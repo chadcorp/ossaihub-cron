@@ -120,11 +120,12 @@ async function fetchStats(repos) {
 }
 
 async function upsert(records) {
-  // Base44 rate-limits ~80 row-updates per window. Keep batches small and pace
-  // between them so the limiter doesn't trip. ~25 min total runtime at 1166 records.
-  const BATCH = 10;
-  const INTER_BATCH_DELAY_MS = 12000;
+  // Base44's function now does parallel chunked updates internally (~2s per batch of 45 rows).
+  // Send generous batches with a small courtesy gap.
+  const BATCH = 50;
+  const INTER_BATCH_DELAY_MS = 500;
   let rowsUpdated = 0;
+  let rowsFailed = 0;
   let groupsUpdated = 0;
   let groupsNotMatched = 0;
   const totalBatches = Math.ceil(records.length / BATCH);
@@ -138,18 +139,18 @@ async function upsert(records) {
     });
     const res = await r.json().catch(() => ({}));
     rowsUpdated += res.rows_updated ?? res.updated ?? 0;
+    rowsFailed += res.rows_failed ?? 0;
     groupsUpdated += res.url_groups_updated ?? 0;
     groupsNotMatched += res.url_groups_not_matched ?? 0;
     console.log(
-      `  batch ${batchNum}/${totalBatches}: ${chunk.length} sent, rows_updated=${res.rows_updated ?? '?'}`
+      `  batch ${batchNum}/${totalBatches}: ${chunk.length} sent, rows_updated=${res.rows_updated ?? '?'}, failed=${res.rows_failed ?? 0}`
     );
-    // Pace to stay under Base44's rate limit, except on the last batch.
     if (i + BATCH < records.length) {
       await new Promise((res) => setTimeout(res, INTER_BATCH_DELAY_MS));
     }
   }
   console.log(
-    `Upsert totals — rows_updated: ${rowsUpdated}, url_groups_updated: ${groupsUpdated}, url_groups_not_matched: ${groupsNotMatched}`
+    `Upsert totals — rows_updated: ${rowsUpdated}, rows_failed: ${rowsFailed}, url_groups_updated: ${groupsUpdated}, url_groups_not_matched: ${groupsNotMatched}`
   );
 }
 
