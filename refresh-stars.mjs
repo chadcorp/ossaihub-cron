@@ -42,18 +42,24 @@ async function fetchWithRetry(url, opts = {}, attempts = 5) {
   throw new Error(`${lastStatus} on ${url} after ${attempts} retries. Last body: ${lastBody}`);
 }
 
+const normalizeUrl = (u) =>
+  (u || '').toLowerCase().trim().replace(/\.git$/, '').replace(/\/$/, '');
+
 async function listTools() {
   const r = await fetchWithRetry(TOOLS_LIST_URL, {
     headers: { Accept: 'application/json' },
   });
-  const tools = await r.json();
-  // Dedupe by github_url so we don't waste GraphQL quota or double-upsert.
-  const seen = new Set();
-  return tools.filter((t) => {
-    if (!t.github_url || seen.has(t.github_url)) return false;
-    seen.add(t.github_url);
-    return true;
-  });
+  const raw = await r.json();
+  // Group records by normalized github_url so we can check current archived state
+  // AND know when an archive-flip payload would be a wasteful no-op.
+  const byUrl = new Map();
+  for (const t of raw) {
+    if (!t.github_url) continue;
+    const k = normalizeUrl(t.github_url);
+    if (!byUrl.has(k)) byUrl.set(k, []);
+    byUrl.get(k).push(t);
+  }
+  return byUrl; // Map: normalized_url -> array of Tool records
 }
 
 async function fetchStats(repos) {
@@ -155,14 +161,26 @@ async function upsert(records) {
 }
 
 (async () => {
-  const tools = await listTools();
-  const repos = tools.map((t) => parseRepo(t.github_url)).filter(Boolean);
-  console.log(`Refreshing ${repos.length} repos`);
+  const urlMap = await listTools();
+  const uniqueUrls = [...urlMap.keys()];
+  const repos = uniqueUrls.map((u) => parseRepo(u)).filter(Boolean);
+  console.log(`Refreshing ${repos.length} unique repos (${[...urlMap.values()].reduce((n,g)=>n+g.length,0)} total rows)`);
   const { live, dead } = await fetchStats(repos);
-  console.log(`Live: ${live.length}, dead (auto-archive): ${dead.length}`);
-  // Process DEAD records first so archive flips land before any rate-limit degrades
-  // throughput later in the run.
-  await upsert([...dead, ...live]);
+
+  // Filter dead list to only URLs with at least one NOT-yet-archived row —
+  // every write must land on a new flip, not overwrite an already-archived record.
+  const deadNeedingArchive = dead.filter((item) => {
+    const records = urlMap.get(normalizeUrl(item.github_url)) || [];
+    return records.some((r) => r.archived !== true);
+  });
+  const deadAlreadyArchived = dead.length - deadNeedingArchive.length;
+
+  console.log(
+    `Live: ${live.length}, dead total: ${dead.length} (already archived: ${deadAlreadyArchived}, new flips: ${deadNeedingArchive.length})`
+  );
+
+  // Process archive-flip records FIRST so they land before rate-limit degrades throughput.
+  await upsert([...deadNeedingArchive, ...live]);
   console.log('Done.');
 })().catch((e) => {
   console.error(e);
