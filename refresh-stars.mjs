@@ -74,12 +74,29 @@ async function fetchStats(repos) {
 }
 
 async function upsert(records) {
-  const r = await fetch(BASE44_UPSERT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', API_KEY: BASE44_API_KEY },
-    body: JSON.stringify(records),
-  });
-  if (!r.ok) throw new Error(`Upsert failed: ${r.status} ${await r.text()}`);
+  // Batch to avoid overwhelming the Base44 function (was 502ing on ~900 records).
+  const BATCH = 50;
+  let updated = 0;
+  let skipped = 0;
+  for (let i = 0; i < records.length; i += BATCH) {
+    const chunk = records.slice(i, i + BATCH);
+    const r = await fetch(BASE44_UPSERT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', API_KEY: BASE44_API_KEY },
+      body: JSON.stringify(chunk),
+    });
+    if (!r.ok) {
+      const body = (await r.text()).slice(0, 300);
+      throw new Error(
+        `Upsert failed at batch ${i / BATCH + 1}: ${r.status} ${body}`
+      );
+    }
+    const res = await r.json().catch(() => ({}));
+    updated += res.updated ?? 0;
+    skipped += res.skipped ?? 0;
+    console.log(`  batch ${i / BATCH + 1}: ${chunk.length} sent`);
+  }
+  console.log(`Upsert totals — updated: ${updated}, skipped: ${skipped}`);
 }
 
 (async () => {
