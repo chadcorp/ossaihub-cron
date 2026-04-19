@@ -14,6 +14,6 @@ jobs:
           node-version: '20'
       - run: node refresh-stars.mjs
         env:
-          GH_READONLY_TOKEN: ${{ secrets.GH_READONLY_TOKEN }}
+          GH_READONLY_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # auto-provided by Actions, no setup
           BASE44_UPSERT_URL: ${{ secrets.BASE44_UPSERT_URL }}
           BASE44_API_KEY:    ${{ secrets.TOOLS_UPSERT_API_KEY }}
