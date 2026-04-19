@@ -15,11 +15,35 @@ const parseRepo = (url) => {
 const TOOLS_LIST_URL =
   'https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson';
 
+// Base44 endpoints are flaky — retry transient 5xx with exponential backoff.
+async function fetchWithRetry(url, opts = {}, attempts = 5) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const r = await fetch(url, opts);
+      if (r.ok) return r;
+      if (r.status >= 500 && r.status < 600) {
+        lastErr = new Error(`${r.status} on ${url}`);
+        const wait = 1000 * Math.pow(2, i); // 1s, 2s, 4s, 8s, 16s
+        console.log(`  retry ${i + 1}/${attempts} after ${wait}ms (${r.status})`);
+        await new Promise((res) => setTimeout(res, wait));
+        continue;
+      }
+      // 4xx is terminal
+      throw new Error(`${r.status} ${(await r.text()).slice(0, 200)}`);
+    } catch (e) {
+      lastErr = e;
+      const wait = 1000 * Math.pow(2, i);
+      await new Promise((res) => setTimeout(res, wait));
+    }
+  }
+  throw lastErr;
+}
+
 async function listTools() {
-  const r = await fetch(TOOLS_LIST_URL, {
+  const r = await fetchWithRetry(TOOLS_LIST_URL, {
     headers: { Accept: 'application/json' },
   });
-  if (!r.ok) throw new Error(`Tool list fetch failed: ${r.status}`);
   const tools = await r.json();
   // Dedupe by github_url so we don't waste GraphQL quota or double-upsert.
   const seen = new Set();
@@ -80,17 +104,11 @@ async function upsert(records) {
   let skipped = 0;
   for (let i = 0; i < records.length; i += BATCH) {
     const chunk = records.slice(i, i + BATCH);
-    const r = await fetch(BASE44_UPSERT_URL, {
+    const r = await fetchWithRetry(BASE44_UPSERT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', API_KEY: BASE44_API_KEY },
       body: JSON.stringify(chunk),
     });
-    if (!r.ok) {
-      const body = (await r.text()).slice(0, 300);
-      throw new Error(
-        `Upsert failed at batch ${i / BATCH + 1}: ${r.status} ${body}`
-      );
-    }
     const res = await r.json().catch(() => ({}));
     updated += res.updated ?? 0;
     skipped += res.skipped ?? 0;
