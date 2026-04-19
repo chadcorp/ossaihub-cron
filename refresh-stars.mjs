@@ -55,7 +55,8 @@ async function listTools() {
 }
 
 async function fetchStats(repos) {
-  const out = [];
+  const live = [];
+  const dead = []; // repos GitHub explicitly reports as NOT_FOUND — auto-archive
   for (let i = 0; i < repos.length; i += 100) {
     const chunk = repos.slice(i, i + 100);
     const q = chunk
@@ -79,22 +80,41 @@ async function fetchStats(repos) {
       body: JSON.stringify({ query: `{${q}}` }),
     });
     const json = await res.json();
-    if (json.errors) console.warn('GraphQL partial errors:', json.errors);
 
-    chunk.forEach((_, idx) => {
-      const repo = json.data?.[`r${idx}`];
-      if (!repo) return; // repo 404 / deleted / renamed — skip silently
-      out.push({
-        github_url: `https://github.com/${repo.nameWithOwner}`,
-        stars: repo.stargazerCount,
-        forks: repo.forkCount,
-        last_commit_at: repo.pushedAt,
-        archived: repo.isArchived,
-        license: repo.licenseInfo?.spdxId ?? null,
-      });
+    // Collect explicit NOT_FOUND aliases so we can auto-archive them.
+    const notFound = new Set();
+    if (Array.isArray(json.errors)) {
+      for (const err of json.errors) {
+        if (err.type === 'NOT_FOUND' && Array.isArray(err.path)) {
+          notFound.add(err.path[0]); // e.g. 'r57'
+        }
+      }
+      const other = json.errors.filter((e) => e.type !== 'NOT_FOUND');
+      if (other.length) console.warn('GraphQL non-404 errors:', other);
+    }
+
+    chunk.forEach((r, idx) => {
+      const alias = `r${idx}`;
+      const repo = json.data?.[alias];
+      if (repo) {
+        live.push({
+          github_url: `https://github.com/${repo.nameWithOwner}`,
+          stars: repo.stargazerCount,
+          forks: repo.forkCount,
+          last_commit_at: repo.pushedAt,
+          archived: repo.isArchived,
+          license: repo.licenseInfo?.spdxId ?? null,
+        });
+      } else if (notFound.has(alias)) {
+        // Only auto-archive on explicit NOT_FOUND — transient errors are ignored.
+        dead.push({
+          github_url: `https://github.com/${r.owner}/${r.name}`,
+          archived: true,
+        });
+      }
     });
   }
-  return out;
+  return { live, dead };
 }
 
 async function upsert(records) {
@@ -121,9 +141,9 @@ async function upsert(records) {
   const tools = await listTools();
   const repos = tools.map((t) => parseRepo(t.github_url)).filter(Boolean);
   console.log(`Refreshing ${repos.length} repos`);
-  const updates = await fetchStats(repos);
-  console.log(`Upserting ${updates.length} records`);
-  await upsert(updates);
+  const { live, dead } = await fetchStats(repos);
+  console.log(`Live: ${live.length}, dead (auto-archive): ${dead.length}`);
+  await upsert([...live, ...dead]);
   console.log('Done.');
 })().catch((e) => {
   console.error(e);
