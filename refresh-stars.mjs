@@ -120,25 +120,33 @@ async function fetchStats(repos) {
 }
 
 async function upsert(records) {
-  // Base44's function does ~N*5 row updates per batch with 50ms sleep each,
-  // so keep chunks small to stay under Cloudflare's 30s timeout.
-  const BATCH = 20;
+  // Base44 rate-limits ~80 row-updates per window. Keep batches small and pace
+  // between them so the limiter doesn't trip. ~25 min total runtime at 1166 records.
+  const BATCH = 10;
+  const INTER_BATCH_DELAY_MS = 12000;
   let rowsUpdated = 0;
   let groupsUpdated = 0;
   let groupsNotMatched = 0;
+  const totalBatches = Math.ceil(records.length / BATCH);
   for (let i = 0; i < records.length; i += BATCH) {
     const chunk = records.slice(i, i + BATCH);
+    const batchNum = i / BATCH + 1;
     const r = await fetchWithRetry(BASE44_UPSERT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', API_KEY: BASE44_API_KEY },
-      // Base44's function accepts both {items:[...]} and raw arrays; wrapper is the tested path.
       body: JSON.stringify({ items: chunk }),
     });
     const res = await r.json().catch(() => ({}));
     rowsUpdated += res.rows_updated ?? res.updated ?? 0;
     groupsUpdated += res.url_groups_updated ?? 0;
     groupsNotMatched += res.url_groups_not_matched ?? 0;
-    console.log(`  batch ${i / BATCH + 1}: ${chunk.length} sent, rows_updated=${res.rows_updated ?? '?'}`);
+    console.log(
+      `  batch ${batchNum}/${totalBatches}: ${chunk.length} sent, rows_updated=${res.rows_updated ?? '?'}`
+    );
+    // Pace to stay under Base44's rate limit, except on the last batch.
+    if (i + BATCH < records.length) {
+      await new Promise((res) => setTimeout(res, INTER_BATCH_DELAY_MS));
+    }
   }
   console.log(
     `Upsert totals — rows_updated: ${rowsUpdated}, url_groups_updated: ${groupsUpdated}, url_groups_not_matched: ${groupsNotMatched}`
