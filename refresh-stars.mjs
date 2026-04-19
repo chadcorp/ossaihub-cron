@@ -120,10 +120,10 @@ async function fetchStats(repos) {
 }
 
 async function upsert(records) {
-  // Base44's function now does parallel chunked updates internally (~2s per batch of 45 rows).
-  // Send generous batches with a small courtesy gap.
+  // Base44's parallel function handles a single batch of ~50 fine but collapses
+  // under sustained load — needs real pacing between batches.
   const BATCH = 50;
-  const INTER_BATCH_DELAY_MS = 500;
+  const INTER_BATCH_DELAY_MS = 6000;
   let rowsUpdated = 0;
   let rowsFailed = 0;
   let groupsUpdated = 0;
@@ -160,7 +160,9 @@ async function upsert(records) {
   console.log(`Refreshing ${repos.length} repos`);
   const { live, dead } = await fetchStats(repos);
   console.log(`Live: ${live.length}, dead (auto-archive): ${dead.length}`);
-  await upsert([...live, ...dead]);
+  // Process DEAD records first so archive flips land before any rate-limit degrades
+  // throughput later in the run.
+  await upsert([...dead, ...live]);
   console.log('Done.');
 })().catch((e) => {
   console.error(e);
