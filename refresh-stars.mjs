@@ -17,27 +17,29 @@ const TOOLS_LIST_URL =
 
 // Base44 endpoints are flaky — retry transient 5xx with exponential backoff.
 async function fetchWithRetry(url, opts = {}, attempts = 5) {
-  let lastErr;
+  let lastBody = '';
+  let lastStatus = 0;
   for (let i = 0; i < attempts; i++) {
     try {
       const r = await fetch(url, opts);
       if (r.ok) return r;
+      lastStatus = r.status;
       if (r.status >= 500 && r.status < 600) {
-        lastErr = new Error(`${r.status} on ${url}`);
+        lastBody = (await r.text()).slice(0, 500);
         const wait = 1000 * Math.pow(2, i); // 1s, 2s, 4s, 8s, 16s
-        console.log(`  retry ${i + 1}/${attempts} after ${wait}ms (${r.status})`);
+        console.log(`  retry ${i + 1}/${attempts} after ${wait}ms (${r.status}) body=${lastBody.slice(0,200)}`);
         await new Promise((res) => setTimeout(res, wait));
         continue;
       }
       // 4xx is terminal
-      throw new Error(`${r.status} ${(await r.text()).slice(0, 200)}`);
+      throw new Error(`${r.status} ${(await r.text()).slice(0, 300)}`);
     } catch (e) {
-      lastErr = e;
+      if (!lastStatus) lastStatus = -1;
       const wait = 1000 * Math.pow(2, i);
       await new Promise((res) => setTimeout(res, wait));
     }
   }
-  throw lastErr;
+  throw new Error(`${lastStatus} on ${url} after ${attempts} retries. Last body: ${lastBody}`);
 }
 
 async function listTools() {
@@ -118,23 +120,29 @@ async function fetchStats(repos) {
 }
 
 async function upsert(records) {
-  // Batch to avoid overwhelming the Base44 function (was 502ing on ~900 records).
-  const BATCH = 50;
-  let updated = 0;
-  let skipped = 0;
+  // Base44's function does ~N*5 row updates per batch with 50ms sleep each,
+  // so keep chunks small to stay under Cloudflare's 30s timeout.
+  const BATCH = 20;
+  let rowsUpdated = 0;
+  let groupsUpdated = 0;
+  let groupsNotMatched = 0;
   for (let i = 0; i < records.length; i += BATCH) {
     const chunk = records.slice(i, i + BATCH);
     const r = await fetchWithRetry(BASE44_UPSERT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', API_KEY: BASE44_API_KEY },
-      body: JSON.stringify(chunk),
+      // Base44's function accepts both {items:[...]} and raw arrays; wrapper is the tested path.
+      body: JSON.stringify({ items: chunk }),
     });
     const res = await r.json().catch(() => ({}));
-    updated += res.updated ?? 0;
-    skipped += res.skipped ?? 0;
-    console.log(`  batch ${i / BATCH + 1}: ${chunk.length} sent`);
+    rowsUpdated += res.rows_updated ?? res.updated ?? 0;
+    groupsUpdated += res.url_groups_updated ?? 0;
+    groupsNotMatched += res.url_groups_not_matched ?? 0;
+    console.log(`  batch ${i / BATCH + 1}: ${chunk.length} sent, rows_updated=${res.rows_updated ?? '?'}`);
   }
-  console.log(`Upsert totals — updated: ${updated}, skipped: ${skipped}`);
+  console.log(
+    `Upsert totals — rows_updated: ${rowsUpdated}, url_groups_updated: ${groupsUpdated}, url_groups_not_matched: ${groupsNotMatched}`
+  );
 }
 
 (async () => {
