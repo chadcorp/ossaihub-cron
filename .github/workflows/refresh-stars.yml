@@ -1,0 +1,19 @@
+name: Refresh OSS AI Hub GitHub stars
+on:
+  schedule:
+    - cron: '17 6 * * *'   # 06:17 UTC daily (off the hour on purpose)
+  workflow_dispatch:        # lets you trigger manually from the Actions tab
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node refresh-stars.mjs
+        env:
+          GH_READONLY_TOKEN: ${{ secrets.GH_READONLY_TOKEN }}
+          BASE44_UPSERT_URL: ${{ secrets.BASE44_UPSERT_URL }}
+          BASE44_API_KEY:    ${{ secrets.TOOLS_UPSERT_API_KEY }}
