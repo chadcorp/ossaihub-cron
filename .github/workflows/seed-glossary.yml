@@ -1,0 +1,19 @@
+name: Seed Glossary (trigger seedGlossary Base44 function)
+on:
+  workflow_dispatch:
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger seedGlossary
+        env:
+          API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}
+        run: |
+          curl -sS -X POST \
+            "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/seedGlossary" \
+            -H "Content-Type: application/json" \
+            -H "API_KEY: $API_KEY" \
+            -o response.json -w "HTTP %{http_code}\n"
+          echo "--- response ---"
+          cat response.json
