@@ -1,0 +1,18 @@
+name: Weekly OSS AI Hub digest
+on:
+  schedule:
+    - cron: '37 9 * * 0'    # 09:37 UTC every Sunday
+  workflow_dispatch:         # manual trigger from Actions tab
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node generate-weekly-digest.mjs
+        env:
+          DIGEST_SECRET:   ${{ secrets.DIGEST_SECRET }}
+          DIGEST_ENDPOINT: ${{ secrets.DIGEST_ENDPOINT }}

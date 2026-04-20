@@ -1,0 +1,19 @@
+name: Nightly OSS AI Hub tool discovery
+on:
+  schedule:
+    - cron: '23 4 * * *'    # 04:23 UTC daily — 2h before stars-refresh so newly
+                             # added tools get their first stat sync on day one
+  workflow_dispatch:         # manual trigger from Actions tab
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node discover-tools.mjs
+        env:
+          DISCOVERY_SECRET:   ${{ secrets.DISCOVERY_SECRET }}
+          DISCOVERY_ENDPOINT: ${{ secrets.DISCOVERY_ENDPOINT }}
