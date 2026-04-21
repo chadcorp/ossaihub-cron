@@ -34,6 +34,7 @@ const CATEGORIES = [
   'video-generation',
   'llm-observability-tracing',
   'llm-evaluation-benchmarks',
+  'document-intelligence-parsing',
 ];
 
 const MAX_PER_CATEGORY = 10;
