@@ -31,6 +31,7 @@ const CATEGORIES = [
   'desktop-personal-agents',
   'vector-databases-embeddings',
   'llm-gateways-routing',
+  'video-generation',
 ];
 
 const MAX_PER_CATEGORY = 10;
