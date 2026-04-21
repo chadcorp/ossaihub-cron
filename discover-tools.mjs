@@ -33,6 +33,7 @@ const CATEGORIES = [
   'llm-gateways-routing',
   'video-generation',
   'llm-observability-tracing',
+  'llm-evaluation-benchmarks',
 ];
 
 const MAX_PER_CATEGORY = 10;
