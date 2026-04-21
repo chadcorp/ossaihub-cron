@@ -36,6 +36,7 @@ const CATEGORIES = [
   'llm-evaluation-benchmarks',
   'document-intelligence-parsing',
   'data-labeling-annotation',
+  'browser-computer-use-agents',
 ];
 
 const MAX_PER_CATEGORY = 10;
