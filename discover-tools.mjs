@@ -37,6 +37,7 @@ const CATEGORIES = [
   'document-intelligence-parsing',
   'data-labeling-annotation',
   'browser-computer-use-agents',
+  'time-series-forecasting',
 ];
 
 const MAX_PER_CATEGORY = 10;
