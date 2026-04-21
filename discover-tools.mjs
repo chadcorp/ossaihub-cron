@@ -32,6 +32,7 @@ const CATEGORIES = [
   'vector-databases-embeddings',
   'llm-gateways-routing',
   'video-generation',
+  'llm-observability-tracing',
 ];
 
 const MAX_PER_CATEGORY = 10;
