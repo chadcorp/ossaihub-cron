@@ -35,6 +35,7 @@ const CATEGORIES = [
   'llm-observability-tracing',
   'llm-evaluation-benchmarks',
   'document-intelligence-parsing',
+  'data-labeling-annotation',
 ];
 
 const MAX_PER_CATEGORY = 10;
