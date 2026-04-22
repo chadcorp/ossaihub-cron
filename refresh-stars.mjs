@@ -105,19 +105,26 @@ async function fetchStats(repos) {
       const alias = `r${idx}`;
       const repo = json.data?.[alias];
       if (repo) {
-        live.push({
+        const payload = {
           github_url: `https://github.com/${repo.nameWithOwner}`,
           stars: repo.stargazerCount,
           forks: repo.forkCount,
           last_commit_at: repo.pushedAt,
           archived: repo.isArchived,
           license: repo.licenseInfo?.spdxId ?? null,
-        });
+        };
+        // Keep status in lockstep with archived=true so the directory can't
+        // claim an archived tool is still "approved" or "featured". The browse
+        // UI filters by archived, but status leaks into JSON-LD, sitemaps, and
+        // anywhere the public feed is consumed — trust-critical to keep aligned.
+        if (repo.isArchived) payload.status = 'archived';
+        live.push(payload);
       } else if (notFound.has(alias)) {
         // Only auto-archive on explicit NOT_FOUND — transient errors are ignored.
         dead.push({
           github_url: `https://github.com/${r.owner}/${r.name}`,
           archived: true,
+          status: 'archived',
         });
       }
     });
