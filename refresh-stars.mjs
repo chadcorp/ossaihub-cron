@@ -15,8 +15,10 @@ const parseRepo = (url) => {
 const TOOLS_LIST_URL =
   'https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson';
 
-// Base44 endpoints are flaky — retry transient 5xx with exponential backoff.
-async function fetchWithRetry(url, opts = {}, attempts = 5) {
+// Base44's upsert endpoint rate-limits under sustained load. It often
+// wraps the rate-limit response as HTTP 500 with body {error: "... 429"}.
+// Detect that pattern and apply longer backoffs specifically for rate-limits.
+async function fetchWithRetry(url, opts = {}, attempts = 10) {
   let lastBody = '';
   let lastStatus = 0;
   for (let i = 0; i < attempts; i++) {
@@ -26,8 +28,14 @@ async function fetchWithRetry(url, opts = {}, attempts = 5) {
       lastStatus = r.status;
       if (r.status >= 500 && r.status < 600) {
         lastBody = (await r.text()).slice(0, 500);
-        const wait = 1000 * Math.pow(2, i); // 1s, 2s, 4s, 8s, 16s
-        console.log(`  retry ${i + 1}/${attempts} after ${wait}ms (${r.status}) body=${lastBody.slice(0,200)}`);
+        const isRateLimit = /429/.test(lastBody);
+        // Rate-limits get a longer floor + slower growth; transient 5xx get
+        // the normal exponential ramp.
+        const baseWait = isRateLimit ? 15000 : 1000;
+        const wait = Math.min(120000, baseWait * Math.pow(1.7, i));
+        console.log(
+          `  retry ${i + 1}/${attempts} after ${wait}ms (${r.status}${isRateLimit ? ' rate-limit' : ''}) body=${lastBody.slice(0, 150)}`
+        );
         await new Promise((res) => setTimeout(res, wait));
         continue;
       }
@@ -35,7 +43,7 @@ async function fetchWithRetry(url, opts = {}, attempts = 5) {
       throw new Error(`${r.status} ${(await r.text()).slice(0, 300)}`);
     } catch (e) {
       if (!lastStatus) lastStatus = -1;
-      const wait = 1000 * Math.pow(2, i);
+      const wait = Math.min(30000, 1000 * Math.pow(2, i));
       await new Promise((res) => setTimeout(res, wait));
     }
   }
@@ -133,10 +141,10 @@ async function fetchStats(repos) {
 }
 
 async function upsert(records) {
-  // Base44's parallel function handles a single batch of ~50 fine but collapses
-  // under sustained load — needs real pacing between batches.
-  const BATCH = 50;
-  const INTER_BATCH_DELAY_MS = 6000;
+  // Base44's upsert is serial under the hood. Smaller batches + longer pacing
+  // keep us below the rate-limit ceiling that caused the 2026-04-23 failure.
+  const BATCH = 25;
+  const INTER_BATCH_DELAY_MS = 8000;
   let rowsUpdated = 0;
   let rowsFailed = 0;
   let groupsUpdated = 0;
