@@ -7,6 +7,11 @@ if (!GH_READONLY_TOKEN || !BASE44_UPSERT_URL || !BASE44_API_KEY) {
   throw new Error('Missing required env vars.');
 }
 
+// Coverage guard — the 404 purger loses its integrity value if it silently
+// skips repos. Fail the job loudly when dropout exceeds this fraction so
+// /data-health goes red instead of reporting a fake-green.
+const MAX_COVERAGE_LOSS = 0.15; // 15%
+
 const parseRepo = (url) => {
   const m = url?.match(/github\.com\/([^\/]+)\/([^\/?#]+)/);
   return m ? { owner: m[1], name: m[2].replace(/\.git$/, '') } : null;
@@ -29,8 +34,6 @@ async function fetchWithRetry(url, opts = {}, attempts = 10) {
       if (r.status >= 500 && r.status < 600) {
         lastBody = (await r.text()).slice(0, 500);
         const isRateLimit = /429/.test(lastBody);
-        // Rate-limits get a longer floor + slower growth; transient 5xx get
-        // the normal exponential ramp.
         const baseWait = isRateLimit ? 15000 : 1000;
         const wait = Math.min(120000, baseWait * Math.pow(1.7, i));
         console.log(
@@ -39,7 +42,6 @@ async function fetchWithRetry(url, opts = {}, attempts = 10) {
         await new Promise((res) => setTimeout(res, wait));
         continue;
       }
-      // 4xx is terminal
       throw new Error(`${r.status} ${(await r.text()).slice(0, 300)}`);
     } catch (e) {
       if (!lastStatus) lastStatus = -1;
@@ -58,8 +60,6 @@ async function listTools() {
     headers: { Accept: 'application/json' },
   });
   const raw = await r.json();
-  // Group records by normalized github_url so we can check current archived state
-  // AND know when an archive-flip payload would be a wasteful no-op.
   const byUrl = new Map();
   for (const t of raw) {
     if (!t.github_url) continue;
@@ -67,25 +67,27 @@ async function listTools() {
     if (!byUrl.has(k)) byUrl.set(k, []);
     byUrl.get(k).push(t);
   }
-  return byUrl; // Map: normalized_url -> array of Tool records
+  return byUrl;
 }
 
-async function fetchStats(repos) {
-  const live = [];
-  const dead = []; // repos GitHub explicitly reports as NOT_FOUND — auto-archive
-  for (let i = 0; i < repos.length; i += 100) {
-    const chunk = repos.slice(i, i + 100);
-    const q = chunk
-      .map(
-        (r, idx) => `
+// One chunk of up to 100 repos. Retries the whole chunk on transient GitHub
+// errors (HTTP 5xx, secondary rate-limits, abuse detection) so partial-data
+// responses don't silently drop repos from the 404 scan.
+async function fetchStatsChunk(chunk, attempt = 0) {
+  const MAX_ATTEMPTS = 5;
+  const q = chunk
+    .map(
+      (r, idx) => `
       r${idx}: repository(owner: "${r.owner}", name: "${r.name}") {
         nameWithOwner
         stargazerCount forkCount pushedAt isArchived
         licenseInfo { spdxId }
       }`
-      )
-      .join('\n');
+    )
+    .join('\n');
 
+  let json;
+  try {
     const res = await fetch('https://api.github.com/graphql', {
       method: 'POST',
       headers: {
@@ -95,54 +97,133 @@ async function fetchStats(repos) {
       },
       body: JSON.stringify({ query: `{${q}}` }),
     });
-    const json = await res.json();
 
-    // Collect explicit NOT_FOUND aliases so we can auto-archive them.
-    const notFound = new Set();
-    if (Array.isArray(json.errors)) {
-      for (const err of json.errors) {
-        if (err.type === 'NOT_FOUND' && Array.isArray(err.path)) {
-          notFound.add(err.path[0]); // e.g. 'r57'
-        }
+    // HTTP-level failure — GitHub 5xx, 403 (abuse), 429 (secondary rate-limit)
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      const retriable = res.status >= 500 || res.status === 403 || res.status === 429;
+      if (retriable && attempt < MAX_ATTEMPTS - 1) {
+        const wait = Math.min(60000, 3000 * Math.pow(2, attempt));
+        console.log(
+          `  GraphQL chunk HTTP ${res.status} (attempt ${attempt + 1}/${MAX_ATTEMPTS}) — retrying in ${wait}ms. Body: ${body.slice(0, 150)}`
+        );
+        await new Promise((r) => setTimeout(r, wait));
+        return fetchStatsChunk(chunk, attempt + 1);
       }
-      const other = json.errors.filter((e) => e.type !== 'NOT_FOUND');
-      if (other.length) console.warn('GraphQL non-404 errors:', other);
+      throw new Error(`GraphQL HTTP ${res.status}: ${body.slice(0, 300)}`);
     }
-
-    chunk.forEach((r, idx) => {
-      const alias = `r${idx}`;
-      const repo = json.data?.[alias];
-      if (repo) {
-        const payload = {
-          github_url: `https://github.com/${repo.nameWithOwner}`,
-          stars: repo.stargazerCount,
-          forks: repo.forkCount,
-          last_commit_at: repo.pushedAt,
-          archived: repo.isArchived,
-          license: repo.licenseInfo?.spdxId ?? null,
-        };
-        // Keep status in lockstep with archived=true so the directory can't
-        // claim an archived tool is still "approved" or "featured". The browse
-        // UI filters by archived, but status leaks into JSON-LD, sitemaps, and
-        // anywhere the public feed is consumed — trust-critical to keep aligned.
-        if (repo.isArchived) payload.status = 'archived';
-        live.push(payload);
-      } else if (notFound.has(alias)) {
-        // Only auto-archive on explicit NOT_FOUND — transient errors are ignored.
-        dead.push({
-          github_url: `https://github.com/${r.owner}/${r.name}`,
-          archived: true,
-          status: 'archived',
-        });
-      }
-    });
+    json = await res.json();
+  } catch (e) {
+    if (attempt < MAX_ATTEMPTS - 1) {
+      const wait = Math.min(60000, 3000 * Math.pow(2, attempt));
+      console.log(
+        `  GraphQL chunk fetch error (attempt ${attempt + 1}/${MAX_ATTEMPTS}) — retrying in ${wait}ms. Error: ${e.message.slice(0, 150)}`
+      );
+      await new Promise((r) => setTimeout(r, wait));
+      return fetchStatsChunk(chunk, attempt + 1);
+    }
+    throw e;
   }
-  return { live, dead };
+
+  // Partition errors: NOT_FOUND means dead repo (legitimate), everything else
+  // means partial data — retry the chunk so those repos aren't silently dropped.
+  const notFound = new Set();
+  const otherErrors = [];
+  if (Array.isArray(json.errors)) {
+    for (const err of json.errors) {
+      if (err.type === 'NOT_FOUND' && Array.isArray(err.path)) {
+        notFound.add(err.path[0]);
+      } else {
+        otherErrors.push(err);
+      }
+    }
+  }
+
+  const hasTransient = otherErrors.some((e) => {
+    const t = (e.type || '').toLowerCase();
+    const msg = (e.message || '').toLowerCase();
+    return (
+      t === 'rate_limited' ||
+      /rate.?limit|timeout|abuse|secondary|temporar/i.test(msg)
+    );
+  });
+  if (hasTransient && attempt < MAX_ATTEMPTS - 1) {
+    const wait = Math.min(60000, 8000 * Math.pow(2, attempt));
+    console.log(
+      `  GraphQL chunk got transient errors (attempt ${attempt + 1}/${MAX_ATTEMPTS}) — retrying full chunk in ${wait}ms. Errors: ${otherErrors.slice(0, 2).map((e) => e.message || e.type).join('; ').slice(0, 200)}`
+    );
+    await new Promise((r) => setTimeout(r, wait));
+    return fetchStatsChunk(chunk, attempt + 1);
+  }
+  if (otherErrors.length) {
+    console.warn(
+      `  GraphQL non-404 errors on chunk (after ${attempt + 1} attempts):`,
+      otherErrors.slice(0, 3).map((e) => ({ type: e.type, message: e.message?.slice(0, 120) }))
+    );
+  }
+
+  const live = [];
+  const dead = [];
+  let skipped = 0;
+
+  chunk.forEach((r, idx) => {
+    const alias = `r${idx}`;
+    const repo = json.data?.[alias];
+    if (repo) {
+      const payload = {
+        github_url: `https://github.com/${repo.nameWithOwner}`,
+        stars: repo.stargazerCount,
+        forks: repo.forkCount,
+        last_commit_at: repo.pushedAt,
+        archived: repo.isArchived,
+        license: repo.licenseInfo?.spdxId ?? null,
+      };
+      // Keep status in lockstep with archived=true.
+      if (repo.isArchived) payload.status = 'archived';
+      live.push(payload);
+    } else if (notFound.has(alias)) {
+      dead.push({
+        github_url: `https://github.com/${r.owner}/${r.name}`,
+        archived: true,
+        status: 'archived',
+      });
+    } else {
+      // Got neither live data nor explicit NOT_FOUND — repo was dropped due
+      // to an upstream error we couldn't recover from. Count it.
+      skipped++;
+    }
+  });
+
+  return { live, dead, skipped };
+}
+
+async function fetchStats(repos) {
+  const live = [];
+  const dead = [];
+  let skipped = 0;
+  const totalChunks = Math.ceil(repos.length / 100);
+
+  for (let i = 0; i < repos.length; i += 100) {
+    const chunk = repos.slice(i, i + 100);
+    const chunkNum = Math.floor(i / 100) + 1;
+    const result = await fetchStatsChunk(chunk);
+    live.push(...result.live);
+    dead.push(...result.dead);
+    skipped += result.skipped;
+    if (result.skipped > 0) {
+      console.log(`  chunk ${chunkNum}/${totalChunks}: ${result.live.length} live + ${result.dead.length} dead + ${result.skipped} SKIPPED`);
+    }
+    // Short pause between chunks to avoid GitHub secondary rate-limits.
+    if (i + 100 < repos.length) {
+      await new Promise((r) => setTimeout(r, 600));
+    }
+  }
+  return { live, dead, skipped };
 }
 
 async function upsert(records) {
   // Base44's upsert is serial under the hood. Smaller batches + longer pacing
-  // keep us below the rate-limit ceiling that caused the 2026-04-23 failure.
+  // keep us below the rate-limit ceiling that caused the 2026-04-23 08:12 failure.
   const BATCH = 25;
   const INTER_BATCH_DELAY_MS = 8000;
   let rowsUpdated = 0;
@@ -179,11 +260,28 @@ async function upsert(records) {
   const urlMap = await listTools();
   const uniqueUrls = [...urlMap.keys()];
   const repos = uniqueUrls.map((u) => parseRepo(u)).filter(Boolean);
-  console.log(`Refreshing ${repos.length} unique repos (${[...urlMap.values()].reduce((n,g)=>n+g.length,0)} total rows)`);
-  const { live, dead } = await fetchStats(repos);
+  console.log(
+    `Refreshing ${repos.length} unique repos (${[...urlMap.values()].reduce((n, g) => n + g.length, 0)} total rows)`
+  );
+  const { live, dead, skipped } = await fetchStats(repos);
 
-  // Filter dead list to only URLs with at least one NOT-yet-archived row —
-  // every write must land on a new flip, not overwrite an already-archived record.
+  const covered = live.length + dead.length;
+  const coveragePct = (covered / repos.length) * 100;
+  const dropPct = (skipped / repos.length) * 100;
+  console.log(
+    `Coverage: ${coveragePct.toFixed(1)}% (live=${live.length}, dead=${dead.length}, skipped=${skipped} of ${repos.length})`
+  );
+
+  // Fail-loudly guardrail: if we dropped too many repos, something upstream
+  // is broken — exit non-zero so /data-health flips red instead of reporting
+  // a fake-green on a half-completed scan.
+  if (dropPct > MAX_COVERAGE_LOSS * 100) {
+    throw new Error(
+      `Coverage too low: ${dropPct.toFixed(1)}% of repos dropped (${skipped}/${repos.length}). Threshold is ${(MAX_COVERAGE_LOSS * 100).toFixed(0)}%. Failing job so /data-health reflects reality.`
+    );
+  }
+
+  // Filter dead list to only URLs with at least one NOT-yet-archived row.
   const deadNeedingArchive = dead.filter((item) => {
     const records = urlMap.get(normalizeUrl(item.github_url)) || [];
     return records.some((r) => r.archived !== true);
@@ -194,7 +292,6 @@ async function upsert(records) {
     `Live: ${live.length}, dead total: ${dead.length} (already archived: ${deadAlreadyArchived}, new flips: ${deadNeedingArchive.length})`
   );
 
-  // Process archive-flip records FIRST so they land before rate-limit degrades throughput.
   await upsert([...deadNeedingArchive, ...live]);
   console.log('Done.');
 })().catch((e) => {
