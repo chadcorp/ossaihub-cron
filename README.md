@@ -67,3 +67,14 @@ First run, after pasting the v2 Base44 prompt and clicking Publish:
 2. `gh workflow run glossary-v2-push.yml` — push all 526 entries
 3. Spot-check https://ossaihub.com/glossary/rag — expect 3 JSON-LD blocks and
    the v2 "TL;DR" / "In Plain English" sections rendering.
+
+### Rate-limit notes (hard-won)
+- Base44's `upsertGlossaryTerm` enforces 100 req/min/IP per the v2 prompt
+  spec. `push_v2.py` defaults to 10 items × 12s = ~50 req/min to stay under.
+- Anthropic OAuth tokens (`CLAUDE_CODE_OAUTH_TOKEN`) rotate on Claude Code's
+  cadence — for long-running rewrites, use a stable `ANTHROPIC_API_KEY`
+  secret rather than OAuth. The nightly workflow requires this secret.
+- `schema_jsonld` must be a single schema.org object (flat, with @context +
+  @type at top level) — Base44 injects it verbatim into one <script> tag,
+  so a wrapper like `{DefinedTerm: {...}, FAQPage: {...}}` breaks Google's
+  parse. `fix_jsonld_shape.py` flattens if the generator emits the wrapper.
