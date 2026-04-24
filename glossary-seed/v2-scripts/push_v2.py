@@ -50,9 +50,9 @@ def post_with_retry(url, api_key, body_bytes, attempts=10):
                 last = e.read().decode("utf-8")[:500]
             except Exception:
                 pass
-            if 500 <= e.code < 600:
-                is_rate = "429" in last
-                base_wait = 15.0 if is_rate else 1.0
+            is_rate = e.code == 429 or "429" in last or "rate limit" in last.lower()
+            if 500 <= e.code < 600 or e.code == 429:
+                base_wait = 20.0 if is_rate else 1.0
                 wait = min(120.0, base_wait * (1.7 ** i)) + random.uniform(0, 1)
                 print(f"  retry {i+1}/{attempts} in {wait:.1f}s ({e.code}{' rate-limit' if is_rate else ''}) body={last[:150]}", flush=True)
                 time.sleep(wait)
@@ -91,8 +91,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--file", default=str(pathlib.Path(__file__).parent.parent / "rebuilt-v2.json"))
     ap.add_argument("--only", default="", help="comma-separated slug subset")
-    ap.add_argument("--chunk", type=int, default=int(os.environ.get("CHUNK", "25")))
-    ap.add_argument("--inter-batch-ms", type=int, default=int(os.environ.get("INTER_BATCH_MS", "8000")))
+    # Chunk size × rate per chunk must stay under Base44's per-IP ceiling
+    # (prompt specified 100 req/min at the function level). 10 items @ 12s =
+    # 50 req/min, well under.
+    ap.add_argument("--chunk", type=int, default=int(os.environ.get("CHUNK", "10")))
+    ap.add_argument("--inter-batch-ms", type=int, default=int(os.environ.get("INTER_BATCH_MS", "12000")))
     ap.add_argument("--dry-run", action="store_true", default=os.environ.get("DRY_RUN", "").lower() == "true")
     ap.add_argument("--url", default=os.environ.get("UPSERT_URL", DEFAULT_URL))
     args = ap.parse_args()
@@ -127,19 +130,43 @@ def main():
             print(f"[DRY] batch {batch_num}/{total_batches}: {len(chunk)} items (first: {chunk[0]['slug']})", flush=True)
             totals["sent"] += len(chunk)
         else:
-            body = json.dumps({"items": chunk}).encode("utf-8")
-            status, resp = post_with_retry(args.url, api_key, body)
+            # Send + handle per-item rate-limit retries up to 3 times.
+            # Base44 returns 200 with rows_failed+errors=[{...Rate limit exceeded}].
+            to_send = list(chunk)
+            attempts_per_chunk = 4
+            for try_i in range(attempts_per_chunk):
+                body = json.dumps({"items": to_send}).encode("utf-8")
+                status, resp = post_with_retry(args.url, api_key, body)
+                rows_failed = resp.get("rows_failed", 0)
+                errs = resp.get("errors") or []
+                rate_limited = [e for e in errs if isinstance(e, dict) and "rate limit" in str(e.get("message","")).lower()]
+                # Credit what succeeded
+                totals["updated"] += resp.get("rows_updated", 0)
+                totals["created"] += resp.get("rows_created", 0)
+                print(
+                    f"  batch {batch_num}/{total_batches} try {try_i+1}: sent={len(to_send)} updated={resp.get('rows_updated','?')} "
+                    f"created={resp.get('rows_created',0)} failed={rows_failed} rate_limited={len(rate_limited)}",
+                    flush=True,
+                )
+                if rows_failed == 0:
+                    break
+                # Only retry the rate-limited slugs; treat other errors as permanent failures
+                retry_slugs = {e.get("slug") for e in rate_limited if e.get("slug")}
+                perm_errors = [e for e in errs if e.get("slug") not in retry_slugs]
+                totals["errors"].extend(perm_errors)
+                if not retry_slugs:
+                    totals["failed"] += rows_failed
+                    break
+                if try_i == attempts_per_chunk - 1:
+                    totals["failed"] += len(retry_slugs)
+                    totals["errors"].extend(rate_limited)
+                    break
+                to_send = [r for r in chunk if r.get("slug") in retry_slugs]
+                # Back off before retrying the rate-limited subset
+                wait_s = 30 * (try_i + 1)
+                print(f"  waiting {wait_s}s before retrying {len(to_send)} rate-limited slugs", flush=True)
+                time.sleep(wait_s)
             totals["sent"] += len(chunk)
-            totals["updated"] += resp.get("rows_updated", 0)
-            totals["created"] += resp.get("rows_created", 0)
-            totals["failed"] += resp.get("rows_failed", 0)
-            if isinstance(resp.get("errors"), list):
-                totals["errors"].extend(resp["errors"])
-            print(
-                f"  batch {batch_num}/{total_batches}: sent={len(chunk)} updated={resp.get('rows_updated','?')} "
-                f"created={resp.get('rows_created',0)} failed={resp.get('rows_failed',0)}",
-                flush=True,
-            )
         if i + args.chunk < len(items):
             time.sleep(args.inter_batch_ms / 1000)
 
