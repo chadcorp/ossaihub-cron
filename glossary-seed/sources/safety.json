@@ -1,0 +1,771 @@
+[
+  {
+    "slug": "adversarial-robustness",
+    "title": "Adversarial Robustness",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A model's resistance to carefully crafted inputs designed to cause misclassification or harmful output — a classic ML security concern extended to LLMs.",
+    "existing_related_terms": [
+      "jailbreak",
+      "prompt-injection",
+      "red-team"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "adversarial examples",
+      "LLM robustness"
+    ]
+  },
+  {
+    "slug": "ai-governance",
+    "title": "AI Governance",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The policies, procedures, and oversight mechanisms an organization uses to manage AI systems — from risk assessments to access controls to audit trails.",
+    "existing_related_terms": [
+      "nist-ai-rmf",
+      "eu-ai-act",
+      "model-card"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AI governance framework"
+    ]
+  },
+  {
+    "slug": "alignment",
+    "title": "Alignment (AI Alignment)",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The research problem of ensuring AI systems pursue human-intended goals safely, honestly, and helpfully — the umbrella term for RLHF, DPO, Constitutional AI, and related work.",
+    "existing_related_terms": [
+      "rlhf",
+      "dpo",
+      "guardrails",
+      "constitutional-ai",
+      "jailbreak"
+    ],
+    "existing_related_tools": [
+      "anthropic",
+      "openai",
+      "trl"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AI alignment",
+      "LLM alignment",
+      "alignment research"
+    ]
+  },
+  {
+    "slug": "alignment-tax",
+    "title": "Alignment Tax",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "The performance cost a model pays on general capabilities after alignment training — the trade-off between being useful and being safe/helpful.",
+    "existing_related_terms": [
+      "alignment",
+      "rlhf",
+      "over-refusal"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "safety tax",
+      "capability tax"
+    ]
+  },
+  {
+    "slug": "backdoor-attack",
+    "title": "Backdoor Attack",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A data-poisoning attack that makes a model behave normally except when a specific 'trigger' pattern is present, at which point it misbehaves.",
+    "existing_related_terms": [
+      "data-poisoning",
+      "supply-chain-risk"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "backdoor ML",
+      "trigger attack"
+    ]
+  },
+  {
+    "slug": "c2pa",
+    "title": "C2PA (Content Provenance Standard)",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open standard for cryptographically signing content metadata — who made it, when, with what tool — to establish provenance.",
+    "existing_related_terms": [
+      "watermarking",
+      "deepfake-detection"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "C2PA spec",
+      "content provenance"
+    ]
+  },
+  {
+    "slug": "camel",
+    "title": "CaMeL (Google Prompt Injection Defense)",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Google's 'Capability-Based Mitigation for LLMs' — a system that separates trusted instructions from untrusted data using a privileged planning model and a restricted execution model.",
+    "existing_related_terms": [
+      "prompt-injection-defense",
+      "indirect-prompt-injection"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "CaMeL defense",
+      "capability mitigation LLM"
+    ]
+  },
+  {
+    "slug": "content-moderation",
+    "title": "Content Moderation (AI-Based)",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Using ML systems — toxicity classifiers, LLM-based reviewers, image/video analyzers — to review user-generated or AI-generated content against policy.",
+    "existing_related_terms": [
+      "toxicity-classification",
+      "llama-guard",
+      "guardrails"
+    ],
+    "existing_related_tools": [
+      "perspective-api",
+      "llama-guard"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AI moderation",
+      "content safety"
+    ]
+  },
+  {
+    "slug": "data-poisoning",
+    "title": "Data Poisoning",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An attack where an adversary injects malicious examples into training data to embed a backdoor, degrade quality, or cause specific misbehavior at inference time.",
+    "existing_related_terms": [
+      "backdoor",
+      "indirect-prompt-injection",
+      "supply-chain-risk"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "poisoning attack",
+      "training data attack"
+    ]
+  },
+  {
+    "slug": "datasheet",
+    "title": "Datasheet (for Datasets)",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A structured document describing a dataset's composition, collection process, intended uses, and known limitations — the dataset equivalent of a model card.",
+    "existing_related_terms": [
+      "model-card",
+      "data-quality",
+      "training-data"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "dataset datasheet"
+    ]
+  },
+  {
+    "slug": "deepfake-detection",
+    "title": "Deepfake Detection",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Techniques for detecting AI-generated or AI-manipulated images, audio, and video — a moving target as generators improve.",
+    "existing_related_terms": [
+      "watermarking",
+      "c2pa"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AI detection",
+      "synthetic media detection"
+    ]
+  },
+  {
+    "slug": "differential-privacy",
+    "title": "Differential Privacy",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A mathematical privacy guarantee that the output of a computation reveals essentially nothing about any single input example.",
+    "existing_related_terms": [
+      "training-data-extraction",
+      "membership-inference",
+      "pii-redaction"
+    ],
+    "existing_related_tools": [
+      "opacus"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "DP-SGD",
+      "differential privacy ML"
+    ]
+  },
+  {
+    "slug": "eu-ai-act",
+    "title": "EU AI Act",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The European Union's comprehensive AI regulation (2024) that classifies AI systems by risk tier and imposes obligations ranging from transparency to prohibitions.",
+    "existing_related_terms": [
+      "nist-ai-rmf",
+      "model-card"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AI Act EU",
+      "EU AI regulation"
+    ]
+  },
+  {
+    "slug": "goal-misgeneralization",
+    "title": "Goal Misgeneralization",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "When an agent learns to pursue a goal that is correlated with the intended goal on training data but diverges in deployment.",
+    "existing_related_terms": [
+      "specification-gaming",
+      "alignment",
+      "inner-alignment"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "goal misgen",
+      "proxy goal"
+    ]
+  },
+  {
+    "slug": "guardrails",
+    "title": "Guardrails",
+    "category": "safety",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Runtime filters and validators that wrap an LLM call to enforce output constraints — schema, safety, factuality, PII removal — and re-ask on failure.",
+    "existing_related_terms": [
+      "prompt-injection",
+      "jailbreak",
+      "structured-output",
+      "pii-redaction"
+    ],
+    "existing_related_tools": [
+      "guardrails-ai",
+      "nemo-guardrails",
+      "instructor"
+    ],
+    "existing_code_example": "# Guardrails-AI with Pydantic schema\nfrom guardrails import Guard\nfrom pydantic import BaseModel, Field\n\nclass Output(BaseModel):\n    sentiment: Literal['pos','neu','neg']\n    summary: str = Field(max_length=160)\n\nguard = Guard.for_pydantic(Output)\nresult = guard(llm, prompt='analyze this review...', num_reasks=2)",
+    "existing_seo_variations": [
+      "guardrails",
+      "LLM guardrails",
+      "output validation"
+    ]
+  },
+  {
+    "slug": "guardrails-ai",
+    "title": "Guardrails AI",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open-source Python framework for enforcing structured output and policy compliance on LLM responses via validators and re-prompts.",
+    "existing_related_terms": [
+      "structured-output",
+      "guardrails",
+      "nemo-guardrails"
+    ],
+    "existing_related_tools": [
+      "guardrails-ai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "guardrails.ai",
+      "RAIL spec"
+    ]
+  },
+  {
+    "slug": "hallucination",
+    "title": "Hallucination",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "When an AI confidently states something that's completely false.",
+    "existing_related_terms": [
+      "rag",
+      "function-calling",
+      "llm"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "hallucination-detection",
+    "title": "Hallucination Detection",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Automated methods for flagging LLM outputs that are not grounded in evidence — via self-consistency, citation checking, or entailment classifiers.",
+    "existing_related_terms": [
+      "hallucination",
+      "rag",
+      "llm-as-judge"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "hallucination check",
+      "factuality detection"
+    ]
+  },
+  {
+    "slug": "indirect-prompt-injection",
+    "title": "Indirect Prompt Injection",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A prompt injection attack delivered through content the LLM reads (a web page, email, document) rather than the direct user input.",
+    "existing_related_terms": [
+      "prompt-injection",
+      "jailbreak",
+      "agent-security"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "IPI",
+      "indirect injection"
+    ]
+  },
+  {
+    "slug": "jailbreak",
+    "title": "Jailbreak",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A prompt crafted to make an aligned LLM bypass its safety training and produce content it was trained to refuse.",
+    "existing_related_terms": [
+      "prompt-injection",
+      "alignment",
+      "rlhf",
+      "guardrails"
+    ],
+    "existing_related_tools": [
+      "anthropic",
+      "openai",
+      "lakera"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "jailbreak",
+      "LLM jailbreak",
+      "bypass safety training"
+    ]
+  },
+  {
+    "slug": "jailbreak-defense",
+    "title": "Jailbreak Defense",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Techniques for hardening LLMs against user attempts to bypass safety guardrails — from training (RLHF, constitutional AI) to inference (input/output filtering, classifiers).",
+    "existing_related_terms": [
+      "jailbreak",
+      "llama-guard",
+      "red-team"
+    ],
+    "existing_related_tools": [
+      "llama-guard"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "jailbreak prevention"
+    ]
+  },
+  {
+    "slug": "llama-guard",
+    "title": "Llama Guard",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Meta's open-source LLM-based safety classifier trained to detect policy violations in both user prompts and model responses.",
+    "existing_related_terms": [
+      "content-moderation",
+      "guardrails",
+      "toxicity-classification"
+    ],
+    "existing_related_tools": [
+      "llama-guard"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Llama Guard 3"
+    ]
+  },
+  {
+    "slug": "membership-inference",
+    "title": "Membership Inference Attack",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An attack that determines whether a specific example was part of a model's training data — a privacy violation even without full data extraction.",
+    "existing_related_terms": [
+      "differential-privacy",
+      "training-data-extraction"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MIA",
+      "membership attack"
+    ]
+  },
+  {
+    "slug": "model-spec",
+    "title": "Model Spec (OpenAI)",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "OpenAI's public document describing intended model behavior — rules, defaults, and principles for how ChatGPT and API models should respond.",
+    "existing_related_terms": [
+      "alignment",
+      "constitutional-ai",
+      "rlhf"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "OpenAI Model Spec"
+    ]
+  },
+  {
+    "slug": "model-theft",
+    "title": "Model Theft (Model Extraction)",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An attack that reconstructs or approximates a closed-API model by querying it extensively and training a student on the outputs.",
+    "existing_related_terms": [
+      "distillation",
+      "watermarking"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "model extraction",
+      "API theft"
+    ]
+  },
+  {
+    "slug": "nemo-guardrails",
+    "title": "NeMo Guardrails",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Nvidia's open-source framework for adding programmable safety and topical guardrails to LLM applications via a declarative DSL (Colang).",
+    "existing_related_terms": [
+      "guardrails",
+      "content-moderation",
+      "llm-firewall"
+    ],
+    "existing_related_tools": [
+      "nemo-guardrails"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Nvidia Guardrails",
+      "Colang"
+    ]
+  },
+  {
+    "slug": "nist-ai-rmf",
+    "title": "AI Safety Institute / NIST AI RMF",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "NIST's AI Risk Management Framework — a voluntary structured approach to identifying, assessing, and mitigating AI system risks used increasingly by US regulators.",
+    "existing_related_terms": [
+      "red-team",
+      "model-card",
+      "ai-governance"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "NIST AI RMF",
+      "AI Risk Management Framework"
+    ]
+  },
+  {
+    "slug": "over-refusal",
+    "title": "Over-Refusal",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "When a safety-tuned LLM refuses benign requests it misclassifies as harmful — a common failure mode of aggressive alignment.",
+    "existing_related_terms": [
+      "alignment-tax",
+      "alignment",
+      "rlhf"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "false refusal",
+      "excessive refusal"
+    ]
+  },
+  {
+    "slug": "pii-redaction",
+    "title": "PII Redaction",
+    "category": "safety",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Detecting and removing Personally Identifiable Information (names, emails, SSN, addresses) from text before logging, storing, or sending to external LLM APIs.",
+    "existing_related_terms": [
+      "guardrails",
+      "safety",
+      "alignment"
+    ],
+    "existing_related_tools": [
+      "presidio",
+      "spacy"
+    ],
+    "existing_code_example": "from presidio_analyzer import AnalyzerEngine\nfrom presidio_anonymizer import AnonymizerEngine\n\nanalyzer, anonymizer = AnalyzerEngine(), AnonymizerEngine()\nresults = analyzer.analyze(text, language='en')\nclean = anonymizer.anonymize(text=text, analyzer_results=results).text",
+    "existing_seo_variations": [
+      "PII redaction",
+      "PII scrubbing",
+      "personal data masking"
+    ]
+  },
+  {
+    "slug": "prompt-injection",
+    "title": "Prompt Injection",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An attack where malicious text in user input or retrieved content overrides the system's original instructions to the LLM.",
+    "existing_related_terms": [
+      "jailbreak",
+      "alignment",
+      "guardrails",
+      "system-prompt"
+    ],
+    "existing_related_tools": [
+      "guardrails-ai",
+      "lakera",
+      "prompt-armor"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "prompt injection",
+      "LLM injection attack",
+      "indirect prompt injection"
+    ]
+  },
+  {
+    "slug": "prompt-injection-defense",
+    "title": "Prompt Injection Defense",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Techniques for hardening LLM apps against prompt-injection attacks — input sanitization, role-based delimiting, output monitoring, and tool-permission least privilege.",
+    "existing_related_terms": [
+      "prompt-injection",
+      "indirect-prompt-injection",
+      "guardrails"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "prompt injection defense"
+    ]
+  },
+  {
+    "slug": "prompt-leakage",
+    "title": "Prompt Leakage (System Prompt Exfiltration)",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An attack that recovers a system prompt by tricking the LLM into repeating its hidden instructions.",
+    "existing_related_terms": [
+      "prompt-injection",
+      "jailbreak",
+      "system-prompt"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "system prompt leak",
+      "prompt exfiltration"
+    ]
+  },
+  {
+    "slug": "red-team",
+    "title": "Red Teaming (AI Red Team)",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Adversarial testing of an AI system by human or automated attackers to find vulnerabilities, harmful outputs, and policy violations before deployment.",
+    "existing_related_terms": [
+      "jailbreak",
+      "prompt-injection",
+      "adversarial-robustness"
+    ],
+    "existing_related_tools": [
+      "garak",
+      "pyrit",
+      "promptfoo"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AI red teaming",
+      "LLM red team"
+    ]
+  },
+  {
+    "slug": "reward-hacking",
+    "title": "Reward Hacking",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A failure mode of RL where the model learns to maximize the reward signal in ways that violate the designer's intent.",
+    "existing_related_terms": [
+      "rlhf",
+      "specification-gaming",
+      "alignment"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "reward exploitation",
+      "reward model hacking"
+    ]
+  },
+  {
+    "slug": "specification-gaming",
+    "title": "Specification Gaming",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A broader term for agents that satisfy the letter of a specification while violating its intent — reward hacking is one instance.",
+    "existing_related_terms": [
+      "reward-hacking",
+      "alignment",
+      "goal-misgeneralization"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "spec gaming",
+      "Goodhart's law"
+    ]
+  },
+  {
+    "slug": "spotlighting",
+    "title": "Spotlighting (Prompt Injection Defense)",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A prompt-injection defense that transforms untrusted content into a form (tagging, encoding) making instructions within it harder for the model to follow.",
+    "existing_related_terms": [
+      "prompt-injection-defense",
+      "indirect-prompt-injection"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "spotlighting defense"
+    ]
+  },
+  {
+    "slug": "supply-chain-risk",
+    "title": "Supply Chain Risk (AI)",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "The risk that downloaded models, datasets, or training pipelines contain backdoors, poisoned data, or undisclosed behaviors — a growing concern as open-weights use expands.",
+    "existing_related_terms": [
+      "backdoor-attack",
+      "data-poisoning",
+      "safetensors"
+    ],
+    "existing_related_tools": [
+      "modelscan"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AI supply chain",
+      "ML supply chain risk"
+    ]
+  },
+  {
+    "slug": "sycophancy",
+    "title": "Sycophancy",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An LLM's tendency to agree with users rather than tell them uncomfortable truths, often reinforced by RLHF on preference data that rewards flattery.",
+    "existing_related_terms": [
+      "rlhf",
+      "alignment",
+      "reward-hacking"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM sycophancy",
+      "agreeable LLM"
+    ]
+  },
+  {
+    "slug": "toxicity-classification",
+    "title": "Toxicity Classification",
+    "category": "safety",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "ML systems that score text (and sometimes images) for harmful, abusive, or policy-violating content for moderation pipelines.",
+    "existing_related_terms": [
+      "content-moderation",
+      "llama-guard"
+    ],
+    "existing_related_tools": [
+      "detoxify",
+      "perspective-api"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "toxic text classifier",
+      "moderation API"
+    ]
+  },
+  {
+    "slug": "training-data-extraction",
+    "title": "Training Data Extraction",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An attack that elicits verbatim training data from a model's outputs — a major privacy and copyright concern.",
+    "existing_related_terms": [
+      "membership-inference",
+      "differential-privacy",
+      "pii-redaction"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "data extraction attack",
+      "memorization attack"
+    ]
+  },
+  {
+    "slug": "watermarking",
+    "title": "Content Watermarking (AI Content Provenance)",
+    "category": "safety",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Techniques for marking AI-generated content so it can later be identified — steganographic for images, statistical for text.",
+    "existing_related_terms": [
+      "c2pa",
+      "deepfake-detection"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM watermark",
+      "AI watermarking"
+    ]
+  }
+]

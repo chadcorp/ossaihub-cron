@@ -1,0 +1,676 @@
+[
+  {
+    "slug": "approximate-nearest-neighbor",
+    "title": "Approximate Nearest Neighbor Search",
+    "category": "rag-internals",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Algorithms that find the k nearest vectors in high-dimensional space much faster than exact search, by trading a small recall loss for large speedups.",
+    "existing_related_terms": [
+      "hnsw",
+      "vector-database",
+      "faiss"
+    ],
+    "existing_related_tools": [
+      "faiss",
+      "qdrant",
+      "milvus"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ANN search",
+      "approximate NN"
+    ]
+  },
+  {
+    "slug": "bi-encoder",
+    "title": "Bi-Encoder",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A retrieval architecture that encodes queries and documents independently into fixed-size vectors, allowing fast similarity lookup.",
+    "existing_related_terms": [
+      "cross-encoder",
+      "embedding-model",
+      "dense-retrieval"
+    ],
+    "existing_related_tools": [
+      "sentence-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "two tower model",
+      "siamese encoder"
+    ]
+  },
+  {
+    "slug": "bm25",
+    "title": "BM25",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A classic sparse retrieval scoring function based on term frequency, inverse document frequency, and document length normalization.",
+    "existing_related_terms": [
+      "sparse-retrieval",
+      "tf-idf",
+      "hybrid-search"
+    ],
+    "existing_related_tools": [
+      "elasticsearch",
+      "opensearch",
+      "lucene"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Okapi BM25",
+      "BM25 algorithm"
+    ]
+  },
+  {
+    "slug": "chunking",
+    "title": "Chunking (Document Chunking)",
+    "category": "rag-internals",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Splitting long documents into smaller pieces before embedding for retrieval — the single highest-leverage decision in any RAG pipeline.",
+    "existing_related_terms": [
+      "embedding",
+      "rag",
+      "vector-database",
+      "retrieval"
+    ],
+    "existing_related_tools": [
+      "langchain",
+      "llamaindex",
+      "unstructured"
+    ],
+    "existing_code_example": "# Semantic chunking with token budget\nfrom langchain_experimental.text_splitter import SemanticChunker\nfrom langchain_openai import OpenAIEmbeddings\nsplitter = SemanticChunker(\n    OpenAIEmbeddings(),\n    breakpoint_threshold_type='percentile',\n    breakpoint_threshold_amount=85,\n)\nchunks = splitter.split_text(doc)",
+    "existing_seo_variations": [
+      "chunking",
+      "document chunking",
+      "text splitting",
+      "chunk size RAG"
+    ]
+  },
+  {
+    "slug": "colbert",
+    "title": "ColBERT (Late Interaction Retrieval)",
+    "category": "rag-internals",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A retrieval model that encodes each document token separately and scores a query by summing the maximum similarity per query token — late interaction.",
+    "existing_related_terms": [
+      "cross-encoder",
+      "bi-encoder",
+      "reranking"
+    ],
+    "existing_related_tools": [
+      "colbert-ai",
+      "ragatouille"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ColBERT retrieval",
+      "late interaction"
+    ]
+  },
+  {
+    "slug": "contextual-compression",
+    "title": "Contextual Compression (Retrieval)",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Passing retrieved documents through an LLM (or small model) to extract only the sentences relevant to the query before sending to the final generator.",
+    "existing_related_terms": [
+      "reranking",
+      "rag",
+      "retrieval"
+    ],
+    "existing_related_tools": [
+      "langchain"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM compression retriever"
+    ]
+  },
+  {
+    "slug": "cosine-similarity",
+    "title": "Cosine Similarity",
+    "category": "rag-internals",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The standard metric for comparing embedding vectors — measures the angle between them, ignoring magnitude. Values range from -1 (opposite) to 1 (identical).",
+    "existing_related_terms": [
+      "embedding",
+      "vector-database",
+      "hnsw",
+      "reranking"
+    ],
+    "existing_related_tools": [
+      "sentence-transformers",
+      "qdrant",
+      "pinecone"
+    ],
+    "existing_code_example": "import numpy as np\n\ndef cosine_sim(a, b):\n    a, b = np.asarray(a), np.asarray(b)\n    return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))\n\n# With normalized embeddings (common), just dot product:\ndef cosine_sim_fast(a, b):\n    return float(np.dot(a, b))",
+    "existing_seo_variations": [
+      "cosine similarity",
+      "vector similarity",
+      "embedding distance"
+    ]
+  },
+  {
+    "slug": "cross-encoder",
+    "title": "Cross-Encoder",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A model that takes a query and document together as a single input and outputs a relevance score — high accuracy, expensive to use at scale.",
+    "existing_related_terms": [
+      "bi-encoder",
+      "reranking",
+      "colbert"
+    ],
+    "existing_related_tools": [
+      "sentence-transformers",
+      "cohere"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "cross encoder reranker"
+    ]
+  },
+  {
+    "slug": "dense-retrieval",
+    "title": "Dense Retrieval",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Retrieval based on embedding queries and documents into a shared vector space and using cosine similarity (or dot product) for matching.",
+    "existing_related_terms": [
+      "sparse-retrieval",
+      "bm25",
+      "embedding-model",
+      "hybrid-search"
+    ],
+    "existing_related_tools": [
+      "pinecone",
+      "qdrant",
+      "faiss"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "vector retrieval",
+      "semantic search"
+    ]
+  },
+  {
+    "slug": "faiss",
+    "title": "FAISS",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Meta's open-source library for efficient similarity search and clustering of dense vectors, the de facto reference for ANN algorithms.",
+    "existing_related_terms": [
+      "hnsw",
+      "ivf-index",
+      "product-quantization",
+      "vector-database"
+    ],
+    "existing_related_tools": [
+      "faiss"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "FAISS library",
+      "Meta FAISS"
+    ]
+  },
+  {
+    "slug": "graph-rag",
+    "title": "Graph RAG",
+    "category": "rag-internals",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A RAG variant that builds a knowledge graph from documents and traverses entity relationships during retrieval, strong on multi-hop questions.",
+    "existing_related_terms": [
+      "rag",
+      "knowledge-graph",
+      "retrieval"
+    ],
+    "existing_related_tools": [
+      "llamaindex",
+      "neo4j"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "GraphRAG",
+      "knowledge graph RAG"
+    ]
+  },
+  {
+    "slug": "hnsw",
+    "title": "HNSW (Hierarchical Navigable Small World)",
+    "category": "rag-internals",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "The algorithm that powers most vector databases — a multi-layer graph index that finds nearest neighbors in log(N) time instead of linear scan.",
+    "existing_related_terms": [
+      "vector-database",
+      "embedding",
+      "cosine-similarity",
+      "rag"
+    ],
+    "existing_related_tools": [
+      "qdrant",
+      "pinecone",
+      "pgvector",
+      "milvus"
+    ],
+    "existing_code_example": "# Tune HNSW in Qdrant\nfrom qdrant_client.models import HnswConfigDiff\nclient.update_collection(\n    collection_name='docs',\n    hnsw_config=HnswConfigDiff(m=32, ef_construct=200),\n)\n# At query time, raise ef for higher recall:\nresults = client.search(collection_name='docs', query_vector=q,\n    search_params={'hnsw_ef': 128}, limit=10)",
+    "existing_seo_variations": [
+      "HNSW",
+      "Hierarchical Navigable Small World",
+      "vector search algorithm"
+    ]
+  },
+  {
+    "slug": "hybrid-search",
+    "title": "Hybrid Search",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Retrieval that combines keyword matching (BM25) with vector similarity — catches both exact-term matches and semantic paraphrasing.",
+    "existing_related_terms": [
+      "rag",
+      "reranking",
+      "embedding"
+    ],
+    "existing_related_tools": [
+      "qdrant",
+      "weaviate",
+      "pgvector",
+      "elasticsearch"
+    ],
+    "existing_code_example": "# Qdrant hybrid search\nresults = client.query_points(\n    collection_name='docs',\n    prefetch=[\n        models.Prefetch(query=dense_vector, using='dense', limit=50),\n        models.Prefetch(query=sparse_vector, using='sparse', limit=50),\n    ],\n    query=models.FusionQuery(fusion=models.Fusion.RRF),\n    limit=10,\n)",
+    "existing_seo_variations": [
+      "hybrid search",
+      "BM25 + vector",
+      "lexical + semantic search",
+      "RRF"
+    ]
+  },
+  {
+    "slug": "hyde",
+    "title": "Hypothetical Document Embeddings (HyDE)",
+    "category": "rag-internals",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A retrieval augmentation where an LLM generates a hypothetical answer to the query, which is then embedded and used as the search vector.",
+    "existing_related_terms": [
+      "query-rewriting",
+      "query-expansion",
+      "dense-retrieval"
+    ],
+    "existing_related_tools": [
+      "langchain",
+      "llamaindex"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HyDE retrieval",
+      "hypothetical document"
+    ]
+  },
+  {
+    "slug": "ivf-index",
+    "title": "IVF (Inverted File Index)",
+    "category": "rag-internals",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A vector-index structure that partitions vectors into clusters via k-means; queries search only the nearest clusters instead of the full corpus.",
+    "existing_related_terms": [
+      "approximate-nearest-neighbor",
+      "product-quantization",
+      "hnsw"
+    ],
+    "existing_related_tools": [
+      "faiss"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "inverted file",
+      "IVF index"
+    ]
+  },
+  {
+    "slug": "knowledge-graph",
+    "title": "Knowledge Graph (RAG Context)",
+    "category": "rag-internals",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A structured representation of entities and relationships — used as a complement or alternative to vector search for multi-hop reasoning.",
+    "existing_related_terms": [
+      "graph-rag",
+      "rag",
+      "retrieval"
+    ],
+    "existing_related_tools": [
+      "neo4j"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "KG RAG",
+      "graph RAG"
+    ]
+  },
+  {
+    "slug": "metadata-filtering",
+    "title": "Metadata Filtering (Vector DB)",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Constraining vector search to documents matching specified metadata conditions — date ranges, categories, authors, tenants — before computing similarity.",
+    "existing_related_terms": [
+      "vector-database",
+      "self-query-retrieval",
+      "retrieval"
+    ],
+    "existing_related_tools": [
+      "qdrant",
+      "pinecone",
+      "weaviate"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "vector filter",
+      "metadata filter"
+    ]
+  },
+  {
+    "slug": "multi-query-retrieval",
+    "title": "Multi-Query Retrieval",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A retrieval strategy where an LLM generates multiple diverse rewordings of the query, retrieves for each, and merges the results.",
+    "existing_related_terms": [
+      "query-rewriting",
+      "rag-fusion",
+      "retrieval"
+    ],
+    "existing_related_tools": [
+      "langchain"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "multi-query RAG"
+    ]
+  },
+  {
+    "slug": "parent-document-retriever",
+    "title": "Parent-Document Retriever",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A retrieval pattern that indexes small chunks for precise matching but returns the larger parent document or section to the LLM for context.",
+    "existing_related_terms": [
+      "chunking",
+      "retrieval",
+      "rag"
+    ],
+    "existing_related_tools": [
+      "langchain",
+      "llamaindex"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "parent document retrieval"
+    ]
+  },
+  {
+    "slug": "product-quantization",
+    "title": "Product Quantization (PQ)",
+    "category": "rag-internals",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A vector-compression technique that splits each vector into sub-vectors and quantizes each independently, shrinking index size by 4–32×.",
+    "existing_related_terms": [
+      "approximate-nearest-neighbor",
+      "hnsw",
+      "faiss"
+    ],
+    "existing_related_tools": [
+      "faiss"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "PQ vector compression",
+      "IVF-PQ"
+    ]
+  },
+  {
+    "slug": "query-rewriting",
+    "title": "Query Rewriting",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Using an LLM to rewrite or refine a user's raw query into one or more retrieval-friendly queries before hitting the retriever.",
+    "existing_related_terms": [
+      "query-expansion",
+      "hyde",
+      "multi-query-retrieval"
+    ],
+    "existing_related_tools": [
+      "langchain",
+      "llamaindex"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "query reformulation",
+      "query rewriting LLM"
+    ]
+  },
+  {
+    "slug": "rag",
+    "title": "RAG (Retrieval Augmented Generation)",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "RAG is a technique where an AI looks up relevant information from a database before answering — like letting the AI search its own private library first.",
+    "existing_related_terms": [
+      "vector-database",
+      "embedding",
+      "context-window",
+      "llm",
+      "fine-tuning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "rag-fusion",
+    "title": "RAG Fusion",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A RAG pattern that combines multi-query retrieval with reciprocal rank fusion to improve recall and robustness of retrieved context.",
+    "existing_related_terms": [
+      "multi-query-retrieval",
+      "reciprocal-rank-fusion",
+      "rag"
+    ],
+    "existing_related_tools": [
+      "langchain"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "RAG fusion pattern"
+    ]
+  },
+  {
+    "slug": "reciprocal-rank-fusion",
+    "title": "Reciprocal Rank Fusion (RRF)",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A method for merging ranked lists from multiple retrievers using each item's rank rather than raw scores — robust to score-scale mismatches.",
+    "existing_related_terms": [
+      "hybrid-search",
+      "rag-fusion",
+      "multi-query-retrieval"
+    ],
+    "existing_related_tools": [
+      "elasticsearch",
+      "opensearch"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "RRF",
+      "rank fusion"
+    ]
+  },
+  {
+    "slug": "reranking",
+    "title": "Reranking",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A second-pass retrieval step that uses a more expensive, more accurate model to re-score the top-K candidates from a cheap first-pass search.",
+    "existing_related_terms": [
+      "embedding",
+      "rag",
+      "retrieval",
+      "cosine-similarity"
+    ],
+    "existing_related_tools": [
+      "sentence-transformers",
+      "cohere",
+      "voyage-ai"
+    ],
+    "existing_code_example": "# Rerank top 20 candidates\nfrom sentence_transformers import CrossEncoder\nreranker = CrossEncoder('BAAI/bge-reranker-v2-m3')\ncandidates = vector_store.similarity_search(query, k=20)\nscores = reranker.predict([(query, c.page_content) for c in candidates])\nreranked = [c for _, c in sorted(zip(scores, candidates), reverse=True)][:10]",
+    "existing_seo_variations": [
+      "reranking",
+      "reranker",
+      "cross-encoder reranking"
+    ]
+  },
+  {
+    "slug": "retrieval",
+    "title": "Retrieval (IR)",
+    "category": "rag-internals",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The process of finding relevant documents or passages from a large corpus in response to a query — the first 'R' in RAG.",
+    "existing_related_terms": [
+      "rag",
+      "dense-retrieval",
+      "bm25"
+    ],
+    "existing_related_tools": [
+      "elasticsearch",
+      "pinecone"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "information retrieval",
+      "IR"
+    ]
+  },
+  {
+    "slug": "self-query-retrieval",
+    "title": "Self-Query Retrieval",
+    "category": "rag-internals",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A retrieval pattern where an LLM parses a natural-language query into both a semantic query and structured metadata filters.",
+    "existing_related_terms": [
+      "query-rewriting",
+      "metadata-filtering",
+      "retrieval"
+    ],
+    "existing_related_tools": [
+      "langchain",
+      "llamaindex"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "self-query retriever"
+    ]
+  },
+  {
+    "slug": "semantic-caching",
+    "title": "Semantic Caching",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Caching LLM responses based on semantic similarity of queries rather than exact string match — returning cached answers for 'similar enough' questions.",
+    "existing_related_terms": [
+      "embedding",
+      "rag",
+      "llm-gateway"
+    ],
+    "existing_related_tools": [
+      "gptcache",
+      "langchain"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "semantic cache",
+      "LLM cache"
+    ]
+  },
+  {
+    "slug": "sentence-window-retrieval",
+    "title": "Sentence Window Retrieval",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A retrieval pattern that indexes individual sentences but returns a window of surrounding sentences for LLM context.",
+    "existing_related_terms": [
+      "chunking",
+      "parent-document-retriever",
+      "small-to-big-retrieval"
+    ],
+    "existing_related_tools": [
+      "llamaindex"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "sentence window"
+    ]
+  },
+  {
+    "slug": "small-to-big-retrieval",
+    "title": "Small-to-Big Retrieval",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A retrieval pattern that matches against small embeddings for precision but returns progressively larger surrounding context to the LLM.",
+    "existing_related_terms": [
+      "parent-document-retriever",
+      "chunking",
+      "retrieval"
+    ],
+    "existing_related_tools": [
+      "llamaindex"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "auto merging retrieval"
+    ]
+  },
+  {
+    "slug": "sparse-retrieval",
+    "title": "Sparse Retrieval",
+    "category": "rag-internals",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Retrieval based on sparse lexical representations — BM25, TF-IDF, or learned sparse models like SPLADE — matching on token overlap.",
+    "existing_related_terms": [
+      "bm25",
+      "splade",
+      "dense-retrieval",
+      "hybrid-search"
+    ],
+    "existing_related_tools": [
+      "elasticsearch",
+      "opensearch"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "lexical retrieval",
+      "sparse search"
+    ]
+  },
+  {
+    "slug": "splade",
+    "title": "SPLADE (Sparse Learned Retrieval)",
+    "category": "rag-internals",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A retrieval model that produces sparse term-weighted representations via BERT, combining lexical interpretability with learned semantic expansion.",
+    "existing_related_terms": [
+      "sparse-retrieval",
+      "bm25",
+      "dense-retrieval"
+    ],
+    "existing_related_tools": [
+      "splade"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SPLADE v2",
+      "learned sparse retrieval"
+    ]
+  }
+]

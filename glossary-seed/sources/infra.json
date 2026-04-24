@@ -1,0 +1,2022 @@
+[
+  {
+    "slug": "a100",
+    "title": "A100 (Nvidia Ampere)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Nvidia's Ampere-architecture data-center GPU that powered most of the pre-H100 LLM era — GPT-3, early Llama, and most 2020–2022 research.",
+    "existing_related_terms": [
+      "h100",
+      "gpu",
+      "l40s"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Nvidia A100",
+      "Ampere GPU"
+    ]
+  },
+  {
+    "slug": "accelerate",
+    "title": "Accelerate (Hugging Face)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A lightweight HF library that abstracts distributed training backends (DDP, FSDP, DeepSpeed, Megatron) behind a small common API.",
+    "existing_related_terms": [
+      "fsdp",
+      "deepspeed-zero",
+      "pytorch"
+    ],
+    "existing_related_tools": [
+      "accelerate"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HF Accelerate"
+    ]
+  },
+  {
+    "slug": "alibi",
+    "title": "ALiBi (Attention with Linear Biases)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A position-encoding alternative that adds a linear bias to attention scores based on query-key distance, enabling strong extrapolation to unseen sequence lengths.",
+    "existing_related_terms": [
+      "rope",
+      "position-embedding"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ALiBi attention"
+    ]
+  },
+  {
+    "slug": "anthropic-workbench",
+    "title": "Anthropic Workbench / Console",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Anthropic's web-based prompt development environment for building, testing, and deploying prompts with Claude — equivalent to OpenAI Playground.",
+    "existing_related_terms": [
+      "openai",
+      "prompt-engineering"
+    ],
+    "existing_related_tools": [
+      "anthropic"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Claude Workbench",
+      "Anthropic Console"
+    ]
+  },
+  {
+    "slug": "autogen",
+    "title": "AutoGen",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Microsoft's multi-agent conversation framework where agents with distinct roles collaborate to solve tasks via structured dialogue.",
+    "existing_related_terms": [
+      "multi-agent",
+      "orchestration",
+      "langraph"
+    ],
+    "existing_related_tools": [
+      "autogen"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AutoGen framework",
+      "MS AutoGen"
+    ]
+  },
+  {
+    "slug": "axolotl",
+    "title": "Axolotl",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A YAML-configured LLM fine-tuning framework covering SFT, LoRA, QLoRA, DPO, ORPO, full fine-tune, and multi-GPU training — the Swiss Army knife of LLM training.",
+    "existing_related_terms": [
+      "unsloth",
+      "trl",
+      "peft"
+    ],
+    "existing_related_tools": [
+      "axolotl"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Axolotl fine-tuning"
+    ]
+  },
+  {
+    "slug": "b200",
+    "title": "B200 (Nvidia Blackwell)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Nvidia's Blackwell-architecture GPU (2024+), doubling H100 performance with FP4 support and larger HBM3e memory — the new frontier training platform.",
+    "existing_related_terms": [
+      "h100",
+      "gpu",
+      "fp8-training"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Nvidia B200",
+      "Blackwell GPU"
+    ]
+  },
+  {
+    "slug": "baml",
+    "title": "BAML (Boundary AI Markup Language)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A domain-specific language for defining LLM functions with typed inputs/outputs, prompt templates, and test cases — compiled to Python or TypeScript.",
+    "existing_related_terms": [
+      "structured-output",
+      "instructor",
+      "dspy"
+    ],
+    "existing_related_tools": [
+      "baml"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "BAML language"
+    ]
+  },
+  {
+    "slug": "bentoml",
+    "title": "BentoML",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open-source framework for packaging and serving ML models as REST/gRPC endpoints with Docker-ready deployment artifacts.",
+    "existing_related_terms": [
+      "ray-serve",
+      "model-serving",
+      "triton-server"
+    ],
+    "existing_related_tools": [
+      "bentoml"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "BentoML framework"
+    ]
+  },
+  {
+    "slug": "bitsandbytes",
+    "title": "BitsAndBytes",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A library for 8-bit and 4-bit quantization of LLMs at load time, enabling bigger models to fit on smaller GPUs via drop-in Transformers integration.",
+    "existing_related_terms": [
+      "quantization",
+      "qlora",
+      "gptq",
+      "awq"
+    ],
+    "existing_related_tools": [
+      "bitsandbytes"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "bitsandbytes library",
+      "int8 quant"
+    ]
+  },
+  {
+    "slug": "chunked-prefill",
+    "title": "Chunked Prefill",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An inference scheduling technique that splits long prefills into chunks so decoding tokens from other requests can interleave, reducing tail latency.",
+    "existing_related_terms": [
+      "prefill",
+      "continuous-batching",
+      "vllm"
+    ],
+    "existing_related_tools": [
+      "vllm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "split prefill"
+    ]
+  },
+  {
+    "slug": "code-sandbox",
+    "title": "Sandbox (LLM Code Execution)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Isolated environments where LLM-generated code runs safely — typically Docker containers, Firecracker microVMs, or WebAssembly.",
+    "existing_related_terms": [
+      "code-interpreter",
+      "ai-agent"
+    ],
+    "existing_related_tools": [
+      "e2b",
+      "firecracker"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "code sandbox",
+      "LLM sandbox"
+    ]
+  },
+  {
+    "slug": "cog",
+    "title": "Cog (Replicate)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Replicate's open-source tool for packaging ML models into production-ready Docker containers with typed predict functions.",
+    "existing_related_terms": [
+      "docker",
+      "model-serving",
+      "replicate"
+    ],
+    "existing_related_tools": [
+      "cog"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Cog container"
+    ]
+  },
+  {
+    "slug": "context-length-extension",
+    "title": "Context Length Extension",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Post-training techniques that extend a model's usable context window beyond its training length, typically via RoPE scaling plus a short fine-tune.",
+    "existing_related_terms": [
+      "rope",
+      "rope-scaling",
+      "long-context-eval"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "context extension",
+      "long context fine-tune"
+    ]
+  },
+  {
+    "slug": "context-window",
+    "title": "Context Window",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The context window is how much text an AI can read and remember at once — like its short-term memory.",
+    "existing_related_terms": [
+      "token",
+      "llm",
+      "rag",
+      "embedding"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "continuous-batching",
+    "title": "Continuous Batching (Inflight Batching)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "LLM serving optimization where new requests join an in-progress batch at each decoding step, instead of waiting for the batch to complete.",
+    "existing_related_terms": [
+      "dynamic-batching",
+      "vllm",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "tensorrt-llm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "continuous batching",
+      "iteration-level scheduling"
+    ]
+  },
+  {
+    "slug": "coreml",
+    "title": "CoreML (Apple)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Apple's on-device ML framework for iOS, macOS, and visionOS — running models on Apple Neural Engine, GPU, or CPU depending on what fits best.",
+    "existing_related_terms": [
+      "mlx",
+      "mobile-ai"
+    ],
+    "existing_related_tools": [
+      "coreml-tools"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Core ML",
+      "Apple ML"
+    ]
+  },
+  {
+    "slug": "cpu-offloading",
+    "title": "CPU Offloading",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A memory-saving technique that stores some model weights or optimizer state in CPU RAM and streams them to the GPU as needed.",
+    "existing_related_terms": [
+      "fsdp",
+      "deepspeed-zero",
+      "vram"
+    ],
+    "existing_related_tools": [
+      "deepspeed"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "CPU offload",
+      "RAM offload"
+    ]
+  },
+  {
+    "slug": "crewai",
+    "title": "CrewAI",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A Python framework for multi-agent orchestration where agents have roles, goals, and backstories, collaborating through defined processes.",
+    "existing_related_terms": [
+      "autogen",
+      "multi-agent",
+      "orchestration"
+    ],
+    "existing_related_tools": [
+      "crewai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "CrewAI framework"
+    ]
+  },
+  {
+    "slug": "cuda",
+    "title": "CUDA",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Nvidia's parallel-compute platform and programming model that nearly every ML framework targets, creating the moat around Nvidia GPUs.",
+    "existing_related_terms": [
+      "rocm",
+      "triton-language",
+      "pytorch"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "CUDA toolkit",
+      "Nvidia CUDA"
+    ]
+  },
+  {
+    "slug": "decode-phase",
+    "title": "Decode (Generation Phase)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The LLM inference phase where tokens are generated one at a time, each pass reusing the KV cache — memory-bandwidth bound, not compute-bound.",
+    "existing_related_terms": [
+      "prefill",
+      "kv-cache",
+      "speculative-decoding"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "decode phase",
+      "token generation"
+    ]
+  },
+  {
+    "slug": "diffusers",
+    "title": "Diffusers (Library)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Hugging Face's library for diffusion models — Stable Diffusion, FLUX, Sora-style, SVD — with a consistent API across image, video, and audio generation.",
+    "existing_related_terms": [
+      "stable-diffusion",
+      "flux",
+      "diffusion"
+    ],
+    "existing_related_tools": [
+      "diffusers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HF Diffusers"
+    ]
+  },
+  {
+    "slug": "disk-offloading",
+    "title": "Disk Offloading (NVMe Offload)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Extending offloading beyond CPU RAM to NVMe SSDs, enabling training of trillion-parameter models on modest clusters at major throughput cost.",
+    "existing_related_terms": [
+      "cpu-offloading",
+      "deepspeed-zero"
+    ],
+    "existing_related_tools": [
+      "deepspeed"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "NVMe offload",
+      "ZeRO-Infinity"
+    ]
+  },
+  {
+    "slug": "docker",
+    "title": "Docker (ML Containers)",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The standard container format for packaging ML code, models, and dependencies into reproducible, deployable images.",
+    "existing_related_terms": [
+      "kubernetes-ml",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "docker"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Dockerfile ML"
+    ]
+  },
+  {
+    "slug": "dspy",
+    "title": "DSPy",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Stanford's framework for programming (not prompting) LLMs — you write modules and signatures, DSPy compiles and optimizes the prompts automatically.",
+    "existing_related_terms": [
+      "prompt-engineering",
+      "langchain"
+    ],
+    "existing_related_tools": [
+      "dspy"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "DSPy framework",
+      "Stanford DSPy"
+    ]
+  },
+  {
+    "slug": "durable-workflows",
+    "title": "Inngest / Temporal / Dagster (Durable Workflows)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "General-purpose durable execution engines increasingly used to orchestrate long-running, crash-resistant AI agent workflows.",
+    "existing_related_terms": [
+      "orchestration",
+      "ai-agent"
+    ],
+    "existing_related_tools": [
+      "temporal",
+      "inngest",
+      "dagster"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "durable execution",
+      "Temporal Inngest"
+    ]
+  },
+  {
+    "slug": "dynamic-batching",
+    "title": "Dynamic Batching",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A batching strategy where requests are grouped on the fly based on a time window or max batch size rather than waiting for a pre-defined batch.",
+    "existing_related_terms": [
+      "continuous-batching",
+      "model-serving",
+      "triton-server"
+    ],
+    "existing_related_tools": [
+      "triton-server",
+      "bentoml"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "dynamic batcher"
+    ]
+  },
+  {
+    "slug": "exllama",
+    "title": "ExLlama (ExLlamaV2)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A fast GPU-only inference library for quantized Llama-family models, popular for consumer-GPU deployments due to superior speed on GPTQ/EXL2 models.",
+    "existing_related_terms": [
+      "quantization",
+      "gptq",
+      "llama.cpp"
+    ],
+    "existing_related_tools": [
+      "exllamav2",
+      "text-generation-webui"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ExLlamaV2",
+      "EXL2 format"
+    ]
+  },
+  {
+    "slug": "fastapi-llm",
+    "title": "FastAPI (LLM Backends)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The dominant Python framework for building production LLM APIs — async-native, Pydantic-typed, OpenAPI-generated.",
+    "existing_related_terms": [
+      "model-serving",
+      "pydantic"
+    ],
+    "existing_related_tools": [
+      "fastapi"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "FastAPI LLM backend"
+    ]
+  },
+  {
+    "slug": "fireworks-ai",
+    "title": "Fireworks AI",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "An inference provider focused on fast, low-latency open-source LLM serving with fine-tuning, structured output, and vision support.",
+    "existing_related_terms": [
+      "inference-as-a-service",
+      "together-ai"
+    ],
+    "existing_related_tools": [
+      "fireworks-ai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Fireworks AI"
+    ]
+  },
+  {
+    "slug": "flash-attention",
+    "title": "Flash Attention",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A GPU-aware attention algorithm that computes the exact same math as standard attention but ~2–4x faster and with dramatically less memory use.",
+    "existing_related_terms": [
+      "attention",
+      "kv-cache",
+      "cuda"
+    ],
+    "existing_related_tools": [
+      "flash-attn",
+      "vllm",
+      "transformers"
+    ],
+    "existing_code_example": "# Enable Flash Attention in Transformers\nfrom transformers import AutoModelForCausalLM\nmodel = AutoModelForCausalLM.from_pretrained(\n    'meta-llama/Llama-3.3-70B',\n    attn_implementation='flash_attention_2',\n    torch_dtype='bfloat16',\n)",
+    "existing_seo_variations": [
+      "Flash Attention",
+      "FlashAttention-2",
+      "efficient attention"
+    ]
+  },
+  {
+    "slug": "flash-attention-2",
+    "title": "Flash Attention 2 / 3",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Successive versions of Flash Attention that improve GPU occupancy, reduce non-matmul overhead, and add support for new precisions and hardware.",
+    "existing_related_terms": [
+      "flash-attention",
+      "attention",
+      "h100"
+    ],
+    "existing_related_tools": [
+      "flash-attn"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "FA2",
+      "FlashAttention 3"
+    ]
+  },
+  {
+    "slug": "gguf",
+    "title": "GGUF",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A file format for AI models that's optimized for running on your own computer, including on CPU.",
+    "existing_related_terms": [
+      "quantization",
+      "llama-cpp",
+      "ollama",
+      "lm-studio"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "gh200",
+    "title": "GH200 (Nvidia Grace Hopper)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Nvidia's coherent-memory superchip pairing a Grace CPU with an H100 GPU via 900 GB/s NVLink, useful for massive-context LLMs and large model inference.",
+    "existing_related_terms": [
+      "h100",
+      "cpu-offloading",
+      "gpu"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "GH200 superchip",
+      "Grace Hopper"
+    ]
+  },
+  {
+    "slug": "gpu",
+    "title": "GPU (Graphics Processing Unit)",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Massively parallel processors with thousands of cores optimized for matrix math — the workhorse of nearly all ML training and inference.",
+    "existing_related_terms": [
+      "h100",
+      "a100",
+      "cuda"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ML GPU",
+      "AI accelerator"
+    ]
+  },
+  {
+    "slug": "gradio",
+    "title": "Gradio",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A Python library for building ML model demos and web UIs with minimal code — the backbone of most Hugging Face Spaces demos.",
+    "existing_related_terms": [
+      "streamlit",
+      "huggingface-hub"
+    ],
+    "existing_related_tools": [
+      "gradio"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Gradio app"
+    ]
+  },
+  {
+    "slug": "groq",
+    "title": "Groq (LPU)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Groq's custom Language Processing Units and their inference service, achieving extremely high tokens-per-second throughput (500+ tok/s) on popular LLMs.",
+    "existing_related_terms": [
+      "inference-as-a-service",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "groq"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Groq LPU",
+      "Groq cloud"
+    ]
+  },
+  {
+    "slug": "grouped-query-attention",
+    "title": "GQA (Grouped Query Attention)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An attention variant where multiple query heads share the same key/value heads, reducing KV cache size and memory bandwidth without much quality loss.",
+    "existing_related_terms": [
+      "multi-query-attention",
+      "attention",
+      "kv-cache"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "GQA attention",
+      "grouped query"
+    ]
+  },
+  {
+    "slug": "h100",
+    "title": "H100 (Nvidia Hopper)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Nvidia's Hopper-architecture data-center GPU — the workhorse of frontier LLM training and inference from 2023–2024.",
+    "existing_related_terms": [
+      "a100",
+      "b200",
+      "gpu"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Nvidia H100",
+      "Hopper GPU"
+    ]
+  },
+  {
+    "slug": "hbm",
+    "title": "HBM (High Bandwidth Memory)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Stacked DRAM integrated with a GPU or accelerator via a silicon interposer, delivering much higher bandwidth than GDDR memory.",
+    "existing_related_terms": [
+      "gpu",
+      "h100",
+      "b200"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HBM3",
+      "HBM memory"
+    ]
+  },
+  {
+    "slug": "huggingface-datasets",
+    "title": "Hugging Face Datasets",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A library for loading, processing, and streaming ML datasets with memory-mapped access and deep Hub integration.",
+    "existing_related_terms": [
+      "dataset",
+      "huggingface-hub",
+      "streaming"
+    ],
+    "existing_related_tools": [
+      "huggingface-datasets"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HF datasets"
+    ]
+  },
+  {
+    "slug": "huggingface-hub",
+    "title": "Hugging Face Hub",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The GitHub-of-ML-models — hosts 1M+ model, dataset, and space repositories with git-LFS versioning, model cards, and a unified loading API.",
+    "existing_related_terms": [
+      "huggingface-transformers",
+      "datasets",
+      "model-card"
+    ],
+    "existing_related_tools": [
+      "huggingface-hub"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HF Hub",
+      "Hugging Face"
+    ]
+  },
+  {
+    "slug": "huggingface-transformers",
+    "title": "Hugging Face Transformers",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The dominant library for loading, running, and fine-tuning pretrained transformer models — BERT, Llama, Stable Diffusion, Whisper, everything.",
+    "existing_related_terms": [
+      "huggingface-hub",
+      "pytorch",
+      "pipelines"
+    ],
+    "existing_related_tools": [
+      "huggingface-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HF Transformers",
+      "transformers library"
+    ]
+  },
+  {
+    "slug": "inference-as-a-service",
+    "title": "Inference as a Service",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Managed inference endpoints from providers (Together, Fireworks, Groq, Replicate, Anyscale) that host open-source LLMs behind an OpenAI-compatible API.",
+    "existing_related_terms": [
+      "vllm",
+      "model-serving"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM hosting",
+      "managed inference"
+    ]
+  },
+  {
+    "slug": "infiniband",
+    "title": "InfiniBand",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A high-performance networking standard used between servers in GPU clusters to connect nodes with low-latency, high-bandwidth RDMA.",
+    "existing_related_terms": [
+      "nvlink",
+      "nccl",
+      "distributed-training"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "IB network",
+      "InfiniBand"
+    ]
+  },
+  {
+    "slug": "instructor",
+    "title": "Instructor (Pydantic for LLMs)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A Python library that makes LLMs return Pydantic-validated structured outputs with automatic retries and schema-based prompting.",
+    "existing_related_terms": [
+      "structured-output",
+      "pydantic",
+      "json-schema-enforcement"
+    ],
+    "existing_related_tools": [
+      "instructor"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "instructor library",
+      "Pydantic LLM"
+    ]
+  },
+  {
+    "slug": "jax",
+    "title": "JAX",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Google's array framework combining NumPy-like API with JIT compilation (XLA), automatic differentiation, and pmap/pjit for scaling to TPU pods.",
+    "existing_related_terms": [
+      "pytorch",
+      "tpu",
+      "xla"
+    ],
+    "existing_related_tools": [
+      "jax"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Google JAX",
+      "flax"
+    ]
+  },
+  {
+    "slug": "kubernetes-ml",
+    "title": "Kubernetes (ML Workloads)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "The default container orchestration platform for production ML — GPU scheduling, autoscaling, job lifecycle, and multi-tenant isolation.",
+    "existing_related_terms": [
+      "docker",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "kubernetes",
+      "kubeflow"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "K8s ML",
+      "Kubernetes AI"
+    ]
+  },
+  {
+    "slug": "kv-cache",
+    "title": "KV Cache",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A memory buffer that stores attention keys and values from previous tokens so the model doesn't recompute them on every new token — the #1 reason LLM inference is feasible.",
+    "existing_related_terms": [
+      "inference",
+      "context-window",
+      "transformer",
+      "attention"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "llama.cpp",
+      "sglang"
+    ],
+    "existing_code_example": "# Estimate KV cache size for a model\n# KV cache (bytes) = 2 * n_layers * n_heads * head_dim * seq_len * dtype_bytes * batch_size\n# Llama-3-70B @ 32k context, bf16, batch 1:\n# = 2 * 80 * 8 * 128 * 32_000 * 2 * 1 = 10.5 GB\ndef kv_cache_bytes(layers, heads, head_dim, seq, dtype_bytes=2, batch=1):\n    return 2 * layers * heads * head_dim * seq * dtype_bytes * batch",
+    "existing_seo_variations": [
+      "KV cache",
+      "key value cache",
+      "attention cache"
+    ]
+  },
+  {
+    "slug": "l40s",
+    "title": "L4 / L40S (Inference GPUs)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Nvidia's inference-optimized Ada Lovelace GPUs — L4 (24GB, edge/dev) and L40S (48GB, server) — lower TDP alternatives to H100 for serving.",
+    "existing_related_terms": [
+      "h100",
+      "gpu",
+      "model-serving"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "L40S",
+      "Ada Lovelace GPU"
+    ]
+  },
+  {
+    "slug": "langchain",
+    "title": "LangChain",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A Python/JS framework for building LLM applications — chains, agents, retrievers, memory, and 700+ integrations with models, DBs, and tools.",
+    "existing_related_terms": [
+      "langgraph",
+      "llamaindex",
+      "orchestration"
+    ],
+    "existing_related_tools": [
+      "langchain",
+      "langgraph"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LangChain framework"
+    ]
+  },
+  {
+    "slug": "langgraph",
+    "title": "LangGraph",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "LangChain's graph-based orchestration library for building stateful, multi-agent LLM workflows with explicit node/edge semantics and durable execution.",
+    "existing_related_terms": [
+      "langchain",
+      "orchestration",
+      "agent-loop"
+    ],
+    "existing_related_tools": [
+      "langgraph"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LangGraph",
+      "LangChain graph"
+    ]
+  },
+  {
+    "slug": "liger-kernels",
+    "title": "Liger Kernels",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "LinkedIn's open-source Triton-based kernels for LLM training that deliver significant speedups and memory savings over stock PyTorch implementations.",
+    "existing_related_terms": [
+      "flash-attention",
+      "triton-language",
+      "fsdp"
+    ],
+    "existing_related_tools": [
+      "liger-kernel"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Liger training kernels"
+    ]
+  },
+  {
+    "slug": "llama-cpp-server",
+    "title": "llama.cpp (server)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The inference server built into the llama.cpp project — a lightweight C/C++ HTTP server that runs GGUF models with minimal dependencies.",
+    "existing_related_terms": [
+      "llama.cpp",
+      "gguf",
+      "ollama"
+    ],
+    "existing_related_tools": [
+      "llama.cpp"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "llama.cpp server"
+    ]
+  },
+  {
+    "slug": "llamaindex",
+    "title": "LlamaIndex",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A framework optimized for RAG — indexing, retrieval, query engines, and agent workflows with a focus on connecting LLMs to private data.",
+    "existing_related_terms": [
+      "langchain",
+      "rag",
+      "retrieval"
+    ],
+    "existing_related_tools": [
+      "llamaindex"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LlamaIndex framework"
+    ]
+  },
+  {
+    "slug": "lm-studio",
+    "title": "LM Studio",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A cross-platform desktop app for running LLMs locally with a GUI and OpenAI-compatible local server — no command line needed.",
+    "existing_related_terms": [
+      "ollama",
+      "llama.cpp",
+      "local-vs-cloud"
+    ],
+    "existing_related_tools": [
+      "lm-studio"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LM Studio app"
+    ]
+  },
+  {
+    "slug": "lost-in-the-middle",
+    "title": "Lost in the Middle",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A long-context failure pattern where models use information at the beginning and end of context well but ignore content in the middle.",
+    "existing_related_terms": [
+      "long-context-eval",
+      "needle-in-a-haystack",
+      "context-window"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "lost in middle"
+    ]
+  },
+  {
+    "slug": "mem0",
+    "title": "Mem0",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open-source memory layer for AI applications that stores, retrieves, and updates user- and session-level memories across any LLM.",
+    "existing_related_terms": [
+      "agent-memory",
+      "vector-database",
+      "rag"
+    ],
+    "existing_related_tools": [
+      "mem0"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Mem0 memory"
+    ]
+  },
+  {
+    "slug": "memgpt",
+    "title": "MemGPT (Letta)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A memory architecture (now called Letta) that gives LLMs OS-like memory management — paging context in and out of limited working memory.",
+    "existing_related_terms": [
+      "agent-memory",
+      "context-window",
+      "ai-agent"
+    ],
+    "existing_related_tools": [
+      "letta"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MemGPT",
+      "Letta agent"
+    ]
+  },
+  {
+    "slug": "mi300x",
+    "title": "MI300X (AMD Instinct)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "AMD's data-center GPU with 192GB HBM3 and strong bf16 performance — a credible non-Nvidia option for LLM inference and some training.",
+    "existing_related_terms": [
+      "gpu",
+      "h100",
+      "rocm"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AMD MI300X",
+      "Instinct GPU"
+    ]
+  },
+  {
+    "slug": "mlc-llm",
+    "title": "MLC-LLM",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A universal LLM deployment framework that compiles models for any device — iOS, Android, WebGPU, CUDA, Metal, Vulkan — from a single codebase.",
+    "existing_related_terms": [
+      "llama.cpp",
+      "webgpu",
+      "mobile-ai"
+    ],
+    "existing_related_tools": [
+      "mlc-llm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MLC LLM"
+    ]
+  },
+  {
+    "slug": "mlx",
+    "title": "MLX (Apple)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Apple's array framework for Apple Silicon — a PyTorch-like API with lazy evaluation optimized for unified memory architecture on M-series chips.",
+    "existing_related_terms": [
+      "coreml",
+      "pytorch",
+      "jax"
+    ],
+    "existing_related_tools": [
+      "mlx"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Apple MLX",
+      "MLX framework"
+    ]
+  },
+  {
+    "slug": "modal",
+    "title": "Modal (Serverless GPU)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A serverless GPU platform where you write Python functions with decorators and Modal handles containers, GPUs, scaling, and cold starts.",
+    "existing_related_terms": [
+      "runpod",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "modal"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Modal labs",
+      "serverless GPU"
+    ]
+  },
+  {
+    "slug": "multi-query-attention",
+    "title": "MQA (Multi-Query Attention)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An attention variant where all query heads share a single key/value head pair, maximally reducing KV cache size.",
+    "existing_related_terms": [
+      "grouped-query-attention",
+      "attention",
+      "kv-cache"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MQA",
+      "multi-query"
+    ]
+  },
+  {
+    "slug": "nccl",
+    "title": "NCCL (Nvidia Collective Communications Library)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Nvidia's optimized library for multi-GPU and multi-node collective operations — all-reduce, all-gather, broadcast — the backbone of distributed training.",
+    "existing_related_terms": [
+      "nvlink",
+      "infiniband",
+      "distributed-training"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "NCCL library",
+      "collective comms"
+    ]
+  },
+  {
+    "slug": "nvlink",
+    "title": "NVLink",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Nvidia's high-bandwidth, low-latency GPU-to-GPU and CPU-to-GPU interconnect, enabling efficient multi-GPU training and inference.",
+    "existing_related_terms": [
+      "infiniband",
+      "tensor-parallelism",
+      "gpu"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "NVLink bandwidth"
+    ]
+  },
+  {
+    "slug": "ollama",
+    "title": "Ollama",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A developer-friendly runtime for running LLMs locally via simple CLI/REST commands, wrapping llama.cpp with a curated model library.",
+    "existing_related_terms": [
+      "llama.cpp",
+      "lm-studio",
+      "local-vs-cloud"
+    ],
+    "existing_related_tools": [
+      "ollama"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ollama local",
+      "Ollama server"
+    ]
+  },
+  {
+    "slug": "onnx",
+    "title": "ONNX (Open Neural Network Exchange)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open format for representing ML models so they can move between frameworks (PyTorch, TensorFlow, JAX) and runtimes (ONNX Runtime, TensorRT).",
+    "existing_related_terms": [
+      "onnx-runtime",
+      "tensorrt-llm"
+    ],
+    "existing_related_tools": [
+      "onnx",
+      "onnxruntime"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ONNX model",
+      "ONNX format"
+    ]
+  },
+  {
+    "slug": "onnx-runtime",
+    "title": "ONNX Runtime",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Microsoft's cross-platform ML inference engine that runs ONNX models efficiently on CPUs, GPUs, mobile devices, and browsers.",
+    "existing_related_terms": [
+      "onnx",
+      "webgpu",
+      "openvino"
+    ],
+    "existing_related_tools": [
+      "onnxruntime"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ORT",
+      "ONNX runtime"
+    ]
+  },
+  {
+    "slug": "openvino",
+    "title": "OpenVINO (Intel)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Intel's inference toolkit for deploying ML models on Intel CPUs, iGPUs, dGPUs, and specialized accelerators — strong on CPU inference optimization.",
+    "existing_related_terms": [
+      "onnx-runtime",
+      "openvino"
+    ],
+    "existing_related_tools": [
+      "openvino"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Intel OpenVINO"
+    ]
+  },
+  {
+    "slug": "paged-attention",
+    "title": "PagedAttention",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A KV cache management technique from vLLM that stores cache in non-contiguous fixed-size blocks (pages), allowing memory sharing and eliminating fragmentation.",
+    "existing_related_terms": [
+      "kv-cache",
+      "vllm",
+      "prefix-caching"
+    ],
+    "existing_related_tools": [
+      "vllm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "PagedAttention vLLM"
+    ]
+  },
+  {
+    "slug": "peft-library",
+    "title": "PEFT Library (HF)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Hugging Face's library implementing LoRA, QLoRA, DoRA, adapters, prompt tuning, IA3, and most major PEFT methods behind a unified API.",
+    "existing_related_terms": [
+      "peft",
+      "lora",
+      "qlora",
+      "dora"
+    ],
+    "existing_related_tools": [
+      "peft"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HF PEFT"
+    ]
+  },
+  {
+    "slug": "prefill",
+    "title": "Prefill",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The first phase of LLM inference where the entire prompt is processed in parallel to initialize the KV cache — compute-bound and fast on GPUs.",
+    "existing_related_terms": [
+      "decode",
+      "prefill-decode-split",
+      "kv-cache"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "prefill phase"
+    ]
+  },
+  {
+    "slug": "prefix-caching",
+    "title": "Prefix Caching (Inference)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Reusing the KV cache of shared prompt prefixes across requests to skip recomputation — the inference-engine counterpart to API-level prompt caching.",
+    "existing_related_terms": [
+      "paged-attention",
+      "radix-attention",
+      "prompt-caching"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "sglang"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "KV prefix caching"
+    ]
+  },
+  {
+    "slug": "pydantic",
+    "title": "Pydantic",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Python's most popular data-validation library — models with typed fields that parse, validate, and serialize data, heavily used for LLM inputs/outputs.",
+    "existing_related_terms": [
+      "structured-output",
+      "json-schema-enforcement"
+    ],
+    "existing_related_tools": [
+      "pydantic"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Pydantic v2",
+      "Pydantic AI"
+    ]
+  },
+  {
+    "slug": "pydantic-ai",
+    "title": "Pydantic AI",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The Pydantic team's framework for building LLM agents with the same ergonomics as Pydantic models — typed inputs, validated outputs, dependency injection.",
+    "existing_related_terms": [
+      "pydantic",
+      "ai-agent",
+      "langgraph"
+    ],
+    "existing_related_tools": [
+      "pydantic-ai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "pydantic-ai framework"
+    ]
+  },
+  {
+    "slug": "pytorch",
+    "title": "PyTorch",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The most widely used deep-learning framework — eager-mode Python APIs with autograd, GPU acceleration, and a vast ecosystem of libraries and models.",
+    "existing_related_terms": [
+      "jax",
+      "tensorflow",
+      "huggingface-transformers"
+    ],
+    "existing_related_tools": [
+      "pytorch"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "PyTorch framework"
+    ]
+  },
+  {
+    "slug": "radix-attention",
+    "title": "RadixAttention",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "SGLang's KV cache data structure — a radix tree that automatically discovers and reuses shared prompt prefixes across concurrent requests.",
+    "existing_related_terms": [
+      "prefix-caching",
+      "kv-cache",
+      "sglang"
+    ],
+    "existing_related_tools": [
+      "sglang"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "radix attention"
+    ]
+  },
+  {
+    "slug": "ray",
+    "title": "Ray (Distributed Python)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Anyscale's distributed Python framework — actors, tasks, and Ray Serve/Train/Tune — used for scaling ML workloads across clusters.",
+    "existing_related_terms": [
+      "distributed-training",
+      "ray-serve",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "ray"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Ray framework",
+      "Anyscale Ray"
+    ]
+  },
+  {
+    "slug": "ray-serve",
+    "title": "Ray Serve",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Ray's model-serving library with native Python APIs, dynamic batching, autoscaling, and deployment graph composition.",
+    "existing_related_terms": [
+      "ray",
+      "model-serving",
+      "bentoml"
+    ],
+    "existing_related_tools": [
+      "ray"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Ray Serve"
+    ]
+  },
+  {
+    "slug": "replicate",
+    "title": "Replicate",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A model-hosting platform where community-contributed models (LLMs, image gen, video gen, audio) are packaged as 'Cog' containers and served on-demand.",
+    "existing_related_terms": [
+      "inference-as-a-service",
+      "cog"
+    ],
+    "existing_related_tools": [
+      "replicate"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Replicate API"
+    ]
+  },
+  {
+    "slug": "rmsnorm",
+    "title": "RMSNorm",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Root Mean Square Normalization — a normalization layer that skips the mean-centering of LayerNorm, saving compute with equivalent quality.",
+    "existing_related_terms": [
+      "layer-norm",
+      "transformer"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "RMS normalization"
+    ]
+  },
+  {
+    "slug": "rocm",
+    "title": "ROCm (AMD)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "AMD's open-source alternative to CUDA — compute platform, runtime, and libraries for running ML workloads on AMD Instinct GPUs.",
+    "existing_related_terms": [
+      "cuda",
+      "mi300x",
+      "gpu"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ROCm AMD",
+      "HIP"
+    ]
+  },
+  {
+    "slug": "rope",
+    "title": "RoPE (Rotary Position Embedding)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A position encoding that rotates query and key vectors by position-dependent angles, enabling relative position awareness and straightforward context-length extension.",
+    "existing_related_terms": [
+      "rope-scaling",
+      "yarn",
+      "position-embedding"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "rotary position",
+      "RoPE embedding"
+    ]
+  },
+  {
+    "slug": "rope-scaling",
+    "title": "RoPE Scaling / YaRN",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Techniques for extending a RoPE-based model's context window beyond its training length by reshaping the rotation frequencies.",
+    "existing_related_terms": [
+      "rope",
+      "context-window"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "YaRN scaling",
+      "NTK RoPE"
+    ]
+  },
+  {
+    "slug": "runpod",
+    "title": "RunPod",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A GPU cloud platform offering on-demand and spot instances at discount prices, with serverless endpoints for inference workloads.",
+    "existing_related_terms": [
+      "modal",
+      "gpu",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "runpod"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "RunPod GPU"
+    ]
+  },
+  {
+    "slug": "safetensors",
+    "title": "Safetensors",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A secure file format for storing model weights — fast, memory-mappable, and immune to the arbitrary code execution vulnerabilities in pickle-based formats.",
+    "existing_related_terms": [
+      "model-weights",
+      "huggingface-hub"
+    ],
+    "existing_related_tools": [
+      "safetensors"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      ".safetensors",
+      "safe tensor format"
+    ]
+  },
+  {
+    "slug": "sglang",
+    "title": "SGLang",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A fast LLM serving engine with a programming frontend for complex prompt workflows and RadixAttention for KV cache reuse across prompt prefixes.",
+    "existing_related_terms": [
+      "vllm",
+      "radix-attention",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "sglang"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SGLang server"
+    ]
+  },
+  {
+    "slug": "sliding-window-attention",
+    "title": "Sliding Window Attention",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An attention pattern where each token attends only to the last K tokens rather than the full sequence — linear-cost attention at the price of limited long-range context.",
+    "existing_related_terms": [
+      "attention",
+      "rope",
+      "context-window"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "sliding attention",
+      "local attention"
+    ]
+  },
+  {
+    "slug": "streamlit",
+    "title": "Streamlit",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A Python library for building data apps and dashboards with pure Python — a common choice for internal LLM tools and prototypes.",
+    "existing_related_terms": [
+      "gradio"
+    ],
+    "existing_related_tools": [
+      "streamlit"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Streamlit app"
+    ]
+  },
+  {
+    "slug": "swiglu",
+    "title": "SwiGLU Activation",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A gated linear unit activation that combines Swish and GLU, used in most modern LLM feed-forward layers for better quality than plain ReLU/GELU.",
+    "existing_related_terms": [
+      "activation-function",
+      "transformer"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SwiGLU activation"
+    ]
+  },
+  {
+    "slug": "tensorrt-llm",
+    "title": "TensorRT-LLM",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Nvidia's optimized LLM inference library that compiles model graphs to TensorRT with custom kernels for maximum H100/B200 throughput.",
+    "existing_related_terms": [
+      "triton-server",
+      "vllm",
+      "speculative-decoding"
+    ],
+    "existing_related_tools": [
+      "tensorrt-llm",
+      "triton-server"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "TRT-LLM",
+      "TensorRT LLM"
+    ]
+  },
+  {
+    "slug": "tgi",
+    "title": "Text Generation Inference (TGI)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Hugging Face's LLM inference server — production-ready, supports most models, integrates with the HF ecosystem.",
+    "existing_related_terms": [
+      "vllm",
+      "sglang",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "tgi"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HF TGI",
+      "text generation inference"
+    ]
+  },
+  {
+    "slug": "together-ai",
+    "title": "Together AI",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A major inference-as-a-service provider hosting a wide catalog of open-source LLMs with competitive per-token pricing and fine-tuning endpoints.",
+    "existing_related_terms": [
+      "inference-as-a-service",
+      "fireworks-ai"
+    ],
+    "existing_related_tools": [
+      "together-ai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Together AI"
+    ]
+  },
+  {
+    "slug": "torch-compile",
+    "title": "torch.compile",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "PyTorch 2.0's JIT compiler that traces Python code into a graph and compiles it via Inductor (Triton backend) for significant speedups.",
+    "existing_related_terms": [
+      "flash-attention",
+      "triton-language",
+      "pytorch"
+    ],
+    "existing_related_tools": [
+      "pytorch"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "PyTorch 2 compile"
+    ]
+  },
+  {
+    "slug": "tpu",
+    "title": "TPU (Tensor Processing Unit)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Google's custom ML accelerator — TPU v4, v5, v6 — optimized for massive matmul throughput via systolic arrays, used to train Gemini and Gemma.",
+    "existing_related_terms": [
+      "gpu",
+      "jax",
+      "xla"
+    ],
+    "existing_related_tools": [
+      "jax"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Google TPU",
+      "TPU v5"
+    ]
+  },
+  {
+    "slug": "trainium-inferentia",
+    "title": "AWS Trainium / Inferentia",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Amazon's custom training (Trainium) and inference (Inferentia) accelerators, accessed via AWS Neuron SDK as a lower-cost alternative to Nvidia on AWS.",
+    "existing_related_terms": [
+      "gpu",
+      "tpu"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AWS Trainium",
+      "Inferentia2"
+    ]
+  },
+  {
+    "slug": "transformers-js",
+    "title": "Transformers.js",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Hugging Face's JavaScript port of Transformers, letting models run in Node.js or the browser via ONNX Runtime Web (CPU) or WebGPU (GPU).",
+    "existing_related_terms": [
+      "webgpu",
+      "onnx-runtime",
+      "mlc-llm"
+    ],
+    "existing_related_tools": [
+      "transformers.js"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "transformers.js",
+      "HF JS"
+    ]
+  },
+  {
+    "slug": "triton-language",
+    "title": "Triton (Language / Compiler)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "OpenAI's open-source Python-like DSL for writing GPU kernels that often match hand-tuned CUDA performance with far less code.",
+    "existing_related_terms": [
+      "cuda",
+      "flash-attention"
+    ],
+    "existing_related_tools": [
+      "triton"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "OpenAI Triton"
+    ]
+  },
+  {
+    "slug": "triton-server",
+    "title": "Triton Inference Server (Nvidia)",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Nvidia's open-source inference serving framework supporting multiple backends (TensorRT, PyTorch, ONNX, Python, TensorRT-LLM) with HTTP/gRPC endpoints.",
+    "existing_related_terms": [
+      "tensorrt-llm",
+      "model-serving",
+      "dynamic-batching"
+    ],
+    "existing_related_tools": [
+      "triton-server",
+      "tensorrt-llm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Triton server",
+      "Nvidia Triton"
+    ]
+  },
+  {
+    "slug": "trl",
+    "title": "TRL (Transformers Reinforcement Learning)",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Hugging Face's library for RLHF and preference optimization — SFTTrainer, DPOTrainer, PPOTrainer, KTOTrainer, RewardTrainer.",
+    "existing_related_terms": [
+      "sft",
+      "dpo",
+      "rlhf",
+      "peft"
+    ],
+    "existing_related_tools": [
+      "trl"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HF TRL",
+      "TRL library"
+    ]
+  },
+  {
+    "slug": "unsloth",
+    "title": "Unsloth",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open-source LLM fine-tuning library that delivers 2x training speed and 80% memory savings on consumer GPUs through custom Triton kernels and memory optimizations.",
+    "existing_related_terms": [
+      "lora",
+      "qlora",
+      "triton-language"
+    ],
+    "existing_related_tools": [
+      "unsloth"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Unsloth training"
+    ]
+  },
+  {
+    "slug": "vector-database",
+    "title": "Vector Database",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A vector database stores embeddings and lets you search for similar ones extremely fast.",
+    "existing_related_terms": [
+      "embedding",
+      "rag",
+      "chroma"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "vllm",
+    "title": "vLLM",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A high-throughput LLM inference and serving engine from UC Berkeley, centered on PagedAttention for efficient KV cache management.",
+    "existing_related_terms": [
+      "paged-attention",
+      "continuous-batching",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "vllm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "vLLM server",
+      "PagedAttention"
+    ]
+  },
+  {
+    "slug": "vllm-openai-server",
+    "title": "vLLM OpenAI API Server",
+    "category": "infra",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "vLLM's built-in OpenAI-compatible REST server that lets any OpenAI SDK client talk to local vLLM-served models.",
+    "existing_related_terms": [
+      "vllm",
+      "openai-api",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "vllm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "vLLM OpenAI compat"
+    ]
+  },
+  {
+    "slug": "vram",
+    "title": "VRAM",
+    "category": "infra",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Your GPU's dedicated memory — the key bottleneck for running local AI models.",
+    "existing_related_terms": [
+      "quantization",
+      "parameters",
+      "gguf",
+      "vram-calculator"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "webgpu",
+    "title": "WebGPU",
+    "category": "infra",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A modern browser graphics/compute API (successor to WebGL) that enables GPU-accelerated ML inference in the browser without plugins.",
+    "existing_related_terms": [
+      "mlc-llm",
+      "onnx-runtime",
+      "transformers-js"
+    ],
+    "existing_related_tools": [
+      "transformers.js",
+      "web-llm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "WebGPU ML",
+      "browser inference"
+    ]
+  }
+]

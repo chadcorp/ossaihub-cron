@@ -1,0 +1,1640 @@
+[
+  {
+    "slug": "agent-loop",
+    "title": "Agent Loop",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The core execution cycle of an AI agent — observe state, decide on an action, execute a tool, incorporate the result, repeat.",
+    "existing_related_terms": [
+      "ai-agent",
+      "react-pattern",
+      "tool-use",
+      "orchestration"
+    ],
+    "existing_related_tools": [
+      "langgraph",
+      "autogen"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "agent execution loop",
+      "agent run loop"
+    ]
+  },
+  {
+    "slug": "agent-memory",
+    "title": "Agent Memory",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Mechanisms that let AI agents retain information across turns or sessions — conversation buffers, summary memories, vector stores, scratchpads.",
+    "existing_related_terms": [
+      "rag",
+      "ai-agent",
+      "vector-database"
+    ],
+    "existing_related_tools": [
+      "mem0",
+      "langmem",
+      "letta"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM memory",
+      "agent state"
+    ]
+  },
+  {
+    "slug": "ai-agent",
+    "title": "AI Agent",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An AI that can take actions in the world — not just answer questions, but use tools, browse the web, write files, and complete multi-step tasks.",
+    "existing_related_terms": [
+      "function-calling",
+      "mcp",
+      "multi-agent",
+      "langchain"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "ai-model-license",
+    "title": "License (AI Model Licenses)",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The legal terms governing how a model's weights can be used — ranging from permissive (Apache 2.0, MIT) to restricted (Llama Community License, research-only) to custom.",
+    "existing_related_terms": [
+      "llama",
+      "open-weights-vs-open-source"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM license",
+      "model license"
+    ]
+  },
+  {
+    "slug": "artificial-intelligence",
+    "title": "Artificial Intelligence",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The broad field of building systems that perform tasks requiring human-like intelligence — perception, reasoning, language, decision-making.",
+    "existing_related_terms": [
+      "machine-learning",
+      "deep-learning",
+      "llm",
+      "foundation-model"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AI",
+      "artificial intelligence definition",
+      "what is AI"
+    ]
+  },
+  {
+    "slug": "asr",
+    "title": "Automatic Speech Recognition (ASR)",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Transcribing speech to text — dominated by OpenAI Whisper and specialized commercial providers like Deepgram and AssemblyAI.",
+    "existing_related_terms": [
+      "whisper",
+      "voice-agent"
+    ],
+    "existing_related_tools": [
+      "whisper",
+      "deepgram"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "speech to text",
+      "ASR model"
+    ]
+  },
+  {
+    "slug": "autonomous-agent",
+    "title": "Autonomous Agent",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An AI system that pursues a goal with minimal human intervention, planning and executing multi-step work across tools and time.",
+    "existing_related_terms": [
+      "ai-agent",
+      "agent-loop",
+      "tool-use",
+      "multi-agent"
+    ],
+    "existing_related_tools": [
+      "autogpt",
+      "langgraph",
+      "claude-code"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "fully autonomous agent",
+      "goal-driven agent"
+    ]
+  },
+  {
+    "slug": "backpropagation",
+    "title": "Backpropagation",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The algorithm that efficiently computes gradients of the loss with respect to every parameter by applying the chain rule backward through the network.",
+    "existing_related_terms": [
+      "gradient-descent",
+      "autograd",
+      "neural-network",
+      "chain-rule"
+    ],
+    "existing_related_tools": [
+      "pytorch",
+      "jax",
+      "tensorflow"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "backprop",
+      "automatic differentiation"
+    ]
+  },
+  {
+    "slug": "benchmark",
+    "title": "Benchmark",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A standardized test used to measure and compare AI model performance.",
+    "existing_related_terms": [
+      "llm",
+      "model-card",
+      "parameters"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "catastrophic-forgetting",
+    "title": "Catastrophic Forgetting",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The tendency of neural networks to lose previously learned capabilities when trained on new data, especially during fine-tuning.",
+    "existing_related_terms": [
+      "continued-pretraining",
+      "fine-tuning",
+      "lora"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "catastrophic interference"
+    ]
+  },
+  {
+    "slug": "chain-of-density",
+    "title": "Chain of Density",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A summarization prompting technique that iteratively adds key entities to a summary while keeping word count constant, producing dense, information-rich summaries.",
+    "existing_related_terms": [
+      "summarization",
+      "prompt-engineering"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "CoD summarization"
+    ]
+  },
+  {
+    "slug": "classification",
+    "title": "Classification",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A supervised ML task where the model predicts a discrete class label from a fixed set of categories.",
+    "existing_related_terms": [
+      "regression",
+      "supervised-learning",
+      "cross-entropy",
+      "precision-recall"
+    ],
+    "existing_related_tools": [
+      "scikit-learn",
+      "xgboost"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "multi-class classification",
+      "classifier"
+    ]
+  },
+  {
+    "slug": "code-interpreter",
+    "title": "Code Interpreter",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An LLM tool that writes and executes Python (or other) code in a sandbox, then uses the results — for calculation, data analysis, and reliable reasoning.",
+    "existing_related_terms": [
+      "tool-use",
+      "ai-agent"
+    ],
+    "existing_related_tools": [
+      "e2b",
+      "riza"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "code interpreter",
+      "ADA Python"
+    ]
+  },
+  {
+    "slug": "computer-use",
+    "title": "Browser Use / Computer Use",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An LLM capability where the model controls a computer GUI — clicks, types, scrolls — via screenshot input and mouse/keyboard output, enabling browser and OS automation.",
+    "existing_related_terms": [
+      "ai-agent",
+      "autonomous-agent",
+      "vision-language-model"
+    ],
+    "existing_related_tools": [
+      "browser-use"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "computer use API",
+      "browser agent"
+    ]
+  },
+  {
+    "slug": "context-engineering",
+    "title": "Context Engineering",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The practice of deliberately shaping what ends up in an LLM's context window — retrieval, memory, tool output, and system prompt — to maximize task success.",
+    "existing_related_terms": [
+      "prompt-engineering",
+      "rag",
+      "chunking"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "context design",
+      "context engineering"
+    ]
+  },
+  {
+    "slug": "continual-learning",
+    "title": "Continual Learning",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "The research direction of training models on a stream of new data over time without catastrophic forgetting or needing to retrain from scratch.",
+    "existing_related_terms": [
+      "catastrophic-forgetting",
+      "lifelong-learning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "lifelong learning",
+      "online learning"
+    ]
+  },
+  {
+    "slug": "copilot-pattern",
+    "title": "Copilot Pattern",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A human-in-the-loop UX where the AI suggests, edits, and assists in real time but the user retains control and approves every action.",
+    "existing_related_terms": [
+      "autonomous-agent",
+      "hitl",
+      "ai-agent"
+    ],
+    "existing_related_tools": [
+      "github-copilot",
+      "cursor",
+      "continue"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "copilot UX",
+      "AI assistant pattern"
+    ]
+  },
+  {
+    "slug": "data-augmentation",
+    "title": "Data Augmentation",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Techniques for expanding a training dataset by generating modified copies of existing examples without changing their labels.",
+    "existing_related_terms": [
+      "training-data",
+      "synthetic-data",
+      "regularization"
+    ],
+    "existing_related_tools": [
+      "albumentations",
+      "nlpaug"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "data aug",
+      "image augmentation"
+    ]
+  },
+  {
+    "slug": "dataset",
+    "title": "Dataset",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A structured collection of examples — text, images, audio, tables — organized for training, evaluating, or benchmarking models.",
+    "existing_related_terms": [
+      "training-data",
+      "datasheet",
+      "data-augmentation",
+      "huggingface-hub"
+    ],
+    "existing_related_tools": [
+      "huggingface-datasets",
+      "dvc",
+      "argilla"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ML dataset",
+      "data corpus"
+    ]
+  },
+  {
+    "slug": "deep-learning",
+    "title": "Deep Learning",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A subfield of ML that uses neural networks with many layers to learn hierarchical representations from raw data.",
+    "existing_related_terms": [
+      "neural-network",
+      "transformer",
+      "machine-learning",
+      "backpropagation"
+    ],
+    "existing_related_tools": [
+      "pytorch",
+      "tensorflow",
+      "jax"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "DL",
+      "deep neural network",
+      "deep learning explained"
+    ]
+  },
+  {
+    "slug": "double-descent",
+    "title": "Double Descent",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A phenomenon where test error decreases, then increases (classical overfitting), then decreases again as model capacity or training time grows past a threshold.",
+    "existing_related_terms": [
+      "overfitting",
+      "generalization",
+      "scaling-laws"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "deep double descent"
+    ]
+  },
+  {
+    "slug": "embedding",
+    "title": "Embedding",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An embedding is a list of numbers that represents the meaning of a piece of text — similar texts have similar numbers.",
+    "existing_related_terms": [
+      "rag",
+      "vector-database",
+      "semantic-search"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "emergence",
+    "title": "Emergence (Emergent Abilities)",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "The phenomenon where certain capabilities appear abruptly in LLMs as model scale crosses a threshold, rather than improving smoothly.",
+    "existing_related_terms": [
+      "scaling-laws",
+      "foundation-model",
+      "llm"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "emergent behavior",
+      "emergent capabilities"
+    ]
+  },
+  {
+    "slug": "extended-thinking",
+    "title": "Extended Thinking (Claude)",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Anthropic's reasoning mode where Claude produces long internal reasoning before its final answer, toggleable per request with a thinking-token budget.",
+    "existing_related_terms": [
+      "reasoning",
+      "chain-of-thought",
+      "openai-o1"
+    ],
+    "existing_related_tools": [
+      "anthropic"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Claude thinking",
+      "extended thinking API"
+    ]
+  },
+  {
+    "slug": "feature",
+    "title": "Feature",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "An individual input variable a model uses to make predictions.",
+    "existing_related_terms": [
+      "feature-engineering",
+      "embedding",
+      "representation-learning"
+    ],
+    "existing_related_tools": [
+      "scikit-learn",
+      "xgboost"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "input variable",
+      "predictor"
+    ]
+  },
+  {
+    "slug": "feature-engineering",
+    "title": "Feature Engineering",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The craft of transforming raw data into features that expose the structure a model needs — dominant in tabular ML, largely replaced by learned features in deep learning.",
+    "existing_related_terms": [
+      "feature",
+      "representation-learning",
+      "tabular-ml"
+    ],
+    "existing_related_tools": [
+      "pandas",
+      "feature-store"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "feature eng",
+      "feature design"
+    ]
+  },
+  {
+    "slug": "framework",
+    "title": "Framework (AI)",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A library or toolkit that handles the complex plumbing of AI applications so you can focus on your actual product.",
+    "existing_related_terms": [
+      "langchain",
+      "llamaindex",
+      "ai-agent",
+      "rag"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "function-calling",
+    "title": "Function Calling",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A feature that lets an AI model request to run a specific function or tool instead of just generating text.",
+    "existing_related_terms": [
+      "ai-agent",
+      "mcp",
+      "api"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "generalization",
+    "title": "Generalization",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A model's ability to perform well on data it has not seen during training.",
+    "existing_related_terms": [
+      "overfitting",
+      "regularization",
+      "bias-variance-tradeoff",
+      "scaling-laws"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "OOD generalization",
+      "generalize"
+    ]
+  },
+  {
+    "slug": "gradient-descent",
+    "title": "Gradient Descent",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The optimization algorithm that trains nearly every ML model by iteratively adjusting parameters in the direction that reduces loss.",
+    "existing_related_terms": [
+      "backpropagation",
+      "adam",
+      "learning-rate",
+      "loss-function"
+    ],
+    "existing_related_tools": [
+      "pytorch",
+      "jax"
+    ],
+    "existing_code_example": "# Vanilla SGD step\nfor x, y in loader:\n    loss = model(x, y)\n    loss.backward()\n    for p in model.parameters():\n        p.data -= lr * p.grad\n        p.grad.zero_()",
+    "existing_seo_variations": [
+      "SGD",
+      "stochastic gradient descent",
+      "optimizer"
+    ]
+  },
+  {
+    "slug": "grokking",
+    "title": "Grokking",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A training phenomenon where a model overfits for a long time and then suddenly generalizes — a dramatic phase transition in generalization.",
+    "existing_related_terms": [
+      "generalization",
+      "mech-interp",
+      "double-descent"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "grokking phenomenon"
+    ]
+  },
+  {
+    "slug": "hitl",
+    "title": "Human-in-the-Loop",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A system design where human judgment is required for specific steps — labeling, approval, escalation — rather than full automation.",
+    "existing_related_terms": [
+      "copilot-pattern",
+      "active-learning",
+      "approval-gate"
+    ],
+    "existing_related_tools": [
+      "label-studio",
+      "argilla"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HITL",
+      "human in the loop",
+      "HOTL"
+    ]
+  },
+  {
+    "slug": "in-context-learning",
+    "title": "In-Context Learning",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The ability of LLMs to perform a new task from a few examples given in the prompt, without any weight updates.",
+    "existing_related_terms": [
+      "few-shot-learning",
+      "prompt",
+      "chain-of-thought",
+      "zero-shot"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ICL",
+      "in-context few-shot"
+    ]
+  },
+  {
+    "slug": "inference-time-scaling",
+    "title": "Inference Time Scaling",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "The empirical observation that LLM performance on reasoning tasks continues to improve predictably as you spend more tokens or compute at inference.",
+    "existing_related_terms": [
+      "test-time-compute",
+      "scaling-laws",
+      "reasoning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "inference scaling",
+      "test time scaling"
+    ]
+  },
+  {
+    "slug": "instruction-tuning",
+    "title": "Instruction Tuning",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Fine-tuning a base LLM on (instruction, response) pairs so it reliably follows user requests instead of just completing text.",
+    "existing_related_terms": [
+      "sft",
+      "post-training",
+      "chat-template"
+    ],
+    "existing_related_tools": [
+      "axolotl",
+      "trl",
+      "unsloth"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "instruct tuning",
+      "chat tuning"
+    ]
+  },
+  {
+    "slug": "label",
+    "title": "Label",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The ground-truth output associated with a training example in supervised learning.",
+    "existing_related_terms": [
+      "supervised-learning",
+      "annotation",
+      "training-data"
+    ],
+    "existing_related_tools": [
+      "label-studio",
+      "argilla"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "target",
+      "ground truth"
+    ]
+  },
+  {
+    "slug": "loss-function",
+    "title": "Loss Function",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A scalar metric that quantifies how wrong a model's predictions are; training minimizes it.",
+    "existing_related_terms": [
+      "cross-entropy",
+      "perplexity",
+      "gradient-descent"
+    ],
+    "existing_related_tools": [
+      "pytorch"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "cost function",
+      "objective function"
+    ]
+  },
+  {
+    "slug": "machine-learning",
+    "title": "Machine Learning",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A field of AI where systems learn patterns from data instead of being explicitly programmed with rules.",
+    "existing_related_terms": [
+      "deep-learning",
+      "supervised-learning",
+      "neural-network",
+      "training-data"
+    ],
+    "existing_related_tools": [
+      "pytorch",
+      "tensorflow",
+      "scikit-learn"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ML",
+      "machine learning definition",
+      "what is machine learning"
+    ]
+  },
+  {
+    "slug": "machine-translation",
+    "title": "Translation (Machine Translation)",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The task of converting text or speech from one language to another, preserving meaning.",
+    "existing_related_terms": [
+      "text-generation",
+      "bleu-score",
+      "llm"
+    ],
+    "existing_related_tools": [
+      "nllb",
+      "seamless-m4t"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "NMT",
+      "neural machine translation"
+    ]
+  },
+  {
+    "slug": "meta-prompting",
+    "title": "Meta-Prompting",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Using an LLM to improve or generate prompts for other LLMs — iteratively refining based on eval feedback or rubric scoring.",
+    "existing_related_terms": [
+      "prompt-engineering",
+      "dspy"
+    ],
+    "existing_related_tools": [
+      "dspy"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "prompt optimization"
+    ]
+  },
+  {
+    "slug": "modality",
+    "title": "Modality",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A single channel of information a model consumes or produces — text, image, audio, video, code, structured data.",
+    "existing_related_terms": [
+      "multimodal",
+      "vision-language-model",
+      "encoder"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "input modality",
+      "data modality"
+    ]
+  },
+  {
+    "slug": "model-card",
+    "title": "Model Card",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A document that describes an AI model — its capabilities, limitations, training data, intended uses, and license.",
+    "existing_related_terms": [
+      "open-source-vs-open-weight",
+      "benchmark",
+      "fine-tuning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "multi-agent",
+    "title": "Multi-Agent System",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Multiple AI agents working together, each with a specialized role, to complete complex tasks.",
+    "existing_related_terms": [
+      "ai-agent",
+      "crewai",
+      "langchain",
+      "function-calling"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "multimodal",
+    "title": "Multimodal",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Models or systems that jointly process multiple input modalities — text, image, audio, video, code — in a single forward pass.",
+    "existing_related_terms": [
+      "vision-language-model",
+      "clip",
+      "foundation-model"
+    ],
+    "existing_related_tools": [
+      "gpt-4o",
+      "gemini",
+      "claude",
+      "llava"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "multimodal AI",
+      "vision language model",
+      "VLM"
+    ]
+  },
+  {
+    "slug": "named-entity-recognition",
+    "title": "Named Entity Recognition",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "An NLP task that identifies and classifies spans of text into categories like person, organization, location, date, or money.",
+    "existing_related_terms": [
+      "information-extraction",
+      "structured-output",
+      "pii-redaction"
+    ],
+    "existing_related_tools": [
+      "spacy",
+      "flair",
+      "huggingface-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "NER",
+      "entity extraction"
+    ]
+  },
+  {
+    "slug": "neural-network",
+    "title": "Neural Network",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A stack of matrix multiplications and nonlinear activation functions that approximate arbitrary functions given enough data.",
+    "existing_related_terms": [
+      "deep-learning",
+      "backpropagation",
+      "activation-function",
+      "gradient-descent"
+    ],
+    "existing_related_tools": [
+      "pytorch",
+      "tensorflow"
+    ],
+    "existing_code_example": "# A minimal 2-layer network in PyTorch\nimport torch.nn as nn\nnet = nn.Sequential(\n    nn.Linear(784, 256), nn.ReLU(),\n    nn.Linear(256, 10)\n)",
+    "existing_seo_variations": [
+      "neural net",
+      "artificial neural network",
+      "ANN"
+    ]
+  },
+  {
+    "slug": "open-source-vs-open-weight",
+    "title": "Open Source vs Open Weight",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Open weight means the model's parameters are public. Open source means the code AND training data are also public.",
+    "existing_related_terms": [
+      "model-card",
+      "fine-tuning",
+      "llm"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "open-weights-vs-open-source",
+    "title": "Open Weights vs Open Source",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The distinction between 'open weights' (model files released, often under usage restrictions) and 'open source' (training code, data, and process also available).",
+    "existing_related_terms": [
+      "llama",
+      "open-source-vs-open-weight",
+      "model-card"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "open weights",
+      "open source AI"
+    ]
+  },
+  {
+    "slug": "orchestration",
+    "title": "Orchestration (Agent Orchestration)",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The control layer that decides what step an AI system takes next — which model, which tool, which branch, and when to stop.",
+    "existing_related_terms": [
+      "workflow",
+      "ai-agent",
+      "prompt-chaining"
+    ],
+    "existing_related_tools": [
+      "langgraph",
+      "temporal",
+      "dagster",
+      "prefect"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "agent orchestration",
+      "workflow engine"
+    ]
+  },
+  {
+    "slug": "overfitting",
+    "title": "Overfitting",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "When a model memorizes training data instead of learning generalizable patterns, so it performs worse on new inputs.",
+    "existing_related_terms": [
+      "underfitting",
+      "regularization",
+      "generalization",
+      "validation-data"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "overfit",
+      "overfitting explained"
+    ]
+  },
+  {
+    "slug": "post-training",
+    "title": "Post-Training",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Everything done to a base model after pretraining — SFT, DPO/RLHF, safety tuning — to turn it into a useful assistant.",
+    "existing_related_terms": [
+      "pretraining",
+      "sft",
+      "dpo",
+      "rlhf",
+      "alignment"
+    ],
+    "existing_related_tools": [
+      "trl",
+      "axolotl"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "alignment",
+      "instruct tuning"
+    ]
+  },
+  {
+    "slug": "pretraining",
+    "title": "Pretraining",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The first and most expensive stage of LLM training — learning general language patterns from trillions of raw tokens with next-token prediction.",
+    "existing_related_terms": [
+      "post-training",
+      "instruction-tuning",
+      "sft",
+      "foundation-model"
+    ],
+    "existing_related_tools": [
+      "megatron-lm",
+      "nemo",
+      "pytorch"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM pretraining",
+      "base model training"
+    ]
+  },
+  {
+    "slug": "prompt",
+    "title": "Prompt",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A prompt is the instruction or question you type to an AI — it's how you tell the AI what you want it to do.",
+    "existing_related_terms": [
+      "llm",
+      "system-prompt",
+      "few-shot-learning",
+      "chain-of-thought",
+      "temperature"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "prompt-chaining",
+    "title": "Prompt Chaining",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Decomposing a task into a sequence of simpler LLM calls where each output feeds the next.",
+    "existing_related_terms": [
+      "orchestration",
+      "workflow",
+      "ai-agent"
+    ],
+    "existing_related_tools": [
+      "langchain",
+      "langgraph",
+      "prefect"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM chain",
+      "prompt pipeline"
+    ]
+  },
+  {
+    "slug": "prompt-engineering",
+    "title": "Prompt Engineering",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The practice of designing input text to LLMs to maximize desired output quality — including role setting, instructions, examples, and output format.",
+    "existing_related_terms": [
+      "chain-of-thought",
+      "few-shot-learning",
+      "system-prompt"
+    ],
+    "existing_related_tools": [
+      "promptfoo"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "prompt design",
+      "prompt craft"
+    ]
+  },
+  {
+    "slug": "question-answering",
+    "title": "Question Answering",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The task of producing an answer to a natural-language question, either from a passage, a knowledge base, or world knowledge.",
+    "existing_related_terms": [
+      "rag",
+      "reasoning",
+      "llm"
+    ],
+    "existing_related_tools": [
+      "langchain",
+      "llamaindex"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "QA",
+      "open domain QA",
+      "closed book QA"
+    ]
+  },
+  {
+    "slug": "react-pattern",
+    "title": "ReAct Pattern",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A prompting pattern that interleaves Reasoning steps with Action steps (tool calls), letting an LLM iteratively gather info before answering.",
+    "existing_related_terms": [
+      "ai-agent",
+      "tool-use",
+      "chain-of-thought",
+      "function-calling"
+    ],
+    "existing_related_tools": [
+      "langchain",
+      "llamaindex"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ReAct agent",
+      "reasoning and acting"
+    ]
+  },
+  {
+    "slug": "reasoning",
+    "title": "Reasoning (LLM Reasoning)",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A model's ability to solve multi-step problems — math, logic, planning — by thinking through intermediate steps rather than pattern-matching to an answer.",
+    "existing_related_terms": [
+      "chain-of-thought",
+      "self-consistency",
+      "tree-of-thought",
+      "reflection"
+    ],
+    "existing_related_tools": [
+      "deepseek-r1",
+      "openai-o1"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM reasoning",
+      "step-by-step reasoning"
+    ]
+  },
+  {
+    "slug": "reflection",
+    "title": "Reflection (Self-Reflection)",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A technique where an LLM critiques its own output and revises it, often improving quality at the cost of extra inference calls.",
+    "existing_related_terms": [
+      "reasoning",
+      "self-consistency",
+      "llm-as-judge"
+    ],
+    "existing_related_tools": [
+      "langchain"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "self-reflection",
+      "Reflexion"
+    ]
+  },
+  {
+    "slug": "regression-task",
+    "title": "Regression (ML Task)",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A supervised ML task where the model predicts a continuous numeric value rather than a discrete class.",
+    "existing_related_terms": [
+      "classification",
+      "mse",
+      "mae",
+      "supervised-learning"
+    ],
+    "existing_related_tools": [
+      "scikit-learn",
+      "xgboost",
+      "lightgbm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "regression analysis",
+      "numeric prediction"
+    ]
+  },
+  {
+    "slug": "reinforcement-learning",
+    "title": "Reinforcement Learning",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A paradigm where an agent learns by trial and error, maximizing cumulative reward from an environment.",
+    "existing_related_terms": [
+      "rlhf",
+      "dpo",
+      "policy-gradients",
+      "ppo"
+    ],
+    "existing_related_tools": [
+      "stable-baselines3",
+      "rllib"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "RL",
+      "reinforcement learning explained"
+    ]
+  },
+  {
+    "slug": "scaling-laws",
+    "title": "Scaling Laws",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Empirical power-law relationships between LLM loss and three inputs: parameters, training tokens, and compute.",
+    "existing_related_terms": [
+      "chinchilla-scaling",
+      "emergence",
+      "compute",
+      "parameters"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Chinchilla laws",
+      "Kaplan scaling",
+      "LLM scaling"
+    ]
+  },
+  {
+    "slug": "self-consistency",
+    "title": "Self-Consistency",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A reasoning trick where the model samples multiple chains of thought at nonzero temperature and picks the answer that appears most often.",
+    "existing_related_terms": [
+      "chain-of-thought",
+      "tree-of-thought",
+      "reasoning",
+      "temperature"
+    ],
+    "existing_related_tools": [
+      "langchain"
+    ],
+    "existing_code_example": "answers = []\nfor _ in range(10):\n    resp = llm.complete(prompt, temperature=0.7)\n    answers.append(extract_answer(resp))\nfinal = Counter(answers).most_common(1)[0][0]",
+    "existing_seo_variations": [
+      "majority voting",
+      "ensemble CoT"
+    ]
+  },
+  {
+    "slug": "sentiment-analysis",
+    "title": "Sentiment Analysis",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Classifying text by emotional tone — typically positive, negative, neutral — or by more fine-grained emotions or aspects.",
+    "existing_related_terms": [
+      "classification",
+      "nlp"
+    ],
+    "existing_related_tools": [
+      "huggingface-transformers",
+      "spacy"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "opinion mining",
+      "emotion classification"
+    ]
+  },
+  {
+    "slug": "speaker-diarization",
+    "title": "Diarization (Speaker Diarization)",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Determining 'who spoke when' in a recording — clustering speech segments by speaker identity without knowing speakers in advance.",
+    "existing_related_terms": [
+      "asr",
+      "whisper"
+    ],
+    "existing_related_tools": [
+      "pyannote-audio"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "speaker diarization",
+      "who spoke when"
+    ]
+  },
+  {
+    "slug": "summarization",
+    "title": "Summarization",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The task of producing a shorter version of a document that preserves the key information.",
+    "existing_related_terms": [
+      "text-generation",
+      "chain-of-density",
+      "rag"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "abstractive summarization",
+      "extractive summarization"
+    ]
+  },
+  {
+    "slug": "supervised-learning",
+    "title": "Supervised Learning",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Training a model on input-output pairs so it learns to predict the output given a new input.",
+    "existing_related_terms": [
+      "unsupervised-learning",
+      "classification",
+      "regression",
+      "sft"
+    ],
+    "existing_related_tools": [
+      "scikit-learn",
+      "pytorch"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "supervised ML",
+      "labeled learning"
+    ]
+  },
+  {
+    "slug": "system-prompt",
+    "title": "System Prompt",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Hidden instructions given to an AI before the conversation starts that shape its behavior and persona.",
+    "existing_related_terms": [
+      "prompt",
+      "few-shot-learning",
+      "chain-of-thought"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "test-data",
+    "title": "Test Data",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A held-out dataset used exactly once at the end of training to estimate a model's real-world performance.",
+    "existing_related_terms": [
+      "training-data",
+      "validation-data",
+      "benchmark-contamination",
+      "generalization"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "test set",
+      "holdout set"
+    ]
+  },
+  {
+    "slug": "test-time-compute",
+    "title": "Test-Time Compute",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "The paradigm of spending more compute at inference time — via longer chains of thought, best-of-N, tree search — to improve performance on hard tasks without retraining.",
+    "existing_related_terms": [
+      "reasoning",
+      "best-of-n",
+      "openai-o1"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "TTC",
+      "inference-time compute"
+    ]
+  },
+  {
+    "slug": "text-generation",
+    "title": "Text Generation",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The task of producing natural-language output from a model, one token at a time, conditioned on a prompt or context.",
+    "existing_related_terms": [
+      "sampling",
+      "inference",
+      "llm",
+      "streaming"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "llama.cpp",
+      "ollama"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM generation",
+      "autoregressive generation"
+    ]
+  },
+  {
+    "slug": "text-to-sql",
+    "title": "Text-to-SQL",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Translating natural-language questions into SQL queries against a known database schema — one of the oldest practical LLM use cases.",
+    "existing_related_terms": [
+      "rag",
+      "tool-use",
+      "structured-output"
+    ],
+    "existing_related_tools": [
+      "vanna-ai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "NL to SQL",
+      "SQL generation"
+    ]
+  },
+  {
+    "slug": "training-data",
+    "title": "Training Data",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The examples used to update a model's parameters during learning.",
+    "existing_related_terms": [
+      "dataset",
+      "data-augmentation",
+      "data-quality",
+      "validation-data"
+    ],
+    "existing_related_tools": [
+      "huggingface-datasets",
+      "dvc"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "train set",
+      "training set"
+    ]
+  },
+  {
+    "slug": "transfer-learning",
+    "title": "Transfer Learning",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Using a model trained on one task as a starting point for a different but related task instead of training from scratch.",
+    "existing_related_terms": [
+      "fine-tuning",
+      "pretraining",
+      "foundation-model",
+      "domain-adaptation"
+    ],
+    "existing_related_tools": [
+      "huggingface-transformers",
+      "pytorch"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "pretrained model",
+      "transfer"
+    ]
+  },
+  {
+    "slug": "tree-of-thought",
+    "title": "Tree of Thought",
+    "category": "concepts",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A reasoning strategy where the model explores a tree of intermediate thoughts, evaluating and backtracking, rather than following a single linear chain.",
+    "existing_related_terms": [
+      "chain-of-thought",
+      "self-consistency",
+      "reasoning"
+    ],
+    "existing_related_tools": [
+      "langchain",
+      "llamaindex"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ToT",
+      "tree-of-thought reasoning"
+    ]
+  },
+  {
+    "slug": "tts",
+    "title": "Text-to-Speech (TTS)",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Synthesizing natural-sounding speech from text — modern models include ElevenLabs, OpenAI TTS, Cartesia Sonic, XTTS, and open-source F5-TTS.",
+    "existing_related_terms": [
+      "whisper",
+      "voice-agent"
+    ],
+    "existing_related_tools": [
+      "elevenlabs",
+      "xtts",
+      "f5-tts"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "text to speech",
+      "neural TTS"
+    ]
+  },
+  {
+    "slug": "underfitting",
+    "title": "Underfitting",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "When a model is too simple to capture the structure of the data, so both training and validation performance are poor.",
+    "existing_related_terms": [
+      "overfitting",
+      "bias-variance-tradeoff",
+      "generalization"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "underfit",
+      "bias"
+    ]
+  },
+  {
+    "slug": "unsupervised-learning",
+    "title": "Unsupervised Learning",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Training on data with no labels — the model discovers structure, clusters, or a representation on its own.",
+    "existing_related_terms": [
+      "self-supervised-learning",
+      "clustering",
+      "dimensionality-reduction",
+      "representation-learning"
+    ],
+    "existing_related_tools": [
+      "scikit-learn"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "unsupervised ML",
+      "label-free learning"
+    ]
+  },
+  {
+    "slug": "validation-data",
+    "title": "Validation Data",
+    "category": "concepts",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A held-out subset of data used during training to tune hyperparameters and detect overfitting — never used for gradient updates.",
+    "existing_related_terms": [
+      "training-data",
+      "test-data",
+      "overfitting",
+      "early-stopping"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "dev set",
+      "validation set",
+      "val split"
+    ]
+  },
+  {
+    "slug": "vision-language-model",
+    "title": "Vision Language Model",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A multimodal model that understands both images and text in a single architecture, typically by projecting image features into the LLM's embedding space.",
+    "existing_related_terms": [
+      "multimodal",
+      "clip",
+      "vision-transformer",
+      "foundation-model"
+    ],
+    "existing_related_tools": [
+      "llava",
+      "qwen-vl",
+      "gpt-4o"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "VLM",
+      "image language model"
+    ]
+  },
+  {
+    "slug": "voice-activity-detection",
+    "title": "Voice Activity Detection (VAD)",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Detecting when speech is present in an audio stream — the trigger that tells voice agents when to start/stop listening.",
+    "existing_related_terms": [
+      "voice-agent",
+      "asr"
+    ],
+    "existing_related_tools": [
+      "silero-vad"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "VAD",
+      "voice activity"
+    ]
+  },
+  {
+    "slug": "voice-agent",
+    "title": "Voice Agent",
+    "category": "concepts",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An AI system that takes voice input and produces voice output in real time, often end-to-end through a multimodal LLM or via ASR → LLM → TTS pipeline.",
+    "existing_related_terms": [
+      "realtime-api",
+      "whisper",
+      "tts"
+    ],
+    "existing_related_tools": [
+      "livekit",
+      "pipecat",
+      "vapi"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AI voice agent",
+      "voice AI"
+    ]
+  }
+]

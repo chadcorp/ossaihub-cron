@@ -1,0 +1,1129 @@
+[
+  {
+    "slug": "bart",
+    "title": "BART",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Facebook AI's encoder-decoder transformer pretrained as a denoising autoencoder, strong on summarization and other seq2seq tasks.",
+    "existing_related_terms": [
+      "t5",
+      "encoder-decoder",
+      "transformer"
+    ],
+    "existing_related_tools": [
+      "huggingface-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "BART model"
+    ]
+  },
+  {
+    "slug": "base-model",
+    "title": "Base Model",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A pretrained LLM that has not undergone instruction tuning or alignment — it completes text but does not follow chat-style instructions.",
+    "existing_related_terms": [
+      "pretraining",
+      "instruction-tuning",
+      "foundation-model"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "base LLM",
+      "pretrained model"
+    ]
+  },
+  {
+    "slug": "bert",
+    "title": "BERT (Bidirectional Encoder Representations from Transformers)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Google's 2018 encoder-only transformer trained with masked language modeling — the foundation of most pre-2023 NLP pipelines.",
+    "existing_related_terms": [
+      "transformer",
+      "encoder",
+      "embedding"
+    ],
+    "existing_related_tools": [
+      "huggingface-transformers",
+      "sentence-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "BERT model",
+      "bidirectional BERT"
+    ]
+  },
+  {
+    "slug": "bge-embeddings",
+    "title": "BGE Embeddings",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "BAAI's BGE (BAAI General Embedding) family — strong open-weights text embedding models, now including multilingual and multi-functional variants.",
+    "existing_related_terms": [
+      "embedding-model",
+      "nomic-embed",
+      "mteb"
+    ],
+    "existing_related_tools": [
+      "sentence-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "BGE-M3",
+      "BAAI embeddings"
+    ]
+  },
+  {
+    "slug": "bitnet",
+    "title": "BitNet (1.58-bit Models)",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Microsoft's research line on LLMs with ternary weights ({-1, 0, +1}) trained with QAT, achieving near-parity with bf16 at a fraction of memory and inference cost.",
+    "existing_related_terms": [
+      "qat",
+      "quantization"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "BitNet 1.58",
+      "ternary LLM"
+    ]
+  },
+  {
+    "slug": "chat-model",
+    "title": "Chat Model (Instruct Model)",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A base model that has been post-trained (SFT + preference optimization) to follow instructions and hold conversations.",
+    "existing_related_terms": [
+      "base-model",
+      "instruction-tuning",
+      "chat-template"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "instruct model",
+      "chat tuned model"
+    ]
+  },
+  {
+    "slug": "claude",
+    "title": "Claude (Model Family)",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Anthropic's closed LLM family — Haiku, Sonnet, Opus variants across Claude 2, 3, 3.5, and 4 — known for strong writing quality, safety training, and agentic capability.",
+    "existing_related_terms": [
+      "gpt",
+      "gemini",
+      "constitutional-ai",
+      "foundation-model"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Claude Sonnet",
+      "Claude Opus",
+      "Anthropic Claude"
+    ]
+  },
+  {
+    "slug": "clip",
+    "title": "CLIP (Contrastive Language-Image Pretraining)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "OpenAI's model that embeds images and text into a shared space via contrastive learning on 400M image-caption pairs — the backbone of most modern VLMs and image search.",
+    "existing_related_terms": [
+      "multimodal",
+      "vision-language-model",
+      "embedding"
+    ],
+    "existing_related_tools": [
+      "open_clip",
+      "sentence-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "CLIP embeddings",
+      "image-text model"
+    ]
+  },
+  {
+    "slug": "codellama",
+    "title": "CodeLlama",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Meta's code specialization of Llama 2, fine-tuned on 500B+ code tokens with long-context and infilling support.",
+    "existing_related_terms": [
+      "llama",
+      "starcoder",
+      "fill-in-the-middle"
+    ],
+    "existing_related_tools": [
+      "continue",
+      "llama.cpp"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Code Llama",
+      "Meta CodeLlama"
+    ]
+  },
+  {
+    "slug": "command-r",
+    "title": "Command R (Cohere)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Cohere's open-weights LLM family (Command R and R+), tuned for enterprise use with strong RAG, tool use, and multilingual support.",
+    "existing_related_terms": [
+      "rag",
+      "tool-use",
+      "llama"
+    ],
+    "existing_related_tools": [
+      "cohere"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Command R+",
+      "Cohere Command"
+    ]
+  },
+  {
+    "slug": "decoder",
+    "title": "Decoder",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A model (or half) that generates tokens autoregressively, using causal attention so each token sees only previous tokens — the whole of GPT-family models.",
+    "existing_related_terms": [
+      "encoder",
+      "transformer",
+      "gpt"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "decoder-only",
+      "causal LM"
+    ]
+  },
+  {
+    "slug": "deepseek",
+    "title": "DeepSeek (Model Family)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A Chinese lab's open-weights MoE and dense models — DeepSeek V2, V3, R1 — notable for strong reasoning and very low training cost.",
+    "existing_related_terms": [
+      "reasoning",
+      "mixture-of-experts",
+      "process-reward-model"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "ollama"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "DeepSeek V3",
+      "DeepSeek R1"
+    ]
+  },
+  {
+    "slug": "deepseek-coder",
+    "title": "DeepSeek Coder",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "DeepSeek's code-specialist LLM family with strong completion, infilling, and long-context performance on programming benchmarks.",
+    "existing_related_terms": [
+      "codellama",
+      "starcoder",
+      "deepseek"
+    ],
+    "existing_related_tools": [
+      "continue",
+      "tabby"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "DeepSeek Coder V2"
+    ]
+  },
+  {
+    "slug": "deepseek-r1",
+    "title": "DeepSeek R1",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "DeepSeek's open-weights reasoning model that achieved OpenAI o1-level performance using large-scale RL on a MoE base, released early 2025.",
+    "existing_related_terms": [
+      "deepseek",
+      "reasoning",
+      "mixture-of-experts"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "ollama"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "R1 reasoning",
+      "DeepSeek reasoning model"
+    ]
+  },
+  {
+    "slug": "detr",
+    "title": "DETR (Detection Transformer)",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An end-to-end object detector that replaces hand-crafted anchor boxes and NMS with a transformer decoder and bipartite matching.",
+    "existing_related_terms": [
+      "yolo",
+      "transformer",
+      "computer-vision"
+    ],
+    "existing_related_tools": [
+      "detectron2"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "DETR detection",
+      "Detection Transformer"
+    ]
+  },
+  {
+    "slug": "diffusion",
+    "title": "Diffusion Model",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A generative modeling approach that learns to reverse a gradual noising process, producing samples from pure noise in a series of denoising steps.",
+    "existing_related_terms": [
+      "stable-diffusion",
+      "latent-space",
+      "generator"
+    ],
+    "existing_related_tools": [
+      "diffusers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "diffusion model",
+      "denoising diffusion"
+    ]
+  },
+  {
+    "slug": "dinov2",
+    "title": "DINOv2 (Self-Supervised Vision)",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Meta's self-supervised vision transformer that produces strong image features without any labels — the state-of-the-art self-supervised vision backbone.",
+    "existing_related_terms": [
+      "clip",
+      "vision-transformer",
+      "foundation-model"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "DINOv2 ViT",
+      "self-supervised vision"
+    ]
+  },
+  {
+    "slug": "embedding-model",
+    "title": "Embedding Model",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A model that maps text, images, or other inputs into fixed-size dense vectors where semantic similarity corresponds to vector proximity.",
+    "existing_related_terms": [
+      "embedding",
+      "cosine-similarity",
+      "vector-database"
+    ],
+    "existing_related_tools": [
+      "sentence-transformers",
+      "openai",
+      "cohere"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "embeddings model",
+      "text embedding model"
+    ]
+  },
+  {
+    "slug": "encoder",
+    "title": "Encoder",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A model (or model half) that transforms input tokens into contextualized representations — the bidirectional half of encoder-decoder and the whole of BERT-style models.",
+    "existing_related_terms": [
+      "decoder",
+      "encoder-decoder",
+      "transformer"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "encoder model",
+      "BERT encoder"
+    ]
+  },
+  {
+    "slug": "encoder-decoder",
+    "title": "Encoder-Decoder",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An architecture with a bidirectional encoder that reads the input and a causal decoder that generates the output, bridged by cross-attention.",
+    "existing_related_terms": [
+      "encoder",
+      "decoder",
+      "transformer"
+    ],
+    "existing_related_tools": [
+      "huggingface-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "seq2seq",
+      "encoder decoder model"
+    ]
+  },
+  {
+    "slug": "falcon",
+    "title": "Falcon (Model Family)",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "TII's (UAE) open-weights LLM family — Falcon 7B/40B/180B, then Falcon 2 and Falcon 3 — one of the early strong open alternatives to Llama.",
+    "existing_related_terms": [
+      "llama",
+      "mistral",
+      "foundation-model"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "huggingface-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Falcon 180B",
+      "TII Falcon"
+    ]
+  },
+  {
+    "slug": "flux",
+    "title": "Flux (Black Forest Labs)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Black Forest Labs' open-weights text-to-image diffusion transformer family — FLUX.1 [dev], [pro], [schnell] — pushing open image quality past SDXL.",
+    "existing_related_terms": [
+      "stable-diffusion",
+      "diffusion",
+      "foundation-model"
+    ],
+    "existing_related_tools": [
+      "comfyui",
+      "diffusers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "FLUX.1",
+      "Black Forest Labs"
+    ]
+  },
+  {
+    "slug": "foundation-model",
+    "title": "Foundation Model",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A large model trained on broad data that can be adapted to many downstream tasks — the base layer upon which instruction-tuned and task-specific models are built.",
+    "existing_related_terms": [
+      "llm",
+      "fine-tuning",
+      "sft",
+      "rlhf",
+      "base-vs-instruct"
+    ],
+    "existing_related_tools": [
+      "llama",
+      "deepseek-v3",
+      "mistral",
+      "qwen"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "foundation model",
+      "base model",
+      "pre-trained model"
+    ]
+  },
+  {
+    "slug": "frontier-reasoning",
+    "title": "OpenAI o4 / Frontier Reasoning",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "The post-o1 reasoning-model lineage (o3, o4-mini, o4, and beyond) representing the cutting edge of LLM reasoning via RL on verifiable tasks and extended test-time compute.",
+    "existing_related_terms": [
+      "openai-o1",
+      "deepseek-r1",
+      "reasoning",
+      "process-reward-model"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "o3 reasoning",
+      "frontier reasoning models"
+    ]
+  },
+  {
+    "slug": "gemini",
+    "title": "Gemini (Model Family)",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Google DeepMind's closed multimodal LLM family — Gemini Pro, Ultra, Flash, Nano — with strong long-context and image/video/audio understanding.",
+    "existing_related_terms": [
+      "gpt",
+      "claude",
+      "foundation-model",
+      "multimodal"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Gemini Pro",
+      "Google Gemini"
+    ]
+  },
+  {
+    "slug": "gemma",
+    "title": "Gemma (Model Family)",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Google's open-weights models (Gemma 1, 2, 3) derived from the same research as Gemini, sized from 1B to 27B with strong quality-per-parameter.",
+    "existing_related_terms": [
+      "llama",
+      "qwen",
+      "foundation-model"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "llama.cpp"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Gemma 2",
+      "Google Gemma"
+    ]
+  },
+  {
+    "slug": "gpt",
+    "title": "GPT (Generative Pre-trained Transformer)",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The decoder-only transformer architecture and OpenAI model family that established modern autoregressive LLMs as the dominant paradigm.",
+    "existing_related_terms": [
+      "transformer",
+      "llm",
+      "foundation-model"
+    ],
+    "existing_related_tools": [
+      "openai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "GPT architecture",
+      "OpenAI GPT"
+    ]
+  },
+  {
+    "slug": "granite",
+    "title": "Granite (IBM Model Family)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "IBM's open-weights LLMs designed for enterprise governance — known training data, clear provenance, and Apache 2.0 licensing.",
+    "existing_related_terms": [
+      "llama",
+      "foundation-model"
+    ],
+    "existing_related_tools": [
+      "watsonx"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "IBM Granite",
+      "Granite 3"
+    ]
+  },
+  {
+    "slug": "jamba",
+    "title": "Jamba (Hybrid Mamba-Transformer)",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "AI21 Labs' hybrid architecture interleaving Mamba and transformer attention layers, supporting 256k+ context with strong throughput.",
+    "existing_related_terms": [
+      "mamba",
+      "transformer",
+      "mixture-of-experts"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Jamba model",
+      "AI21 Jamba"
+    ]
+  },
+  {
+    "slug": "llama",
+    "title": "Llama (Model Family)",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Meta's open-weights LLM family — Llama, Llama 2, Llama 3, Llama 4 — that defined the open-source frontier since 2023.",
+    "existing_related_terms": [
+      "mistral",
+      "qwen",
+      "foundation-model",
+      "gguf"
+    ],
+    "existing_related_tools": [
+      "llama.cpp",
+      "ollama"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLaMA",
+      "Llama 3",
+      "Meta Llama"
+    ]
+  },
+  {
+    "slug": "llava",
+    "title": "LLaVA",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open-source vision-language model family that glues a CLIP/SigLIP vision encoder onto an LLM via a lightweight projection layer, with instruction tuning on image-text pairs.",
+    "existing_related_terms": [
+      "vision-language-model",
+      "clip",
+      "siglip",
+      "multimodal"
+    ],
+    "existing_related_tools": [
+      "llava",
+      "vllm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLaVA model",
+      "vision instruction tuning"
+    ]
+  },
+  {
+    "slug": "llm",
+    "title": "LLM (Large Language Model)",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "An AI that reads and generates human text — it's the brain behind ChatGPT, Claude, and most AI tools you've heard of.",
+    "existing_related_terms": [
+      "prompt",
+      "token",
+      "context-window",
+      "hallucination",
+      "fine-tuning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "mamba",
+    "title": "Mamba (State Space Model)",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An LLM architecture based on selective state-space models instead of attention, with linear-time inference and strong long-context performance.",
+    "existing_related_terms": [
+      "transformer",
+      "attention",
+      "foundation-model"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Mamba model",
+      "state space LLM"
+    ]
+  },
+  {
+    "slug": "mistral",
+    "title": "Mistral (Model Family)",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Mistral AI's open-weights models — Mistral 7B, Mixtral 8x7B, Mixtral 8x22B, Mistral Large, Ministral — known for efficiency and MoE pioneering.",
+    "existing_related_terms": [
+      "mixture-of-experts",
+      "sliding-window-attention",
+      "llama"
+    ],
+    "existing_related_tools": [
+      "llama.cpp",
+      "vllm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Mistral AI",
+      "Mixtral"
+    ]
+  },
+  {
+    "slug": "mixtral",
+    "title": "Mixtral",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Mistral's mixture-of-experts models — 8×7B and 8×22B — with total parameters of 46B and 141B but only ~13B and ~39B active per token.",
+    "existing_related_terms": [
+      "mistral",
+      "mixture-of-experts",
+      "moe-routing"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "llama.cpp"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Mixtral 8x7B",
+      "Mixtral MoE"
+    ]
+  },
+  {
+    "slug": "mixture-of-experts",
+    "title": "Mixture of Experts (MoE)",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An architecture that activates only a small subset of the model's total parameters per token, giving you a big model's quality at a small model's compute cost.",
+    "existing_related_terms": [
+      "parameters",
+      "inference",
+      "transformer"
+    ],
+    "existing_related_tools": [
+      "mixtral",
+      "deepseek-v3",
+      "llama-4-maverick",
+      "vllm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MoE",
+      "Mixture of Experts",
+      "sparse model"
+    ]
+  },
+  {
+    "slug": "nomic-embed",
+    "title": "Nomic Embed",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Nomic AI's open-weights text embedding models with fully reproducible training (open data + open code) and strong MTEB performance.",
+    "existing_related_terms": [
+      "embedding-model",
+      "bge-embeddings",
+      "mteb"
+    ],
+    "existing_related_tools": [
+      "sentence-transformers",
+      "nomic"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Nomic embed",
+      "open embeddings"
+    ]
+  },
+  {
+    "slug": "openai-o1",
+    "title": "OpenAI o1 / o3 (Reasoning Models)",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "OpenAI's first public reasoning models (o1 series, late 2024; o3 series, 2025) that trade extra inference-time 'thinking' for sharply better performance on hard tasks.",
+    "existing_related_terms": [
+      "reasoning",
+      "chain-of-thought",
+      "test-time-compute"
+    ],
+    "existing_related_tools": [
+      "openai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "o1 model",
+      "OpenAI reasoning"
+    ]
+  },
+  {
+    "slug": "parameters",
+    "title": "Parameters (Model Size)",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The numbers inside an AI model that were learned during training — more parameters generally means smarter but slower.",
+    "existing_related_terms": [
+      "quantization",
+      "vram",
+      "gguf"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "phi",
+    "title": "Phi (Small Language Model Family)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Microsoft's small language models — Phi-2, Phi-3, Phi-4 — demonstrating that carefully curated 'textbook-quality' data can make sub-10B models competitive with much larger ones.",
+    "existing_related_terms": [
+      "llama",
+      "synthetic-data",
+      "foundation-model"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Phi-3",
+      "Microsoft Phi"
+    ]
+  },
+  {
+    "slug": "qwen",
+    "title": "Qwen (Model Family)",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Alibaba's open-weights LLM family — Qwen, Qwen2, Qwen2.5, Qwen3 — strong on multilingual tasks, code, math, and agentic capabilities.",
+    "existing_related_terms": [
+      "llama",
+      "mistral",
+      "foundation-model"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "llama.cpp"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Qwen2.5",
+      "Qwen LLM",
+      "Alibaba Qwen"
+    ]
+  },
+  {
+    "slug": "qwen-coder",
+    "title": "Qwen Coder",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Alibaba's code-specialist variant of Qwen, strong on repo-level context, agentic code tasks, and multilingual programming.",
+    "existing_related_terms": [
+      "qwen",
+      "codellama",
+      "deepseek-coder"
+    ],
+    "existing_related_tools": [
+      "continue"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Qwen2.5-Coder"
+    ]
+  },
+  {
+    "slug": "reasoning-model",
+    "title": "Reasoning Model (Category)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An LLM specifically trained (usually via RL) to produce extended internal reasoning before answering, excelling at math, coding, and scientific problems.",
+    "existing_related_terms": [
+      "openai-o1",
+      "deepseek-r1",
+      "test-time-compute"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "reasoning LLM",
+      "thinking model"
+    ]
+  },
+  {
+    "slug": "roberta",
+    "title": "RoBERTa",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A robustly optimized BERT — same architecture, different pretraining recipe — that dropped NSP, trained longer on more data, and consistently outperforms BERT on classification tasks.",
+    "existing_related_terms": [
+      "bert",
+      "deberta",
+      "transformer"
+    ],
+    "existing_related_tools": [
+      "huggingface-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "RoBERTa model"
+    ]
+  },
+  {
+    "slug": "rwkv",
+    "title": "RWKV",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A linear-attention RNN-transformer hybrid that trains like a transformer but runs inference like an RNN, with linear-time generation.",
+    "existing_related_terms": [
+      "mamba",
+      "state-space-model",
+      "transformer"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "RWKV model",
+      "RNN transformer"
+    ]
+  },
+  {
+    "slug": "sam",
+    "title": "SAM (Segment Anything Model)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Meta's foundation model for promptable image segmentation — given a point, box, or mask, it produces a precise object mask zero-shot.",
+    "existing_related_terms": [
+      "foundation-model",
+      "computer-vision"
+    ],
+    "existing_related_tools": [
+      "segment-anything"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SAM model",
+      "Segment Anything"
+    ]
+  },
+  {
+    "slug": "siglip",
+    "title": "SigLIP",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Google's CLIP successor that replaces the softmax contrastive loss with a sigmoid loss, improving scaling and quality especially for smaller batches.",
+    "existing_related_terms": [
+      "clip",
+      "vision-language-model",
+      "contrastive-learning"
+    ],
+    "existing_related_tools": [
+      "open_clip"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SigLIP model",
+      "sigmoid CLIP"
+    ]
+  },
+  {
+    "slug": "sora",
+    "title": "Sora (Video Generation)",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "OpenAI's text-to-video diffusion-transformer model (announced Feb 2024, public 2024), generating coherent multi-second HD video from text prompts.",
+    "existing_related_terms": [
+      "diffusion",
+      "veo",
+      "foundation-model"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Sora model",
+      "OpenAI video"
+    ]
+  },
+  {
+    "slug": "stable-diffusion",
+    "title": "Stable Diffusion",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Stability AI's open-weights latent-diffusion text-to-image model family (SD 1.5, SDXL, SD3) that democratized generative imagery.",
+    "existing_related_terms": [
+      "diffusion",
+      "latent-space",
+      "foundation-model"
+    ],
+    "existing_related_tools": [
+      "automatic1111",
+      "comfyui",
+      "diffusers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SD",
+      "SDXL",
+      "Stable Diffusion 3"
+    ]
+  },
+  {
+    "slug": "starcoder",
+    "title": "StarCoder (Code Model)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "BigCode's open-source code LLM family trained on permissively licensed GitHub data, with strong code completion and repo-level context.",
+    "existing_related_terms": [
+      "codellama",
+      "fill-in-the-middle",
+      "llm"
+    ],
+    "existing_related_tools": [
+      "continue",
+      "tabby"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "StarCoder 2",
+      "BigCode"
+    ]
+  },
+  {
+    "slug": "state-space-model",
+    "title": "State Space Model",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A sequence-model class that processes tokens through a linear recurrence with a learned hidden state, enabling linear-time inference.",
+    "existing_related_terms": [
+      "mamba",
+      "transformer",
+      "attention"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SSM",
+      "selective state space"
+    ]
+  },
+  {
+    "slug": "t5",
+    "title": "T5 (Text-to-Text Transfer Transformer)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Google's encoder-decoder model that frames every NLP task — classification, translation, summarization — as text-to-text generation.",
+    "existing_related_terms": [
+      "transformer",
+      "encoder-decoder",
+      "bart"
+    ],
+    "existing_related_tools": [
+      "huggingface-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "T5 model",
+      "text-to-text transformer"
+    ]
+  },
+  {
+    "slug": "transformer",
+    "title": "Transformer",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "The neural network architecture that powers almost every modern AI model — it's the 'T' in GPT and BERT.",
+    "existing_related_terms": [
+      "llm",
+      "parameters",
+      "embedding"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "veo",
+    "title": "Veo (Google Video Model)",
+    "category": "models",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Google DeepMind's text-to-video generation model (Veo 1, Veo 2, Veo 3) — strong on cinematic quality, motion, and prompt adherence.",
+    "existing_related_terms": [
+      "sora",
+      "diffusion",
+      "multimodal"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Google Veo",
+      "Veo 3"
+    ]
+  },
+  {
+    "slug": "vision-transformer",
+    "title": "Vision Transformer (ViT)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A transformer architecture that treats image patches as tokens, replacing CNNs as the dominant backbone for large-scale vision models.",
+    "existing_related_terms": [
+      "transformer",
+      "clip",
+      "vision-language-model"
+    ],
+    "existing_related_tools": [
+      "huggingface-transformers",
+      "timm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ViT",
+      "vision transformer"
+    ]
+  },
+  {
+    "slug": "whisper",
+    "title": "Whisper (Speech Recognition)",
+    "category": "models",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "OpenAI's open-weight speech-to-text model family, trained on 680k hours of multilingual audio, with strong robustness to noise and accents.",
+    "existing_related_terms": [
+      "foundation-model",
+      "multimodal"
+    ],
+    "existing_related_tools": [
+      "whisper.cpp",
+      "faster-whisper"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "OpenAI Whisper",
+      "Whisper ASR"
+    ]
+  },
+  {
+    "slug": "yolo",
+    "title": "YOLO (You Only Look Once)",
+    "category": "models",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A family of real-time object detection models — YOLOv1 through YOLO11 — that perform detection in a single forward pass for high FPS inference.",
+    "existing_related_terms": [
+      "computer-vision",
+      "detr",
+      "sam"
+    ],
+    "existing_related_tools": [
+      "ultralytics"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "YOLOv8",
+      "YOLO11",
+      "real-time detection"
+    ]
+  }
+]

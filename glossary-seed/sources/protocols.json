@@ -1,0 +1,715 @@
+[
+  {
+    "slug": "a2a-protocol",
+    "title": "A2A (Agent-to-Agent Protocol)",
+    "category": "protocols",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Google's open protocol (announced 2025) for agents from different vendors to discover, authenticate, and exchange tasks.",
+    "existing_related_terms": [
+      "mcp",
+      "agent-protocol"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "A2A",
+      "Agent2Agent"
+    ]
+  },
+  {
+    "slug": "admin-api",
+    "title": "Admin API (OpenAI / Anthropic)",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Management APIs for LLM providers that handle projects, teams, API keys, usage limits, and billing — separate from inference APIs.",
+    "existing_related_terms": [
+      "llm-gateway",
+      "rate-limit"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "OpenAI Admin API"
+    ]
+  },
+  {
+    "slug": "agent-card",
+    "title": "Agent Card",
+    "category": "protocols",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A JSON document that describes an agent's capabilities, auth, and endpoints in the A2A protocol — discoverable at a well-known URL.",
+    "existing_related_terms": [
+      "a2a-protocol",
+      "openapi-tool-binding"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "agent.json",
+      "well-known agent"
+    ]
+  },
+  {
+    "slug": "anthropic-prompt-caching",
+    "title": "Anthropic API Prompt Caching",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Claude's explicit prompt-caching mechanism — mark specific content blocks with cache_control and pay a reduced rate on subsequent calls with matching prefixes.",
+    "existing_related_terms": [
+      "prompt-caching",
+      "messages-api"
+    ],
+    "existing_related_tools": [
+      "anthropic"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Claude caching",
+      "cache_control"
+    ]
+  },
+  {
+    "slug": "api",
+    "title": "API",
+    "category": "protocols",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A way for software to talk to other software — in AI, it's how you send prompts to a model and get responses back programmatically.",
+    "existing_related_terms": [
+      "function-calling",
+      "mcp",
+      "inference",
+      "local-vs-cloud"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "assistants-api",
+    "title": "Assistants API (OpenAI)",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "OpenAI's stateful API (predecessor to Responses API) for building assistants with persistent threads, file search, and code interpreter.",
+    "existing_related_terms": [
+      "responses-api",
+      "chat-completions-api",
+      "openai-api"
+    ],
+    "existing_related_tools": [
+      "openai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "OpenAI Assistants"
+    ]
+  },
+  {
+    "slug": "batch-api",
+    "title": "Batch API",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An async LLM API that accepts a file of requests, processes them offline within 24 hours, and returns results — typically at ~50% cost of sync.",
+    "existing_related_terms": [
+      "chat-completions-api",
+      "messages-api"
+    ],
+    "existing_related_tools": [
+      "openai",
+      "anthropic"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "OpenAI Batch API",
+      "LLM batch"
+    ]
+  },
+  {
+    "slug": "chat-completions-api",
+    "title": "Chat Completions API",
+    "category": "protocols",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The OpenAI-style API format for chat-based LLM calls — a list of role-tagged messages in, a new assistant message out.",
+    "existing_related_terms": [
+      "responses-api",
+      "openai-api",
+      "completions-api"
+    ],
+    "existing_related_tools": [
+      "openai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "chat API",
+      "ChatCompletion"
+    ]
+  },
+  {
+    "slug": "embeddings-api",
+    "title": "Embeddings API",
+    "category": "protocols",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The API endpoint provided by LLM vendors for converting text (and increasingly images) to vector embeddings for search, classification, and clustering.",
+    "existing_related_terms": [
+      "embedding-model",
+      "embedding",
+      "rag"
+    ],
+    "existing_related_tools": [
+      "openai",
+      "cohere"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "text embeddings API",
+      "vector API"
+    ]
+  },
+  {
+    "slug": "grpc",
+    "title": "gRPC (LLM Serving)",
+    "category": "protocols",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A high-performance RPC framework using HTTP/2 and protobuf — common for internal LLM serving where JSON overhead matters.",
+    "existing_related_terms": [
+      "server-sent-events",
+      "triton-server"
+    ],
+    "existing_related_tools": [
+      "triton-server"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "gRPC inference"
+    ]
+  },
+  {
+    "slug": "json-schema-enforcement",
+    "title": "JSON Schema Enforcement",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Provider-side feature where the LLM's output is guaranteed to validate against a supplied JSON schema — no post-parsing retries needed.",
+    "existing_related_terms": [
+      "structured-output",
+      "constrained-decoding",
+      "strict-mode"
+    ],
+    "existing_related_tools": [
+      "openai",
+      "outlines"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "strict JSON",
+      "schema-guided output"
+    ]
+  },
+  {
+    "slug": "litellm",
+    "title": "LiteLLM",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open-source Python SDK and gateway that wraps 100+ LLM providers behind an OpenAI-compatible interface.",
+    "existing_related_terms": [
+      "llm-gateway",
+      "openai-api"
+    ],
+    "existing_related_tools": [
+      "litellm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LiteLLM proxy"
+    ]
+  },
+  {
+    "slug": "llm-gateway",
+    "title": "LLM Gateway",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A middleware layer between applications and LLM providers that handles routing, caching, retries, cost tracking, and model fallback.",
+    "existing_related_terms": [
+      "semantic-caching",
+      "rate-limit",
+      "llm-observability"
+    ],
+    "existing_related_tools": [
+      "litellm",
+      "portkey",
+      "helicone"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AI gateway",
+      "LLM proxy"
+    ]
+  },
+  {
+    "slug": "mcp",
+    "title": "MCP (Model Context Protocol)",
+    "category": "protocols",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An open standard that lets AI assistants connect to external tools and data sources in a standardized way.",
+    "existing_related_terms": [
+      "ai-agent",
+      "function-calling",
+      "api"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "mcp-client",
+    "title": "MCP Client",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An application that connects to MCP servers and exposes their resources, prompts, and tools to an LLM for use during a session.",
+    "existing_related_terms": [
+      "mcp",
+      "mcp-server",
+      "mcp-tools"
+    ],
+    "existing_related_tools": [
+      "mcp",
+      "claude-code"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MCP client"
+    ]
+  },
+  {
+    "slug": "mcp-prompts",
+    "title": "MCP Prompts",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Reusable prompt templates MCP servers expose, often surfaced in client UIs as slash-commands or workflow starters.",
+    "existing_related_terms": [
+      "mcp",
+      "mcp-server",
+      "system-prompt"
+    ],
+    "existing_related_tools": [
+      "mcp"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MCP prompt"
+    ]
+  },
+  {
+    "slug": "mcp-resources",
+    "title": "MCP Resources",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Read-only context MCP servers expose to LLMs — files, database rows, API responses — identified by URI.",
+    "existing_related_terms": [
+      "mcp",
+      "mcp-server",
+      "rag"
+    ],
+    "existing_related_tools": [
+      "mcp"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MCP resource"
+    ]
+  },
+  {
+    "slug": "mcp-sampling",
+    "title": "MCP Sampling",
+    "category": "protocols",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An MCP feature that lets a server request LLM completions through the client, so server authors can build LLM-backed workflows without bundling a model.",
+    "existing_related_terms": [
+      "mcp",
+      "mcp-server",
+      "mcp-client"
+    ],
+    "existing_related_tools": [
+      "mcp"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MCP server sampling"
+    ]
+  },
+  {
+    "slug": "mcp-server",
+    "title": "MCP Server",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A program that implements the Model Context Protocol server interface, exposing resources, prompts, and tools for MCP-compatible LLM clients to consume.",
+    "existing_related_terms": [
+      "mcp",
+      "mcp-client",
+      "mcp-tools",
+      "mcp-resources"
+    ],
+    "existing_related_tools": [
+      "mcp"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MCP server",
+      "Model Context Protocol server"
+    ]
+  },
+  {
+    "slug": "mcp-tools",
+    "title": "MCP Tools",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Executable actions an MCP server exposes to LLMs — the subset of MCP capabilities meant for side-effecting or interactive operations.",
+    "existing_related_terms": [
+      "mcp",
+      "mcp-server",
+      "function-calling"
+    ],
+    "existing_related_tools": [
+      "mcp"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MCP tool definition"
+    ]
+  },
+  {
+    "slug": "messages-api",
+    "title": "Messages API (Anthropic)",
+    "category": "protocols",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Anthropic's native API format for Claude — a messages array plus a separate system field, distinct from OpenAI's chat completions format.",
+    "existing_related_terms": [
+      "chat-completions-api",
+      "anthropic"
+    ],
+    "existing_related_tools": [
+      "anthropic"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Anthropic Messages",
+      "Claude API"
+    ]
+  },
+  {
+    "slug": "openai-batch",
+    "title": "OpenAI Batch API (Reprise)",
+    "category": "protocols",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "OpenAI's 50%-discounted asynchronous API for dataset-scale jobs — submit a JSONL file, retrieve results within 24 hours.",
+    "existing_related_terms": [
+      "batch-api",
+      "embeddings-api"
+    ],
+    "existing_related_tools": [
+      "openai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "OpenAI batch"
+    ]
+  },
+  {
+    "slug": "openapi-tool-binding",
+    "title": "OpenAPI Tool Binding",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Automatically generating LLM-callable tool definitions from an OpenAPI (Swagger) specification — an instant way to expose a REST API to agents.",
+    "existing_related_terms": [
+      "function-calling",
+      "mcp-tools",
+      "tool-use"
+    ],
+    "existing_related_tools": [
+      "langchain"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "OpenAPI function calling",
+      "swagger to tools"
+    ]
+  },
+  {
+    "slug": "parallel-function-calling",
+    "title": "Function Calling (Parallel)",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "LLM feature where the model emits multiple tool calls in a single response, to be executed concurrently by the client.",
+    "existing_related_terms": [
+      "function-calling",
+      "tool-use",
+      "tool-choice"
+    ],
+    "existing_related_tools": [
+      "openai",
+      "anthropic"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "parallel tools",
+      "batch function calls"
+    ]
+  },
+  {
+    "slug": "prompt-caching",
+    "title": "Prompt Caching (API)",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Reusing the computed KV cache of a shared prompt prefix across multiple API calls, cutting cost and latency for repeated context.",
+    "existing_related_terms": [
+      "kv-cache",
+      "inference",
+      "semantic-caching"
+    ],
+    "existing_related_tools": [
+      "anthropic",
+      "openai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "cache_control",
+      "LLM prefix caching"
+    ]
+  },
+  {
+    "slug": "rate-limit",
+    "title": "Rate Limit (LLM APIs)",
+    "category": "protocols",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Provider-enforced caps on request frequency and total tokens per minute or day, controlling cost and protecting infrastructure.",
+    "existing_related_terms": [
+      "llm-gateway",
+      "batch-api"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM rate limit",
+      "429 error"
+    ]
+  },
+  {
+    "slug": "realtime-api",
+    "title": "Realtime API (OpenAI)",
+    "category": "protocols",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "OpenAI's WebSocket-based API for speech-in, speech-out conversations with sub-second latency and native turn-taking / interruption.",
+    "existing_related_terms": [
+      "websockets-llm",
+      "streaming",
+      "voice-agent"
+    ],
+    "existing_related_tools": [
+      "openai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Realtime voice API"
+    ]
+  },
+  {
+    "slug": "responses-api",
+    "title": "Responses API (OpenAI)",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "OpenAI's newer stateful API for multi-turn interactions, tool use, and reasoning — a superset of the Chat Completions format.",
+    "existing_related_terms": [
+      "chat-completions-api",
+      "assistants-api",
+      "openai-api"
+    ],
+    "existing_related_tools": [
+      "openai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "OpenAI Responses"
+    ]
+  },
+  {
+    "slug": "responses-api-reasoning",
+    "title": "Responses API Reasoning (OpenAI)",
+    "category": "protocols",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "OpenAI's Responses API surface for reasoning models — provides reasoning_effort control, persistent reasoning summaries, and tool-use integration.",
+    "existing_related_terms": [
+      "responses-api",
+      "openai-o1",
+      "reasoning"
+    ],
+    "existing_related_tools": [
+      "openai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Responses API reasoning"
+    ]
+  },
+  {
+    "slug": "server-sent-events",
+    "title": "Server-Sent Events (SSE)",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An HTTP standard for streaming updates from server to client over a long-lived connection — the transport LLM APIs use for token streaming.",
+    "existing_related_terms": [
+      "streaming",
+      "websockets",
+      "grpc"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SSE streaming",
+      "HTTP streaming"
+    ]
+  },
+  {
+    "slug": "streaming",
+    "title": "Streaming (Token Streaming)",
+    "category": "protocols",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Returning model output token-by-token as it's generated, instead of waiting for the full response — dramatically improves perceived responsiveness in chat UIs.",
+    "existing_related_terms": [
+      "inference",
+      "context-window",
+      "tool-use"
+    ],
+    "existing_related_tools": [
+      "openai",
+      "anthropic",
+      "vercel-ai-sdk",
+      "vllm"
+    ],
+    "existing_code_example": "# Streaming in OpenAI\nstream = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=msgs,\n    stream=True,\n    stream_options={'include_usage': True},\n)\nfor chunk in stream:\n    if chunk.choices and chunk.choices[0].delta.content:\n        print(chunk.choices[0].delta.content, end='', flush=True)\n    if chunk.usage:\n        print(f'\\nTokens: {chunk.usage.total_tokens}')",
+    "existing_seo_variations": [
+      "streaming LLM",
+      "token streaming",
+      "SSE streaming"
+    ]
+  },
+  {
+    "slug": "strict-mode",
+    "title": "Strict Mode (OpenAI)",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "OpenAI's enforcement flag for function calling and JSON schema that guarantees output exactly matches the schema, at the cost of reduced vocabulary flexibility.",
+    "existing_related_terms": [
+      "json-schema-enforcement",
+      "structured-output"
+    ],
+    "existing_related_tools": [
+      "openai"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "strict JSON mode"
+    ]
+  },
+  {
+    "slug": "structured-output",
+    "title": "Structured Output (JSON Mode)",
+    "category": "protocols",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Forcing an LLM to output valid JSON (or another strict format) that matches a schema — the reliable way to integrate LLMs into deterministic pipelines.",
+    "existing_related_terms": [
+      "function-calling",
+      "tool-use",
+      "json-schema",
+      "guardrails"
+    ],
+    "existing_related_tools": [
+      "instructor",
+      "outlines",
+      "guidance",
+      "guardrails-ai"
+    ],
+    "existing_code_example": "# Instructor with Pydantic\nfrom pydantic import BaseModel\nimport instructor\nfrom openai import OpenAI\n\nclient = instructor.from_openai(OpenAI())\n\nclass Review(BaseModel):\n    sentiment: Literal['positive', 'negative', 'neutral']\n    summary: str\n\nreview = client.chat.completions.create(\n    model='gpt-4o-mini',\n    response_model=Review,\n    messages=[{'role':'user','content':'Analyze: ...'}],\n    max_retries=2,\n)",
+    "existing_seo_variations": [
+      "structured output",
+      "JSON mode",
+      "JSON schema LLM"
+    ]
+  },
+  {
+    "slug": "tool-choice",
+    "title": "Tool Choice",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An API parameter controlling how the model selects tools — auto, required (must use a tool), none (forbidden), or a specific named tool.",
+    "existing_related_terms": [
+      "function-calling",
+      "parallel-function-calling",
+      "tool-use"
+    ],
+    "existing_related_tools": [
+      "openai",
+      "anthropic"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "tool_choice param"
+    ]
+  },
+  {
+    "slug": "tool-use",
+    "title": "Tool Use (Function Calling)",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The LLM capability to decide when to call external functions, choose arguments, and incorporate the returned results back into its reasoning — the foundation of agentic behavior.",
+    "existing_related_terms": [
+      "function-calling",
+      "mcp",
+      "structured-output",
+      "ai-agent"
+    ],
+    "existing_related_tools": [
+      "anthropic",
+      "openai",
+      "mcp"
+    ],
+    "existing_code_example": "# Anthropic tool use\nresponse = client.messages.create(\n    model='claude-3-5-sonnet-latest',\n    max_tokens=1024,\n    tools=[{\n        'name': 'get_weather',\n        'description': 'Get current weather in a city',\n        'input_schema': {'type':'object','properties':{'city':{'type':'string'}},'required':['city']},\n    }],\n    messages=[{'role':'user','content':'Weather in Paris?'}],\n)\n# response.stop_reason == 'tool_use' → extract, execute, return",
+    "existing_seo_variations": [
+      "tool use",
+      "function calling",
+      "LLM tools"
+    ]
+  },
+  {
+    "slug": "webhook",
+    "title": "Webhook (LLM Integrations)",
+    "category": "protocols",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "An HTTP callback mechanism where a service POSTs event data to a URL you register, used extensively for async LLM completions, tool events, and integrations.",
+    "existing_related_terms": [
+      "batch-api",
+      "openapi-tool-binding"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HTTP callback",
+      "event webhook"
+    ]
+  },
+  {
+    "slug": "websockets-llm",
+    "title": "WebSockets (LLM)",
+    "category": "protocols",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A bidirectional protocol over a persistent TCP connection — used for real-time LLM interactions, voice, and multimodal streaming.",
+    "existing_related_terms": [
+      "server-sent-events",
+      "realtime-api",
+      "streaming"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "WebSocket API",
+      "WS protocol"
+    ]
+  }
+]

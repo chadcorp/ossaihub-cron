@@ -1,0 +1,1276 @@
+[
+  {
+    "slug": "3d-parallelism",
+    "title": "3D Parallelism",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Combining data parallelism, tensor parallelism, and pipeline parallelism to train frontier-scale models across clusters of GPUs.",
+    "existing_related_terms": [
+      "tensor-parallelism",
+      "pipeline-parallelism",
+      "data-parallelism"
+    ],
+    "existing_related_tools": [
+      "megatron-lm",
+      "deepspeed"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "3D training",
+      "Megatron DeepSpeed"
+    ]
+  },
+  {
+    "slug": "activation-steering",
+    "title": "Activation Steering",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Modifying an LLM's residual stream activations at inference time to steer its behavior — e.g., making it more truthful, safer, or more on-topic.",
+    "existing_related_terms": [
+      "mech-interp",
+      "sparse-autoencoders",
+      "alignment"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "representation engineering",
+      "activation additions"
+    ]
+  },
+  {
+    "slug": "adapter",
+    "title": "Adapter (PEFT Adapter)",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Small neural modules inserted inside a frozen base model's layers; only the adapter weights are trained.",
+    "existing_related_terms": [
+      "lora",
+      "peft",
+      "fine-tuning"
+    ],
+    "existing_related_tools": [
+      "peft",
+      "adapter-hub"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "adapter layers",
+      "PEFT adapter"
+    ]
+  },
+  {
+    "slug": "attention",
+    "title": "Attention (Self-Attention)",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The core mechanism in transformers that lets every token 'look at' every other token in the context and weight them by relevance.",
+    "existing_related_terms": [
+      "transformer",
+      "flash-attention",
+      "context-window",
+      "positional-encoding"
+    ],
+    "existing_related_tools": [
+      "transformers",
+      "llama.cpp"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "attention",
+      "self-attention",
+      "multi-head attention"
+    ]
+  },
+  {
+    "slug": "awq",
+    "title": "AWQ (Activation-Aware Weight Quantization)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A 4-bit weight-only quantization method that scales weights based on their corresponding activation magnitudes, protecting important channels from quantization error.",
+    "existing_related_terms": [
+      "gptq",
+      "quantization",
+      "smoothquant"
+    ],
+    "existing_related_tools": [
+      "llm-awq",
+      "vllm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AWQ quantization",
+      "activation aware"
+    ]
+  },
+  {
+    "slug": "best-of-n",
+    "title": "Best-of-N Sampling",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An inference-time strategy where the model generates N candidates and a reward model or verifier picks the best.",
+    "existing_related_terms": [
+      "rejection-sampling",
+      "self-consistency",
+      "reasoning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": "cands = [llm.complete(prompt, temperature=0.8) for _ in range(16)]\nscores = [reward_model(prompt, c) for c in cands]\nreturn cands[scores.index(max(scores))]",
+    "existing_seo_variations": [
+      "BoN sampling",
+      "best of N"
+    ]
+  },
+  {
+    "slug": "chain-of-thought",
+    "title": "Chain of Thought",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A prompting technique where you ask the AI to show its reasoning step-by-step before giving a final answer.",
+    "existing_related_terms": [
+      "prompt",
+      "system-prompt",
+      "few-shot-learning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "constitutional-ai",
+    "title": "Constitutional AI",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An alignment method from Anthropic where an AI critiques and revises its own responses against a written set of principles, reducing the need for human red-teamers.",
+    "existing_related_terms": [
+      "rlhf",
+      "rlaif",
+      "alignment",
+      "red-team"
+    ],
+    "existing_related_tools": [
+      "claude"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "CAI",
+      "constitutional AI"
+    ]
+  },
+  {
+    "slug": "continued-pretraining",
+    "title": "Continued Pretraining",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Extending the pretraining phase of a base model on domain-specific raw text, before any instruction tuning.",
+    "existing_related_terms": [
+      "pretraining",
+      "fine-tuning",
+      "domain-adaptation"
+    ],
+    "existing_related_tools": [
+      "axolotl",
+      "megatron-lm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "DAPT",
+      "domain adaptive pretraining"
+    ]
+  },
+  {
+    "slug": "dare",
+    "title": "DARE (Drop And REscale)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A model merging method that randomly drops parameters from task vectors and rescales survivors, producing sparse merges.",
+    "existing_related_terms": [
+      "model-merging",
+      "ties-merging",
+      "slerp"
+    ],
+    "existing_related_tools": [
+      "mergekit"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "DARE merging",
+      "drop rescale"
+    ]
+  },
+  {
+    "slug": "data-parallelism",
+    "title": "Data Parallelism",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The simplest distributed training: each GPU holds a full copy of the model and processes different shards of the batch, then gradients are averaged.",
+    "existing_related_terms": [
+      "fsdp",
+      "deepspeed-zero",
+      "tensor-parallelism"
+    ],
+    "existing_related_tools": [
+      "pytorch",
+      "accelerate"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "DDP",
+      "DistributedDataParallel"
+    ]
+  },
+  {
+    "slug": "deepspeed-zero",
+    "title": "DeepSpeed ZeRO",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Microsoft's memory-optimization technique that shards optimizer state (ZeRO-1), gradients (ZeRO-2), and parameters (ZeRO-3) across GPUs.",
+    "existing_related_terms": [
+      "fsdp",
+      "gradient-checkpointing",
+      "cpu-offloading"
+    ],
+    "existing_related_tools": [
+      "deepspeed"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ZeRO",
+      "ZeRO-3",
+      "DeepSpeed"
+    ]
+  },
+  {
+    "slug": "distillation",
+    "title": "Distillation (Knowledge Distillation)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Training a small 'student' model to mimic a large 'teacher' model's outputs — trades a small quality loss for 5-50x inference cost reduction.",
+    "existing_related_terms": [
+      "fine-tuning",
+      "sft",
+      "synthetic-data",
+      "llm-as-judge"
+    ],
+    "existing_related_tools": [
+      "axolotl",
+      "trl"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "distillation",
+      "knowledge distillation",
+      "model distillation"
+    ]
+  },
+  {
+    "slug": "dora",
+    "title": "DoRA (Weight-Decomposed Low-Rank Adaptation)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A LoRA variant that decomposes weight updates into magnitude and direction components, consistently matching or beating LoRA.",
+    "existing_related_terms": [
+      "lora",
+      "peft",
+      "fine-tuning"
+    ],
+    "existing_related_tools": [
+      "peft"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "weight decomposed LoRA"
+    ]
+  },
+  {
+    "slug": "dpo",
+    "title": "DPO (Direct Preference Optimization)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An RLHF alternative that fine-tunes an LLM on preference pairs (chosen vs rejected answers) without training a separate reward model.",
+    "existing_related_terms": [
+      "rlhf",
+      "sft",
+      "alignment",
+      "fine-tuning"
+    ],
+    "existing_related_tools": [
+      "trl",
+      "axolotl"
+    ],
+    "existing_code_example": "# DPO with TRL library\nfrom trl import DPOTrainer\ntrainer = DPOTrainer(\n    model=model, ref_model=ref_model,\n    beta=0.1,  # KL regularization strength\n    train_dataset=preference_dataset,  # {prompt, chosen, rejected}\n    tokenizer=tokenizer,\n)\ntrainer.train()",
+    "existing_seo_variations": [
+      "DPO",
+      "Direct Preference Optimization",
+      "DPO vs RLHF"
+    ]
+  },
+  {
+    "slug": "evol-instruct",
+    "title": "Evol-Instruct",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A synthetic instruction generation method that iteratively rewrites simple instructions into harder ones via explicit evolution operators.",
+    "existing_related_terms": [
+      "self-instruct",
+      "synthetic-data",
+      "instruction-tuning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Evol-Instruct",
+      "WizardLM data"
+    ]
+  },
+  {
+    "slug": "few-shot-learning",
+    "title": "Few-Shot Learning",
+    "category": "techniques",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Teaching an AI how to respond by giving it a few examples in the prompt, without retraining it.",
+    "existing_related_terms": [
+      "zero-shot",
+      "prompt",
+      "fine-tuning",
+      "chain-of-thought"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "fill-in-the-middle",
+    "title": "Fill-in-the-Middle (FIM)",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A code-model training objective that teaches the model to predict text between a prefix and suffix, enabling true code-completion inside existing files.",
+    "existing_related_terms": [
+      "codellama",
+      "starcoder",
+      "pretraining"
+    ],
+    "existing_related_tools": [
+      "continue",
+      "tabby"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "FIM",
+      "fill-in-middle"
+    ]
+  },
+  {
+    "slug": "fine-tuning",
+    "title": "Fine-tuning",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Fine-tuning is training an existing AI model on your specific data to make it better at your particular task.",
+    "existing_related_terms": [
+      "llm",
+      "rag",
+      "parameters",
+      "quantization",
+      "benchmark"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "fp8-training",
+    "title": "FP8 Training",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Training with 8-bit floating-point precision on supported hardware (H100+), doubling throughput over bf16 with careful scaling.",
+    "existing_related_terms": [
+      "mixed-precision-training",
+      "bf16-training"
+    ],
+    "existing_related_tools": [
+      "transformer-engine",
+      "megatron-lm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "FP8 precision",
+      "H100 training"
+    ]
+  },
+  {
+    "slug": "fsdp",
+    "title": "FSDP (Fully Sharded Data Parallel)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "PyTorch's native technique for sharding model parameters, gradients, and optimizer state across GPUs to train models that do not fit on one device.",
+    "existing_related_terms": [
+      "deepspeed-zero",
+      "tensor-parallelism",
+      "pipeline-parallelism"
+    ],
+    "existing_related_tools": [
+      "pytorch",
+      "accelerate"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "FSDP training",
+      "fully sharded"
+    ]
+  },
+  {
+    "slug": "full-fine-tuning",
+    "title": "Full Fine-Tuning",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Updating every parameter in a pretrained model during fine-tuning — maximum expressiveness at maximum cost.",
+    "existing_related_terms": [
+      "lora",
+      "qlora",
+      "fine-tuning",
+      "peft"
+    ],
+    "existing_related_tools": [
+      "axolotl",
+      "deepspeed"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "FFT",
+      "full parameter fine tuning"
+    ]
+  },
+  {
+    "slug": "gptq",
+    "title": "GPTQ (Post-Training Quantization)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A post-training quantization method that reduces LLM weights to 3–4 bits using layer-wise error minimization — a widely used production quantizer.",
+    "existing_related_terms": [
+      "awq",
+      "quantization",
+      "bitsandbytes"
+    ],
+    "existing_related_tools": [
+      "auto-gptq",
+      "vllm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "GPTQ quantization",
+      "4-bit LLM"
+    ]
+  },
+  {
+    "slug": "gradient-accumulation",
+    "title": "Gradient Accumulation",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Summing gradients over multiple small micro-batches before applying a single optimizer step, emulating a large batch on limited-memory hardware.",
+    "existing_related_terms": [
+      "gradient-descent",
+      "batch-size"
+    ],
+    "existing_related_tools": [
+      "accelerate",
+      "deepspeed"
+    ],
+    "existing_code_example": "accum = 8\nfor i, batch in enumerate(loader):\n    loss = model(batch) / accum\n    loss.backward()\n    if (i+1) % accum == 0:\n        optimizer.step(); optimizer.zero_grad()",
+    "existing_seo_variations": [
+      "grad accumulation",
+      "virtual batch size"
+    ]
+  },
+  {
+    "slug": "gradient-checkpointing",
+    "title": "Gradient Checkpointing",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A memory-saving technique that recomputes activations during the backward pass instead of storing them, trading compute for VRAM.",
+    "existing_related_terms": [
+      "mixed-precision-training",
+      "fsdp",
+      "deepspeed-zero"
+    ],
+    "existing_related_tools": [
+      "deepspeed",
+      "accelerate"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "activation checkpointing"
+    ]
+  },
+  {
+    "slug": "ia3",
+    "title": "IA3 (Infused Adapter by Inhibiting and Amplifying Inner Activations)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A PEFT method that rescales activations with learned per-channel multiplicative vectors — extremely few trainable parameters.",
+    "existing_related_terms": [
+      "lora",
+      "peft",
+      "adapter"
+    ],
+    "existing_related_tools": [
+      "peft"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "IA3 fine tuning"
+    ]
+  },
+  {
+    "slug": "knowledge-editing",
+    "title": "Knowledge Editing",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Surgically updating specific facts inside a trained model's weights without full fine-tuning — e.g., changing what it says the capital of a country is.",
+    "existing_related_terms": [
+      "rome",
+      "memit",
+      "rag"
+    ],
+    "existing_related_tools": [
+      "easyedit"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "model editing",
+      "weight editing"
+    ]
+  },
+  {
+    "slug": "kto",
+    "title": "KTO (Kahneman-Tversky Optimization)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A preference-optimization method that trains on individual positive or negative signals rather than paired preferences, inspired by prospect theory.",
+    "existing_related_terms": [
+      "dpo",
+      "rlhf",
+      "alignment"
+    ],
+    "existing_related_tools": [
+      "trl"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "KTO fine-tuning"
+    ]
+  },
+  {
+    "slug": "lookahead-decoding",
+    "title": "Lookahead Decoding",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A draft-model-free decoding speedup that uses Jacobi iteration to predict multiple tokens in parallel.",
+    "existing_related_terms": [
+      "speculative-decoding",
+      "medusa",
+      "inference"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Jacobi decoding",
+      "parallel decoding"
+    ]
+  },
+  {
+    "slug": "lora",
+    "title": "LoRA (Low-Rank Adaptation)",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A technique to fine-tune large language models by only training small 'adapter' matrices — 10-100x cheaper than full fine-tuning with nearly identical quality.",
+    "existing_related_terms": [
+      "qlora",
+      "fine-tuning",
+      "sft",
+      "quantization"
+    ],
+    "existing_related_tools": [
+      "unsloth",
+      "peft",
+      "axolotl"
+    ],
+    "existing_code_example": "# Fine-tune Llama-3.2 with LoRA in 30 lines (Unsloth)\nfrom unsloth import FastLanguageModel\nmodel, tokenizer = FastLanguageModel.from_pretrained(\n    'unsloth/Llama-3.2-3B-Instruct-bnb-4bit', load_in_4bit=True)\nmodel = FastLanguageModel.get_peft_model(\n    model, r=16, lora_alpha=32,\n    target_modules=['q_proj','k_proj','v_proj','o_proj'])\n# Now train — only LoRA weights update",
+    "existing_seo_variations": [
+      "LoRA",
+      "Low-Rank Adaptation",
+      "LoRA fine-tuning",
+      "what is LoRA"
+    ]
+  },
+  {
+    "slug": "mech-interp",
+    "title": "Mechanistic Interpretability",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "The research program of reverse-engineering neural networks into human-understandable algorithms, circuit by circuit.",
+    "existing_related_terms": [
+      "sparse-autoencoders",
+      "activation-steering",
+      "alignment"
+    ],
+    "existing_related_tools": [
+      "transformer-lens"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "mech interp",
+      "circuit analysis"
+    ]
+  },
+  {
+    "slug": "medusa",
+    "title": "Medusa Decoding",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A self-speculative decoding technique that adds multiple prediction heads to a single model, removing the need for a separate draft model.",
+    "existing_related_terms": [
+      "speculative-decoding",
+      "inference"
+    ],
+    "existing_related_tools": [
+      "tensorrt-llm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Medusa LLM",
+      "self-speculative decoding"
+    ]
+  },
+  {
+    "slug": "memit",
+    "title": "MEMIT (Mass-Editing Memory in a Transformer)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An extension of ROME that edits thousands of facts simultaneously by distributing updates across multiple MLP layers.",
+    "existing_related_terms": [
+      "rome",
+      "knowledge-editing"
+    ],
+    "existing_related_tools": [
+      "easyedit"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MEMIT editing",
+      "batch model editing"
+    ]
+  },
+  {
+    "slug": "mixed-precision-training",
+    "title": "Mixed Precision Training",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Training with some tensors in low precision (fp16 or bf16) and others in fp32, roughly halving memory and doubling throughput.",
+    "existing_related_terms": [
+      "bf16-training",
+      "fp8-training",
+      "loss-scaling"
+    ],
+    "existing_related_tools": [
+      "apex",
+      "accelerate",
+      "deepspeed"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AMP",
+      "fp16 training",
+      "bf16 training"
+    ]
+  },
+  {
+    "slug": "model-distillation",
+    "title": "Distillation (Knowledge Distillation, Reprise)",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Training a smaller 'student' model to match a larger 'teacher' model's outputs — trading capacity for speed at similar quality.",
+    "existing_related_terms": [
+      "distillation",
+      "sft",
+      "synthetic-data"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "model distillation",
+      "teacher student"
+    ]
+  },
+  {
+    "slug": "model-merging",
+    "title": "Model Merging (Model Souping)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Combining the weights of multiple fine-tuned models into one by averaging or more sophisticated blending, often improving quality for free.",
+    "existing_related_terms": [
+      "lora-merging",
+      "slerp",
+      "ties-merging",
+      "dare"
+    ],
+    "existing_related_tools": [
+      "mergekit"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "model soup",
+      "weight merging",
+      "mergekit"
+    ]
+  },
+  {
+    "slug": "orpo",
+    "title": "ORPO (Odds Ratio Preference Optimization)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A single-stage fine-tuning method that combines SFT and preference learning in one loss, eliminating the need for a separate DPO stage.",
+    "existing_related_terms": [
+      "dpo",
+      "sft",
+      "alignment"
+    ],
+    "existing_related_tools": [
+      "trl",
+      "axolotl"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ORPO fine-tuning",
+      "odds ratio preference"
+    ]
+  },
+  {
+    "slug": "outcome-reward-model",
+    "title": "Outcome Reward Model",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A reward model that scores only the final answer of a generation, not the intermediate steps.",
+    "existing_related_terms": [
+      "process-reward-model",
+      "rlhf",
+      "reasoning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ORM",
+      "outcome reward"
+    ]
+  },
+  {
+    "slug": "peft",
+    "title": "PEFT (Parameter-Efficient Fine-Tuning)",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The umbrella term for fine-tuning methods that update only a tiny fraction of a model's parameters — LoRA, adapters, prefix tuning, IA3 — to save memory and compute.",
+    "existing_related_terms": [
+      "lora",
+      "qlora",
+      "adapter",
+      "fine-tuning"
+    ],
+    "existing_related_tools": [
+      "peft",
+      "axolotl",
+      "unsloth"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "parameter efficient fine tuning",
+      "PEFT methods"
+    ]
+  },
+  {
+    "slug": "pipeline-parallelism",
+    "title": "Pipeline Parallelism",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Splitting a model across multiple GPUs by assigning consecutive layers to different devices, streaming micro-batches through the pipeline.",
+    "existing_related_terms": [
+      "tensor-parallelism",
+      "data-parallelism",
+      "3d-parallelism"
+    ],
+    "existing_related_tools": [
+      "megatron-lm",
+      "deepspeed"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "PP",
+      "pipeline training"
+    ]
+  },
+  {
+    "slug": "ppo",
+    "title": "PPO (Proximal Policy Optimization)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "The RL algorithm historically used in RLHF to fine-tune an LLM against a reward model while constraining how far the policy drifts from the base.",
+    "existing_related_terms": [
+      "rlhf",
+      "dpo",
+      "reinforcement-learning"
+    ],
+    "existing_related_tools": [
+      "trl"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "PPO algorithm",
+      "proximal policy"
+    ]
+  },
+  {
+    "slug": "prefix-tuning",
+    "title": "Prefix Tuning",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A parameter-efficient fine-tuning method that prepends a small set of trainable vectors to every transformer layer's key/value cache while freezing the base model.",
+    "existing_related_terms": [
+      "prompt-tuning",
+      "lora",
+      "peft",
+      "fine-tuning"
+    ],
+    "existing_related_tools": [
+      "peft"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "prefix-tuning",
+      "PEFT prefix"
+    ]
+  },
+  {
+    "slug": "probing",
+    "title": "Probing",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An interpretability method that trains a small classifier on a frozen model's activations to test what information is linearly encoded.",
+    "existing_related_terms": [
+      "mech-interp",
+      "representation-learning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "linear probe",
+      "probing classifier"
+    ]
+  },
+  {
+    "slug": "process-reward-model",
+    "title": "Process Reward Model",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A reward model that scores each intermediate step of a reasoning chain, not just the final answer — used to train and guide reasoning models.",
+    "existing_related_terms": [
+      "reasoning",
+      "rlhf",
+      "outcome-reward-model"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "PRM",
+      "process supervision"
+    ]
+  },
+  {
+    "slug": "prompt-tuning",
+    "title": "Prompt Tuning",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Fine-tuning only a small set of continuous vectors prepended to the input tokens, leaving the base model completely frozen.",
+    "existing_related_terms": [
+      "prefix-tuning",
+      "lora",
+      "soft-prompts"
+    ],
+    "existing_related_tools": [
+      "peft"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "soft prompt tuning",
+      "virtual tokens"
+    ]
+  },
+  {
+    "slug": "pruning",
+    "title": "Pruning (Neural Network Pruning)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Removing weights from a trained model to shrink it — either unstructured (zero individual weights) or structured (remove whole heads, channels, or layers).",
+    "existing_related_terms": [
+      "quantization",
+      "distillation",
+      "sparsification"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "network pruning",
+      "model pruning"
+    ]
+  },
+  {
+    "slug": "qat",
+    "title": "Quantization-Aware Training (QAT)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Training a model with simulated quantization in the forward pass so the weights learn to be robust to the precision loss of actual quantization.",
+    "existing_related_terms": [
+      "quantization",
+      "gptq",
+      "awq",
+      "bitnet"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "QAT training"
+    ]
+  },
+  {
+    "slug": "qlora",
+    "title": "QLoRA (Quantized LoRA)",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "LoRA fine-tuning on a 4-bit quantized base model — lets you fine-tune a 70B model on a single 48GB GPU.",
+    "existing_related_terms": [
+      "lora",
+      "quantization",
+      "fine-tuning"
+    ],
+    "existing_related_tools": [
+      "bitsandbytes",
+      "unsloth",
+      "peft"
+    ],
+    "existing_code_example": "# QLoRA with bitsandbytes\nfrom transformers import BitsAndBytesConfig\nbnb = BitsAndBytesConfig(\n    load_in_4bit=True,\n    bnb_4bit_quant_type='nf4',\n    bnb_4bit_compute_dtype=torch.bfloat16,\n    bnb_4bit_use_double_quant=True,\n)\nmodel = AutoModelForCausalLM.from_pretrained(base, quantization_config=bnb)",
+    "existing_seo_variations": [
+      "QLoRA",
+      "Quantized LoRA",
+      "4-bit LoRA"
+    ]
+  },
+  {
+    "slug": "quantization",
+    "title": "Quantization",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Shrinking an AI model's file size by using lower-precision numbers, so it fits on less powerful hardware.",
+    "existing_related_terms": [
+      "gguf",
+      "vram",
+      "parameters",
+      "llama-cpp"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "rejection-sampling",
+    "title": "Rejection Sampling (Training)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A post-training technique where the model generates many candidates per prompt, a reward model or verifier picks the best, and only those are used for SFT.",
+    "existing_related_terms": [
+      "sft",
+      "rlhf",
+      "dpo",
+      "synthetic-data"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "best-of-N training",
+      "rejection sampling fine-tuning"
+    ]
+  },
+  {
+    "slug": "rlaif",
+    "title": "RLAIF (Reinforcement Learning from AI Feedback)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "RLHF where an LLM, rather than a human, produces the preference labels used to train the reward model.",
+    "existing_related_terms": [
+      "rlhf",
+      "dpo",
+      "constitutional-ai",
+      "alignment"
+    ],
+    "existing_related_tools": [
+      "trl"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "RL from AI feedback",
+      "RLAIF alignment"
+    ]
+  },
+  {
+    "slug": "rlhf",
+    "title": "RLHF (Reinforcement Learning from Human Feedback)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A three-stage training method that makes an LLM follow human preferences by training a reward model from human rankings, then fine-tuning against that reward.",
+    "existing_related_terms": [
+      "dpo",
+      "sft",
+      "alignment",
+      "rlaif"
+    ],
+    "existing_related_tools": [
+      "trl",
+      "openai",
+      "anthropic"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "RLHF",
+      "Reinforcement Learning from Human Feedback",
+      "what is RLHF"
+    ]
+  },
+  {
+    "slug": "rome",
+    "title": "ROME (Rank-One Model Editing)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A knowledge-editing algorithm that changes a single fact inside an LLM via a rank-one update to a specific MLP layer's output matrix.",
+    "existing_related_terms": [
+      "knowledge-editing",
+      "memit",
+      "mech-interp"
+    ],
+    "existing_related_tools": [
+      "easyedit"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ROME editing"
+    ]
+  },
+  {
+    "slug": "self-distillation",
+    "title": "Self-Distillation",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Distillation where the teacher and student are the same model size — often the same model at different checkpoints or ensembling with itself.",
+    "existing_related_terms": [
+      "distillation",
+      "chain-of-thought",
+      "reasoning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "self-distillation training"
+    ]
+  },
+  {
+    "slug": "self-instruct",
+    "title": "Self-Instruct",
+    "category": "techniques",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A method for bootstrapping instruction datasets by having an LLM generate new instructions and responses from a small seed set.",
+    "existing_related_terms": [
+      "synthetic-data",
+      "alpaca",
+      "instruction-tuning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Self-Instruct dataset",
+      "synthetic instructions"
+    ]
+  },
+  {
+    "slug": "sft",
+    "title": "SFT (Supervised Fine-Tuning)",
+    "category": "techniques",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The most basic fine-tuning method: show the model pairs of (instruction, ideal response) and train it to produce the response when given the instruction.",
+    "existing_related_terms": [
+      "lora",
+      "dpo",
+      "rlhf",
+      "fine-tuning"
+    ],
+    "existing_related_tools": [
+      "trl",
+      "axolotl",
+      "unsloth"
+    ],
+    "existing_code_example": "# SFT with TRL\nfrom trl import SFTTrainer\ntrainer = SFTTrainer(\n    model=model, tokenizer=tokenizer,\n    train_dataset=ds,  # {'text': chat-templated string}\n    max_seq_length=2048,\n)\ntrainer.train()",
+    "existing_seo_variations": [
+      "SFT",
+      "Supervised Fine-Tuning",
+      "instruction tuning"
+    ]
+  },
+  {
+    "slug": "simpo",
+    "title": "SimPO",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A reference-free preference optimization method with length-normalized reward, consistently matching or beating DPO at lower memory cost.",
+    "existing_related_terms": [
+      "dpo",
+      "orpo",
+      "alignment"
+    ],
+    "existing_related_tools": [
+      "trl"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SimPO fine-tuning"
+    ]
+  },
+  {
+    "slug": "slerp",
+    "title": "SLERP (Spherical Linear Interpolation)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A weight-blending method for model merging that interpolates along a sphere rather than linearly, preserving vector norms.",
+    "existing_related_terms": [
+      "model-merging",
+      "ties-merging",
+      "dare"
+    ],
+    "existing_related_tools": [
+      "mergekit"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SLERP merging",
+      "spherical interpolation"
+    ]
+  },
+  {
+    "slug": "sparse-autoencoders",
+    "title": "Sparse Autoencoders (Interpretability)",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Autoencoders trained on LLM activations with a sparsity penalty, used to decompose dense activations into interpretable features.",
+    "existing_related_terms": [
+      "mech-interp",
+      "activation-steering",
+      "interpretability"
+    ],
+    "existing_related_tools": [
+      "sae-lens"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SAE interpretability",
+      "sparse features"
+    ]
+  },
+  {
+    "slug": "speculative-decoding",
+    "title": "Speculative Decoding",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An inference speedup where a small fast 'draft' model predicts several tokens ahead, which the large target model then verifies in parallel.",
+    "existing_related_terms": [
+      "inference",
+      "draft-model",
+      "medusa"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "tensorrt-llm",
+      "sglang"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "speculative sampling",
+      "spec decoding"
+    ]
+  },
+  {
+    "slug": "structured-pruning",
+    "title": "Structured Pruning",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Pruning that removes entire architectural units — heads, channels, layers — producing a smaller dense model that runs faster on any hardware.",
+    "existing_related_terms": [
+      "pruning",
+      "distillation"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "head pruning",
+      "layer pruning"
+    ]
+  },
+  {
+    "slug": "tensor-parallelism",
+    "title": "Tensor Parallelism",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Splitting individual matrix multiplications across multiple GPUs so each GPU computes a shard of the output.",
+    "existing_related_terms": [
+      "pipeline-parallelism",
+      "data-parallelism",
+      "3d-parallelism"
+    ],
+    "existing_related_tools": [
+      "megatron-lm",
+      "vllm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "TP",
+      "Megatron parallelism"
+    ]
+  },
+  {
+    "slug": "ties-merging",
+    "title": "TIES-Merging",
+    "category": "techniques",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A model merging method that resolves conflicts by trimming small-magnitude changes, electing signs, and disjoint-merging what remains.",
+    "existing_related_terms": [
+      "model-merging",
+      "slerp",
+      "dare"
+    ],
+    "existing_related_tools": [
+      "mergekit"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "TIES merge",
+      "task vector merging"
+    ]
+  },
+  {
+    "slug": "zero-shot",
+    "title": "Zero-Shot Learning",
+    "category": "techniques",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Asking an AI to do a task it hasn't seen examples of, relying purely on its pre-trained knowledge.",
+    "existing_related_terms": [
+      "few-shot-learning",
+      "prompt",
+      "fine-tuning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  }
+]

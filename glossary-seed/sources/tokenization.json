@@ -1,0 +1,460 @@
+[
+  {
+    "slug": "alpaca-format",
+    "title": "Alpaca Format",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A simple (and now dated) instruction-tuning prompt format using '### Instruction:' / '### Input:' / '### Response:' headers, popularized by Stanford Alpaca in 2023.",
+    "existing_related_terms": [
+      "chatml",
+      "chat-template",
+      "instruction-tuning"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Alpaca prompt format"
+    ]
+  },
+  {
+    "slug": "bos-token",
+    "title": "Prefix Tokens / BOS (Beginning of Sequence)",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Special tokens (<s>, <|begin_of_text|>, [CLS]) prepended to every sequence to mark where it starts — a sentinel the model uses to anchor attention.",
+    "existing_related_terms": [
+      "special-tokens",
+      "chat-template",
+      "tokenizer"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "BOS token",
+      "begin of sequence"
+    ]
+  },
+  {
+    "slug": "bpe",
+    "title": "BPE (Byte Pair Encoding)",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The most common tokenization algorithm for modern LLMs — repeatedly merges the most-frequent byte pairs in the training corpus to build a vocabulary of subword units.",
+    "existing_related_terms": [
+      "token",
+      "tokenization",
+      "sentencepiece",
+      "special-tokens"
+    ],
+    "existing_related_tools": [
+      "tiktoken",
+      "tokenizers",
+      "sentencepiece"
+    ],
+    "existing_code_example": "# Inspect tokenization with tiktoken\nimport tiktoken\nenc = tiktoken.encoding_for_model('gpt-4o')\ntokens = enc.encode('The quick brown fox jumps over the lazy dog')\nprint(len(tokens), tokens)\n# Decode back to see token boundaries:\nfor t in tokens:\n    print(repr(enc.decode([t])))",
+    "existing_seo_variations": [
+      "BPE",
+      "Byte Pair Encoding",
+      "subword tokenization"
+    ]
+  },
+  {
+    "slug": "byte-level-bpe",
+    "title": "Byte-Level BPE",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A BPE variant that operates on raw UTF-8 bytes instead of Unicode characters, giving a 256-byte starting alphabet that covers any possible text.",
+    "existing_related_terms": [
+      "bpe",
+      "subword-tokenization",
+      "tiktoken"
+    ],
+    "existing_related_tools": [
+      "tiktoken"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "BBPE",
+      "byte BPE"
+    ]
+  },
+  {
+    "slug": "chat-template",
+    "title": "Chat Template",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The exact string format a model expects for multi-turn conversations — user vs assistant roles, system prompts, special tokens separating turns.",
+    "existing_related_terms": [
+      "system-prompt",
+      "token",
+      "special-tokens",
+      "bpe"
+    ],
+    "existing_related_tools": [
+      "transformers",
+      "ollama",
+      "llama.cpp"
+    ],
+    "existing_code_example": "from transformers import AutoTokenizer\ntok = AutoTokenizer.from_pretrained('meta-llama/Llama-3.3-70B-Instruct')\nmessages = [\n    {'role': 'system', 'content': 'You are a concise assistant.'},\n    {'role': 'user', 'content': 'Hello'},\n]\nprompt = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)\nprint(prompt)  # Shows exact formatted string",
+    "existing_seo_variations": [
+      "chat template",
+      "prompt template",
+      "ChatML",
+      "Llama chat format"
+    ]
+  },
+  {
+    "slug": "chat-template-jinja",
+    "title": "Chat Template (Jinja)",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A Jinja-formatted template string shipped with each chat model's tokenizer that defines how to turn messages into a formatted prompt.",
+    "existing_related_terms": [
+      "chat-template",
+      "chatml",
+      "tokenizer"
+    ],
+    "existing_related_tools": [
+      "huggingface-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "apply_chat_template",
+      "Jinja chat template"
+    ]
+  },
+  {
+    "slug": "chatml",
+    "title": "ChatML",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A simple chat-message format using special tokens to mark role boundaries — originally introduced by OpenAI, now common in open-source chat templates.",
+    "existing_related_terms": [
+      "chat-template",
+      "special-tokens",
+      "tokenizer"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ChatML format"
+    ]
+  },
+  {
+    "slug": "eos-token",
+    "title": "EOS (End of Sequence) Token",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A special token that tells the model to stop generating — hitting it during inference is how the model signals 'I'm done.'",
+    "existing_related_terms": [
+      "bos-token",
+      "stop-sequences",
+      "special-tokens"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "EOS token",
+      "end of sequence"
+    ]
+  },
+  {
+    "slug": "pad-token",
+    "title": "Pad Token",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A special token used to pad short sequences in a batch to a common length so they can be processed together efficiently.",
+    "existing_related_terms": [
+      "special-tokens",
+      "bos-token",
+      "eos-token"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "padding token"
+    ]
+  },
+  {
+    "slug": "sentencepiece",
+    "title": "SentencePiece",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Google's open-source tokenizer library that treats the input as a raw sequence of characters (no word-boundary assumption), supporting both BPE and Unigram LM algorithms.",
+    "existing_related_terms": [
+      "bpe",
+      "subword-tokenization",
+      "unigram-lm-tokenizer"
+    ],
+    "existing_related_tools": [
+      "sentencepiece"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SentencePiece tokenizer"
+    ]
+  },
+  {
+    "slug": "sharegpt-format",
+    "title": "ShareGPT Format",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A multi-turn conversation dataset format popularized by the ShareGPT dataset, using role-tagged message arrays.",
+    "existing_related_terms": [
+      "chatml",
+      "alpaca-format",
+      "instruction-tuning"
+    ],
+    "existing_related_tools": [
+      "axolotl",
+      "unsloth"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ShareGPT dataset format"
+    ]
+  },
+  {
+    "slug": "special-tokens",
+    "title": "Special Tokens (BOS, EOS, PAD)",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Reserved token IDs a tokenizer uses to mark structure — beginning of sequence (BOS), end of sequence (EOS), padding (PAD), end-of-turn markers, etc.",
+    "existing_related_terms": [
+      "token",
+      "bpe",
+      "chat-template"
+    ],
+    "existing_related_tools": [
+      "tokenizers",
+      "transformers"
+    ],
+    "existing_code_example": "tok = AutoTokenizer.from_pretrained('meta-llama/Llama-3.3-70B-Instruct')\nprint(tok.bos_token_id, tok.eos_token_id, tok.pad_token_id)\nprint(tok.special_tokens_map)\n# For generation:\noutput = model.generate(**inputs, eos_token_id=[tok.eos_token_id, tok.convert_tokens_to_ids('<|eot_id|>')])",
+    "existing_seo_variations": [
+      "special tokens",
+      "BOS EOS",
+      "stop tokens",
+      "EOT tokens"
+    ]
+  },
+  {
+    "slug": "subword-tokenization",
+    "title": "Subword Tokenization",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Splitting text into units smaller than words but larger than characters — the dominant tokenization family for modern LLMs.",
+    "existing_related_terms": [
+      "bpe",
+      "wordpiece",
+      "sentencepiece",
+      "byte-level-bpe"
+    ],
+    "existing_related_tools": [
+      "tokenizers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "subword tokens"
+    ]
+  },
+  {
+    "slug": "tiktoken",
+    "title": "Tiktoken",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "OpenAI's fast open-source BPE tokenizer library and the reference implementation for GPT-family models.",
+    "existing_related_terms": [
+      "tokenizer",
+      "bpe"
+    ],
+    "existing_related_tools": [
+      "tiktoken"
+    ],
+    "existing_code_example": "import tiktoken\nenc = tiktoken.encoding_for_model('gpt-4o')\nprint(len(enc.encode('Hello world')))",
+    "existing_seo_variations": [
+      "tiktoken library",
+      "GPT tokenizer"
+    ]
+  },
+  {
+    "slug": "token",
+    "title": "Token",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A token is a chunk of text — roughly a word or part of a word — that AI models process as a single unit.",
+    "existing_related_terms": [
+      "context-window",
+      "llm",
+      "api",
+      "parameters"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "token-budget",
+    "title": "Token Budget",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The total number of tokens an application allocates to a single LLM call — system prompt + messages + retrieved context + output headroom.",
+    "existing_related_terms": [
+      "context-window",
+      "chunking",
+      "rag"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM token budget"
+    ]
+  },
+  {
+    "slug": "token-cost",
+    "title": "Token Cost",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The dollars-per-million-tokens price charged for inputs and outputs — the unit economics of every LLM feature.",
+    "existing_related_terms": [
+      "token-budget",
+      "prompt-caching",
+      "llm-gateway"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "cost per token",
+      "LLM pricing"
+    ]
+  },
+  {
+    "slug": "token-healing",
+    "title": "Token Healing",
+    "category": "tokenization",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A trick at structured-generation time where the tokenizer 'heals' a partial prefix by backtracking one token, avoiding awkward splits during constrained decoding.",
+    "existing_related_terms": [
+      "constrained-decoding",
+      "guidance",
+      "outlines"
+    ],
+    "existing_related_tools": [
+      "guidance",
+      "outlines"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "healing tokens"
+    ]
+  },
+  {
+    "slug": "tokenizer",
+    "title": "Tokenizer",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The component that converts raw text into integer token IDs (and back) before and after model inference.",
+    "existing_related_terms": [
+      "token",
+      "bpe",
+      "wordpiece",
+      "sentencepiece"
+    ],
+    "existing_related_tools": [
+      "tokenizers",
+      "tiktoken"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM tokenizer"
+    ]
+  },
+  {
+    "slug": "tool-use-format",
+    "title": "Tool Use Formatting (In-Context)",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The model-specific format for representing tool definitions, tool calls, and tool results inside the prompt — typically JSON inside special tokens.",
+    "existing_related_terms": [
+      "function-calling",
+      "chat-template",
+      "tool-use"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "tool calling format"
+    ]
+  },
+  {
+    "slug": "unigram-lm-tokenizer",
+    "title": "Unigram LM Tokenizer",
+    "category": "tokenization",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A tokenization algorithm that starts with a large seed vocabulary and iteratively prunes it to maximize log-likelihood under a unigram language model.",
+    "existing_related_terms": [
+      "bpe",
+      "sentencepiece",
+      "subword-tokenization"
+    ],
+    "existing_related_tools": [
+      "sentencepiece"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "unigram tokenizer"
+    ]
+  },
+  {
+    "slug": "vocab-extension",
+    "title": "Tokenizer Vocabulary Extension",
+    "category": "tokenization",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Adding new tokens to an existing tokenizer — for languages, domain jargon, or special structural tokens — without retraining from scratch.",
+    "existing_related_terms": [
+      "tokenizer",
+      "continued-pretraining"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "extend tokenizer",
+      "add tokens"
+    ]
+  },
+  {
+    "slug": "vocabulary-size",
+    "title": "Vocabulary Size",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The number of distinct tokens a tokenizer can emit — typically 30k–260k for modern LLMs, trading expressiveness for embedding-table size.",
+    "existing_related_terms": [
+      "tokenizer",
+      "embedding",
+      "parameters"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "vocab size"
+    ]
+  },
+  {
+    "slug": "wordpiece",
+    "title": "WordPiece",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A subword tokenization algorithm (used by BERT) that greedily segments words into pieces that maximize training-corpus likelihood.",
+    "existing_related_terms": [
+      "bpe",
+      "subword-tokenization",
+      "bert"
+    ],
+    "existing_related_tools": [
+      "tokenizers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "WordPiece algorithm"
+    ]
+  }
+]

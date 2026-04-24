@@ -1,0 +1,1074 @@
+[
+  {
+    "slug": "ab-test-llm",
+    "title": "A/B Testing (LLM)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Running a randomized experiment where different user segments receive different model versions or prompts, measuring impact on business metrics.",
+    "existing_related_terms": [
+      "canary-deployment",
+      "shadow-deployment"
+    ],
+    "existing_related_tools": [
+      "growthbook",
+      "optimizely"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "split test LLM",
+      "AB test"
+    ]
+  },
+  {
+    "slug": "active-learning",
+    "title": "Active Learning",
+    "category": "ops",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A labeling strategy where the model selects the most informative examples to label next, maximizing model improvement per annotation budget.",
+    "existing_related_terms": [
+      "annotation",
+      "hitl",
+      "data-quality"
+    ],
+    "existing_related_tools": [
+      "label-studio"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "active learning ML"
+    ]
+  },
+  {
+    "slug": "agent-benchmark",
+    "title": "AgentBench / AgentEval",
+    "category": "ops",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Benchmarks that evaluate LLM agents on multi-step tasks in realistic environments — shells, browsers, databases, OSes — rather than single-shot Q&A.",
+    "existing_related_terms": [
+      "swe-bench",
+      "benchmark",
+      "ai-agent"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "agent benchmark",
+      "WebArena"
+    ]
+  },
+  {
+    "slug": "ai-observability",
+    "title": "AI Observability (Reprise)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The practice of monitoring LLM and ML systems in production — traces, cost, quality, safety events, drift — to ensure reliability and continuous improvement.",
+    "existing_related_terms": [
+      "llm-observability",
+      "langsmith",
+      "langfuse"
+    ],
+    "existing_related_tools": [
+      "langfuse",
+      "phoenix"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "AI observability",
+      "LLM monitoring"
+    ]
+  },
+  {
+    "slug": "annotation",
+    "title": "Annotation (Data Labeling)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The process of humans labeling examples — spans, classes, preferences, ratings — to create training or evaluation data.",
+    "existing_related_terms": [
+      "label",
+      "active-learning",
+      "golden-dataset"
+    ],
+    "existing_related_tools": [
+      "label-studio",
+      "argilla"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "data labeling",
+      "human annotation"
+    ]
+  },
+  {
+    "slug": "arize-phoenix",
+    "title": "Arize Phoenix",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Arize's open-source ML and LLM observability platform with OpenTelemetry-based tracing, RAG evaluation, and drift detection.",
+    "existing_related_terms": [
+      "langfuse",
+      "llm-observability",
+      "opentelemetry"
+    ],
+    "existing_related_tools": [
+      "phoenix"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Arize Phoenix",
+      "OpenInference"
+    ]
+  },
+  {
+    "slug": "beir",
+    "title": "BEIR (Retrieval Benchmark)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A zero-shot retrieval benchmark spanning 18 diverse datasets (news, bio, Wikipedia, finance, fact-checking) used to evaluate retrieval models out-of-domain.",
+    "existing_related_terms": [
+      "mteb",
+      "retrieval",
+      "benchmark"
+    ],
+    "existing_related_tools": [
+      "beir"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "BEIR benchmark",
+      "retrieval eval"
+    ]
+  },
+  {
+    "slug": "bigcodebench",
+    "title": "BigCodeBench",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A coding benchmark that evaluates LLMs on tasks requiring library usage and complex instruction following — a more realistic test than HumanEval.",
+    "existing_related_terms": [
+      "humaneval",
+      "livecodebench",
+      "swe-bench"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "BigCodeBench"
+    ]
+  },
+  {
+    "slug": "braintrust",
+    "title": "Braintrust",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A platform for LLM evaluation, dataset management, and logging that integrates evaluation into the development workflow like unit tests.",
+    "existing_related_terms": [
+      "llm-as-judge",
+      "promptfoo",
+      "langsmith"
+    ],
+    "existing_related_tools": [
+      "braintrust"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Braintrust LLM"
+    ]
+  },
+  {
+    "slug": "canary-deployment",
+    "title": "Canary Deployment",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A rollout strategy that sends a small fraction of traffic to a new model version before full promotion, catching regressions early.",
+    "existing_related_terms": [
+      "shadow-deployment",
+      "ab-test-llm",
+      "model-serving"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "canary release",
+      "progressive rollout"
+    ]
+  },
+  {
+    "slug": "chatbot-arena",
+    "title": "Chatbot Arena (LMSYS)",
+    "category": "ops",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "LMSYS's crowd-sourced pairwise LLM evaluation platform where users vote on anonymous side-by-side responses, producing an Elo leaderboard.",
+    "existing_related_terms": [
+      "llm-as-judge",
+      "benchmark",
+      "lmsys"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LMSYS Arena",
+      "LLM Arena"
+    ]
+  },
+  {
+    "slug": "cost-per-query",
+    "title": "Cost per Query (CPQ)",
+    "category": "ops",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The total LLM spend for a single user interaction — including input tokens, output tokens, reasoning tokens, tool calls, and embedding lookups.",
+    "existing_related_terms": [
+      "token-cost",
+      "llm-gateway",
+      "llm-observability"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM cost per query",
+      "CPQ"
+    ]
+  },
+  {
+    "slug": "data-quality",
+    "title": "Data Quality",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The measurable properties that determine how useful a dataset is — accuracy, completeness, consistency, freshness, coverage, and labeling reliability.",
+    "existing_related_terms": [
+      "training-data",
+      "annotation",
+      "data-contracts"
+    ],
+    "existing_related_tools": [
+      "great-expectations"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "data quality ML"
+    ]
+  },
+  {
+    "slug": "deepeval",
+    "title": "DeepEval",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open-source pytest-style framework for LLM evaluation — runs metrics (hallucination, relevance, bias, toxicity) as test assertions.",
+    "existing_related_terms": [
+      "eval-harness",
+      "ragas",
+      "promptfoo"
+    ],
+    "existing_related_tools": [
+      "deepeval"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "deepeval framework"
+    ]
+  },
+  {
+    "slug": "drift-detection",
+    "title": "Drift Detection",
+    "category": "ops",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Monitoring for changes in input data distribution, labels, or model predictions over time that may degrade model performance.",
+    "existing_related_terms": [
+      "data-quality",
+      "model-monitoring"
+    ],
+    "existing_related_tools": [
+      "evidently"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "data drift",
+      "concept drift"
+    ]
+  },
+  {
+    "slug": "eval-harness",
+    "title": "Eval Harness (Evaluation Framework)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A framework that runs a model against a battery of test cases, scores each with metrics, and produces comparable results across models or versions.",
+    "existing_related_terms": [
+      "golden-dataset",
+      "llm-as-judge",
+      "benchmark",
+      "llm-observability"
+    ],
+    "existing_related_tools": [
+      "deepeval",
+      "phoenix",
+      "promptfoo",
+      "lm-evaluation-harness",
+      "braintrust"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "eval harness",
+      "evaluation framework",
+      "LLM testing framework"
+    ]
+  },
+  {
+    "slug": "feature-store",
+    "title": "Feature Store",
+    "category": "ops",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Infrastructure that stores and serves engineered features for ML with guarantees about consistency between training and serving.",
+    "existing_related_terms": [
+      "ml-pipeline",
+      "training-data"
+    ],
+    "existing_related_tools": [
+      "feast",
+      "tecton"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ML feature store"
+    ]
+  },
+  {
+    "slug": "g-eval",
+    "title": "G-Eval",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An LLM-as-judge method that uses chain-of-thought evaluation steps and form-filling to produce reliable scores for generation quality.",
+    "existing_related_terms": [
+      "llm-judge",
+      "llm-as-judge"
+    ],
+    "existing_related_tools": [
+      "deepeval"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "G-Eval framework"
+    ]
+  },
+  {
+    "slug": "golden-dataset",
+    "title": "Golden Dataset (Eval Dataset)",
+    "category": "ops",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A curated, hand-checked set of (input, expected output) pairs used as the ground truth for evaluating LLM changes — the single most valuable artifact in a production LLM app.",
+    "existing_related_terms": [
+      "eval-harness",
+      "llm-as-judge",
+      "benchmark",
+      "synthetic-data"
+    ],
+    "existing_related_tools": [
+      "deepeval",
+      "braintrust",
+      "phoenix"
+    ],
+    "existing_code_example": "# Minimal golden dataset format\n[\n  {'input': 'What is the capital of France?', 'expected': 'Paris', 'tags': ['trivia', 'geography']},\n  {'input': 'Summarize in one sentence: [long doc]', 'expected_rubric': 'contains key facts: X, Y, Z', 'tags': ['summarization']},\n]",
+    "existing_seo_variations": [
+      "golden dataset",
+      "eval dataset",
+      "test dataset LLM"
+    ]
+  },
+  {
+    "slug": "gpqa",
+    "title": "GPQA (Graduate-Level Google-Proof QA)",
+    "category": "ops",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A 448-question benchmark of graduate-level science (physics, biology, chemistry) that PhDs without internet access score ~65% on — a hard reasoning test.",
+    "existing_related_terms": [
+      "math-benchmark",
+      "reasoning",
+      "mmlu-pro"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "GPQA Diamond",
+      "grad QA"
+    ]
+  },
+  {
+    "slug": "gsm8k",
+    "title": "GSM8K",
+    "category": "ops",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "OpenAI's 8k-example grade-school math word-problem benchmark — the starter reasoning eval that most LLMs now saturate.",
+    "existing_related_terms": [
+      "math-benchmark",
+      "reasoning",
+      "chain-of-thought"
+    ],
+    "existing_related_tools": [
+      "lm-evaluation-harness"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "GSM8K benchmark"
+    ]
+  },
+  {
+    "slug": "helicone",
+    "title": "Helicone",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An LLM observability and gateway platform focused on logging, cost tracking, caching, and rate limiting — one proxy line away from adoption.",
+    "existing_related_terms": [
+      "llm-gateway",
+      "llm-observability",
+      "semantic-caching"
+    ],
+    "existing_related_tools": [
+      "helicone"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Helicone proxy"
+    ]
+  },
+  {
+    "slug": "humaneval",
+    "title": "HumanEval (Benchmark)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "OpenAI's 164-problem Python code benchmark where solutions are scored by unit-test pass rate — the canonical LLM coding eval.",
+    "existing_related_terms": [
+      "swe-bench",
+      "livecodebench",
+      "benchmark"
+    ],
+    "existing_related_tools": [
+      "lm-evaluation-harness"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HumanEval score",
+      "pass@1"
+    ]
+  },
+  {
+    "slug": "inference",
+    "title": "Inference",
+    "category": "ops",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Running an AI model to get output — as opposed to training it.",
+    "existing_related_terms": [
+      "vram",
+      "quantization",
+      "ollama",
+      "vllm"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "langfuse",
+    "title": "Langfuse",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open-source observability and evaluation platform for LLM apps — traces, prompts, eval runs, user feedback — self-hostable alternative to LangSmith.",
+    "existing_related_terms": [
+      "langsmith",
+      "llm-observability",
+      "traceloop"
+    ],
+    "existing_related_tools": [
+      "langfuse"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Langfuse observability",
+      "open source LLM tracing"
+    ]
+  },
+  {
+    "slug": "langsmith",
+    "title": "LangSmith",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "LangChain's observability and evaluation platform for LLM applications — traces, datasets, evals, and prompt management in one tool.",
+    "existing_related_terms": [
+      "llm-observability",
+      "langfuse",
+      "eval-harness"
+    ],
+    "existing_related_tools": [
+      "langsmith"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LangChain LangSmith"
+    ]
+  },
+  {
+    "slug": "livecodebench",
+    "title": "LiveCodeBench",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A continually updated coding benchmark that sources problems from LeetCode, AtCoder, and Codeforces after each model's training cutoff to avoid contamination.",
+    "existing_related_terms": [
+      "humaneval",
+      "swe-bench",
+      "benchmark"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LiveCodeBench",
+      "live coding benchmark"
+    ]
+  },
+  {
+    "slug": "llm-as-judge",
+    "title": "LLM-as-Judge",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Using one LLM to grade another LLM's output against a rubric — the most scalable evaluation method for tasks without clear reference answers.",
+    "existing_related_terms": [
+      "evaluation",
+      "golden-dataset",
+      "benchmark",
+      "rlhf"
+    ],
+    "existing_related_tools": [
+      "deepeval",
+      "phoenix",
+      "langsmith",
+      "braintrust"
+    ],
+    "existing_code_example": "# Simple LLM-as-judge via OpenAI\ndef judge(prompt, actual, rubric):\n    r = client.chat.completions.create(\n        model='gpt-4o',\n        messages=[{'role':'system','content':f'You are a strict grader.\\nRubric: {rubric}\\nReply JSON: {{\"score\":0-5,\"reason\":\"\"}}'},\n                  {'role':'user','content':f'Task: {prompt}\\n\\nResponse: {actual}'}],\n        response_format={'type':'json_object'},\n    )\n    return json.loads(r.choices[0].message.content)",
+    "existing_seo_variations": [
+      "LLM as judge",
+      "LLM as a judge",
+      "automated LLM evaluation"
+    ]
+  },
+  {
+    "slug": "llm-judge",
+    "title": "LLM-as-Judge (Reprise)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Using a strong LLM to score or pairwise-compare other LLMs' outputs — a scalable substitute for human evaluation with well-documented biases.",
+    "existing_related_terms": [
+      "llm-as-judge",
+      "chatbot-arena",
+      "g-eval"
+    ],
+    "existing_related_tools": [
+      "ragas",
+      "langsmith"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM judge",
+      "automated eval"
+    ]
+  },
+  {
+    "slug": "llm-observability",
+    "title": "Observability (LLM Observability)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The discipline of capturing, storing, and analyzing every LLM call in production — prompts, responses, tokens, latency, cost, user feedback — to debug and improve the system.",
+    "existing_related_terms": [
+      "tracing",
+      "mlops",
+      "golden-dataset",
+      "llmops"
+    ],
+    "existing_related_tools": [
+      "langfuse",
+      "langsmith",
+      "phoenix",
+      "braintrust",
+      "helicone"
+    ],
+    "existing_code_example": "# Langfuse auto-instrumented OpenAI\nfrom langfuse.openai import openai\nresponse = openai.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=[{'role':'user','content': q}],\n    metadata={'user_id': user.id, 'session': sess, 'prompt_version': 'v2.1'},\n)",
+    "existing_seo_variations": [
+      "LLM observability",
+      "LLM monitoring",
+      "AI observability"
+    ]
+  },
+  {
+    "slug": "local-vs-cloud",
+    "title": "Local vs Cloud AI",
+    "category": "ops",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Local AI runs on your own hardware. Cloud AI runs on someone else's servers.",
+    "existing_related_terms": [
+      "inference",
+      "vram",
+      "ollama",
+      "api"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "long-context-benchmark",
+    "title": "LongBench / RULER",
+    "category": "ops",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Benchmarks that stress-test long-context LLMs with multi-hop QA, retrieval, summarization, and synthetic tasks up to hundreds of thousands of tokens.",
+    "existing_related_terms": [
+      "needle-in-a-haystack",
+      "lost-in-the-middle",
+      "context-window"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "RULER benchmark",
+      "LongBench"
+    ]
+  },
+  {
+    "slug": "math-benchmark",
+    "title": "MATH (Competition Math Benchmark)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A 12,500-problem benchmark of competition math (AMC/AIME-level) — much harder than GSM8K and still unsaturated for most models.",
+    "existing_related_terms": [
+      "gsm8k",
+      "reasoning",
+      "gpqa"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MATH benchmark",
+      "competition math LLM"
+    ]
+  },
+  {
+    "slug": "mlflow",
+    "title": "MLflow",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open-source platform for the ML lifecycle — experiment tracking, model registry, deployment — increasingly extended with LLM-specific features.",
+    "existing_related_terms": [
+      "weights-and-biases",
+      "model-registry"
+    ],
+    "existing_related_tools": [
+      "mlflow"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MLflow tracking",
+      "ML lifecycle"
+    ]
+  },
+  {
+    "slug": "mmlu",
+    "title": "MMLU (Benchmark)",
+    "category": "ops",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Massive Multitask Language Understanding — a 57-subject multiple-choice benchmark that became the standard broad-knowledge test for LLMs.",
+    "existing_related_terms": [
+      "benchmark",
+      "mmlu-pro",
+      "gpqa",
+      "eval-harness"
+    ],
+    "existing_related_tools": [
+      "lm-evaluation-harness"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MMLU benchmark",
+      "MMLU score"
+    ]
+  },
+  {
+    "slug": "mmlu-pro",
+    "title": "MMLU-Pro",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A harder, less-contaminated successor to MMLU with 10-way multiple choice and harder questions, reducing test-taking-skill effects.",
+    "existing_related_terms": [
+      "mmlu",
+      "gpqa",
+      "benchmark"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MMLU Pro"
+    ]
+  },
+  {
+    "slug": "model-registry",
+    "title": "Model Registry",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A versioned catalog of trained models with metadata — training run, metrics, stage (staging/prod), lineage — governing which model is deployed.",
+    "existing_related_terms": [
+      "mlflow",
+      "ml-pipeline",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "mlflow"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "ML model registry",
+      "model versioning"
+    ]
+  },
+  {
+    "slug": "model-routing",
+    "title": "LLM Router / Model Routing",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A pattern that dispatches each query to the most cost-effective model capable of handling it — cheap model for easy queries, expensive model only when needed.",
+    "existing_related_terms": [
+      "llm-gateway",
+      "litellm",
+      "semantic-caching"
+    ],
+    "existing_related_tools": [
+      "routellm",
+      "unify"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM router",
+      "model router"
+    ]
+  },
+  {
+    "slug": "model-serving",
+    "title": "Model Serving",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The infrastructure that hosts trained models behind an API with low latency, high availability, and scaling properties needed for production traffic.",
+    "existing_related_terms": [
+      "vllm",
+      "triton-server",
+      "tgi"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "triton-server",
+      "bentoml"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "LLM serving",
+      "model deployment"
+    ]
+  },
+  {
+    "slug": "mteb",
+    "title": "MTEB (Massive Text Embedding Benchmark)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A benchmark suite of 50+ tasks (retrieval, classification, clustering, reranking, STS) for comparing text embedding models on a standardized leaderboard.",
+    "existing_related_terms": [
+      "embedding-model",
+      "beir",
+      "benchmark"
+    ],
+    "existing_related_tools": [
+      "mteb"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "MTEB leaderboard",
+      "embedding benchmark"
+    ]
+  },
+  {
+    "slug": "needle-in-a-haystack",
+    "title": "Needle in a Haystack",
+    "category": "ops",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A long-context evaluation that buries a specific fact (the needle) at a random position in a huge irrelevant context (the haystack) and asks the model to retrieve it.",
+    "existing_related_terms": [
+      "long-context-eval",
+      "lost-in-the-middle"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "NIAH test",
+      "long context eval"
+    ]
+  },
+  {
+    "slug": "open-llm-leaderboard",
+    "title": "Open LLM Leaderboard",
+    "category": "ops",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Hugging Face's leaderboard that ranks open-weights LLMs on a standardized benchmark suite — the most-consulted reference for 'what open model should I try?'",
+    "existing_related_terms": [
+      "mmlu",
+      "chatbot-arena",
+      "benchmark"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HF leaderboard",
+      "LLM leaderboard"
+    ]
+  },
+  {
+    "slug": "opentelemetry-genai",
+    "title": "OpenTelemetry (GenAI / OpenInference)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The emerging standard for tracing LLM applications — OpenTelemetry semantic conventions plus vendor-specific attributes like prompts, tokens, and cost.",
+    "existing_related_terms": [
+      "llm-observability",
+      "arize-phoenix",
+      "langfuse"
+    ],
+    "existing_related_tools": [
+      "phoenix"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "OTel GenAI",
+      "OpenInference"
+    ]
+  },
+  {
+    "slug": "pipeline",
+    "title": "Pipeline (LLM Serving Pipeline)",
+    "category": "ops",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The sequence of components (tokenizer, model, sampler, post-processors) packaged together as a single runnable unit behind a common API.",
+    "existing_related_terms": [
+      "huggingface-transformers",
+      "tokenizer",
+      "model-serving"
+    ],
+    "existing_related_tools": [
+      "huggingface-transformers"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "HF pipeline"
+    ]
+  },
+  {
+    "slug": "portkey",
+    "title": "Portkey",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An LLM gateway platform with multi-provider routing, fallbacks, caching, guardrails, and observability — targeted at enterprise LLM infrastructure.",
+    "existing_related_terms": [
+      "llm-gateway",
+      "litellm",
+      "helicone"
+    ],
+    "existing_related_tools": [
+      "portkey"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Portkey AI"
+    ]
+  },
+  {
+    "slug": "promptfoo",
+    "title": "PromptFoo",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open-source CLI and framework for testing, evaluating, and red-teaming LLM prompts — think Jest for LLMs.",
+    "existing_related_terms": [
+      "eval-harness",
+      "llm-as-judge",
+      "red-team"
+    ],
+    "existing_related_tools": [
+      "promptfoo"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "promptfoo framework"
+    ]
+  },
+  {
+    "slug": "ragas",
+    "title": "RAGAS (RAG Assessment)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "An open-source RAG evaluation framework that scores faithfulness, answer relevance, context precision, and context recall without human ground truth.",
+    "existing_related_terms": [
+      "rag",
+      "llm-as-judge",
+      "eval-harness"
+    ],
+    "existing_related_tools": [
+      "ragas"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "RAGAS framework",
+      "RAG eval"
+    ]
+  },
+  {
+    "slug": "shadow-deployment",
+    "title": "Shadow Deployment",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Running a new model alongside production, processing live traffic in parallel but not serving its outputs to users — for safe quality comparison.",
+    "existing_related_terms": [
+      "canary-deployment",
+      "ab-test-llm"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "dark launch",
+      "mirror traffic"
+    ]
+  },
+  {
+    "slug": "swe-agent",
+    "title": "SWE-Agent / Agentless",
+    "category": "ops",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Agent frameworks designed to maximize SWE-Bench performance — SWE-Agent via custom agent-computer interface, Agentless via simpler structured pipelines.",
+    "existing_related_terms": [
+      "swe-bench",
+      "ai-agent",
+      "agent-benchmark"
+    ],
+    "existing_related_tools": [
+      "swe-agent"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SWE-Agent framework"
+    ]
+  },
+  {
+    "slug": "swe-bench",
+    "title": "SWE-Bench",
+    "category": "ops",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A benchmark where an LLM must resolve real-world GitHub issues in open-source Python repos by producing a patch that passes the repo's tests.",
+    "existing_related_terms": [
+      "humaneval",
+      "benchmark",
+      "agent-benchmark"
+    ],
+    "existing_related_tools": [
+      "swe-agent"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "SWE-Bench Verified",
+      "agent code benchmark"
+    ]
+  },
+  {
+    "slug": "synthetic-data",
+    "title": "Synthetic Data",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Training data generated by an LLM instead of collected from humans — cheap at scale but prone to introducing the generator's biases and failure modes.",
+    "existing_related_terms": [
+      "sft",
+      "distillation",
+      "fine-tuning",
+      "golden-dataset"
+    ],
+    "existing_related_tools": [
+      "distilabel",
+      "argilla",
+      "trl"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "synthetic data",
+      "LLM-generated training data",
+      "synthetic training data"
+    ]
+  },
+  {
+    "slug": "tau-bench",
+    "title": "Tau-Bench (τ-Bench)",
+    "category": "ops",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A benchmark from Sierra that evaluates LLM agents on realistic customer-support tasks over APIs with a simulated user and success criteria.",
+    "existing_related_terms": [
+      "agent-benchmark",
+      "tool-use",
+      "ai-agent"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "tau bench",
+      "Sierra tau bench"
+    ]
+  },
+  {
+    "slug": "time-to-first-token",
+    "title": "Time to First Token (TTFT)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The latency between sending a request and receiving the first generated token — dominated by prefill time, critical for perceived responsiveness.",
+    "existing_related_terms": [
+      "prefill",
+      "tokens-per-second",
+      "prompt-caching"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "TTFT",
+      "first token latency"
+    ]
+  },
+  {
+    "slug": "tokens-per-second",
+    "title": "Token Per Second (TPS)",
+    "category": "ops",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A throughput metric for LLM inference measuring generated tokens per second — the single most common latency headline number.",
+    "existing_related_terms": [
+      "inference",
+      "vllm",
+      "time-to-first-token"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "TPS inference",
+      "tokens per second"
+    ]
+  },
+  {
+    "slug": "weights-and-biases",
+    "title": "Weights & Biases (W&B)",
+    "category": "ops",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A managed platform for experiment tracking, model monitoring, and LLM evaluation widely used across ML research and industry.",
+    "existing_related_terms": [
+      "mlflow",
+      "model-registry",
+      "experiment-tracking"
+    ],
+    "existing_related_tools": [
+      "wandb"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "wandb",
+      "W&B"
+    ]
+  }
+]

@@ -1,0 +1,505 @@
+[
+  {
+    "slug": "assistant-decoding",
+    "title": "Assistant-Guided Decoding",
+    "category": "sampling",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Speculative decoding where a small 'assistant' model drafts tokens for the large target model to verify — generic term for the technique popularized by Medusa and EAGLE.",
+    "existing_related_terms": [
+      "speculative-decoding",
+      "medusa",
+      "eagle-decoding"
+    ],
+    "existing_related_tools": [
+      "vllm",
+      "tensorrt-llm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "draft verification decoding"
+    ]
+  },
+  {
+    "slug": "beam-search",
+    "title": "Beam Search",
+    "category": "sampling",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A decoding method that tracks the top-B candidate sequences in parallel and returns the highest-scoring complete sequence. Used heavily in translation, rarely in chat.",
+    "existing_related_terms": [
+      "greedy-decoding",
+      "top-p-sampling",
+      "top-k-sampling"
+    ],
+    "existing_related_tools": [
+      "transformers",
+      "marian",
+      "fairseq"
+    ],
+    "existing_code_example": "# Beam search in HuggingFace Transformers\noutputs = model.generate(\n    input_ids,\n    num_beams=5,\n    max_new_tokens=200,\n    early_stopping=True,\n    no_repeat_ngram_size=3,\n)",
+    "existing_seo_variations": [
+      "beam search",
+      "beam search decoding",
+      "num_beams"
+    ]
+  },
+  {
+    "slug": "constrained-decoding",
+    "title": "Constrained Decoding",
+    "category": "sampling",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Generation guaranteed to follow a formal grammar — JSON schema, regex, or BNF — by masking disallowed tokens at each step.",
+    "existing_related_terms": [
+      "structured-output",
+      "schema-decoding",
+      "guidance"
+    ],
+    "existing_related_tools": [
+      "outlines",
+      "lm-format-enforcer",
+      "guidance"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "grammar-based decoding",
+      "structured generation"
+    ]
+  },
+  {
+    "slug": "contrastive-decoding",
+    "title": "Contrastive Decoding",
+    "category": "sampling",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A decoding method that subtracts a smaller 'amateur' model's logits from the main model's logits to suppress generic predictions and amplify expert signal.",
+    "existing_related_terms": [
+      "speculative-decoding",
+      "sampling"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "contrastive search"
+    ]
+  },
+  {
+    "slug": "deterministic-decoding",
+    "title": "Deterministic Decoding (Seeded Generation)",
+    "category": "sampling",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Using temperature = 0 (or a fixed random seed) so the model produces the same output for the same input across runs.",
+    "existing_related_terms": [
+      "temperature",
+      "greedy-decoding",
+      "sampling"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "seeded generation",
+      "temp 0"
+    ]
+  },
+  {
+    "slug": "diverse-beam-search",
+    "title": "Diverse Beam Search",
+    "category": "sampling",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A beam search variant that penalizes similarity between beams so the returned N candidates are meaningfully different from each other.",
+    "existing_related_terms": [
+      "beam-search",
+      "sampling"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "diverse decoding",
+      "group beam search"
+    ]
+  },
+  {
+    "slug": "dry-sampling",
+    "title": "DRY Sampling",
+    "category": "sampling",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "'Don't Repeat Yourself' sampling — a repetition-penalty variant that penalizes repeated n-grams rather than individual tokens, reducing loops without over-suppressing common words.",
+    "existing_related_terms": [
+      "repetition-penalty",
+      "frequency-penalty"
+    ],
+    "existing_related_tools": [
+      "text-generation-webui"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "DRY repetition penalty"
+    ]
+  },
+  {
+    "slug": "eagle-decoding",
+    "title": "EAGLE Decoding",
+    "category": "sampling",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A speculative-decoding method that uses a lightweight auto-regressive head attached to the target model, achieving 3–4x speedups with minimal quality loss.",
+    "existing_related_terms": [
+      "speculative-decoding",
+      "medusa",
+      "assistant-decoding"
+    ],
+    "existing_related_tools": [
+      "tensorrt-llm"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "EAGLE speculative"
+    ]
+  },
+  {
+    "slug": "entropy-decoding",
+    "title": "Entropy-Based Decoding",
+    "category": "sampling",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Decoders that adapt sampling parameters (temperature, top-p, cutoffs) based on the current step's distribution entropy — more creative when uncertain, more conservative when confident.",
+    "existing_related_terms": [
+      "sampling",
+      "temperature",
+      "min-p-sampling"
+    ],
+    "existing_related_tools": [
+      "entropix"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "adaptive decoding",
+      "entropy sampling"
+    ]
+  },
+  {
+    "slug": "frequency-penalty",
+    "title": "Frequency Penalty",
+    "category": "sampling",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "OpenAI-style sampling parameter that reduces a token's logit proportional to how often it has appeared in the generated text so far.",
+    "existing_related_terms": [
+      "presence-penalty",
+      "repetition-penalty"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "frequency penalty param"
+    ]
+  },
+  {
+    "slug": "greedy-decoding",
+    "title": "Greedy Decoding",
+    "category": "sampling",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "The simplest decoding method: at every step pick the single highest-probability token. Deterministic and fast, but often produces repetitive output.",
+    "existing_related_terms": [
+      "temperature",
+      "top-p-sampling",
+      "top-k-sampling",
+      "beam-search"
+    ],
+    "existing_related_tools": [
+      "openai",
+      "anthropic",
+      "vllm"
+    ],
+    "existing_code_example": "# Deterministic mode\nresponse = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=msgs,\n    temperature=0,  # greedy\n    seed=42,        # further reproducibility\n)",
+    "existing_seo_variations": [
+      "greedy decoding",
+      "greedy sampling",
+      "temperature 0"
+    ]
+  },
+  {
+    "slug": "guidance",
+    "title": "Guidance (Microsoft)",
+    "category": "sampling",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A Python library for structured LLM generation that interleaves fixed template text with variable generation, guaranteeing adherence to format.",
+    "existing_related_terms": [
+      "constrained-decoding",
+      "outlines",
+      "structured-output"
+    ],
+    "existing_related_tools": [
+      "guidance"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Microsoft Guidance"
+    ]
+  },
+  {
+    "slug": "logit-bias",
+    "title": "Logit Bias",
+    "category": "sampling",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A per-token adjustment that adds (or subtracts) a constant from specific token logits at inference, forcing or forbidding certain outputs.",
+    "existing_related_terms": [
+      "structured-output",
+      "constrained-decoding"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": "resp = openai.chat.completions.create(\n    model='gpt-4o',\n    messages=[{'role':'user','content':'Is this spam?'}],\n    logit_bias={'9642': 100, '2360': 100, '2822': 100},  # yes/no/N/A\n    max_tokens=1)",
+    "existing_seo_variations": [
+      "logit bias API"
+    ]
+  },
+  {
+    "slug": "logprob",
+    "title": "Log Probability (Logprobs)",
+    "category": "sampling",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The natural logarithm of the probability a model assigns to each generated token — a core signal for confidence, eval, and retrieval.",
+    "existing_related_terms": [
+      "perplexity",
+      "token-probability",
+      "entropy-decoding"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "token logprobs",
+      "log probabilities"
+    ]
+  },
+  {
+    "slug": "min-p-sampling",
+    "title": "Min-P Sampling",
+    "category": "sampling",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A sampling method that keeps tokens with probability above a fraction (p_min) of the most likely token's probability, adapting the cutoff to confidence.",
+    "existing_related_terms": [
+      "top-p-sampling",
+      "temperature",
+      "multinomial-sampling"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "min p decoding"
+    ]
+  },
+  {
+    "slug": "mirostat",
+    "title": "Mirostat",
+    "category": "sampling",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "A sampling method that dynamically adjusts top-k to maintain a target output perplexity (surprise level) across the generation.",
+    "existing_related_terms": [
+      "top-p-sampling",
+      "typical-sampling",
+      "perplexity"
+    ],
+    "existing_related_tools": [
+      "llama.cpp"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "Mirostat sampling"
+    ]
+  },
+  {
+    "slug": "multinomial-sampling",
+    "title": "Multinomial Sampling",
+    "category": "sampling",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "Drawing the next token by sampling from the model's full probability distribution over the vocabulary, weighted by predicted probabilities.",
+    "existing_related_terms": [
+      "temperature",
+      "top-p-sampling",
+      "top-k-sampling"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "multinomial decode",
+      "random sampling"
+    ]
+  },
+  {
+    "slug": "outlines",
+    "title": "Outlines (Structured LLM)",
+    "category": "sampling",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "An open-source library for constrained decoding against regex, JSON schema, and context-free grammars via efficient automaton-based token masking.",
+    "existing_related_terms": [
+      "constrained-decoding",
+      "guidance",
+      "structured-output"
+    ],
+    "existing_related_tools": [
+      "outlines"
+    ],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "dottxt outlines"
+    ]
+  },
+  {
+    "slug": "perplexity",
+    "title": "Perplexity",
+    "category": "sampling",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "The exponentiated average negative log-likelihood of a sequence under a language model — lower means the model finds the sequence more natural.",
+    "existing_related_terms": [
+      "logprob",
+      "cross-entropy",
+      "sampling"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "PPL",
+      "LLM perplexity"
+    ]
+  },
+  {
+    "slug": "presence-penalty",
+    "title": "Presence Penalty",
+    "category": "sampling",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A sampling parameter that applies a flat logit reduction to any token that has already appeared at least once, encouraging topic diversity.",
+    "existing_related_terms": [
+      "frequency-penalty",
+      "repetition-penalty"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "presence penalty OpenAI"
+    ]
+  },
+  {
+    "slug": "reasoning-token-budget",
+    "title": "Reasoning Token / Thinking Budget",
+    "category": "sampling",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A parameter that caps how many tokens a reasoning model spends on internal reasoning before producing its final answer.",
+    "existing_related_terms": [
+      "reasoning",
+      "extended-thinking",
+      "openai-o1"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "thinking budget",
+      "reasoning effort"
+    ]
+  },
+  {
+    "slug": "repetition-penalty",
+    "title": "Repetition Penalty",
+    "category": "sampling",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A sampling modifier that reduces the probability of tokens already present in the context, discouraging the model from repeating itself.",
+    "existing_related_terms": [
+      "frequency-penalty",
+      "presence-penalty",
+      "dry-sampling"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "rep penalty"
+    ]
+  },
+  {
+    "slug": "stop-sequences",
+    "title": "Stop Sequences",
+    "category": "sampling",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "Strings that, when generated, cause the model to halt output — used to delimit structured responses or prevent over-generation.",
+    "existing_related_terms": [
+      "sampling",
+      "streaming",
+      "structured-output"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "stop tokens",
+      "stop strings"
+    ]
+  },
+  {
+    "slug": "temperature",
+    "title": "Temperature",
+    "category": "sampling",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A setting that controls how random or creative an AI's responses are.",
+    "existing_related_terms": [
+      "inference",
+      "llm",
+      "prompt"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": []
+  },
+  {
+    "slug": "top-k-sampling",
+    "title": "Top-k Sampling",
+    "category": "sampling",
+    "difficulty_tier": "beginner",
+    "existing_short_definition": "A decoding strategy that samples the next token from only the top K most-likely candidates, ignoring the rest.",
+    "existing_related_terms": [
+      "top-p-sampling",
+      "temperature",
+      "greedy-decoding"
+    ],
+    "existing_related_tools": [
+      "ollama",
+      "vllm",
+      "llama.cpp"
+    ],
+    "existing_code_example": "# Top-k in Ollama (via REST API)\n# curl localhost:11434/api/generate -d '{\"model\":\"llama3\",\"options\":{\"top_k\":40}}'\n\n# In vLLM Python:\nfrom vllm import SamplingParams\nsp = SamplingParams(top_k=40, top_p=0.9, temperature=0.7)",
+    "existing_seo_variations": [
+      "top-k sampling",
+      "top_k parameter",
+      "top-K decoding"
+    ]
+  },
+  {
+    "slug": "top-p-sampling",
+    "title": "Top-p (Nucleus) Sampling",
+    "category": "sampling",
+    "difficulty_tier": "intermediate",
+    "existing_short_definition": "A decoding strategy that samples from the smallest set of tokens whose cumulative probability exceeds a threshold p — typically the best default for creative text generation.",
+    "existing_related_terms": [
+      "temperature",
+      "top-k-sampling",
+      "greedy-decoding"
+    ],
+    "existing_related_tools": [
+      "openai",
+      "ollama",
+      "vllm"
+    ],
+    "existing_code_example": "# Top-p sampling in OpenAI\nresponse = client.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=msgs,\n    temperature=0.7,\n    top_p=0.9,\n    # top_k is not OpenAI-exposed; they apply it internally\n)\n# In llama.cpp / Ollama:\n# curl localhost:11434/api/generate -d '{\"model\":\"llama3\",\"options\":{\"top_p\":0.9,\"temperature\":0.7}}'",
+    "existing_seo_variations": [
+      "top-p sampling",
+      "nucleus sampling",
+      "top_p parameter"
+    ]
+  },
+  {
+    "slug": "typical-sampling",
+    "title": "Typical Sampling",
+    "category": "sampling",
+    "difficulty_tier": "advanced",
+    "existing_short_definition": "Sampling tokens whose information content is close to the distribution's expected entropy — biasing away from both too-predictable and too-surprising tokens.",
+    "existing_related_terms": [
+      "top-p-sampling",
+      "entropy-decoding"
+    ],
+    "existing_related_tools": [],
+    "existing_code_example": null,
+    "existing_seo_variations": [
+      "typical decoding"
+    ]
+  }
+]
