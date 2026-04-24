@@ -58,61 +58,13 @@
       "A2A protocol"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "A2A (Agent-to-Agent Protocol)",
-        "description": "Open HTTP protocol for agents to discover, authenticate, and hand off tasks across vendors.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/a2a-protocol",
-        "termCode": "a2a-protocol"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between A2A and MCP?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "MCP is agent-to-tool: an agent calls external tools (APIs, databases, files). A2A is agent-to-agent: one agent delegates work to another agent. They're complementary—an A2A agent often uses MCP internally to call tools."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is A2A production-ready?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Early adopters (Google, Salesforce, SAP) are testing it, but widespread production deployments are not yet common. Expect 2025–2026 for stable tooling and standardized implementations."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does A2A handle security and trust between agents?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Agents publish cryptographic signatures, API keys, or OAuth tokens in their agent cards. The calling agent verifies identity before sending tasks. You're still responsible for rotating credentials, vetting agent publishers, and monitoring for abuse."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to rewrite my agents to support A2A?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not necessarily. You can wrap existing agents with an A2A adapter layer that translates between A2A messages and your agent's internal format."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if an A2A agent goes offline or fails?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A2A doesn't handle retries or fallbacks natively—that's your orchestration layer's job. You'll need to implement circuit breakers, timeouts, and redundant agent discovery."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "A2A (Agent-to-Agent Protocol)",
+      "description": "Open HTTP protocol for agents to discover, authenticate, and hand off tasks across vendors.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/a2a-protocol",
+      "termCode": "a2a-protocol"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:32:59Z"
@@ -176,61 +128,13 @@
       "API cost tracking"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Admin API (OpenAI / Anthropic)",
-        "description": "Management API that controls API keys, teams, budgets, and usage metrics—separate from inference APIs.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/admin-api",
-        "termCode": "admin-api"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between an Admin API key and a regular API key?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A regular key can only call inference endpoints (chat completions, embeddings). An admin key can create/revoke keys, modify budgets, manage teams, and fetch usage metrics. Never expose an admin key to your applications."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use the Admin API to set a per-user spending limit?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "OpenAI supports per-API-key limits; you create one key per user and set a budget on it. Anthropic's approach differs—check their current documentation. Most providers don't offer true per-user limits across all keys owned by one account."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How quickly do Admin API changes take effect?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Rate limit and budget changes are usually immediate (within seconds). Key creation is instant, but revocation may take a few seconds to propagate across all inference servers."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need the Admin API if I'm using a single API key?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. If one key is shared across your whole team and you don't need programmatic access control or cost tracking, the dashboard UI alone is enough."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if I hit my Admin API rate limit?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You'll get a 429 response. Most providers allow hundreds of admin calls per minute, but if you're provisioning thousands of keys daily, you may need to batch requests or contact support."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Admin API (OpenAI / Anthropic)",
+      "description": "Management API that controls API keys, teams, budgets, and usage metrics—separate from inference APIs.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/admin-api",
+      "termCode": "admin-api"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:33:12Z"
@@ -291,61 +195,13 @@
       "well-known agent"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Agent Card",
-        "description": "JSON document published at /.well-known/agent-card.json that advertises an agent's capabilities, auth, and endpoints.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/agent-card",
-        "termCode": "agent-card"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between an agent card and an OpenAPI spec?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "An agent card is A2A-specific metadata: it advertises agent capabilities and auth for peer-to-peer discovery. OpenAPI describes HTTP APIs in general. Agent cards often reference an OpenAPI spec for endpoint details, but the card itself is lighter and agent-focused."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need an agent card if I'm using a centralized agent registry?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Agent cards enable distributed discovery. If your system has a central registry that clients query instead, you can register there without publishing a card. Use the card only if you want agents to be discoverable at a standard URL."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can an agent card change without breaking existing clients?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if you add new skills or auth methods while keeping existing ones stable. But removing skills or changing endpoint URLs will break clients that cached the card. Version your changes or maintain backwards compatibility."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if a client can't fetch the agent card?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The client cannot discover your agent's capabilities, auth, or endpoints. It will either fail or fall back to manual configuration. Always ensure your card is publicly accessible at the standard location."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is the agent card the same as a model card?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. A model card describes an AI model's training, capabilities, and biases. An agent card describes an agent service's skills, endpoints, and auth. They serve different purposes."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Agent Card",
+      "description": "JSON document published at /.well-known/agent-card.json that advertises an agent's capabilities, auth, and endpoints.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/agent-card",
+      "termCode": "agent-card"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:31:23Z"
@@ -408,61 +264,13 @@
       "cache_control"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Anthropic API Prompt Caching",
-        "description": "Mark Claude API content blocks with cache_control to reuse prefixes, cutting token costs by 90% after a 25% write premium.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/anthropic-prompt-caching",
-        "termCode": "anthropic-prompt-caching"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How much do I save with Anthropic prompt caching?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "After paying a 25% write premium on first use, cached tokens cost 90% less on subsequent requests. For a 50KB context reused 10 times, you amortize the premium and achieve ~6–8x lower per-token cost overall."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if my prompt changes slightly?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Any change to the cached prefix invalidates the entire cache and triggers a new write cycle at 25% premium. Exact prefix matching is required; plan stable context accordingly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use prompt caching with extended thinking?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but cache control applies only to input tokens, not reasoning tokens generated during extended thinking. The discount applies to reused context, not to the thinking process itself."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long does a cache stay active?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "By default, 5 minutes. You can opt into a 1-hour TTL via the API. After expiration, the next request with the same prefix pays the 25% write premium again."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is prompt caching available on all Claude models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Prompt caching is available on Claude 3.5 Sonnet, Opus, and newer versions. Check Anthropic's API docs for the most current support."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Anthropic API Prompt Caching",
+      "description": "Mark Claude API content blocks with cache_control to reuse prefixes, cutting token costs by 90% after a 25% write premium.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/anthropic-prompt-caching",
+      "termCode": "anthropic-prompt-caching"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:26:22Z"
@@ -521,61 +329,13 @@
     "meta_description": "A standardized way to send requests to a model and receive responses programmatically over HTTP.",
     "seo_variations": [],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "API",
-        "description": "A standardized way to send requests to a model and receive responses programmatically over HTTP.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/api",
-        "termCode": "api"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is an API in AI?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "An API (Application Programming Interface) is a programmatic way to send text to a model and receive generated output. You make HTTP requests to a model endpoint; it returns JSON with the result."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is OpenAI's API the only standard?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. OpenAI's Chat Completions API became the de facto standard, so Ollama, LM Studio, and LocalAI implement OpenAI-compatible APIs. But other formats (Claude's Messages API, Anthropic's Workbench) also exist."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does an API call cost?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Cost depends on the provider and model. OpenAI charges per token (input and output); Ollama is free (self-hosted). Always check pricing and multiply by your expected token volume."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use the same API code for different models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if both models expose OpenAI-compatible APIs. You change the endpoint URL and model name; the request/response format stays the same. Custom models may need adapter code."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if an API request fails?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The server returns an HTTP error code (429 for rate limit, 500 for server error) and a JSON error message. Your code should retry transient errors with exponential backoff and handle permanent errors gracefully."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "API",
+      "description": "A standardized way to send requests to a model and receive responses programmatically over HTTP.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/api",
+      "termCode": "api"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:59Z"
@@ -633,53 +393,13 @@
       "OpenAI Assistants"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Assistants API (OpenAI)",
-        "description": "OpenAI's stateful API for building conversational assistants with persistent threads, file handling, and built-in tools.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/assistants-api",
-        "termCode": "assistants-api"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between Assistants API and Chat Completions API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Chat Completions is stateless: you send a full message array each call. Assistants API is stateful: threads persist conversation history server-side, and the API manages tools and file references automatically. Assistants trades request-by-request control for less boilerplate."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Assistants API being replaced?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. OpenAI is deprecating Assistants API in favor of Responses API (released late 2024). If starting new work, use Responses. If maintaining existing Assistants code, understand the migration path but don't rewrite unless you hit performance or cost cliffs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I handle files in Assistants?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Upload files to the API, attach them to threads or messages, then enable the file search or code interpreter tool. The Assistant accesses them during execution. Be aware: file search indexes at Assistant creation, not upload—changes require rebuilding."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why is my Assistant call timing out?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Runs can take seconds to minutes, especially with file search or code execution. You must poll the run status endpoint (not wait synchronously). If polling returns failure, check the run's error message—common causes are malformed function calls or resource limits."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Assistants API (OpenAI)",
+      "description": "OpenAI's stateful API for building conversational assistants with persistent threads, file handling, and built-in tools.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/assistants-api",
+      "termCode": "assistants-api"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:22:55Z"
@@ -745,61 +465,13 @@
       "batch API cost savings"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Batch API",
-        "description": "Async LLM API that processes thousands of requests offline within 24 hours at ~50% cost savings.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/batch-api",
-        "termCode": "batch-api"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How much does Batch API cost compared to regular API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Batch APIs cost roughly 50% less than synchronous calls on the same model. Exact discounts vary by provider (OpenAI, Anthropic, Google) but typically range 40–60%."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I cancel a batch once I've submitted it?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Most providers allow cancellation within minutes of submission, but once processing starts, you cannot recall individual requests. Design your batch carefully before upload."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between Batch API and continuous batching?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Batch API is client-initiated; you upload a file and wait hours. Continuous batching is server-side; the provider automatically groups real-time requests behind the scenes for efficiency."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Batch API work with vision models or just text?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Support varies by provider. OpenAI Batch supports text and vision; check your provider's current documentation for multimodal support."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if my batch file has errors?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The entire batch or specific requests may fail. Invalid JSONL syntax, missing required fields, or unsupported model names will cause errors. Validate your file locally before submission."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Batch API",
+      "description": "Async LLM API that processes thousands of requests offline within 24 hours at ~50% cost savings.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/batch-api",
+      "termCode": "batch-api"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:56Z"
@@ -866,61 +538,13 @@
       "chat API format"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Chat Completions API",
-        "description": "API standard for chat-based LLM calls: send message history, get assistant response back.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/chat-completions-api",
-        "termCode": "chat-completions-api"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between Chat Completions and the Completions API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Completions takes raw text input and continues it; Chat Completions takes structured conversation history (roles + messages) and is built for multi-turn dialogue. Chat Completions is the modern standard."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I have to include the entire message history every time I call the API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—the API is stateless. You send the full conversation context each call. Most frameworks cache this to reduce tokens, but the API itself doesn't remember previous requests."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Chat Completions with open-source models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. vLLM, Ollama, Replicate, and self-hosted inference servers expose OpenAI-compatible Chat Completions endpoints. You swap the base URL and keep your request code identical."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What does the 'tool' role do?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Tool role messages contain the output of function calls you made. After the model requests a function, you call it, then send the result back in a tool message so the model can continue reasoning."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is temperature the only way to control randomness?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. You can also use top_p (nucleus sampling), top_k, min_p, or frequency_penalty. Temperature scales all logits uniformly; top_p keeps only the smallest set of tokens summing to probability p."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Chat Completions API",
+      "description": "API standard for chat-based LLM calls: send message history, get assistant response back.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/chat-completions-api",
+      "termCode": "chat-completions-api"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:32:48Z"
@@ -988,61 +612,13 @@
       "hosted embeddings"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Embeddings API",
-        "description": "API endpoint that converts text or images to dense vectors for semantic search, retrieval, and classification tasks.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/embeddings-api",
-        "termCode": "embeddings-api"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between embeddings API and embedding model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "An embedding model is the neural network that does the encoding. An embeddings API is the hosted service exposing that model. You call the API; it runs the model and returns vectors. Most practitioners use APIs rather than self-hosting because it eliminates infrastructure burden."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does it cost to embed data with an embeddings API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Pricing varies: OpenAI charges per million input tokens (e.g., $0.02/M for text-embedding-3-small), Cohere charges per million input tokens (cheaper for bulk), and some open-source models via inference-as-a-service are cheaper but require vendor hosting. Batch operations often qualify for volume discounts."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use one embeddings API to search data embedded by another?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Embeddings from different models live in different vector spaces. OpenAI and Cohere embeddings are not comparable directly. If you switch providers, you must re-embed all your existing data."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do embeddings APIs support images?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Some do: OpenAI text-embedding-3 does not, but models like CLIP via hosted APIs (e.g., Replicate, Hugging Face Inference) handle images. Check the specific API's documentation; most general-purpose embeddings APIs focus on text only."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the typical latency of an embeddings API call?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Single-item calls typically return in 100–500ms depending on the provider and network. Batch calls are much more efficient: embedding 1,000 items often takes 2–5 seconds. This is why batching is standard practice."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Embeddings API",
+      "description": "API endpoint that converts text or images to dense vectors for semantic search, retrieval, and classification tasks.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/embeddings-api",
+      "termCode": "embeddings-api"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:31:37Z"
@@ -1108,61 +684,13 @@
       "gRPC streaming"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "gRPC (LLM Serving)",
-        "description": "HTTP/2 RPC framework using protobuf for low-latency, schema-enforced internal LLM serving.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/grpc",
-        "termCode": "grpc"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is gRPC the same as protobuf?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Protobuf is the serialization format (how data is encoded). gRPC is the RPC framework that uses protobuf. You can use protobuf without gRPC, but gRPC typically pairs with protobuf for efficiency."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use gRPC for a public API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Technically yes, but it's awkward. Browsers cannot call gRPC directly; you'd need gRPC-Web, which adds a proxy layer. For public APIs, HTTP+JSON is simpler and more accessible."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I debug gRPC calls?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use grpcurl for command-line requests, or tools like Kreya or Postman (limited support). For detailed traffic inspection, enable gRPC logging and use Wireshark with protobuf dissectors. Standard curl won't work."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does gRPC require TLS?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not strictly, but HTTP/2 (which gRPC uses) works best over TLS in production. Many libraries and proxies default to enforcing it, so plan for mTLS in any real deployment."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's faster: gRPC or REST JSON?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "gRPC is typically 20–40% faster due to binary serialization and HTTP/2 multiplexing. The gap widens at high QPS and payload sizes; REST wins on simplicity for low-traffic scenarios."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "gRPC (LLM Serving)",
+      "description": "HTTP/2 RPC framework using protobuf for low-latency, schema-enforced internal LLM serving.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/grpc",
+      "termCode": "grpc"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:22:43Z"
@@ -1222,53 +750,13 @@
       "schema-guided output"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "JSON Schema Enforcement",
-        "description": "Provider-side guarantee that LLM output validates against a JSON schema at decoding time.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/json-schema-enforcement",
-        "termCode": "json-schema-enforcement"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is JSON schema enforcement the same as function calling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Function calling lets you specify discrete functions the model can invoke; schema enforcement constrains the raw output format. Function calling is for tool selection; schema enforcement is for structure guarantee."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does schema enforcement slow down generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Slightly. Constrained decoding adds a small overhead per token to check validity, but you save latency by eliminating retries. Simple schemas have minimal impact; very complex ones are more expensive."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use JSON schema enforcement with streaming?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, most providers support streaming with schemas. The constraint is applied token-by-token, so output is streamed incrementally while remaining valid."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if the schema is impossible to satisfy?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The model will generate partial output matching the schema constraints, then stop. Some providers error; others truncate. Test edge cases before production."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "JSON Schema Enforcement",
+      "description": "Provider-side guarantee that LLM output validates against a JSON schema at decoding time.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/json-schema-enforcement",
+      "termCode": "json-schema-enforcement"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:05Z"
@@ -1333,61 +821,13 @@
       "LiteLLM router"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "LiteLLM",
-        "description": "Open-source Python SDK that wraps 100+ LLM providers behind a single OpenAI-compatible API.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/litellm",
-        "termCode": "litellm"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Can I use LiteLLM with Ollama or local models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. LiteLLM wraps Ollama, vLLM, and LM Studio the same way it wraps OpenAI—you point it to your local server URL and reference the model by name."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does LiteLLM add latency?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Library mode adds 5–15ms overhead (request parsing and routing). Proxy mode adds 10–30ms. For most applications, this is negligible versus network round-trip time."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can LiteLLM track spending across providers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. LiteLLM Proxy logs input/output tokens per provider and calculates costs in real time. You can set per-user or per-model budgets that block requests when limits are hit."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if a provider is down?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "In library mode, the call fails. In Proxy mode, you can configure fallback routing—if OpenAI fails, automatically retry with Anthropic."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is LiteLLM compatible with LangChain or LlamaIndex?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Both frameworks support custom LLM providers that accept OpenAI-format calls, so LiteLLM works as a drop-in replacement."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "LiteLLM",
+      "description": "Open-source Python SDK that wraps 100+ LLM providers behind a single OpenAI-compatible API.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/litellm",
+      "termCode": "litellm"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:31:14Z"
@@ -1453,61 +893,13 @@
       "LLM proxy"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "LLM Gateway",
-        "description": "Middleware that routes requests across LLM providers, handles retries, caches responses, and tracks costs centrally.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/llm-gateway",
-        "termCode": "llm-gateway"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between an LLM gateway and a load balancer?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A load balancer distributes traffic across identical backend servers by health and latency. An LLM gateway does that plus provider abstraction, semantic caching, cost accounting, and cross-provider fallback. A gateway is application-aware; a load balancer is agnostic."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does an LLM gateway add latency?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, typically 10–50ms for routing, caching checks, and logging. For latency-critical use cases, benchmark your specific gateway and payload size. Semantic caching can recover latency by avoiding downstream calls entirely."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use a gateway with local models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Gateways like LiteLLM and Portkey support local inference servers (Ollama, vLLM, llama-cpp-server) alongside cloud providers. This lets you fall back to local models if cloud APIs fail or become expensive."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Will a gateway lock me into a specific provider?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No—that's the point. A gateway abstracts away provider-specific APIs. You can swap Claude for Mixtral or GPT-4 by changing a config file, not rewriting application code."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does adding a gateway cost?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Gateways charge per-million tokens or flat monthly (typically $50–500). The ROI comes from semantic-cache hits reducing redundant calls, plus reduced emergency incident costs from automatic failover."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "LLM Gateway",
+      "description": "Middleware that routes requests across LLM providers, handles retries, caches responses, and tracks costs centrally.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/llm-gateway",
+      "termCode": "llm-gateway"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:33:29Z"
@@ -1565,61 +957,13 @@
     "meta_description": "Open standard for AI assistants to connect to external tools and data sources via a single, reusable server interface.",
     "seo_variations": [],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "MCP (Model Context Protocol)",
-        "description": "Open standard for AI assistants to connect to external tools and data sources via a single, reusable server interface.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mcp",
-        "termCode": "mcp"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is MCP the same as function calling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Function calling is how a model invokes a tool; MCP is a protocol for how a client (which includes models) discovers and communicates with external servers. MCP can transport function calls, but it's a layer above them."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use MCP with models other than Claude?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. MCP is model-agnostic. Any AI application or agent framework that implements the MCP client spec can use your MCP server. Adoption is growing across Cursor, Zed, and other tools."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to host an MCP server?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You can run it locally, on a server you control, or via a hosted service. The client connects via stdio or HTTP—deployment is up to you. Many teams run MCP servers locally or on internal infrastructure for data access."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between MCP and REST APIs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "REST is a general web architecture; MCP is a specific protocol optimized for AI clients to discover tools, prompts, and resources in a standardized format. MCP is simpler for AI use cases because it bakes in context awareness."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does MCP handle authentication?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "MCP itself doesn't define auth; that's your server's responsibility. You control auth inside your server logic—use API keys, OAuth, or whatever suits your architecture."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "MCP (Model Context Protocol)",
+      "description": "Open standard for AI assistants to connect to external tools and data sources via a single, reusable server interface.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mcp",
+      "termCode": "mcp"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:24:04Z"
@@ -1681,61 +1025,13 @@
       "MCP client"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "MCP Client",
-        "description": "An application that connects to MCP servers and exposes their tools, prompts, and resources to an LLM.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mcp-client",
-        "termCode": "mcp-client"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between an MCP client and an MCP server?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A server exposes capabilities (tools, resources, prompts) and waits for requests. A client discovers servers, maintains connections, and routes LLM requests to the right server. Clients are consumers; servers are providers."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run multiple MCP servers with one client?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. That's the main point. A single client can discover and connect to many servers simultaneously, and the LLM can call tools from any of them in the same session."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to write code to build an MCP client?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not always. Claude Desktop and Cursor are production MCP clients; you configure them via JSON. You only write code if you need a custom client for a specific application or use case."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does an MCP client handle server failures?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "That depends on the client implementation. Well-designed clients implement timeout limits, retry logic, and graceful degradation so a failed server doesn't crash the entire LLM session."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can an MCP client run on my local machine?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Clients can run locally (Claude Desktop, Cursor) or as a cloud service. Local clients connect to servers via stdio, local sockets, or network calls, depending on the server setup."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "MCP Client",
+      "description": "An application that connects to MCP servers and exposes their tools, prompts, and resources to an LLM.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mcp-client",
+      "termCode": "mcp-client"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:23Z"
@@ -1799,61 +1095,13 @@
       "Model Context Protocol prompts"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "MCP Prompts",
-        "description": "Reusable prompt templates MCP servers expose to clients, usually surfaced as slash-commands or workflow shortcuts.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mcp-prompts",
-        "termCode": "mcp-prompts"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between an MCP prompt and a system prompt?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A system prompt is a global instruction set sent to every LLM call. An MCP prompt is a reusable template that a server exposes for clients to invoke on-demand, often parameterized by user input."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can an MCP prompt call server tools?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. A prompt template can include calls to server tools, so the server can fetch live data (e.g., pull PR details from GitHub) before rendering the final prompt."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does a client discover MCP prompts?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "When a client connects to an MCP server, the server advertises its prompts via the MCP protocol. The client then lists them in its UI, usually as slash-commands or menu items."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Are MCP prompts just static templates?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not necessarily. Prompts can be dynamic—the server can inspect parameters, fetch resources, and conditionally include sections before returning the rendered template to the client."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to use MCP prompts if I'm building an MCP server?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Prompts are optional. You can build a server with only tools or resources. Prompts are a convenience layer for common workflows."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "MCP Prompts",
+      "description": "Reusable prompt templates MCP servers expose to clients, usually surfaced as slash-commands or workflow shortcuts.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mcp-prompts",
+      "termCode": "mcp-prompts"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:42Z"
@@ -1917,61 +1165,13 @@
       "Model Context Protocol resources"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "MCP Resources",
-        "description": "Read-only data exposed by MCP servers to LLMs—files, database rows, APIs—identified by URI.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mcp-resources",
-        "termCode": "mcp-resources"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between MCP resources and MCP tools?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Resources are read-only context the server exposes. Tools are actions the LLM can call with side effects. Use resources for data, tools for operations."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can an MCP resource be large?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Technically yes, but large resources block the client and waste context. Break them into smaller, scoped resources by entity, time range, or file."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do clients decide which resources to include?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Clients typically show users a list of available resources and let them select manually, or agents/tools can request specific resources by URI."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do MCP resources support real-time updates?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Resources are snapshots. If data changes mid-session, the client must re-fetch. For live data, use tools that query on-demand instead."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use a resource URI to access a private database?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if your MCP server has database credentials. The server handles auth; the client just sees the URI. But expose only what the LLM should see."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "MCP Resources",
+      "description": "Read-only data exposed by MCP servers to LLMs—files, database rows, APIs—identified by URI.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mcp-resources",
+      "termCode": "mcp-resources"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:53Z"
@@ -2037,61 +1237,13 @@
       "Model Context Protocol sampling"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "MCP Sampling",
-        "description": "MCP protocol feature that lets a server request LLM text generation from the client without managing its own model.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mcp-sampling",
-        "termCode": "mcp-sampling"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is MCP sampling the same as MCP tools?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Tools let a server expose functions that the client or LLM can call. Sampling is the reverse: the server asks the client to run the LLM. Tools are for server-side action; sampling is for LLM-side generation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need API keys to use MCP sampling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. The server doesn't manage keys—the client does. Sampling works because your client is already authenticated to an LLM (Claude, OpenAI, etc.); the server just borrows that connection."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use MCP sampling offline?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Only if your client has offline LLM access (e.g., a local model). If the client uses a cloud API, sampling requires internet and authentication to that API."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if the user denies a sampling request?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The client returns an error to the server. The server must handle rejection gracefully—either fall back to a default response, skip the operation, or ask the user differently."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does sampling work with all MCP clients?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sampling is part of the MCP spec, but not all clients implement it. Desktop clients like Claude Desktop do; simpler clients might not. Check your client's documentation."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "MCP Sampling",
+      "description": "MCP protocol feature that lets a server request LLM text generation from the client without managing its own model.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mcp-sampling",
+      "termCode": "mcp-sampling"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:33:33Z"
@@ -2154,61 +1306,13 @@
       "Model Context Protocol server"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "MCP Server",
-        "description": "A program exposing resources, prompts, and tools over the Model Context Protocol for LLM clients to consume.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mcp-server",
-        "termCode": "mcp-server"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between an MCP server and an MCP client?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A server exposes resources and tools; a client (like Claude Desktop) consumes them. The server runs in your environment or on your infrastructure; the client runs on the user's machine or in their app."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to use an official SDK to write an MCP server?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Official SDKs for Python and TypeScript simplify implementation, but you can implement the protocol directly if you understand the JSON-RPC message format and transport layer."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can an MCP server run in the cloud?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. You can deploy it as a containerized service (Docker, Kubernetes) and expose it over HTTP+SSE or gRPC. Clients connect via a remote endpoint instead of stdio."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is an MCP server secure for exposing sensitive APIs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Only if you implement authentication and authorization. An MCP server is a network service, so use API keys, TLS, and permission checks—don't rely on client-side validation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What transport protocols does MCP support?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "stdio (local), HTTP+SSE (server-sent events), and HTTP with streaming. stdio is simplest for local tools; HTTP variants work for remote servers."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "MCP Server",
+      "description": "A program exposing resources, prompts, and tools over the Model Context Protocol for LLM clients to consume.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mcp-server",
+      "termCode": "mcp-server"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:32:45Z"
@@ -2274,61 +1378,13 @@
       "how to define MCP tools"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "MCP Tools",
-        "description": "Functions an MCP server exposes to LLMs, enabling side-effecting actions like running SQL or creating issues.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mcp-tools",
-        "termCode": "mcp-tools"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between MCP tools and function calling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Function calling is an LLM capability; MCP tools are the protocol layer for exposing functions over MCP. An MCP server uses function calling under the hood to let clients define and invoke tools."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can an MCP tool return multiple results?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. A tool can return structured content with multiple fields or arrays. The LLM sees all of it and can decide what to do next based on the full result."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does the MCP server know if a tool call succeeded?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The tool handler in the server returns a result object. You control the structure—include a status field, error message, or data. The client passes this back to the LLM so it can react."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if a tool takes too long to run?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Most LLM integrations have a timeout (typically 30–60 seconds). If your tool exceeds it, the call fails. Design tools to be fast, or split long operations into separate tools that report progress."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I make a tool optional—only available in some MCP clients?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Each tool definition is independent. A client only sees and can call tools that the server declares. You can conditionally register tools based on configuration or capabilities."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "MCP Tools",
+      "description": "Functions an MCP server exposes to LLMs, enabling side-effecting actions like running SQL or creating issues.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mcp-tools",
+      "termCode": "mcp-tools"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:46Z"
@@ -2391,61 +1447,13 @@
       "Claude API"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Messages API (Anthropic)",
-        "description": "Anthropic's native API format for Claude with system prompt as a top-level field and conversation as a messages array.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/messages-api",
-        "termCode": "messages-api"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is the Messages API the same as OpenAI's Chat Completions API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Both use a messages array, but Anthropic separates the system prompt into its own top-level field, and the tool use format and behavior differ. They are not interchangeable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use the Messages API if I only want to send text, no tools?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Tools are optional. You can use the Messages API for simple text-in, text-out conversations; you just get the system/messages structure."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does prompt caching work automatically on the Messages API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. You must explicitly mark which messages or system blocks you want cached using the cache_control parameter. Then Claude batches them and caches subsequent requests."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if I send two user messages in a row?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The API rejects it. Messages must alternate between user and assistant, or end with user. Claude cannot respond to back-to-back user turns."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need a different SDK to use the Messages API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You need Anthropic's official SDK or a compatible wrapper. Generic OpenAI-compatible libraries will not work because the request/response shapes differ."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Messages API (Anthropic)",
+      "description": "Anthropic's native API format for Claude with system prompt as a top-level field and conversation as a messages array.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/messages-api",
+      "termCode": "messages-api"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:44Z"
@@ -2510,61 +1518,13 @@
       "asynchronous OpenAI requests"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "OpenAI Batch API",
-        "description": "Submit bulk requests in JSONL format; OpenAI processes them asynchronously at 50% discount within 24 hours.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/openai-batch",
-        "termCode": "openai-batch"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How long does an OpenAI Batch API job actually take?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Up to 24 hours. Most complete within 1–2 hours during low-traffic periods. Your actual time depends on queue depth and request complexity. You can poll status or use webhooks to avoid checking manually."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Batch API for vision or fine-tuning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Batch supports chat completions and embeddings endpoints only. Fine-tuning and vision tasks require standard API calls or separate fine-tuning endpoints."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if a single request in my batch fails?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "That request fails independently; others complete normally. OpenAI returns an error object in the results file for the failed custom_id. You must retry failed requests in a new batch or via standard API."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Batch API cheaper than using Assistants API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Batch is 50% off standard rates. Assistants API pricing is separate and often higher due to overhead. Use Batch for bulk offline work; use Assistants for multi-turn, stateful conversations."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I cancel or pause a batch after submission?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You cannot pause a batch. If submitted and queued, it will run. You can discard results after it completes, but you pay for the full processing."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "OpenAI Batch API",
+      "description": "Submit bulk requests in JSONL format; OpenAI processes them asynchronously at 50% discount within 24 hours.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/openai-batch",
+      "termCode": "openai-batch"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:32Z"
@@ -2630,61 +1590,13 @@
       "REST API to LLM tool binding"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "OpenAPI Tool Binding",
-        "description": "Automatically converts OpenAPI specs into LLM-callable tool definitions, exposing REST APIs to agents instantly.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/openapi-tool-binding",
-        "termCode": "openapi-tool-binding"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Can I use OpenAPI tool binding with any LLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Only if the LLM supports function calling (most modern ones do). The binding generates function schemas compatible with OpenAI, Anthropic, and other function-calling APIs, but your framework must pass those schemas to the model correctly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between OpenAPI tool binding and writing functions manually?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Binding auto-generates schemas from your API docs; manual writing lets you customize descriptions, validation, and structure. Binding is faster but less flexible. Use binding for straightforward CRUD endpoints, manual definitions for complex logic or safety-critical calls."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does my OpenAPI spec have to be public?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. You can bind private or internal specs. The binding system only reads the YAML/JSON file—it doesn't publish it. Store the spec securely alongside your agent code."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I test an auto-generated tool before deploying it to agents?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Call the generated function directly with test inputs, or use a tool-calling harness (LangChain's tool validators, eval frameworks like DeepEval). Check that the generated schemas match your actual API behavior."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Will the agent actually understand what a tool does if I use auto-generated descriptions?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It depends on the description quality in your OpenAPI spec. Auto-extracted summaries are often bare-bones. Add concrete examples and intent notes (e.g., 'Use this to refund an order, not to modify it') to your spec for better agent reasoning."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "OpenAPI Tool Binding",
+      "description": "Automatically converts OpenAPI specs into LLM-callable tool definitions, exposing REST APIs to agents instantly.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/openapi-tool-binding",
+      "termCode": "openapi-tool-binding"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:51Z"
@@ -2750,61 +1662,13 @@
       "parallel API calls LLM"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Function Calling (Parallel)",
-        "description": "LLM emits multiple tool calls in one response, executed concurrently, cutting latency for independent requests.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/parallel-function-calling",
-        "termCode": "parallel-function-calling"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between parallel function calling and regular function calling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Regular calling emits one tool request, waits for the result, then emits the next. Parallel calling emits multiple independent requests in one batch. Regular calling takes N × latency; parallel takes 1 × max_latency."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do all LLMs support parallel function calls?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. OpenAI, Anthropic Claude, and newer models do. Smaller or older models may not structure multiple calls in a single response. Check your model's API docs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if one parallel tool call fails?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The failure is returned in the result array with that call's ID and an error message. Other results succeed. Your client code must handle partial success and decide whether to retry, skip, or escalate."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I call dependent tools in parallel?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not safely. If tool B needs the output of tool A, request tool A first, wait for the result, then request tool B. Parallel only works for truly independent calls."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much latency does parallel calling save?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "If you have 3 tools taking 100ms, 150ms, and 200ms each, sequential takes 450ms; parallel takes 200ms (the slowest). Savings scale with call count and diversity of latencies."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Function Calling (Parallel)",
+      "description": "LLM emits multiple tool calls in one response, executed concurrently, cutting latency for independent requests.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/parallel-function-calling",
+      "termCode": "parallel-function-calling"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:04Z"
@@ -2871,61 +1735,13 @@
       "API prompt caching"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Prompt Caching (API)",
-        "description": "Reuse computed KV cache from repeated prompt prefixes across API calls to cut cost and latency by 50–90%.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/prompt-caching",
-        "termCode": "prompt-caching"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How much does prompt caching actually save?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Typical savings are 50–90% on the cached prefix alone (both cost and latency). If your cached prefix is 80% of the request, expect ~60% overall savings. Exact numbers depend on provider pricing and your cache hit rate."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is prompt caching the same as semantic caching?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Prompt caching reuses the exact same token prefix via KV cache. Semantic caching matches similar (not identical) prompts and reuses their outputs. Prompt caching is faster and cheaper but requires exact matches."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I have to change my code to use prompt caching?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It depends on the provider. OpenAI caches automatically on repeated requests. Anthropic requires you to add cache_control tags to your system prompt. Google requires explicit prefix markers. Check your provider's docs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if the cache expires while I'm working?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Your next request will miss the cache and recompute the prefix from scratch. Cost and latency jump back to baseline. Cache TTL is typically 5 minutes to 1 hour; design batch jobs to stay within that window if possible."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I cache the entire conversation history?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if it stays under the provider's cache-write limit. But if users add new messages frequently, only the stable part (system prompt + instructions) benefits. Mark only truly static sections for caching."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Prompt Caching (API)",
+      "description": "Reuse computed KV cache from repeated prompt prefixes across API calls to cut cost and latency by 50–90%.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/prompt-caching",
+      "termCode": "prompt-caching"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:49Z"
@@ -2986,61 +1802,13 @@
       "429 error"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Rate Limit (LLM APIs)",
-        "description": "Provider caps on request frequency and tokens per minute, tiered by account level; exceeding returns HTTP 429.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/rate-limit",
-        "termCode": "rate-limit"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What does HTTP 429 mean?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "429 is the HTTP status code for 'Too Many Requests'—your provider's server is telling you to stop sending requests and wait. The response headers include `Retry-After` (seconds to wait) or `x-ratelimit-reset-tokens` (when your token budget refills)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long does a rate limit last?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Rate limits reset on a sliding window (usually per minute or per day, depending on the dimension). Once the window passes, your quota refills automatically; you don't need to do anything."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I request a higher rate limit?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but it varies by provider. OpenAI, Anthropic, and others require you to apply, prove usage, and wait 1–7 days. Some providers (Groq, Together AI) auto-scale for paid accounts. Always check your provider's ramp-up policy before launch."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between TPM and RPM limits?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RPM caps how many API calls you make per minute (e.g., 10,000 requests). TPM caps total tokens across all calls (e.g., 2 million tokens). Both are active; you hit whichever limit first."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does batch API have rate limits?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Batch APIs (like OpenAI's batch endpoint) have separate, usually much higher limits—they're designed for non-real-time workloads and don't compete with synchronous API calls for quota."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Rate Limit (LLM APIs)",
+      "description": "Provider caps on request frequency and tokens per minute, tiered by account level; exceeding returns HTTP 429.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/rate-limit",
+      "termCode": "rate-limit"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:33:01Z"
@@ -3104,61 +1872,13 @@
       "WebSocket speech API"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Realtime API (OpenAI)",
-        "description": "WebSocket API for speech-in, speech-out LLM conversations with sub-500ms latency and native interruption.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/realtime-api",
-        "termCode": "realtime-api"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is Realtime API different from Whisper + GPT + TTS?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Realtime handles audio end-to-end in one connection with native interruption. The three-step pipeline (Whisper transcribes, GPT responds, TTS synthesizes) serializes latency—each hop adds 100–500ms. Realtime skips intermediate steps entirely."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Realtime API with custom voices?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You select from OpenAI's preset voices in the session config. You cannot upload custom voice files or clone a speaker's voice with Realtime API."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if I talk while the agent is speaking?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The API detects your voice and immediately cancels the agent's outgoing audio stream. You then own the turn. If you stop, the model processes your speech and generates a new response."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Realtime API support function calling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. You define tools in the session config. When the model calls a function, audio output pauses, you execute the function server-side, and send the result back. Audio resumes after."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the pricing model for Realtime API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "OpenAI charges per input and output tokens at published rates (same as Chat API), plus per-minute connection fees for active sessions. Check current pricing on OpenAI's billing page."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Realtime API (OpenAI)",
+      "description": "WebSocket API for speech-in, speech-out LLM conversations with sub-500ms latency and native interruption.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/realtime-api",
+      "termCode": "realtime-api"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:58Z"
@@ -3222,61 +1942,13 @@
       "OpenAI Responses"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Responses API (OpenAI)",
-        "description": "OpenAI's stateful API for multi-turn conversations, tool use, and reasoning—replaces Chat Completions for complex workflows.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/responses-api",
-        "termCode": "responses-api"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between Responses API and Chat Completions API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Responses API manages conversation state server-side and integrates tool calls natively; Chat Completions requires you to reconstruct history and parse tool calls yourself. Responses API is built for multi-step agentic flows."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I still need the Assistants API if I use Responses API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not necessarily. Responses API covers most Assistants API use cases (tools, reasoning, state) in a simpler, more direct format. Assistants API remains useful for persistent threads and file management across sessions."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Responses API with GPT-4 and older models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Responses API is designed for o1 and newer reasoning models. Check OpenAI's model compatibility matrix for the current list of supported models."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much do reasoning tokens cost in Responses API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Reasoning tokens are priced separately and cost more than regular completion tokens. Set reasoning_effort to 'low', 'medium', or 'high' to control spending, or cap max_reasoning_tokens."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Responses API save conversation history between requests?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. State persists within a single request conversation. For long-term memory, you must implement external storage or use the Assistants API with persistent threads."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Responses API (OpenAI)",
+      "description": "OpenAI's stateful API for multi-turn conversations, tool use, and reasoning—replaces Chat Completions for complex workflows.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/responses-api",
+      "termCode": "responses-api"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:42Z"
@@ -3344,61 +2016,13 @@
       "test-time compute OpenAI"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Responses API Reasoning (OpenAI)",
-        "description": "OpenAI's API surface for reasoning models, letting you control inference compute and access reasoning summaries.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/responses-api-reasoning",
-        "termCode": "responses-api-reasoning"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between Responses API and Chat Completions API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Responses API is built for reasoning models with native reasoning.effort control, structured reasoning summaries, and seamless tool integration. Chat Completions has limited reasoning model support and was designed before test-time compute became a first-class concern."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does reasoning.effort affect cost and latency?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Higher reasoning.effort allocates more tokens to the reasoning phase, increasing both cost and latency. 'minimal' is fast and cheap; 'high' can 10x tokens and latency. The tradeoff is accuracy and solution quality."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I hide the reasoning from users?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. The API returns reasoning summaries separately from the final response. You choose whether to display them, log them, or discard them—useful for compliance, UX control, or reducing verbosity."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do tools like web search run inside or outside the reasoning phase?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Tools run within the reasoning loop itself. The model reasons, decides to call a tool, uses the result to refine reasoning, then outputs a final answer—tighter integration than Chat Completions allows."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Which OpenAI models support Responses API Reasoning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "o1, o1-mini, o3, and o3-mini support Responses API natively. Non-reasoning models (GPT-4, GPT-4o) also work via Responses API but without the reasoning.effort parameter."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Responses API Reasoning (OpenAI)",
+      "description": "OpenAI's API surface for reasoning models, letting you control inference compute and access reasoning summaries.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/responses-api-reasoning",
+      "termCode": "responses-api-reasoning"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:29Z"
@@ -3463,61 +2087,13 @@
       "text/event-stream"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Server-Sent Events (SSE)",
-        "description": "HTTP protocol for streaming server-to-client updates over a persistent connection; how LLM APIs deliver tokens.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/server-sent-events",
-        "termCode": "server-sent-events"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is SSE different from WebSockets?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SSE is one-way (server → client only) and uses standard HTTP; WebSockets are bidirectional and use a separate protocol. SSE is simpler for streaming; use WebSockets only if you need client-to-server messages without polling."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need an SDK to use SSE streaming?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Any HTTP client library (curl, fetch, httpx) can read SSE by reading lines from the response body. SDKs handle parsing and error recovery, but aren't required for basic streaming."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if the SSE connection drops mid-stream?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The connection closes and no more data arrives. You must detect the drop and reconnect manually. Use the id field in SSE events and the Last-Event-ID header to resume from the last received event."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can SSE pass through proxies and firewalls?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Usually yes, because it's plain HTTP. However, some corporate proxies timeout long-lived connections after 30–60 seconds. If streaming cuts out unexpectedly, check your infrastructure's idle-connection policy."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is SSE the right choice for my chatbot?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if you're streaming text tokens from an LLM. SSE handles this use case well. If users also need to upload files or send binary data, consider combining SSE (for streaming) with a separate upload channel."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Server-Sent Events (SSE)",
+      "description": "HTTP protocol for streaming server-to-client updates over a persistent connection; how LLM APIs deliver tokens.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/server-sent-events",
+      "termCode": "server-sent-events"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:30Z"
@@ -3584,61 +2160,13 @@
       "SSE streaming"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Streaming (Token Streaming)",
-        "description": "Return model output token-by-token as generated instead of waiting for the full response.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/streaming",
-        "termCode": "streaming"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Does streaming make LLM generation faster overall?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Total generation time is the same. Streaming redistributes latency so the first token arrives sooner and tokens appear continuously, improving perceived responsiveness, but the model takes the same wall-clock time to finish."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I implement streaming in Python?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Set `stream=True` in your API call (OpenAI, Anthropic, etc.) and iterate over chunks. Most SDKs yield chunk objects; extract the token content from each chunk and print or append to a buffer. Frameworks like LangChain wrap this in a callback handler."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use streaming with tool use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but tool calls arrive fragmented across multiple chunks. You must buffer chunks until a complete tool call appears (usually marked by a stop reason), then parse and execute it. This adds complexity compared to non-streamed tool use."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is the difference between SSE and WebSocket streaming?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SSE is one-directional (server to client) and simpler to implement; WebSocket is bidirectional. Most LLM providers use SSE. WebSocket is useful when you need real-time input changes mid-generation, but LLM APIs rarely support that."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I get token usage from a streamed response?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Token counts arrive in the final chunk. Providers like OpenAI include usage data in the last message event only. You must consume the entire stream to get the full token count; you cannot bill upfront."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Streaming (Token Streaming)",
+      "description": "Return model output token-by-token as generated instead of waiting for the full response.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/streaming",
+      "termCode": "streaming"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:51Z"
@@ -3700,61 +2228,13 @@
       "JSON schema enforcement"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Strict Mode (OpenAI)",
-        "description": "OpenAI flag that forces model output to match JSON schema exactly, eliminating validation overhead.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/strict-mode",
-        "termCode": "strict-mode"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What happens if I use strict mode with an unsupported JSON Schema feature?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "OpenAI returns a schema validation error immediately, before generation starts. You must remove the unsupported feature (like patternProperties) or disable strict mode."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does strict mode slow down the model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. The schema is compiled into a grammar on the first call; subsequent calls generate tokens within that grammar with zero overhead. You save latency by eliminating validation and retries."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use strict mode with function calling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Set strict: true on the function definition. The model generates parameters that always match the schema exactly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is strict mode the same as constrained decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Related but different. Strict mode is OpenAI's specific protocol using cached grammar. Constrained decoding is a broader technique (used by other vendors) to limit token generation to a grammar."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What if my schema needs optional fields that vary by row?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Strict mode enforces a single schema per call. If fields are truly optional, define them in the schema with no required constraint, but the model may or may not include them."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Strict Mode (OpenAI)",
+      "description": "OpenAI flag that forces model output to match JSON schema exactly, eliminating validation overhead.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/strict-mode",
+      "termCode": "strict-mode"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:44Z"
@@ -3823,61 +2303,13 @@
       "LLM schema validation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Structured Output (JSON Mode)",
-        "description": "Constrain LLM output to valid JSON or other strict formats that match a schema for production parsing.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/structured-output",
-        "termCode": "structured-output"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is JSON mode the same as schema enforcement?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. JSON mode guarantees valid JSON syntax but not your schema. The model can return `{\"wrong_field\": \"value\"}`. Always validate against your schema separately or use constrained decoding for true enforcement."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between constrained decoding and validation with retry?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Constrained decoding enforces the schema during generation (100% reliable, 10–50% slower). Validation with retry generates freely, checks after, and re-prompts on failure (faster but may need multiple API calls)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does structured output work with every LLM API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Constrained decoding works on models you control (local, self-hosted). Validation with retry works on any API (OpenAI, Anthropic, open-source). OpenAI and some others now offer native JSON Schema mode."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does structured output slow down generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Constrained decoding typically adds 10–50% latency depending on schema complexity. Retry validation adds latency only on failures. Measure with your exact schema and model before production deployment."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use structured output for nested or complex schemas?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Pydantic and JSON Schema support nested objects, arrays, and unions. Constrained decoding in libraries like Outlines handles complex schemas, but validation becomes stricter and latency impact grows."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Structured Output (JSON Mode)",
+      "description": "Constrain LLM output to valid JSON or other strict formats that match a schema for production parsing.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/structured-output",
+      "termCode": "structured-output"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:22:43Z"
@@ -3943,61 +2375,13 @@
       "tool_choice none"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Tool Choice",
-        "description": "API parameter that controls whether a model must call a tool, can skip it, or must use a specific tool.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/tool-choice",
-        "termCode": "tool-choice"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between tool_choice='required' and a regular tool call?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "'required' guarantees the model will call at least one tool; a regular call lets the model refuse. Use 'required' when a tool call is non-negotiable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I force the model to use multiple tools at once with tool_choice?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Tool_choice controls whether the model calls tools, not how many. Use parallel-function-calling if you want multiple simultaneous calls, then set tool_choice to shape that behavior."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does tool_choice work with streaming?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, on both OpenAI and Anthropic. Tool choice is enforced at response generation time, before streaming begins."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if I set tool_choice to a tool that isn't in my tools list?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The API rejects the request with a validation error. Always ensure your tool name in tool_choice matches the exact id or function name you declared."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does tool_choice add latency or cost?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No measurable latency cost. It may slightly reduce token usage when set to 'none' (skips tool reasoning), but increases it with 'required' (forces tool planning)."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Tool Choice",
+      "description": "API parameter that controls whether a model must call a tool, can skip it, or must use a specific tool.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/tool-choice",
+      "termCode": "tool-choice"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:16Z"
@@ -4065,61 +2449,13 @@
       "model tool calling"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Tool Use (Function Calling)",
-        "description": "The LLM's ability to call external functions, choose arguments, and reason over results—turning models into agents.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/tool-use",
-        "termCode": "tool-use"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is tool use the same as function calling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—they're synonymous terms. OpenAI calls it 'function calling,' Anthropic calls it 'tool use,' and the Model Context Protocol generalizes it as 'tools.' The mechanics are identical."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can a model call multiple tools at once?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Modern models support parallel tool calling, which lets you execute multiple independent tool calls simultaneously and return all results together, cutting latency significantly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if the model calls a tool that doesn't exist?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "That's a hallucination. Always validate the tool name and arguments against your schema before execution. Return a tool-result error message and let the model retry with a valid tool."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to use tool use for every API call in my agent?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Use tool use only for decisions the model needs to make (which tool to call, what arguments). For deterministic, non-decision steps, call APIs directly in your orchestration code."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I know if my model supports tool use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Check the model's API documentation. OpenAI's GPT-4/4o, Anthropic's Claude 3+, and most recent open-source models (via vLLM, Ollama, or similar) support it. Older models typically don't."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Tool Use (Function Calling)",
+      "description": "The LLM's ability to call external functions, choose arguments, and reason over results—turning models into agents.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/tool-use",
+      "termCode": "tool-use"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:24:18Z"
@@ -4181,61 +2517,13 @@
       "event webhook"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Webhook (LLM Integrations)",
-        "description": "An HTTP callback that delivers events to your registered URL instead of you polling for updates.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/webhook",
-        "termCode": "webhook"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between webhooks and polling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Polling means you ask an API \"Is my result ready yet?\" every few seconds. Webhooks mean the API calls you when the result is ready. Webhooks are faster and cheaper because you don't make wasted requests."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I verify a webhook is real and not faked?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The provider includes an HMAC signature (usually in an X-Signature header) computed from the event body and your secret key. You recompute that signature on your side; if it matches, the event is genuine. Always verify before acting on webhook data."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What if my webhook endpoint is down when an event fires?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The provider retries delivery (typically 3–5 times over hours or days). If you stay down, events are eventually dropped. Some providers let you replay missed webhooks from a dashboard. Use a message queue to buffer events so you can process them later even if your handler is temporarily offline."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use webhooks with batch jobs in OpenAI or Anthropic?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "OpenAI's batch API supports webhooks; you register an endpoint and they POST when the batch completes. Anthropic does not yet offer webhook notifications for batch API—you must poll. Check provider docs for current support."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I prevent duplicate processing if a webhook is retried?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Store the event ID (provided by the webhook) in your database with a unique constraint. When a retry arrives with the same ID, your insert fails gracefully and you skip reprocessing. This is idempotency."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Webhook (LLM Integrations)",
+      "description": "An HTTP callback that delivers events to your registered URL instead of you polling for updates.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/webhook",
+      "termCode": "webhook"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:33:19Z"
@@ -4294,53 +2582,13 @@
       "real-time LLM"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "WebSockets (LLM)",
-        "description": "Bidirectional protocol enabling real-time LLM streaming; server and client send data simultaneously without waiting.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/websockets-llm",
-        "termCode": "websockets-llm"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between WebSocket and Server-Sent Events?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SSE only streams server-to-client over HTTP. WebSocket opens a bidirectional channel where both sides send data independently and simultaneously."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need WebSocket for every LLM API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Use REST/HTTP for turn-based chat. Use WebSocket only when you need interruption, simultaneous bidirectional traffic, or sub-100ms latency (voice, real-time agents)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does WebSocket work in browsers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. All modern browsers support the WebSocket API natively. Authentication requires tokens in the URL or subprotocols, not custom headers."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if a WebSocket connection drops?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It closes silently. You must detect the close event and implement client-side reconnection; heartbeat frames prevent idle timeouts on proxies."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "WebSockets (LLM)",
+      "description": "Bidirectional protocol enabling real-time LLM streaming; server and client send data simultaneously without waiting.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/websockets-llm",
+      "termCode": "websockets-llm"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:27Z"

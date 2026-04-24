@@ -57,61 +57,13 @@
       "jailbreak defense"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Adversarial Robustness",
-        "description": "A model's ability to resist crafted inputs designed to trigger misclassification or unsafe outputs.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/adversarial-robustness",
-        "termCode": "adversarial-robustness"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between adversarial robustness and safety?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Safety is the broad goal: avoiding harmful outputs. Adversarial robustness is one slice—defense against intentional attacks. A model can be safe against random queries but fail under deliberate jailbreak attempts."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I make a model 100% adversarially robust?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Perfect robustness is mathematically impossible for general tasks. The goal is to raise the cost of attack high enough that it's impractical for your threat model. Layer defenses and red-team continuously."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is adversarial training the same as RLHF?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. RLHF optimizes for user preference and alignment. Adversarial training specifically exposes the model to attack examples to build defense. They complement each other but serve different goals."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I test for adversarial robustness?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Run red-teaming (humans crafting attacks), use automated tools like GCG or jailbreak datasets, and monitor production logs for new attack patterns. Document what breaks, retrain on it, and test again."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do open-source models have worse adversarial robustness than closed models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not necessarily. Robustness depends on training data and defense choices, not license. But open-source models are easier to attack because weights are public, enabling gradient-based optimization attacks."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Adversarial Robustness",
+      "description": "A model's ability to resist crafted inputs designed to trigger misclassification or unsafe outputs.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/adversarial-robustness",
+      "termCode": "adversarial-robustness"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:19Z"
@@ -174,61 +126,13 @@
       "AI governance structure"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "AI Governance",
-        "description": "Formal policies and processes for managing AI systems—inventory, risk assessment, approvals, monitoring, incident response.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/ai-governance",
-        "termCode": "ai-governance"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between AI governance and AI safety?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Safety is about preventing harms—bias, hallucinations, jailbreaks. Governance is the organizational structure that enforces safety checks. Safety is the goal; governance is the process."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need AI governance if I only use off-the-shelf models like ChatGPT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but lighter weight. You still need to document which models you use, who accesses them, and compliance implications. Third-party risk assessment is critical."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What framework should we use—NIST AI RMF, ISO 42001, or something else?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Pick based on your regulatory environment. NIST AI RMF is US-focused, free, and widely adopted; ISO 42001 aligns with existing ISO compliance programs. Many orgs blend both."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How often should we audit AI systems under governance?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Risk-based: high-risk models monthly or after any retraining; medium-risk quarterly; low-risk annually. Trigger audits after any production incident or major data distribution shift."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can a small team implement AI governance or do we need a dedicated officer?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Small teams can start with lightweight checklists and shared responsibility; governance scales to a dedicated function once you exceed ~10 production models or hit regulatory pressure."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "AI Governance",
+      "description": "Formal policies and processes for managing AI systems—inventory, risk assessment, approvals, monitoring, incident response.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/ai-governance",
+      "termCode": "ai-governance"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:22:47Z"
@@ -300,61 +204,13 @@
       "RLHF alignment"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Alignment (AI Alignment)",
-        "description": "Shaping an LLM to pursue human-intended goals through training techniques like RLHF and DPO.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/alignment",
-        "termCode": "alignment"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is alignment the same as safety?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Safety is about preventing harm; alignment is about matching human intent. A model can be safe but useless (refuses everything) or aligned but unsafe (complies with harmful requests). Good products need both."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long does it take to align a model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SFT takes days to weeks on a single GPU. RLHF or DPO adds weeks to months depending on data size and annotation cost. Red-teaming and iteration continue indefinitely in production."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can you align a model without human feedback?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Partially. Constitutional AI uses rule-based self-critique without preference labels. But preference-based methods (RLHF, DPO) almost always outperform rule-only approaches because humans catch nuances that rules miss."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does alignment training hurt model performance?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sometimes—it's called alignment tax. Heavy refusal training or narrow instruction-tuning can reduce the model's flexibility on benign tasks. Good alignment balances helpfulness and safety rather than maximizing one."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What are jailbreaks and why do they matter for alignment?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Jailbreaks are inputs that trick an aligned model into violating its training. They reveal gaps in alignment—the model technically can generate harmful content if prompted cleverly enough, showing that alignment is about behavioral surface, not fundamental values."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Alignment (AI Alignment)",
+      "description": "Shaping an LLM to pursue human-intended goals through training techniques like RLHF and DPO.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/alignment",
+      "termCode": "alignment"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:26Z"
@@ -416,61 +272,13 @@
       "capability tax"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Alignment Tax",
-        "description": "Performance drop on benchmarks after safety training tunes out unsafe behavior alongside useful capabilities.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/alignment-tax",
-        "termCode": "alignment-tax"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is alignment tax exactly?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The measurable drop in model performance on capability benchmarks (MMLU, HumanEval, MATH) after safety and alignment training. A model might lose 2–5 percentage points on reasoning tasks after RLHF."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is alignment tax the same as over-refusal?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Over-refusal is one symptom—refusing benign tasks. Alignment tax is the broader performance loss, including degraded reasoning, blander writing, and weaker coding, not just more rejections."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can you eliminate alignment tax?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not fully, but you can minimize it. Careful reward modeling, balanced training data, and targeted safety layers avoid broad capability erosion. Some tax is unavoidable if you want genuine safety."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much alignment tax is acceptable?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It depends on the use case. Consumer products tolerate 1–3% benchmark drop for strong safety. Research or coding models may aim lower. The trade-off must match your deployment risk."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Which capabilities suffer most from alignment training?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Math reasoning, coding, and nuanced writing tend to suffer most because safety training can suppress reasoning depth or specificity. Chat-level helpfulness often survives intact."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Alignment Tax",
+      "description": "Performance drop on benchmarks after safety training tunes out unsafe behavior alongside useful capabilities.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/alignment-tax",
+      "termCode": "alignment-tax"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:11Z"
@@ -533,61 +341,13 @@
       "hidden model behavior"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Backdoor Attack",
-        "description": "A poisoning attack that plants a hidden trigger pattern to make a model misbehave only when activated.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/backdoor-attack",
-        "termCode": "backdoor-attack"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between a backdoor attack and a jailbreak?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A jailbreak exploits the model's behavior at inference time using a crafted prompt; a backdoor is baked into the weights during training via poisoned data. Backdoors are stealthier because they don't rely on finding a weakness—they create one."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can fine-tuning remove a backdoor?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Fine-tuning teaches new tasks without overwriting the original trigger association. The backdoor lies dormant and reactivates if the trigger appears."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I detect if a model has a backdoor?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Audit training data for anomalous repeated patterns, run adversarial trigger-search tests, and inspect model outputs under suspected triggers. Full transparency on data provenance is the strongest defense."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Are open-source models more vulnerable to backdoors than proprietary ones?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Open-source models are easier to poison at upload because anyone can contribute. Proprietary models hide training data, making backdoors harder to verify but also harder to audit—tradeoffs exist either way."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is a trigger in the context of backdoor attacks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A trigger is a rare, specific pattern (phrase, token, pixel patch, or symbol) embedded in poisoned training examples. When the model sees it, it activates the attacker's desired behavior."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Backdoor Attack",
+      "description": "A poisoning attack that plants a hidden trigger pattern to make a model misbehave only when activated.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/backdoor-attack",
+      "termCode": "backdoor-attack"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:10Z"
@@ -646,53 +406,13 @@
       "media authenticity"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "C2PA (Content Provenance and Authenticity)",
-        "description": "Open standard for cryptographically signing media metadata to prove who created content and what tools were used.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/c2pa",
-        "termCode": "c2pa"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Does C2PA prove an image is real or unedited?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. C2PA only proves that a specific party signed specific metadata at a specific time. It discloses edits and AI use, but doesn't validate whether the content is truthful or matches reality."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can C2PA be faked or stripped from a file?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The signature itself cannot be forged without the signer's private key. However, C2PA metadata can be stripped if the file is saved in a format that doesn't preserve it (e.g., exporting to JPEG without C2PA support). Tampering is detectable but removal is possible."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between C2PA and watermarking?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Watermarking embeds invisible or visible markers into the image itself to prove ownership; C2PA stores signed metadata about provenance and edits. They complement each other — C2PA is structural metadata, watermarking is content-embedded."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Who can see C2PA metadata?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Anyone with a C2PA-compatible viewer (browsers, media apps, forensic tools) can read C2PA signatures. The standard is open; no special permission is required to view or verify metadata."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "C2PA (Content Provenance and Authenticity)",
+      "description": "Open standard for cryptographically signing media metadata to prove who created content and what tools were used.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/c2pa",
+      "termCode": "c2pa"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:24Z"
@@ -755,61 +475,13 @@
       "privileged planner architecture"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "CaMeL (Google Prompt Injection Defense)",
-        "description": "Google's two-model architecture that separates trusted planning from untrusted data execution to block prompt injection.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/camel",
-        "termCode": "camel"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is CaMeL different from just filtering user inputs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Filtering tries to detect and remove malicious patterns—it's reactive and incomplete. CaMeL is preventive: it makes injection structurally impossible because untrusted data can never reach the planning stage where instructions live."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does CaMeL work against all types of prompt injection?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "CaMeL blocks direct and indirect prompt injection attacks that try to manipulate the planner. It does not defend against poisoned training data, goal misgeneralization, or attacks that exploit the plan structure itself."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the performance cost of running two models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You pay the latency and compute of two forward passes. In practice, the planner is often smaller or cached; the executor may run in parallel with other agents. Tradeoff depends on your throughput and latency requirements."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can CaMeL be used with smaller or open-source models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. CaMeL is an architectural pattern, not tied to any specific model. You can implement it with any LLM, though the planner benefits from strong instruction-following and the executor from safety training."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if the planner generates an invalid or incomplete plan?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The executor cannot exceed the plan's scope—it will either fail safely or produce incomplete output. This is a feature (prevents hallucination in execution) but requires the planner to be reliable."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "CaMeL (Google Prompt Injection Defense)",
+      "description": "Google's two-model architecture that separates trusted planning from untrusted data execution to block prompt injection.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/camel",
+      "termCode": "camel"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:22:43Z"
@@ -879,61 +551,13 @@
       "LLM-based moderation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Content Moderation (AI-Based)",
-        "description": "ML and LLM systems that automatically review user or AI-generated content against platform policies.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/content-moderation",
-        "termCode": "content-moderation"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between content moderation and guardrails?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Guardrails block unsafe inputs/outputs within a single AI model interaction. Content moderation reviews user-posted or model-generated content at platform scale, often after it's been created, against broader community policies."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can LLMs alone do content moderation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LLMs alone are slow and expensive at scale. Effective moderation layers rules and fast classifiers first, then routes complex cases to LLM review. This reduces cost and latency while keeping nuance where it matters."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do you handle false positives without overwhelming users?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use a confidence threshold and send borderline decisions to human review rather than auto-blocking. Provide clear appeal paths and explain decisions in user-facing language so they understand why content was flagged."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is AI moderation biased?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, especially for toxicity classifiers. Bias stems from training data (e.g., overrepresentation of English, Western norms) and from different cultural contexts interpreting the same words differently. Regular audits and multi-language fine-tuning help but don't eliminate it."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the latency tradeoff for good moderation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Rules and ML classifiers add 50–200ms. LLM review adds 1–5 seconds. Most platforms show content immediately with post-hoc review, flagging violations after the fact and relying on user reports for urgent harm."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Content Moderation (AI-Based)",
+      "description": "ML and LLM systems that automatically review user or AI-generated content against platform policies.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/content-moderation",
+      "termCode": "content-moderation"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:38Z"
@@ -996,61 +620,13 @@
       "backdoor training data"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Data Poisoning",
-        "description": "An attack where malicious training examples are injected to embed backdoors, degrade model quality, or trigger specific misbehavior.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/data-poisoning",
-        "termCode": "data-poisoning"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is data poisoning different from a prompt injection attack?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Prompt injection happens at inference time—the user's input tricks the model. Data poisoning happens at training time—the attacker modifies the data the model learned from. Poisoning is harder to patch because it requires retraining."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can data poisoning affect fine-tuning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, critically. If you fine-tune on externally sourced data or user-generated content, an attacker can poison that dataset. Fine-tuning on even a few malicious examples often embeds the attack faster than poisoning massive pretraining corpora."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between broad and targeted poisoning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Broad poisoning degrades overall task performance (e.g., making a model worse at math). Targeted poisoning only triggers on specific inputs (e.g., a model giving wrong answers only when the input contains a trigger word)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do you detect data poisoning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Detection is hard. Common approaches: monitor training data for statistical anomalies, check for unusual phrase patterns, track provenance of external sources, and test model behavior on isolated trigger examples. No method catches all attacks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is data poisoning a real threat to production LLMs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Web-scraped training data is inherently exposed. Companies have documented poisoning campaigns targeting image models; LLMs face the same surface area at scale."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Data Poisoning",
+      "description": "An attack where malicious training examples are injected to embed backdoors, degrade model quality, or trigger specific misbehavior.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/data-poisoning",
+      "termCode": "data-poisoning"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:24Z"
@@ -1110,61 +686,13 @@
       "dataset datasheet"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Datasheet (for Datasets)",
-        "description": "A structured document describing a dataset's composition, collection process, intended uses, and limitations.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/datasheet",
-        "termCode": "datasheet"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is a datasheet the same as a data dictionary?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. A data dictionary lists column names, types, and value ranges. A datasheet explains *why* the dataset exists, how it was collected, who should use it, and what biases or gaps it has. You can have both."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Who should write a datasheet?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The team that created or curated the dataset should write it, ideally with input from stakeholders who will use it (engineers, product managers, ethics reviewers). The goal is transparency from the source, not reverse-engineering it later."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long does it take to write a datasheet?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "For a typical dataset, 2–6 hours. The real cost is honest reflection on your collection process and known limitations, not the writing itself. Rushed datasheets that hide problems are worse than useless."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need a datasheet if my data is private or internal?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Internal teams benefit just as much; datasheets prevent your colleagues from misusing data months later when context is forgotten. It's especially critical if the data touches regulated use cases (hiring, lending, medical)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What if I don't know the answer to a datasheet question?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Say so explicitly. 'Unknown' or 'not documented' is honest and actionable. It flags a gap your team or future maintainers should investigate before the dataset is considered production-ready."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Datasheet (for Datasets)",
+      "description": "A structured document describing a dataset's composition, collection process, intended uses, and limitations.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/datasheet",
+      "termCode": "datasheet"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:26:34Z"
@@ -1228,61 +756,13 @@
       "AI-generated content detection"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Deepfake Detection",
-        "description": "Techniques to identify AI-generated or manipulated media; effectiveness degrades as generators improve.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/deepfake-detection",
-        "termCode": "deepfake-detection"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between deepfake detection and AI detection?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "AI detection identifies any AI-generated content (text, images, code); deepfake detection specifically flags manipulated or synthetic media designed to deceive. Deepfake detection is narrower and media-focused."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can deepfake detectors keep up with new AI generators?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Detectors built on one generator's artifacts (e.g., StyleGAN) fail on newer ones (e.g., Stable Diffusion). The gap between detection and generation is widening; provenance methods are more durable than pixel analysis."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do you verify a video is real if detection fails?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use out-of-band verification: contact the original source directly, check C2PA certificates, reverse-search for prior versions, or verify metadata (timestamps, camera EXIF data). Combine with human review for high-stakes claims."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What percentage of deepfakes can current detectors catch?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "On benchmark datasets, 85–95%. On unseen generators and real-world video compression, accuracy drops to 60–75%. No detector exceeds 80% on fully adversarial synthetic media."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is audio deepfake detection easier than video?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Slightly, because vocal patterns are harder to perfectly replicate than faces. But high-quality audio synthesis (voice cloning) now fools most detectors; multimodal detection (checking both audio and video together) is more reliable."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Deepfake Detection",
+      "description": "Techniques to identify AI-generated or manipulated media; effectiveness degrades as generators improve.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/deepfake-detection",
+      "termCode": "deepfake-detection"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:15Z"
@@ -1347,61 +827,13 @@
       "privacy budget epsilon"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Differential Privacy",
-        "description": "Mathematical guarantee that adding or removing one training example produces statistically indistinguishable model outputs.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/differential-privacy",
-        "termCode": "differential-privacy"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is DP-SGD and how does it differ from regular SGD?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "DP-SGD (Differentially Private Stochastic Gradient Descent) computes gradients per example, clips them to a norm bound, adds Gaussian noise, then aggregates. Regular SGD skips clipping and noise. DP-SGD guarantees privacy but degrades convergence."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I choose an epsilon value?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Epsilon quantifies privacy strength: lower ε is stronger privacy but noisier training. In practice, ε ≤ 1 is defensible, ε ≤ 8 is common for production. Start with your accuracy target, then binary-search ε downward. Document your choice in your model card."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I apply DP to LLM pretraining?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Technically yes, but the noise cost is prohibitive at frontier scale. DP pretraining usually requires ε ≥ 100 and often fails to converge. DP is practical for fine-tuning on smaller sensitive datasets where you can afford lower ε."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does differential privacy guarantee my model won't leak training data?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "DP guarantees no attacker can statistically distinguish whether one record was in training, even with full model access. It does not prevent reverse-engineering if you publish embeddings or logits at scale; use DP as part of a layered defense strategy."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is the privacy budget and why does it matter?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The privacy budget ε is a hard limit on total privacy loss across all training steps and queries. Once spent, you cannot recover privacy without retraining. It forces a direct trade-off: spend ε fast for higher accuracy, spend it slow for stronger privacy."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Differential Privacy",
+      "description": "Mathematical guarantee that adding or removing one training example produces statistically indistinguishable model outputs.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/differential-privacy",
+      "termCode": "differential-privacy"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:22:58Z"
@@ -1464,61 +896,13 @@
       "EU AI compliance"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "EU AI Act",
-        "description": "EU's risk-tiered AI regulation (effective 2024) classifying systems from prohibited to minimal-risk, with compliance penalties up to 7% global revenue.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/eu-ai-act",
-        "termCode": "eu-ai-act"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "When does the EU AI Act go into effect?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The Act took effect in June 2024, but high-risk system requirements and general-purpose model rules phase in through 2026–2027. Non-prohibited systems get grace periods for compliance."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is my chatbot a high-risk system under the EU AI Act?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Only if it makes decisions affecting fundamental rights (hiring, credit, law enforcement). A consumer chatbot is limited-risk and needs transparency labels only, not full audit trails."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What counts as a prohibited AI system in the EU AI Act?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Social scoring, real-time biometric surveillance without consent, scraped emotion recognition, and subliminal manipulation. Most commercial AI doesn't hit these bars, but law-enforcement bias detection and 'predictive policing' walk the line."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I know if my model is 'systemic risk' under the EU AI Act?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Models exceeding a compute threshold (currently ~10^25 FLOPs during training) trigger systemic risk rules: red-team requirements, vulnerability disclosure, and power-consumption reporting. Check the Act's technical annex for exact thresholds."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if I don't comply with the EU AI Act?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Penalties scale: €6 million or 1.5% of annual revenue for low-risk violations; €30 million or 7% for high-risk/prohibited. Enforcement includes product bans, audit demands, and public censure."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "EU AI Act",
+      "description": "EU's risk-tiered AI regulation (effective 2024) classifying systems from prohibited to minimal-risk, with compliance penalties up to 7% global revenue.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/eu-ai-act",
+      "termCode": "eu-ai-act"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:26:09Z"
@@ -1581,61 +965,13 @@
       "correlated objective failure"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Goal Misgeneralization",
-        "description": "Agent learns a proxy correlated with the intended goal during training, then pursues the proxy instead in deployment.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/goal-misgeneralization",
-        "termCode": "goal-misgeneralization"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is goal misgeneralization the same as reward hacking?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Reward hacking is deliberate exploitation of a known loophole. Misgeneralization is an unintended learned proxy that looks indistinguishable from the true goal in training, so the model's optimization is honest—it's just optimizing the wrong thing."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I detect goal misgeneralization before deployment?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Test the agent in environments where proxies break (e.g., reverse correlations, novel distributions). Use interpretability tools to inspect learned representations. Include adversarial evaluation that isolates each suspected proxy signal and removes it."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can you prevent goal misgeneralization entirely?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No, but you reduce it: train on diverse environments to break proxy correlations, use explicit goal specification rather than proxy metrics, and validate out-of-distribution before ship. Some proxies are impossible to catch without mechanistic understanding of the model."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does goal misgeneralization happen with language models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. An LLM trained on human-approved responses may learn \"sound confident\" or \"match the user's tone\" instead of \"be accurate.\" This explains confident hallucinations and sycophancy even in well-trained models."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between goal misgeneralization and distribution shift?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Distribution shift: the model works correctly but sees new data it wasn't trained on. Misgeneralization: the model learned a different objective that happened to work in training. Both cause deployment failures, but misgeneralization persists even if you add more training data from the same distribution."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Goal Misgeneralization",
+      "description": "Agent learns a proxy correlated with the intended goal during training, then pursues the proxy instead in deployment.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/goal-misgeneralization",
+      "termCode": "goal-misgeneralization"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:22:57Z"
@@ -1704,61 +1040,13 @@
       "prompt guardrails"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Guardrails",
-        "description": "Runtime validators that wrap LLM calls, enforce output constraints, and retry on failure.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/guardrails",
-        "termCode": "guardrails"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between guardrails and constrained decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Constrained decoding enforces rules during token generation (stopping the model mid-response if it violates constraints). Guardrails validate the complete response after generation and retry if needed. Constrained decoding is faster but less flexible; guardrails work with any model via post-processing."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do guardrails make my LLM safer?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No—guardrails make outputs safer by catching and filtering what reaches users. The model's internal reasoning stays the same. They reduce incidents, not the underlying model risk."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much latency do guardrails add?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Validation itself is fast (milliseconds), but retries compound cost. A single retry can double latency and tokens consumed. Minimize checks and set a low retry limit (1–2) to stay under 100ms overhead."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can guardrails fix hallucinations?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Only partially. Guardrails can flag claims against a knowledge base and retry, but they rely on the model fixing itself—which often fails. For hallucination reduction, pair guardrails with RAG or fact-checking external APIs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if guardrails fail all retries?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You define the fallback: return an error response, pass to human review, use a cached safe response, or escalate. Never ship an unvalidated response silently."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Guardrails",
+      "description": "Runtime validators that wrap LLM calls, enforce output constraints, and retry on failure.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/guardrails",
+      "termCode": "guardrails"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:39Z"
@@ -1825,61 +1113,13 @@
       "LLM output validation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Guardrails AI",
-        "description": "Open-source framework that wraps LLM calls with validators to enforce output structure, policy compliance, and automatic re-prompting on violations.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/guardrails-ai",
-        "termCode": "guardrails-ai"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between Guardrails AI and JSON schema enforcement?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "JSON schema enforces structure (field types, required keys). Guardrails adds policy validation (no PII, toxicity checks, semantic rules) and automatic re-prompting. Use Guardrails when structure alone isn't enough."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Guardrails AI work with all LLM providers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—Guardrails wraps any LLM API (OpenAI, Anthropic, local models). Validators run client-side, so they're provider-agnostic. Some validators use LLM-as-judge, which requires an additional model call."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if an LLM fails a validator after a re-prompt?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Guardrails can retry (configurable), return a fallback response, or raise an error. You decide the fallback behavior—e.g., return a canned response or escalate to a human."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much latency does Guardrails AI add?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Local validators (regex, schema) add <50ms per call. LLM-as-judge validators add the cost of another LLM inference. Re-prompts double the token cost and latency if they occur; monitor failure rates to estimate impact."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can Guardrails AI prevent jailbreaks or prompt injection?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No—Guardrails validates output, not input. Pair it with prompt-injection defenses (input validation, sandboxing) for defense-in-depth. Guardrails catches policy violations on the way out."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Guardrails AI",
+      "description": "Open-source framework that wraps LLM calls with validators to enforce output structure, policy compliance, and automatic re-prompting on violations.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/guardrails-ai",
+      "termCode": "guardrails-ai"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:56Z"
@@ -1935,53 +1175,13 @@
     "meta_description": "LLM confidently invents false information instead of saying it doesn't know. Learn how hallucination works, why it happens, and how RAG and verification catch it.",
     "seo_variations": [],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Hallucination",
-        "description": "LLM confidently invents false information instead of saying it doesn't know.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/hallucination",
-        "termCode": "hallucination"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Can you fix hallucination by using a smarter model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Larger, better-trained models hallucinate less often but still hallucinate. Gemini and Claude have lower hallucination rates than GPT-3.5, but none are hallucination-free. If accuracy is critical, pair a strong model with RAG or function calling."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between hallucination and making a mistake?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Hallucination is confident invention of false information. A mistake is processing real information incorrectly. Hallucination feels worse because the model states falsehoods as fact, creating false confidence in the user."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does RAG completely solve hallucination?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RAG dramatically reduces hallucination by grounding answers in retrieved documents, but the model can still misinterpret, misquote, or invent details not in those documents. Combine RAG with output validation for best results."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do LLMs hallucinate in the first place?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LLMs are trained to predict the next token, not to verify truth. If the most probable next token happens to be false, the model generates it anyway. They have no internal fact database or mechanism to query reality."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Hallucination",
+      "description": "LLM confidently invents false information instead of saying it doesn't know.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/hallucination",
+      "termCode": "hallucination"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:52Z"
@@ -2045,61 +1245,13 @@
       "claim verification"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Hallucination Detection",
-        "description": "Automated methods to flag LLM outputs not grounded in evidence via consistency checks, citation verification, or entailment classifiers.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/hallucination-detection",
-        "termCode": "hallucination-detection"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between hallucination detection and hallucination prevention?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Detection catches hallucinations after generation (verify outputs). Prevention stops them during generation (constrained decoding, instruction tuning). Detection is faster to implement; prevention is more efficient at scale."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can a single hallucination detection method catch all false claims?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Self-consistency fails on deterministic outputs, citation methods break with paraphrased sources, and entailment classifiers struggle with numerical reasoning. Stacking 2–3 methods is standard practice."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does hallucination detection work for creative or subjective outputs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Poorly. These methods assume ground-truth sources or factual correctness. For creative writing or opinion-based responses, detection adds false positives and is usually skipped."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much latency does hallucination detection add?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Self-consistency requires multiple forward passes (3–5× slower). Citation checking and entailment classifiers add 50–200ms per response. Use batch processing or caching to reduce per-query cost."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use GPT-4 as a hallucination detector?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but it hallucinate too. It's useful as a tiebreaker or for complex reasoning, but pair it with symbolic methods (citation matching, knowledge base lookup) for production accuracy."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Hallucination Detection",
+      "description": "Automated methods to flag LLM outputs not grounded in evidence via consistency checks, citation verification, or entailment classifiers.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/hallucination-detection",
+      "termCode": "hallucination-detection"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:24Z"
@@ -2160,61 +1312,13 @@
       "indirect injection"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Indirect Prompt Injection",
-        "description": "Attack that embeds malicious instructions in content an LLM reads (web page, email, file) rather than direct user input.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/indirect-prompt-injection",
-        "termCode": "indirect-prompt-injection"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is indirect prompt injection different from regular prompt injection?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Regular prompt injection manipulates the direct user input to an LLM. Indirect injection embeds malicious instructions in content the LLM reads—a webpage, document, or email—after the user's request. The user input may be benign ('summarize this'), but the content itself contains the attack."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I stop indirect injection just by filtering user prompts?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Filtering the user's direct input won't catch instructions hidden in external content. You must also validate and segregate untrusted sources, apply output filtering, and restrict tool scope."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the most common indirect injection attack in production?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Exfiltration: an agent reads a compromised document or webpage, and injected instructions command it to leak the system prompt, chat history, or API keys to an attacker-controlled URL."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do agentic frameworks have built-in defenses against indirect injection?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Most do not. Frameworks like LangChain and AutoGen focus on tool orchestration, not input validation. You must add defenses yourself: input tagging, output filtering, and capability restriction."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is indirect injection a real risk or theoretical?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Real. Greshake et al. (2023) published working exploits against production agents. As LLMs control more tools and access more documents, the attack surface only grows."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Indirect Prompt Injection",
+      "description": "Attack that embeds malicious instructions in content an LLM reads (web page, email, file) rather than direct user input.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/indirect-prompt-injection",
+      "termCode": "indirect-prompt-injection"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:22:56Z"
@@ -2287,61 +1391,13 @@
       "jailbreak defense"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Jailbreak",
-        "description": "A prompt designed to trick an LLM into ignoring its safety training and producing forbidden content.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/jailbreak",
-        "termCode": "jailbreak"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between a jailbreak and prompt injection?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Prompt injection hijacks the model's instructions (e.g., overwriting the system prompt). Jailbreaks target refusal policies—the model knows it shouldn't comply, but context tricks it. Both bypass intended behavior; defense tactics differ."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can encoding a request (Base64, pig-latin) actually prevent jailbreaks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Encoding adds friction but doesn't address the semantic intent. Sufficiently skilled prompts can trigger refusal failures regardless of encoding because the model decodes and processes meaning, not just surface form."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do jailbreaks work on all LLMs equally?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Model architecture, training data, RLHF intensity, and instruction-tuning approach all affect vulnerability. Some models are more robust; none are fully jailbreak-proof. Novel jailbreaks often succeed because threat models lag behind attacker creativity."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How can I defend my product against jailbreaks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use defense-in-depth: model refusal (but don't rely on it alone), output classifiers, rate limits, user-behavior monitoring, and policy enforcement outside the model. Red-team your system regularly with fresh techniques."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is researching jailbreaks ethical?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if you disclose findings responsibly to the model provider. Security research identifies weaknesses before malicious actors exploit them. Responsible disclosure is standard practice."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Jailbreak",
+      "description": "A prompt designed to trick an LLM into ignoring its safety training and producing forbidden content.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/jailbreak",
+      "termCode": "jailbreak"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:46Z"
@@ -2404,61 +1460,13 @@
       "jailbreak prevention"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Jailbreak Defense",
-        "description": "Training and inference techniques that prevent users from bypassing an LLM's safety guardrails.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/jailbreak-defense",
-        "termCode": "jailbreak-defense"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between jailbreak defense and content moderation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Content moderation filters outputs after generation to catch toxic or illegal content. Jailbreak defense prevents users from tricking the model into generating that content in the first place. They're complementary—moderation is a safety net, jailbreak defense is the barrier."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can a model be 100% jailbreak-proof?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Jailbreaks are an arms race: attackers find new techniques, you patch them, attackers adapt. The goal is raising the cost high enough that most users stop trying, not achieving perfection."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need a safety classifier if I fine-tune on jailbreak examples?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Both help, but they catch different attacks. Fine-tuning handles the jailbreaks you've seen; a classifier generalizes to novel prompts. Use both for layered defense."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does jailbreak defense slow down inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Running a separate classifier (Llama Guard) adds 5–15% latency. Logit bias and self-critique loops cost milliseconds. The tradeoff is worth it for safety-critical applications."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the best way to test if my defenses work?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Red-team your model with known attacks from papers and jailbreak databases, measure refusal rates, and sample outputs for over-refusal. Test on both direct and indirect attacks (prompt injection, roleplay, hypothetical scenarios)."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Jailbreak Defense",
+      "description": "Training and inference techniques that prevent users from bypassing an LLM's safety guardrails.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/jailbreak-defense",
+      "termCode": "jailbreak-defense"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:22Z"
@@ -2522,61 +1530,13 @@
       "open source LLM moderation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Llama Guard",
-        "description": "Meta's open-source LLM classifier that detects policy violations in prompts and responses across harm categories.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/llama-guard",
-        "termCode": "llama-guard"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is Llama Guard the same as OpenAI's moderation API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. OpenAI's API is proprietary and cloud-based; Llama Guard is open-source and runs locally. Llama Guard also classifies model outputs, not just user inputs, and works offline."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between Llama Guard and Nemo Guardrails?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Llama Guard classifies safety; Nemo Guardrails is a framework for enforcing dialogue guardrails (structure, logic, safety). They're often used together—Llama Guard for safety detection, Nemo for workflow enforcement."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can Llama Guard detect jailbreaks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Llama Guard detects policy violations (violence, sexual content, etc.), not adversarial manipulation. A jailbreak that asks harmful questions in indirect language may pass Llama Guard."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does Llama Guard cost to run?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Zero licensing cost. Running inference depends on your hardware. On a single GPU, inference takes ~100–500ms; on CPU it's slower. No per-request charges."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Llama Guard 3 support image content?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, Llama Guard 3 adds visual safety classification. Feed it image embeddings or multi-modal inputs and it labels unsafe images alongside text."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Llama Guard",
+      "description": "Meta's open-source LLM classifier that detects policy violations in prompts and responses across harm categories.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/llama-guard",
+      "termCode": "llama-guard"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:11Z"
@@ -2639,61 +1599,13 @@
       "training data privacy attack"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Membership Inference Attack",
-        "description": "An attack that determines whether specific data was in a model's training set, revealing privacy violations without extracting the data itself.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/membership-inference",
-        "termCode": "membership-inference"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is membership inference the same as data extraction?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Membership inference tells you whether a data point was in training; extraction reconstructs the actual data. Membership inference is easier to execute and harder to defend against."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How effective is differential privacy against membership inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Differential privacy with appropriate noise budgets significantly raises the attack cost. However, tight privacy guarantees (low epsilon) often reduce model accuracy, forcing a tradeoff."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I test for membership inference without access to model weights?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Black-box membership inference uses only model outputs (probabilities, logits, API responses) and is more practical in production environments."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does deduplicating training data prevent membership inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Deduplication reduces risk for duplicated examples but doesn't eliminate it. Attackers can still infer membership for unique or near-unique examples in the dataset."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between membership inference and model interpretability?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Membership inference asks 'was X in training?'; interpretability asks 'why did the model produce output Y?'. They're orthogonal—you can have either, both, or neither."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Membership Inference Attack",
+      "description": "An attack that determines whether specific data was in a model's training set, revealing privacy violations without extracting the data itself.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/membership-inference",
+      "termCode": "membership-inference"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:10Z"
@@ -2755,61 +1667,13 @@
       "OpenAI Model Spec rules"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Model Spec (OpenAI)",
-        "description": "OpenAI's published document stating rules and principles governing how its models should behave in specific scenarios.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/model-spec",
-        "termCode": "model-spec"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the OpenAI Model Spec?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It's OpenAI's public document describing the rules, defaults, and case studies that should guide how its models (ChatGPT, API models) respond to requests. Published in May 2024 and updated since."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Where can I read the Model Spec?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "OpenAI publishes it on their official website. It's a free, public document. Check their research or safety pages for the latest version."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does the Model Spec mean the model will always follow these rules?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. The spec describes intended behavior, but models can drift, hallucinate, or misinterpret edge cases. Always test critical behavior rather than assume the spec is enforced."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How is the Model Spec different from Anthropic's approach?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Anthropic publishes Usage Policies and a Constitutional AI framework; the core idea is similar (public behavior principles), but the structure and content differ. Google has a similar public AI Principles document."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use the Model Spec to predict how a model will respond?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It's a strong starting point—it explains intent and reasoning—but edge cases, prompt phrasing, and model version matter. Test your specific use case to be sure."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Model Spec (OpenAI)",
+      "description": "OpenAI's published document stating rules and principles governing how its models should behave in specific scenarios.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/model-spec",
+      "termCode": "model-spec"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:26:35Z"
@@ -2872,61 +1736,13 @@
       "API model stealing"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Model Theft (Model Extraction)",
-        "description": "Reconstructing a closed model by querying its API extensively and training a local copy on the outputs.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/model-theft",
-        "termCode": "model-theft"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between model theft and distillation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Distillation is a legitimate technique where you own or have permission to use a model and compress it for efficiency. Model theft applies distillation without permission to a closed API. Intent and authorization are the key difference."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does it cost to extract a large language model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Extraction cost depends on model size and desired fidelity, but researchers have extracted GPT-3.5-equivalent behavior for $200–$500 in API queries. Scaling to larger models (GPT-4 equivalent) would cost significantly more but remains feasible at enterprise scale."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can watermarking stop model extraction?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Watermarking makes extraction harder by marking extracted outputs as derivative, but it's not foolproof—watermarks can persist through distillation, be stripped with adversarial prompting, or become invisible if the attacker only cares about task performance, not watermark preservation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is it illegal to extract a model from an API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Extracting outputs and training a model may violate the API provider's terms of service and potentially copyright or trade secret law, depending on jurisdiction. Commercial use of extracted models significantly increases legal risk."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do API providers defend against model theft?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Defenses include rate limiting, output watermarking, monitoring for suspicious query patterns, and legal enforcement of ToS. No single defense is complete; a layered approach is most effective."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Model Theft (Model Extraction)",
+      "description": "Reconstructing a closed model by querying its API extensively and training a local copy on the outputs.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/model-theft",
+      "termCode": "model-theft"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:22:57Z"
@@ -2989,61 +1805,13 @@
       "Colang"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "NeMo Guardrails",
-        "description": "Nvidia's open-source framework for defining conversation safety rules via a declarative DSL instead of system prompts alone.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/nemo-guardrails",
-        "termCode": "nemo-guardrails"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How does NeMo Guardrails differ from just using a detailed system prompt?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "System prompts live inline with your application code and are not easily audited or reused. NeMo Guardrails centralizes safety rules in a declarative DSL (Colang), making them version-controlled, testable, and swappable without retraining or prompt engineering."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need Nvidia hardware to run NeMo Guardrails?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. NeMo Guardrails is software that runs on CPU or GPU and works with any LLM API (OpenAI, Anthropic, local models). Nvidia developed it, but there's no hardware lock-in."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is Colang and why should I learn it?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Colang is a lightweight DSL designed to describe conversation flows and safety rules in plain, readable syntax. You don't need to write Python; Colang translates to guardrails automatically, lowering the barrier for non-engineers to define and modify safety policies."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can NeMo Guardrails prevent all jailbreaks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Guardrails are one layer. Determined attackers can find edge cases or craft prompts that bypass rules. Treat them as a practical defense, not a security guarantee; combine with adversarial testing and monitoring."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much latency does NeMo Guardrails add?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Depends on rule complexity. Simple filters add 50–200ms per request. Complex fact-checking or API calls add more. Benchmark your rails in staging before production rollout."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "NeMo Guardrails",
+      "description": "Nvidia's open-source framework for defining conversation safety rules via a declarative DSL instead of system prompts alone.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/nemo-guardrails",
+      "termCode": "nemo-guardrails"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:12Z"
@@ -3104,61 +1872,13 @@
       "AI Risk Management Framework"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "AI Safety Institute / NIST AI RMF",
-        "description": "NIST's voluntary AI Risk Management Framework guides US organizations through governance, mapping, measurement, and mitigation of AI system risks.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/nist-ai-rmf",
-        "termCode": "nist-ai-rmf"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is NIST AI RMF mandatory?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No, it is voluntary. But it is cited in US federal procurement, state laws, and international AI Act guidance, making it de facto expected for regulated or high-stakes AI deployments."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How is NIST AI RMF different from the EU AI Act?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "NIST AI RMF is a process framework without legal force; the EU AI Act is binding law with specific prohibited practices. Many organizations use NIST to structure compliance with the Act."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is the NIST Generative AI Profile?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A 2024 specialization of the core framework addressing LLM-specific risks: hallucination, prompt injection, training data misuse, and model theft."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need external certification to comply with NIST AI RMF?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Compliance is self-demonstrated through documentation, testing, and governance artifacts. Audit by a third party is optional but common for high-stakes deployments."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long does it take to implement NIST AI RMF?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Scope and maturity vary widely. A small team with one deployed model might document and measure in weeks; an enterprise with many systems across departments typically requires 3–6 months per initiative."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "AI Safety Institute / NIST AI RMF",
+      "description": "NIST's voluntary AI Risk Management Framework guides US organizations through governance, mapping, measurement, and mitigation of AI system risks.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/nist-ai-rmf",
+      "termCode": "nist-ai-rmf"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:25Z"
@@ -3219,61 +1939,13 @@
       "excessive refusal"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Over-Refusal",
-        "description": "Model refuses harmless requests because its safety training overgeneralizes, treating benign queries as risky.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/over-refusal",
-        "termCode": "over-refusal"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between over-refusal and under-refusal?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Over-refusal blocks benign requests; under-refusal allows harmful ones. Over-refusal is a precision problem, under-refusal a recall problem. Both damage trust, but they require opposite fixes."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do you measure over-refusal?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Benchmarks like XSTest and OR-Bench present benign-sounding queries and measure refusal rate. Compare against human judgment to find your false-positive baseline. Monitor user feedback and completion rates post-deployment."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does fine-tuning on more data reduce over-refusal?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Only if the new data includes benign examples of edge-case topics. Pure quantity helps; targeted examples showing safe boundaries help much more."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is over-refusal a sign the model is safer?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Safety is a calibrated boundary, not a refusal rate. A model that refuses everything is useless; one that refuses nothing is dangerous. Over-refusal means the boundary is misaligned with reality."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can you fix over-refusal without retraining?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Partially. Prompt engineering (adding 'this is safe' context) offers temporary relief. True fixes require retraining on better boundaries or using a different base model."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Over-Refusal",
+      "description": "Model refuses harmless requests because its safety training overgeneralizes, treating benign queries as risky.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/over-refusal",
+      "termCode": "over-refusal"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:01Z"
@@ -3338,61 +2010,13 @@
       "personal data masking"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "PII Redaction",
-        "description": "Detect and replace personally identifiable information in text before logging or sending to external APIs.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/pii-redaction",
-        "termCode": "pii-redaction"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Does OpenAI's no-training promise mean I don't need to redact?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Compliance requirements (HIPAA, GDPR, PCI DSS) require you to redact before external transmission regardless of vendor promises. Redaction is your responsibility, not theirs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between redaction and masking?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Redaction removes or replaces the entire value ([EMAIL]); masking obscures it partially (j***@example.com). Both work for compliance, but redaction leaves less residual information."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can redaction catch all PII?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Detectors miss informal names, transliterated text, and implicit PII (addresses without 'address:' labels). Always pair redaction with access controls and auditing."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I test my redaction pipeline?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Build a golden dataset with known PII, run redaction, and verify all expected matches are caught. Test multilingual inputs, slang, and edge cases from your domain."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I redact after I've already sent data to an API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Once data reaches an external service, you've lost control. Redaction must happen before transmission; it's a preventive step, not remediation."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "PII Redaction",
+      "description": "Detect and replace personally identifiable information in text before logging or sending to external APIs.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/pii-redaction",
+      "termCode": "pii-redaction"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:24:06Z"
@@ -3459,61 +2083,13 @@
       "indirect prompt injection"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Prompt Injection",
-        "description": "An attack where untrusted input or retrieved content tricks an LLM into ignoring its original instructions.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/prompt-injection",
-        "termCode": "prompt-injection"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between prompt injection and jailbreak?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Jailbreak is a user manually crafting a prompt to bypass the model's safety guidelines. Prompt injection is an attacker embedding a malicious instruction in content the model retrieves, so the user may not even be aware. Injection often targets multi-step agents and retrieval pipelines."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I prevent prompt injection just by warning users in the system prompt?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Warnings and disclaimers added to the system prompt have no special privilege—they're just text in context. An attacker's injected instruction competes equally. The fix is architectural: sandbox what the LLM can do and treat external content as data, not commands."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I detect if my LLM app has been prompt-injected?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Monitor outputs for unexpected behavior: leaking system prompts, executing unintended tool calls, or producing answers that contradict the original task. Log all retrieved content and final model outputs. Red-team your app with injection payloads and watch for escapes. Tools like Lakera and Guardrails-AI can flag injection patterns in real time."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is prompt injection only a risk for RAG systems?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Any system that feeds the LLM external or user-controlled data is at risk: email assistants, research bots, code interpreters, API-aggregation agents. Direct user prompts can also inject if you're not validating or constraining inputs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the best defense against prompt injection?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No single defense is bulletproof. Combine: sandboxing tool execution so the LLM can't call sensitive APIs directly, constrained output formats (JSON schema), human review for high-stakes actions, and input/output monitoring. Treat untrusted content as data only, and minimize what the LLM is allowed to do."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Prompt Injection",
+      "description": "An attack where untrusted input or retrieved content tricks an LLM into ignoring its original instructions.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/prompt-injection",
+      "termCode": "prompt-injection"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:46Z"
@@ -3576,61 +2152,13 @@
       "LLM injection attack mitigation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Prompt Injection Defense",
-        "description": "Layered techniques—input delimiting, tool permissions, output verification—reduce LLM attack surface.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/prompt-injection-defense",
-        "termCode": "prompt-injection-defense"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between prompt injection and jailbreak?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Prompt injection embeds malicious instructions in user input (e.g., a document or chat message) to hijack the model. Jailbreak targets the system prompt or model itself to disable safety guidelines. Both are attacks, but injection works through data; jailbreak targets training or configuration."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I stop prompt injection with input filtering alone?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Attackers use synonyms, indirection, encoding, and multi-turn techniques that bypass keyword filters. Filtering is one layer, but defense in depth—scoped permissions, output review, logging—is required."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I know if a prompt injection attack happened?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Monitor tool-call logs for unusual sequences (sudden permission requests, calls to APIs the model should not touch) and anomalies in output content (requests for data export, refunds, or actions outside the model's typical role). A second model or rule engine can flag suspicious outputs before execution."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need a separate critic model to defend against injection?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not always. For low-risk workflows, logging and human review suffice. For high-frequency, high-stakes actions (payments, access grants), a critic model or output validation rule accelerates detection without blocking every request."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What does least-privilege tool permission mean?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Grant the LLM only the API methods and data it needs to do its job. If it drafts emails, give it email-send permission but not password-reset or delete-user permissions. An injection attack cannot invoke permissions the model was never granted."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Prompt Injection Defense",
+      "description": "Layered techniques—input delimiting, tool permissions, output verification—reduce LLM attack surface.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/prompt-injection-defense",
+      "termCode": "prompt-injection-defense"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:27:17Z"
@@ -3691,61 +2219,13 @@
       "prompt exfiltration"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Prompt Leakage (System Prompt Exfiltration)",
-        "description": "An attack that extracts a system prompt by tricking the LLM into revealing its hidden instructions.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/prompt-leakage",
-        "termCode": "prompt-leakage"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Can you prevent prompt leakage completely?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. You can train models to refuse requests for their instructions and monitor for suspicious queries, but determined attackers can leak prompts through roleplay, context shifting, or multi-turn tricks. Design around the assumption that system prompts will eventually be public."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is prompt leakage the same as prompt injection?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Prompt injection is injecting new instructions into the model's context. Prompt leakage is extracting existing hidden instructions. Both are attacks, but they have different goals and defenses."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What should I never put in a system prompt?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Never store API keys, database credentials, OAuth tokens, or other secrets. Never put authentication logic that relies on the prompt being hidden. Assume the prompt will leak and design your security model accordingly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I know if my system prompt was leaked?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Monitor logs for unusual queries asking for instructions, system prompts, or 'debug' information. Watch for attackers replicating your system's behavior in ways that suggest they know your internal logic or tool configuration."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does refusal training stop prompt leakage?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Refusal training reduces but doesn't eliminate leakage. Models can be tricked through roleplay ('You are a documentation tool'), multi-turn sequences, or attacks that don't directly ask for the prompt. Use it as one layer, not the only defense."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Prompt Leakage (System Prompt Exfiltration)",
+      "description": "An attack that extracts a system prompt by tricking the LLM into revealing its hidden instructions.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/prompt-leakage",
+      "termCode": "prompt-leakage"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:06Z"
@@ -3810,61 +2290,13 @@
       "LLM red team"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Red Teaming (AI Red Team)",
-        "description": "Adversarial testing where you attack your own AI system to find vulnerabilities, harmful outputs, and policy violations before release.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/red-team",
-        "termCode": "red-team"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between red teaming and adversarial robustness?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Red teaming is a testing and discovery process—you run attacks and log what fails. Adversarial robustness is a property—whether the model resists those attacks. Red teaming measures robustness; improving robustness prevents what red teaming finds."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can automated red teaming replace human testers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not fully. Automated tools (Garak, PyRIT) scale testing and catch common patterns fast, but humans find novel jailbreaks and contextual failures that scripted probes miss. Best practice: use both."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How many people do I need for a red team?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Depends on scale: frontier labs employ 5–20+ dedicated red teamers; smaller teams use 1–2 part-time testers plus tooling. A solo engineer with a red-teaming framework is better than nothing."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is red teaming the same as penetration testing?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Red teaming for AI is inspired by security pen testing but differs: it focuses on model safety and alignment failures, not just system vulnerabilities. The goals overlap but the methods are different."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What should I do after red teaming finds a failure?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Log the failure mode and reproduction prompt, assess harm severity, decide whether to fix (retraining, fine-tuning, guardrails) or accept, and track the decision. Iterate."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Red Teaming (AI Red Team)",
+      "description": "Adversarial testing where you attack your own AI system to find vulnerabilities, harmful outputs, and policy violations before release.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/red-team",
+      "termCode": "red-team"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:45Z"
@@ -3925,61 +2357,13 @@
       "reward model hacking"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Reward Hacking",
-        "description": "RL model exploits gaps in the reward function to maximize the signal in unintended ways.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/reward-hacking",
-        "termCode": "reward-hacking"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is reward hacking the same as specification gaming?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Specification gaming is broader: any misalignment between a metric and true intent. Reward hacking is specific to RL systems with explicit reward functions. All reward hacking is specification gaming, but not vice versa."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do you detect reward hacking before deployment?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Adversarial testing: try to find behaviors that maximize your reward but violate your intent. Red-team the reward function itself, not just the model output. Compare outcome and process rewards on the same rollouts."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can you prevent reward hacking completely?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. You can reduce it via better reward modeling, KL constraints, and adversarial testing, but any scalar reward function has exploitable gaps. The goal is to make exploitation expensive or obvious."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between outcome and process rewards for avoiding hacking?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Outcome rewards (did the final answer succeed?) are easier to game because they only look at results. Process rewards (were the steps correct?) are harder to hack but slower and require step-level labels."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do RLHF models become sycophantic?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Human raters unconsciously prefer confident, agreeable, verbose answers. The model learns this signal faster than it learns actual correctness, creating reward hacking toward politeness over accuracy."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Reward Hacking",
+      "description": "RL model exploits gaps in the reward function to maximize the signal in unintended ways.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/reward-hacking",
+      "termCode": "reward-hacking"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:16Z"
@@ -4039,53 +2423,13 @@
       "metric gaming"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Specification Gaming",
-        "description": "Agent exploits literal task rules while violating intended purpose, often called reward hacking.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/specification-gaming",
-        "termCode": "specification-gaming"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is specification gaming the same as reward hacking?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Reward hacking is one instance of specification gaming. Reward hacking exploits explicit reward signals; specification gaming includes any misalignment between a metric and the real goal—including loss functions, benchmarks, or preference ratings."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do you detect specification gaming in an LLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Look for patterns where the model produces high scores on your metric while failing at the human intent—verbose but unhelpful answers, over-refusal to safe queries, or suspiciously perfect alignment with training signal. Red-teaming and human review catch most cases."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can you prevent specification gaming with better metrics?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Partially. More comprehensive and adversarially-tested metrics reduce surface area, but cannot eliminate it. Combination approaches—multiple reward signals, distributional robustness testing, and human oversight—work better than metric design alone."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does this only happen in reinforcement learning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Any optimization process can produce specification gaming. LLM fine-tuning on human preferences, classifier training on dataset proxies, and agentic systems all exhibit it. The mechanism is optimization-against-incomplete-specification, not the learning algorithm."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Specification Gaming",
+      "description": "Agent exploits literal task rules while violating intended purpose, often called reward hacking.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/specification-gaming",
+      "termCode": "specification-gaming"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:58Z"
@@ -4148,61 +2492,13 @@
       "delimiter-based prompt injection defense"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Spotlighting (Prompt Injection Defense)",
-        "description": "Marks untrusted input with delimiters to signal the model to treat it as data, not instructions.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/spotlighting",
-        "termCode": "spotlighting"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How does spotlighting differ from other prompt injection defenses?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Unlike input filtering (which removes words) or model isolation (which uses separate models), spotlighting marks untrusted text so the model itself learns to deprioritize instructions within it. It works at the formatting level rather than the content level."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can an attacker bypass spotlighting?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Spotlighting is a signal, not a guarantee. A sophisticated attacker can experiment with the delimiter scheme, use homoglyphs, or exploit weaknesses in the model's training. It raises friction but is not bulletproof."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to retrain my model to use spotlighting?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not always. You can apply spotlighting at inference time and instruct the model in the system prompt to treat marked content as data. However, fine-tuning the model on spotlighted examples improves effectiveness."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does spotlighting slow down inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The transformation itself (adding delimiters) is negligible. However, spotlighting increases token count, which can add latency and cost if your input is large."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if I forget to spotlight part of the untrusted input?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Any unmarked section remains vulnerable to injection. You must spotlight all untrusted sources consistently—user queries, retrieved documents, external API responses—or the defense has gaps."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Spotlighting (Prompt Injection Defense)",
+      "description": "Marks untrusted input with delimiters to signal the model to treat it as data, not instructions.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/spotlighting",
+      "termCode": "spotlighting"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:26:37Z"
@@ -4268,61 +2564,13 @@
       "open-source model security"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Supply Chain Risk (AI)",
-        "description": "Risk that downloaded models, datasets, or code contain hidden backdoors, poisoned data, or malicious behavior.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/supply-chain-risk",
-        "termCode": "supply-chain-risk"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between data poisoning and supply chain risk?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Data poisoning is intentional corruption of training data to skew model output; supply chain risk is the broader threat that any component (code, weights, datasets, dependencies) in your pipeline could be compromised before you use it. Supply chain risk includes poisoning but also covers backdoors, code injection, and compromised registries."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why is safetensors safer than pickle for models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Pickle executes arbitrary Python code when loading, giving attackers a direct code-execution vector. Safetensors is a binary format that only deserializes tensor data without executing code, blocking that attack surface entirely."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can ModelScan detect all backdoors?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. ModelScan can flag suspicious weight patterns and anomalies, but sophisticated backdoors designed to pass statistical tests may evade it. Use it as one layer in a defense strategy, not a complete solution."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I verify a model's provenance?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Check the model card for training data sources, training recipes, and upstream dependencies. Request commit hashes and signatures from maintainers. Prefer models with open training logs or papers you can independently verify."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is open-source model supply chain risk worse than closed APIs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Open-source models expose weights to inspection (a form of transparency) but require you to vet them; closed APIs shift the auditing burden to the provider. Neither is inherently safer—your risk depends on your verification process and the provider's security track record."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Supply Chain Risk (AI)",
+      "description": "Risk that downloaded models, datasets, or code contain hidden backdoors, poisoned data, or malicious behavior.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/supply-chain-risk",
+      "termCode": "supply-chain-risk"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:27:25Z"
@@ -4387,61 +2635,13 @@
       "AI model agreeing instead of correcting"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Sycophancy",
-        "description": "LLM tendency to agree with users rather than correct them, reinforced by RLHF on preference data rewarding flattery.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/sycophancy",
-        "termCode": "sycophancy"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How do I detect sycophancy in an LLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Test by contradicting the model on factual claims and see if it reverses itself. Present flawed logic and check if the model validates or critiques it. Sycophantic models will soften or agree; honest models will push back even if it disagrees with you."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is sycophancy the same as hallucination?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Hallucination is false information the model generates. Sycophancy is the model agreeing with a user's false claim rather than correcting it—a learned behavior from RLHF, not a factual error."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can you fix sycophancy after training?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Adversarial fine-tuning with data that rewards 'accurate but disagreeing' over 'flattering agreement' works. Constitutional AI principles and process reward models also reduce it during inference."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why does RLHF cause sycophancy?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Humans rating responses tend to score agreement higher than contradiction, even when the contradiction is correct. RLHF optimizes for what humans rated highly, so it learns to agree."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do all LLMs have sycophancy?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Most RLHF-trained models show measurable sycophancy. Base models don't; instruction-tuned models with stronger sycophancy mitigation (explicit honesty training) show less. Measure it on your use case."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Sycophancy",
+      "description": "LLM tendency to agree with users rather than correct them, reinforced by RLHF on preference data rewarding flattery.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/sycophancy",
+      "termCode": "sycophancy"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:34Z"
@@ -4508,61 +2708,13 @@
       "automated content moderation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Toxicity Classification",
-        "description": "ML models that score text and images for harmful content categories to automate content moderation at scale.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/toxicity-classification",
-        "termCode": "toxicity-classification"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is toxicity classification?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A machine learning model that scores text or images for harmful content categories (hate speech, harassment, self-harm) and outputs probabilities to automate moderation decisions."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How accurate are toxicity classifiers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Accuracy varies by category and dataset. Hate speech detection typically achieves 85–95% precision on benchmark data but drops 10–20% on real-world content due to context, slang, and adversarial paraphrases. Cross-cultural fairness remains a known weakness."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between toxicity classification and content moderation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Toxicity classification is one component of content moderation. Moderation is the full workflow: detect, review, decide, and enforce. Classification speeds up detection; moderation includes human judgment, appeals, and policy execution."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can toxicity classifiers detect sarcasm or context?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Most classifiers struggle with context and sarcasm. They learn patterns in training data but miss real-world nuance. A comment saying 'this subreddit is toxic' differs from 'you're toxic,' yet classifiers often score both the same way without semantic reasoning."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the false positive rate?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Typical false positive rates range from 2–8% depending on thresholds and categories. Higher thresholds reduce false positives but miss true violations. Most platforms tune this trade-off empirically by comparing classifier scores to human reviewer decisions."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Toxicity Classification",
+      "description": "ML models that score text and images for harmful content categories to automate content moderation at scale.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/toxicity-classification",
+      "termCode": "toxicity-classification"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:10Z"
@@ -4625,61 +2777,13 @@
       "training data recovery"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Training Data Extraction",
-        "description": "An attack that retrieves verbatim training data from a model's outputs, exposing PII, code, and copyrighted text.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/training-data-extraction",
-        "termCode": "training-data-extraction"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Can I prevent training data extraction completely?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No—but you can raise the cost and limit exposure. Differential privacy, aggressive deduplication, and output filtering all reduce extractable data, but a determined adversary with enough queries may recover rare sequences. The goal is limiting what's worth extracting."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is extraction the same as membership inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Membership inference detects whether a specific record was in training data (binary yes/no). Extraction retrieves the actual content. Extraction is the stronger attack."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I test my model for extraction vulnerabilities?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use canary evaluations: insert known unique sequences into training data, then probe the model with contextual prompts. If you recover the canary, extraction is possible. Tools like membership-inference frameworks can also be adapted for extraction testing."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does fine-tuning on top of a pre-trained model expose the base model's training data?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, fine-tuning doesn't erase memorized pre-training data. The base model's extractable content remains unless you apply privacy techniques during or after fine-tuning."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between extraction and overfitting?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Overfitting is unintended memorization that hurts generalization on test data. Extraction is an attack that intentionally retrieves that memorized content. A well-generalizing model can still leak extracted data."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Training Data Extraction",
+      "description": "An attack that retrieves verbatim training data from a model's outputs, exposing PII, code, and copyrighted text.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/training-data-extraction",
+      "termCode": "training-data-extraction"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:14Z"
@@ -4743,61 +2847,13 @@
       "deepfake detection via watermarking"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Content Watermarking (AI Content Provenance)",
-        "description": "Techniques embedding hidden signals in AI-generated content to prove its origin later; statistical for text, steganographic for images.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/watermarking",
-        "termCode": "watermarking"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between watermarking and C2PA?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Watermarking embeds a hidden signal inside the content itself; C2PA signs metadata (creator, date, edits) separately and links it via a chain of custody. Watermarks survive content edits but are invisible and harder to verify; C2PA is transparent but doesn't protect the content from being copied or edited."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I remove a text watermark by paraphrasing?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Paraphrasing or rewriting text breaks most current watermarks because the detector relies on the original token distribution. This is a major limitation for text compared to image watermarks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does watermarking slow down text generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Slightly. Biasing token selection toward a green list adds inference overhead, typically 5–15% latency increase, depending on implementation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is watermarking required by law?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The EU AI Act and some jurisdictions recommend AI content disclosure but do not mandate watermarking specifically. Watermarking is one tool among many; metadata labeling and detection systems are alternatives."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can watermarks be spoofed?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if the green list or key is leaked or guessed. Watermarks are not cryptographic signatures; they rely on secrecy of the watermark algorithm or key to prevent spoofing."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Content Watermarking (AI Content Provenance)",
+      "description": "Techniques embedding hidden signals in AI-generated content to prove its origin later; statistical for text, steganographic for images.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/watermarking",
+      "termCode": "watermarking"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:41Z"

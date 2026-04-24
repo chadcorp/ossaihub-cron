@@ -57,61 +57,13 @@
       "draft verification decoding"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Assistant-Guided Decoding",
-        "description": "A small model drafts tokens; a larger model verifies them to speed up inference without sacrificing quality.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/assistant-decoding",
-        "termCode": "assistant-decoding"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between assistant-guided decoding and speculative decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Assistant-guided decoding is the umbrella term for all speculative methods using one or more auxiliary models to propose tokens. Classical speculative decoding is one implementation; Medusa (fused heads) and EAGLE (dedicated speculators) are others."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much faster is assistant-guided decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Typical speedups are 1.5x to 4x on latency, depending on acceptance rate, context length, and hardware. Longer sequences see lower speedups because the target's KV cache grows and memory bandwidth becomes the bottleneck."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use assistant-guided decoding with any model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You need either a separate small model, a model with built-in decode heads (Medusa/EAGLE), or the ability to train an auxiliary head. Standard Llama or Mistral models require you to pair them with a draft model or fork to add speculator heads."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if the small model's prediction is wrong?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The target model rejects it during verification, and decoding resumes from the last accepted token. This is called rejection sampling and is correct by design, but high rejection rates hurt speedup."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does assistant-guided decoding change the output quality?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. The target model always verifies, so output quality is identical to standard decoding. The only variable is speed."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Assistant-Guided Decoding",
+      "description": "A small model drafts tokens; a larger model verifies them to speed up inference without sacrificing quality.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/assistant-decoding",
+      "termCode": "assistant-decoding"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:49Z"
@@ -181,61 +133,13 @@
       "beam width"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Beam Search",
-        "description": "Decoding method that tracks multiple top candidate sequences in parallel, returning the highest-probability complete sequence.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/beam-search",
-        "termCode": "beam-search"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is beam search the same as greedy decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Greedy decoding picks the single highest-probability token at each step and never backtracks. Beam search tracks B candidates in parallel, allowing it to explore alternatives and recover from early mistakes. Beam search typically achieves lower perplexity but is slower."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why doesn't beam search work well for ChatGPT-style models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Modern LLMs are too large to run B=5 beams efficiently, and beam search produces safer, more repetitive outputs. Users expect varied, conversational responses, not the single highest-probability completion."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if I set beam width very high, like B=50?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Quality often drops because the model's probability estimates become unreliable. All 50 beams tend to converge on the same low-entropy, repetitive outputs. B=5–10 is typically optimal."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does beam search guarantee the optimal translation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. It returns the sequence with highest joint probability under the model, but the model itself may assign high probability to suboptimal translations. Beam search respects the model; it doesn't fix poor model training."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much slower is beam search than greedy decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Roughly B times slower on the same hardware, since you compute B forward passes per step. A B=5 beam on a model with 2ms per-token latency costs ~10ms per token instead of 2ms."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Beam Search",
+      "description": "Decoding method that tracks multiple top candidate sequences in parallel, returning the highest-probability complete sequence.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/beam-search",
+      "termCode": "beam-search"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:21Z"
@@ -301,61 +205,13 @@
       "grammar-constrained sampling"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Constrained Decoding",
-        "description": "Generation that masks disallowed tokens at each step to guarantee output matches a formal grammar, regex, or JSON schema.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/constrained-decoding",
-        "termCode": "constrained-decoding"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is constrained decoding the same as JSON mode?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. JSON mode guides the model to try to output JSON but doesn't guarantee it. Constrained decoding masks invalid tokens so JSON is mathematically certain—no malformed brackets or escaped quotes."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does constrained decoding slow down generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, slightly. Grammar checking and token masking add overhead per step. For short outputs or simple grammars it's negligible; for long outputs or complex BNF rules, you may see 10–30% latency increase."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use constrained decoding with any LLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Any LLM with token-level access (via logits or an API that supports it). Ollama, llama.cpp, Outlines, and Guidance support it; some closed APIs like OpenAI do not expose the required hooks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between regex and BNF constraints?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Regex matches flat token sequences (e.g., phone numbers, ISO dates). BNF is a formal grammar that handles nested and recursive structures (e.g., JSON, code). Use regex for simple patterns, BNF for complex hierarchies."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does constrained decoding work with streaming?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but grammar checking happens on each token as it's generated, so you cannot stream until the token is validated. Streaming latency is higher than unconstrained generation."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Constrained Decoding",
+      "description": "Generation that masks disallowed tokens at each step to guarantee output matches a formal grammar, regex, or JSON schema.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/constrained-decoding",
+      "termCode": "constrained-decoding"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:37Z"
@@ -415,61 +271,13 @@
       "contrastive search"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Contrastive Decoding",
-        "description": "Subtract a small model's predictions from a large model's to suppress generic tokens and amplify expert reasoning.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/contrastive-decoding",
-        "termCode": "contrastive-decoding"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is contrastive decoding the same as speculative decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Speculative decoding uses a small model to draft tokens, then the large model verifies them—a speedup technique. Contrastive decoding uses logit subtraction to change output quality. They solve different problems."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does contrastive decoding improve factuality?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Gains vary by task and model pair. Li et al. (2022) reported 3–8% improvements on factuality benchmarks, but real gains depend on how well the amateur model captures generic patterns you want to suppress."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use any small model as the amateur?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Ideally, yes—but it should be noticeably weaker (lower perplexity, fewer parameters) and trained on similar data. Using a random or unrelated model produces poor contrastive signal."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What value of lambda should I use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with λ = 0.5–1.0 and validate on a held-out set. Higher λ (2+) increases contrast but risks erasing valid expert predictions. No universal default exists."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does contrastive decoding work for non-English languages?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, the mechanism is language-agnostic. Effectiveness depends on whether both models were trained on the target language and whether generic patterns are similar across languages."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Contrastive Decoding",
+      "description": "Subtract a small model's predictions from a large model's to suppress generic tokens and amplify expert reasoning.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/contrastive-decoding",
+      "termCode": "contrastive-decoding"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:36:13Z"
@@ -531,61 +339,13 @@
       "reproducible LLM output"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Deterministic Decoding (Seeded Generation)",
-        "description": "Set temperature to 0 or use a fixed seed to produce identical outputs for the same input across runs.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/deterministic-decoding",
-        "termCode": "deterministic-decoding"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is temperature 0 the same as deterministic decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Temperature=0 is one way to achieve determinism (greedy decoding), but it's not the only way. APIs may also offer a seed parameter for reproducible stochastic sampling. Both produce identical outputs for the same input within one system, but temperature=0 removes randomness entirely."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Will my seeded model outputs be identical across different cloud providers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Even with the same seed, floating-point arithmetic order and internal optimizations differ between providers, causing drift. For cross-provider reproducibility, you need bit-for-bit identical inference code and hardware."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use deterministic decoding for creative tasks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You can, but it's not ideal. Temperature=0 always picks the most likely token, which works for factual tasks but produces repetitive, dull output for creative writing, brainstorming, or open-ended generation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I implement seeded generation in my API calls?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Most modern APIs (OpenAI, Anthropic, etc.) accept a seed parameter in the request body. Pass temperature=0 or your seed value depending on the provider's API. Check their documentation for the exact parameter name and behavior."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why does my model give different outputs with the same seed across software versions?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Library updates, tokenizer changes, or hardware acceleration differences can alter floating-point reduction order or probability calculations, breaking seed reproducibility. Version lock your dependencies if byte-exact reproducibility is critical."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Deterministic Decoding (Seeded Generation)",
+      "description": "Set temperature to 0 or use a fixed seed to produce identical outputs for the same input across runs.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/deterministic-decoding",
+      "termCode": "deterministic-decoding"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:36:15Z"
@@ -646,61 +406,13 @@
       "group beam search"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Diverse Beam Search",
-        "description": "Beam search variant that penalizes similar candidates so you get N meaningfully different outputs instead of near-duplicates.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/diverse-beam-search",
-        "termCode": "diverse-beam-search"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is diverse beam search different from just running beam search multiple times?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Running beam search multiple times gives you identical outputs (or near-identical, depending on tie-breaking). Diverse beam search modifies the decoding algorithm itself to steer beams apart during a single forward pass, guaranteeing structural difference without recomputation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does diverse beam search work with all language models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, it's a post-training decoding algorithm—no model retraining needed. It works with any autoregressive model. You control it via the diversity penalty hyperparameter at inference time."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the diversity penalty parameter and how do I set it?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It's a scalar (usually 0.0–1.0) that scales how much earlier beams penalize later beams' token choices. Start at 0.5; higher values force more divergence but risk incoherence. Lower values make groups compete more, reducing diversity."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use diverse beam search with large batch sizes?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but the penalty calculation scales with the number of beams and groups. For large batches, compute becomes the bottleneck. Some frameworks like Hugging Face transformers optimize this, but verify latency before production use."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is diverse beam search the same as diverse decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Diverse beam search is one flavor of diverse decoding. The term 'diverse decoding' is broader and includes other methods like contrastive decoding or nucleus sampling variants."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Diverse Beam Search",
+      "description": "Beam search variant that penalizes similar candidates so you get N meaningfully different outputs instead of near-duplicates.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/diverse-beam-search",
+      "termCode": "diverse-beam-search"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:36:29Z"
@@ -768,61 +480,13 @@
       "how to prevent model loops"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "DRY Sampling",
-        "description": "Repetition penalty that blocks repeated n-gram prefixes, not tokens, to reduce loops without suppressing common words.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/dry-sampling",
-        "termCode": "dry-sampling"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is DRY sampling different from frequency penalty?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Frequency penalty penalizes any repeated token based on how often it's appeared overall; DRY only penalizes n-grams whose exact prefix just occurred. DRY preserves common words like 'the', while frequency penalty suppresses them globally."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What window size should I use for DRY sampling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start at 64–128 tokens. Larger windows catch more distant loops but may block legitimate patterns; smaller windows miss loops in long generation. Test with your output length and adjust based on whether you see unwanted repetition or over-penalization."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does DRY sampling work with code generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but carefully. Code often repeats variable names and keywords intentionally. DRY prevents copy-paste errors but may block needed repeated patterns. Lower the penalty or window size, or use it alongside other constraints like grammar-guided generation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I combine DRY with temperature and top-p?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. DRY acts independently during decoding; temperature and top-p still control diversity. Combine them for best results: DRY blocks exact loops, temperature adds variation, top-p narrows the token pool. Start conservative and tune together."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is DRY sampling the same as reject sampling or beam search?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. DRY modifies probability during generation; reject sampling filters completed sequences afterward; beam search explores multiple paths in parallel. DRY is faster and more direct for loop prevention."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "DRY Sampling",
+      "description": "Repetition penalty that blocks repeated n-gram prefixes, not tokens, to reduce loops without suppressing common words.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/dry-sampling",
+      "termCode": "dry-sampling"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:35Z"
@@ -888,61 +552,13 @@
       "speculative decoding EAGLE vs Medusa"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "EAGLE Decoding",
-        "description": "Lightweight auxiliary model predicts multiple next tokens from target LLM hidden states, speeding generation 3–4× with minimal quality loss.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/eagle-decoding",
-        "termCode": "eagle-decoding"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between EAGLE and Medusa?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "EAGLE uses the target model's hidden states to train its head, making predictions more accurate. Medusa trains heads on logits only. EAGLE typically achieves higher speedup with lower overhead."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does EAGLE work with quantized models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but the auxiliary head trains on hidden states before quantization. Quantization of the main model doesn't break EAGLE, though some speedup may be lost if quantization itself is fast."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long does it take to train EAGLE for a new model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "4–8 hours on a single H100 for a 70B model, using cached hidden states from a few thousand training examples. Smaller models train in 1–2 hours."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use EAGLE with batch inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Continuous batching in vLLM handles EAGLE's parallel validation efficiently. Speedup multiplies across batches in production."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does EAGLE change the output tokens or just make generation faster?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "EAGLE does not change output quality. Speeds up the decoding process only; same tokens in the same order, just faster."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "EAGLE Decoding",
+      "description": "Lightweight auxiliary model predicts multiple next tokens from target LLM hidden states, speeding generation 3–4× with minimal quality loss.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/eagle-decoding",
+      "termCode": "eagle-decoding"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:36:04Z"
@@ -1008,61 +624,13 @@
       "adaptive temperature"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Entropy-Based Decoding",
-        "description": "Decoding that adjusts sampling parameters per step based on model confidence, sampling broadly when uncertain and narrowly when confident.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/entropy-decoding",
-        "termCode": "entropy-decoding"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is entropy-based decoding different from temperature scheduling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Temperature scheduling adjusts temperature on a predefined schedule (e.g., linearly decrease over steps). Entropy-based decoding adjusts on the fly based on the actual distribution's uncertainty. Entropy adapts to what the model does; scheduling adapts to time."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does entropy-based decoding work with constrained decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but entropy is computed over the masked vocabulary (only valid tokens). If constraints eliminate most options, entropy drops artificially, and the benefit diminishes."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What entropy threshold should I use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No universal threshold exists. Typical practice: log(vocabulary_size) / 2 as a starting point, then tune per model and task. High-entropy languages (e.g., code) often need higher thresholds than low-entropy domains (e.g., classification)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can entropy-based decoding reduce hallucinations?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Indirectly—it tightens sampling when the model is confident, which can reduce unjustified variations. But entropy reflects uncertainty, not correctness; a confident wrong answer will still sample narrowly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is entropy-based decoding the same as best-of-n sampling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Best-of-n generates multiple samples and ranks them; entropy-based decoding adapts a single forward pass. Entropy-based is cheaper but requires calibrated probabilities."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Entropy-Based Decoding",
+      "description": "Decoding that adjusts sampling parameters per step based on model confidence, sampling broadly when uncertain and narrowly when confident.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/entropy-decoding",
+      "termCode": "entropy-decoding"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:34Z"
@@ -1127,61 +695,13 @@
       "frequency penalty vs presence penalty"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Frequency Penalty",
-        "description": "Sampling parameter that reduces a token's probability based on how many times it has already appeared in the generated text.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/frequency-penalty",
-        "termCode": "frequency-penalty"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between frequency penalty and presence penalty?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Frequency penalty subtracts a value proportional to how many times a token has appeared (count × α). Presence penalty subtracts a fixed value after the token appears at all (flat -α). Frequency penalty scales with repetition; presence penalty does not."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Will frequency penalty affect my token costs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Frequency penalty is applied during sampling and does not change the number of tokens generated or consumed. Cost is based on input and output token count, not penalty settings."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if I set frequency penalty to 0?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "At 0, no penalty is applied and the model samples from the original probability distribution. This is equivalent to disabling frequency penalty."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use frequency penalty with structured outputs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Frequency penalty is ignored when using constrained decoding modes (JSON mode, function calling) because token selection is forced by the schema, not by sampling."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I know what frequency penalty value to use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start at 0.5–1.0 for general long-form text and increment in 0.2 steps while sampling. Measure output quality and repetition; higher values reduce repetition but risk unnatural phrasing."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Frequency Penalty",
+      "description": "Sampling parameter that reduces a token's probability based on how many times it has already appeared in the generated text.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/frequency-penalty",
+      "termCode": "frequency-penalty"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:58Z"
@@ -1249,61 +769,13 @@
       "deterministic text generation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Greedy Decoding",
-        "description": "Pick the highest-probability token at each step. Deterministic, fast, often repetitive.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/greedy-decoding",
-        "termCode": "greedy-decoding"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is greedy decoding the same as temperature 0?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, in practice. Both disable randomness and always pick the argmax token. Some frameworks implement them identically; others may layer additional constraints, but the core behavior is the same."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why does greedy decoding repeat words?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Once greedy picks a high-probability token (e.g., 'I'), that token becomes part of the context. The model then sees 'I' and assigns high probability to 'think' again. Greedy can't back out because it never samples alternatives."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use greedy decoding for creative writing?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Technically yes, but results are usually poor. Greedy will produce stilted, repetitive, or clichéd text. Use top-p or temperature >0 for anything narrative or expressive."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does greedy decoding make the model faster?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Slightly. You skip the sampling step and only compute one forward pass per token. But the difference is negligible—inference speed is usually bottlenecked by model size and hardware, not decoding method."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I set greedy decoding in OpenAI or Anthropic APIs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Set temperature=0. OpenAI also accepts a seed parameter to lock randomness even further. Anthropic's APIs respect temperature=0 for greedy behavior."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Greedy Decoding",
+      "description": "Pick the highest-probability token at each step. Deterministic, fast, often repetitive.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/greedy-decoding",
+      "termCode": "greedy-decoding"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:08Z"
@@ -1365,61 +837,13 @@
       "Microsoft Guidance"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Guidance (Microsoft)",
-        "description": "Python library that mixes fixed template text with constrained LLM generation to guarantee structured output format.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/guidance",
-        "termCode": "guidance"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How does Guidance differ from just parsing the LLM output?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Guidance enforces format constraints *during* token sampling, guaranteeing valid output on first pass. Parsing checks format *after* generation and requires retry logic on failure. Guidance eliminates retries and wasted tokens."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Guidance work with local models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Guidance supports any model via constrained decoding at the token level. OpenAI's JSON mode is API-only; Guidance gives you the same guarantee on your own Llama, Mistral, or other local model."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the performance cost of using Guidance?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Constrained decoding adds latency per token (typically 5–20% slower than greedy sampling) because each token is checked against the constraint. Token healing reduces overhead when reusing fixed template sections across multiple calls."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can Guidance enforce complex nested JSON schemas?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but deeply nested or very strict schemas can degrade model reasoning. Simpler constraints (regex, choice lists, basic types) work best; test complex schemas with your model first."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Guidance the same as Outlines?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Both do constrained decoding for structured output. Guidance is Microsoft's tool with an emphasis on mixing text and generation in a readable program; Outlines is more agnostic and focuses on schema-driven generation. Both solve similar problems."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Guidance (Microsoft)",
+      "description": "Python library that mixes fixed template text with constrained LLM generation to guarantee structured output format.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/guidance",
+      "termCode": "guidance"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:36:18Z"
@@ -1485,61 +909,13 @@
       "ban tokens with logit bias"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Logit Bias",
-        "description": "Add or subtract a constant from specific token logits before decoding to force, penalize, or ban outputs.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/logit-bias",
-        "termCode": "logit-bias"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How do I find the token IDs for words I want to bias?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use your model's tokenizer.encode() method. For example, with OpenAI, decode the word into tokens, then map each token ID to your bias value. Test with a few words first—compound words may tokenize into multiple IDs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use logit bias to force an exact output format like JSON?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not reliably. Logit bias works token-by-token but doesn't enforce structure across multiple positions. For JSON, use structured-output or constrained-decoding libraries like Outlines or Guidance instead."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between logit bias and temperature?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Temperature scales all logits uniformly before softmax (higher = more random). Logit bias adds fixed offsets to specific tokens, letting you pin certain tokens up or down. You can use both together."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do token IDs change if I upgrade my model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Token IDs are tied to the model's tokenizer. Upgrading the model or tokenizer can shift IDs, breaking hardcoded bias dictionaries. Regenerate and test your logit_bias values after any model update."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I combine logit bias with function calling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. You can bias tokens to steer the model toward specific function names or parameters while still allowing the function-calling machinery to parse and validate the output."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Logit Bias",
+      "description": "Add or subtract a constant from specific token logits before decoding to force, penalize, or ban outputs.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/logit-bias",
+      "termCode": "logit-bias"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:36:26Z"
@@ -1601,61 +977,13 @@
       "log probabilities"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Log Probability (Logprobs)",
-        "description": "Natural logarithm of a token's probability; summed across sequences to measure confidence and detect hallucinations.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/logprob",
-        "termCode": "logprob"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between logprobs and probabilities?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Probabilities range from 0–1; logprobs are their natural logarithm and range from 0 to −∞. Logprobs compress small probabilities into readable numbers and make mathematical operations like summation more stable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I use logprobs to detect hallucinations?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Set a confidence threshold (e.g., average logprob per token < −2) and flag outputs below it. Low logprobs often correlate with invented facts, but pair this signal with other checks—uncertainty alone isn't proof of hallucination."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I compare logprobs across different models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Logprobs are model-specific because different models have different vocabularies, training objectives, and calibration. A logprob of −1.5 in GPT-4 doesn't mean the same thing as −1.5 in Llama."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do all LLM APIs return logprobs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. OpenAI, Anthropic, and Groq expose logprobs, but some endpoints require you to request them explicitly or may charge a small overhead. Check your API documentation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the relationship between logprobs and perplexity?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Perplexity is exp(−mean logprob per token) over a full sequence. It measures how surprised the model is by the data; lower perplexity means higher confidence."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Log Probability (Logprobs)",
+      "description": "Natural logarithm of a token's probability; summed across sequences to measure confidence and detect hallucinations.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/logprob",
+      "termCode": "logprob"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:20Z"
@@ -1715,61 +1043,13 @@
       "min p decoding"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Min-P Sampling",
-        "description": "Sampling method that adapts token cutoff relative to the top token's probability, keeping only candidates above a minimum threshold.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/min-p-sampling",
-        "termCode": "min-p-sampling"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is min-p different from top-p?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Top-p filters by cumulative probability (e.g., include tokens until 90% mass is covered). Min-p filters by absolute probability relative to the best token. Min-p adapts cutoff dynamically; top-p is fixed regardless of model confidence."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What min-p value should I use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with 0.05–0.1. Lower values (0.02) allow more exploration; higher values (0.15+) are more conservative. Test on your use case; there's no universal setting."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use min-p and temperature together?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but they interact: temperature flattens the probability distribution, which can make min-p's threshold very permissive. Use one or the other to avoid over-tuning."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does min-p work better for creative or technical writing?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It works well for both. For technical writing (code, docs), it keeps output on-topic. For creative work, it lets the model explore when uncertain but stabilizes confident passages."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Which inference servers support min-p?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "vLLM, LM Studio, Ollama, and some others support it. Check your framework's sampling API; if not, you may need to implement it as a post-processing filter."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Min-P Sampling",
+      "description": "Sampling method that adapts token cutoff relative to the top token's probability, keeping only candidates above a minimum threshold.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/min-p-sampling",
+      "termCode": "min-p-sampling"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:50Z"
@@ -1835,61 +1115,13 @@
       "adaptive sampling LLM"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Mirostat",
-        "description": "Sampling method that adjusts token cutoff at each step to maintain target output perplexity.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mirostat",
-        "termCode": "mirostat"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between Mirostat and top-p sampling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Top-p uses a fixed cutoff for token probability mass; Mirostat dynamically adjusts that cutoff per step to hit a perplexity target. Top-p is static, Mirostat is adaptive."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What perplexity value should I use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with τ = 5–8 for creative writing, 3–5 for code, 7–10 for casual chat. Tune by generating a sample and checking if output feels repetitive (lower τ) or chaotic (higher τ)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Mirostat work with all models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, Mirostat works with any model producing logits. It's model-agnostic but may need τ tuning per architecture (LLaMA vs. Mistral behave slightly differently)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Mirostat slower than top-p?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, slightly—Mirostat recalculates entropy and updates parameters at every token, adding ~5–10% latency. For real-time chat, consider top-p unless consistency is critical."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Mirostat with quantized models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Quantization doesn't change the logits Mirostat reads, so it works fine with GGUF, AWQ, or other quantized formats in llama.cpp or vLLM."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Mirostat",
+      "description": "Sampling method that adjusts token cutoff at each step to maintain target output perplexity.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mirostat",
+      "termCode": "mirostat"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:36:02Z"
@@ -1951,61 +1183,13 @@
       "random sampling"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Multinomial Sampling",
-        "description": "Draw the next token by randomly sampling from the full vocabulary distribution weighted by model probabilities.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/multinomial-sampling",
-        "termCode": "multinomial-sampling"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is multinomial sampling different from greedy decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Greedy decoding always picks the single highest-probability token. Multinomial sampling rolls a weighted die using the full probability distribution, so any token can be chosen—higher-probability tokens just win more often. Multinomial adds randomness; greedy is deterministic."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What does temperature do in multinomial sampling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Temperature rescales the probability distribution before sampling. Lower temperature (e.g., 0.3) makes high-probability tokens even more dominant; higher temperature (e.g., 1.5) flattens the distribution and gives rare tokens a better chance to be sampled."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do people use top-p instead of pure multinomial sampling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Pure multinomial sampling includes the long tail of very-low-probability tokens, which adds noise and incoherence. Top-p truncates the distribution to only the most-probable tokens that sum to a threshold (e.g., 90%), then samples from that smaller set. This keeps diversity while eliminating garbage tokens."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can multinomial sampling be used with gradient-based training?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Direct sampling is non-differentiable. For training, use Gumbel-softmax or straight-through estimators as alternatives. At inference (generation), multinomial sampling is fine."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is multinomial sampling faster or slower than beam search?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Multinomial is faster: one token per forward pass, single sample. Beam search keeps K hypotheses in parallel, requiring K forward passes per step, so it's slower but explores more output space."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Multinomial Sampling",
+      "description": "Draw the next token by randomly sampling from the full vocabulary distribution weighted by model probabilities.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/multinomial-sampling",
+      "termCode": "multinomial-sampling"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:36:12Z"
@@ -2071,61 +1255,13 @@
       "structured generation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Outlines (Structured LLM)",
-        "description": "Open-source library that enforces exact output formats (JSON, regex, grammar) by masking invalid tokens during generation.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/outlines",
-        "termCode": "outlines"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between Outlines and Guidance?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Guidance uses context-free grammars with more flexible token-level control; Outlines precompiles automata for speed. Outlines is faster for rigid schemas; Guidance is more flexible for complex branching logic."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Outlines guarantee the output is valid JSON?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if you provide a valid JSON schema. Outlines masks all tokens that would produce invalid JSON, so generation can only produce valid output."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does Outlines slow down generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Minimal—token masking is O(1) per step and compiled upfront. Real-world overhead is <5% on most models; in some cases it's faster than beam search because fewer tokens are explored."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Outlines with quantized models like GPTQ?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if your inference engine (vLLM, llama.cpp) supports both. Verify version compatibility; older versions may require slower fallback validation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if my schema is too complex?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Automaton compilation time increases and memory usage grows, but generation itself stays fast. Test large schemas offline first; if compilation is slow, simplify or split the schema."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Outlines (Structured LLM)",
+      "description": "Open-source library that enforces exact output formats (JSON, regex, grammar) by masking invalid tokens during generation.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/outlines",
+      "termCode": "outlines"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:40Z"
@@ -2190,61 +1326,13 @@
       "how to calculate perplexity"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Perplexity",
-        "description": "Exponentiated average negative log-likelihood of a sequence; lower means the model finds it more natural.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/perplexity",
-        "termCode": "perplexity"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is a good perplexity score for a language model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Context-dependent. State-of-the-art 7B models on Wikipedia achieve 10–15 PPL; on code, 15–25 PPL is typical. Smaller models or harder domains see higher scores. Always compare within the same dataset and tokenizer."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I compare perplexity across different models if they use different tokenizers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No—a model with a smaller vocabulary will appear more perplexed on the same text because it expresses the same meaning across more tokens. Re-tokenize to the same vocabulary or use a normalized comparison."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does low perplexity mean the model will be good at my task?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not necessarily. Perplexity measures language prediction quality, not reasoning, alignment, or task-specific accuracy. A low-perplexity model can still hallucinate, refuse correctly, or fail at reasoning."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do you use exponentiation in the perplexity formula?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Exponentiation converts average negative log-likelihood into an intuitive branching factor: PPL of 100 means the model is roughly equally uncertain between 100 tokens, making the number easier to reason about than raw loss values."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How is perplexity different from cross-entropy loss?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Cross-entropy is the average negative log-likelihood (the exponent in PPL). Perplexity is the exponentiated form. Both measure the same underlying prediction quality; PPL is just more interpretable."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Perplexity",
+      "description": "Exponentiated average negative log-likelihood of a sequence; lower means the model finds it more natural.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/perplexity",
+      "termCode": "perplexity"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:36:00Z"
@@ -2305,61 +1393,13 @@
       "presence penalty OpenAI"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Presence Penalty",
-        "description": "Reduces token probability if it appeared anywhere before, encouraging topic diversity in generation.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/presence-penalty",
-        "termCode": "presence-penalty"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between presence penalty and frequency penalty?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Presence penalty subtracts a fixed amount once per token, regardless of count. Frequency penalty scales the penalty by how many times the token appeared. Use presence for diversity; use frequency to discourage repeated words proportionally."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does presence penalty slow down inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. It's a single lookup and subtraction per token during logit calculation—negligible overhead at decode time."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use presence penalty with instruct models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Presence penalty works on any model during generation. However, instruct models already favor variety through training, so you may need lower values (0.2–0.4) to avoid degrading coherence."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if I set presence penalty too high?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The model runs out of common tokens and begins generating rare, incoherent, or off-topic words to avoid penalties. Start with 0.5–0.6 and adjust downward if quality drops."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does presence penalty work for multi-turn conversations?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but it penalizes tokens across the entire conversation history. This can prevent the model from reusing proper nouns or relevant context; consider disabling it for dialogue or using a smaller value."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Presence Penalty",
+      "description": "Reduces token probability if it appeared anywhere before, encouraging topic diversity in generation.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/presence-penalty",
+      "termCode": "presence-penalty"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:26Z"
@@ -2422,61 +1462,13 @@
       "max reasoning tokens"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Reasoning Token / Thinking Budget",
-        "description": "A cap on internal reasoning tokens a model can spend before returning its answer, trading compute cost for solution quality.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/reasoning-token-budget",
-        "termCode": "reasoning-token-budget"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between reasoning budget and context window?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Context window is the total input+output tokens your model can handle. Reasoning budget is a subset—tokens spent on hidden internal thinking before the final answer. A 128K context window model might have a 10K reasoning budget."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I set a reasoning budget as an explicit token count or only as a preset level?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It depends on the model. OpenAI's o1 accepts only reasoning_effort (low/medium/high); some APIs (e.g., certain Claude versions) accept max_thinking_tokens as a number. Check your provider's API docs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does a higher reasoning budget guarantee a better answer?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Most answers stabilize after a certain threshold. Beyond that, extra tokens are wasted. Profile your use case empirically—often medium budget is sufficient, and high is only needed for competition-grade math or system design."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does reasoning cost compared to standard inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Reasoning tokens typically cost 3–10x more than standard output tokens. A 10K reasoning + 500 output token request may cost $0.50–$2.00 depending on the model and provider."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I see what the model was thinking during the reasoning phase?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sometimes. OpenAI's o1 and Claude's extended thinking can return a thinking trace, but it's not always enabled by default. Check your API response structure; some providers omit it to reduce latency."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Reasoning Token / Thinking Budget",
+      "description": "A cap on internal reasoning tokens a model can spend before returning its answer, trading compute cost for solution quality.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/reasoning-token-budget",
+      "termCode": "reasoning-token-budget"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:23Z"
@@ -2536,61 +1528,13 @@
       "rep penalty"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Repetition Penalty",
-        "description": "Reduces the probability of tokens already in the context, stopping models from looping on the same words.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/repetition-penalty",
-        "termCode": "repetition-penalty"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between repetition penalty and frequency penalty?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Repetition penalty divides logits uniformly for all seen tokens. Frequency penalty subtracts a score scaled by how many times a token appeared. Frequency gives diminishing returns; repetition is a hard divisor."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I know if my repetition penalty is too high?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Read the output. If it avoids common words or sounds unnatural (e.g., 'The cat sat on the furniture' instead of 'The cat sat on the rug'), reduce the penalty from 1.3 to 1.1."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does repetition penalty prevent hallucinations?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. It only discourages token repetition. Hallucinations come from training or context, not loop behavior. Use separate techniques like RAG or guardrails for that."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I apply repetition penalty to specific tokens only?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Most inference engines apply it globally. Some frameworks (e.g., vLLM, Outlines) allow custom sampling logic to exempt or weight certain tokens differently."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's a good starting value for repetition penalty?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "1.1–1.2 works for most tasks. Start there and adjust down if output feels stilted, up if you still see loops."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Repetition Penalty",
+      "description": "Reduces the probability of tokens already in the context, stopping models from looping on the same words.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/repetition-penalty",
+      "termCode": "repetition-penalty"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:36:24Z"
@@ -2651,61 +1595,13 @@
       "stop strings"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Stop Sequences",
-        "description": "Strings that halt model output when generated, used to delimit structured responses or prevent over-generation.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/stop-sequences",
-        "termCode": "stop-sequences"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between stop sequences and max_tokens?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Stop sequences halt generation when specific text appears; max_tokens halts after a fixed count. Use stop sequences for semantic boundaries (like dialog turns) and max_tokens as a safety cap. Both can be active at once."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do stop sequences work the same way in all APIs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Most APIs (OpenAI, Anthropic, Hugging Face) implement stop sequences identically—substring matching during streaming—but some older or niche services may differ. Check documentation for exact behavior."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use stop sequences with constrained decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Stop sequences are often faster and simpler for coarse truncation, while constrained decoding ensures strict format compliance. Layer them: use constrained decoding for JSON schema, stop sequences for dialog boundaries."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if the stop sequence never appears?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Generation continues until max_tokens is reached. If you need guaranteed termination, always pair stop sequences with max_tokens."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Are stop sequences case-sensitive?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. \"User:\" and \"user:\" are different sequences. Exact string matching applies."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Stop Sequences",
+      "description": "Strings that halt model output when generated, used to delimit structured responses or prevent over-generation.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/stop-sequences",
+      "termCode": "stop-sequences"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:34:09Z"
@@ -2764,61 +1660,13 @@
     "meta_description": "A parameter scaling how much randomness the model applies when picking the next token. Control creativity vs. consistency with 0.0–1.0+.",
     "seo_variations": [],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Temperature",
-        "description": "A parameter scaling how much randomness the model applies when picking the next token.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/temperature",
-        "termCode": "temperature"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between temperature 0 and temperature 1?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Temperature 0 always picks the highest-probability token (deterministic, repetitive). Temperature 1.0 samples proportionally to the original probabilities (stochastic, natural). Temperature 0 is useful for reproducibility; temperature 1.0 gives more natural variation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What temperature should I use for code generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use temperature 0–0.3. Code correctness depends on the model following learned patterns closely. High temperature introduces hallucinated syntax and logic errors."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use temperature with top-p sampling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Temperature reshapes the probability distribution first, then top-p truncates it. Using both together gives you control over both diversity and extreme-tail probability cutoff."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why does my model produce the same response every time?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You likely have temperature set to 0 or very close to it. Increase temperature to 0.7–1.0 to get varied responses; even then, the prompt and model weights matter more than temperature alone."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is higher temperature always better for creativity?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Temperature >1.5 often produces incoherent gibberish rather than creative ideas. Aim for 0.7–1.0; creativity comes from the model's training, not from chaos."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Temperature",
+      "description": "A parameter scaling how much randomness the model applies when picking the next token.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/temperature",
+      "termCode": "temperature"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:06Z"
@@ -2884,61 +1732,13 @@
       "top-K decoding"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Top-k Sampling",
-        "description": "Sampling strategy that restricts choices to the K highest-probability tokens, ignoring the rest.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/top-k-sampling",
-        "termCode": "top-k-sampling"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between top-k and top-p sampling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Top-k uses a fixed count: pick the K highest-probability tokens. Top-p uses cumulative probability: pick tokens until their probabilities sum to p (e.g., 90%). Top-p adapts to the model's confidence; top-k does not. Both can be combined in one decoder pass."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I choose the right K value?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with K=40–50 for general use. Increase to 100+ for creative tasks; decrease to 20–30 for conservative, factual applications. Experiment with your task—there is no universal K."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does top-k sampling prevent hallucinations?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Partially. It reduces hallucinations caused by sampling from the tail of the distribution, but it does not prevent the model from confidently generating false information ranked in the top K. Use retrieval-augmented generation (RAG) or fine-tuning for stronger hallucination control."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use top-k with greedy decoding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Greedy decoding always picks the single highest-probability token; there is no sampling or distribution to restrict. Top-k only applies to sampling-based strategies."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if K is larger than the vocabulary size?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Top-k becomes equivalent to unrestricted sampling. The decoder will consider all tokens, so the filter has no effect. Keep K well below your vocabulary size (typically 30k–100k)."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Top-k Sampling",
+      "description": "Sampling strategy that restricts choices to the K highest-probability tokens, ignoring the rest.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/top-k-sampling",
+      "termCode": "top-k-sampling"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:08Z"
@@ -3004,61 +1804,13 @@
       "top_p parameter"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Top-p (Nucleus) Sampling",
-        "description": "Sampling from the smallest set of tokens whose cumulative probability reaches threshold p, adapting to the model's confidence.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/top-p-sampling",
-        "termCode": "top-p-sampling"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between top-p and top-k sampling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Top-k keeps exactly k highest-probability tokens regardless of their probabilities; top-p keeps tokens until cumulative probability reaches p, adapting set size to the distribution shape. Top-p usually produces more natural text because it tightens on confident predictions."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why does top-p interact with temperature?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Temperature reshapes the probability distribution before top-p is applied. Lower temperature makes the distribution more peaked, so top-p's set shrinks; higher temperature flattens it, so top-p's set grows. They compound, not replace each other."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is p=0.9 always the right setting?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. p=0.9 is a common default, but it depends on your task, model, and temperature. Creative tasks often use p=0.85–0.95; factual tasks use lower values (p=0.7–0.8). Always test on your own data."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Should I use top-p or top-k?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Top-p is usually better for general-purpose generation because it adapts. Use top-k only if you need strict, predictable token set sizes or have a specific reason to prefer fixed behavior."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does top-p prevent hallucinations?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Top-p only affects sampling diversity; it doesn't validate factual correctness. Combine it with prompt engineering, retrieval augmentation, or constrained decoding to reduce hallucination."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Top-p (Nucleus) Sampling",
+      "description": "Sampling from the smallest set of tokens whose cumulative probability reaches threshold p, adapting to the model's confidence.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/top-p-sampling",
+      "termCode": "top-p-sampling"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:09Z"
@@ -3118,61 +1870,13 @@
       "typical decoding"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Typical Sampling",
-        "description": "Sample tokens whose information content matches the distribution's expected entropy, avoiding predictable and incoherent extremes.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/typical-sampling",
-        "termCode": "typical-sampling"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is typical sampling different from top-p sampling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Top-p keeps cumulative probability mass below a threshold; typical sampling keeps tokens within an entropy range. Typical sampling is theory-driven and often produces different stylistic outputs, especially for creative tasks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What should I set the tau threshold to?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with τ = 1.0 (within one unit of expected entropy) and adjust based on output quality. Smaller τ favors coherence; larger τ increases diversity. No universal default — tune empirically."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does typical sampling work with all model types?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but entropy calculations assume a well-calibrated probability distribution. For quantized or distilled models, verify that log-probs are still reliable before deploying."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is typical sampling slower than top-p?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Typical sampling requires computing negative log probabilities for all tokens and calculating full entropy, while top-p only needs cumulative sorting of a subset."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I combine typical sampling with other decoding techniques?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You can apply temperature before typical sampling to shift the entropy distribution. Combining with other filters (like logit bias) is possible but requires careful tuning."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Typical Sampling",
+      "description": "Sample tokens whose information content matches the distribution's expected entropy, avoiding predictable and incoherent extremes.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/typical-sampling",
+      "termCode": "typical-sampling"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:35:46Z"

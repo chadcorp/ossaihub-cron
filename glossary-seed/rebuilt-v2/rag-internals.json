@@ -62,61 +62,13 @@
       "vector similarity search"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Approximate Nearest Neighbor Search",
-        "description": "Fast vector search that trades small accuracy loss for speed by pruning the search space instead of checking every vector.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/approximate-nearest-neighbor",
-        "termCode": "approximate-nearest-neighbor"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How much accuracy do I lose with approximate nearest neighbor?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Recall@10 typically ranges from 95–99% depending on algorithm and parameters. You miss 1–5% of the true top-10 neighbors but gain 10–100× speed. Tune based on your use case: recommendation engines often tolerate 95% recall; RAG retrieval may require 99%+."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is HNSW better than IVF?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "HNSW usually offers higher recall at lower latency but requires more memory and slower indexing. IVF indexes faster and uses less RAM, making it better for frequently-updated datasets. Choice depends on your read/write ratio and memory budget."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use approximate nearest neighbor for real-time updates?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Some algorithms support incremental insertion (HNSW, certain IVF variants), but full index rebuilds are still common. If you need to add millions of vectors daily, plan for offline indexing or accept slightly stale indexes."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between approximate nearest neighbor and semantic caching?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "ANN finds similar vectors in a large index; semantic caching checks if a new query is similar to past queries you've already cached. They solve different problems: ANN speeds up retrieval, caching avoids duplicate computation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does approximate nearest neighbor work for high-dimensional vectors?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but performance degrades as dimensionality increases (curse of dimensionality). Dimensionality reduction or quantization (compressing vectors to fewer bits) helps mitigate this on 1000+ dimensional embeddings."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Approximate Nearest Neighbor Search",
+      "description": "Fast vector search that trades small accuracy loss for speed by pruning the search space instead of checking every vector.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/approximate-nearest-neighbor",
+      "termCode": "approximate-nearest-neighbor"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:38Z"
@@ -179,61 +131,13 @@
       "siamese encoder"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Bi-Encoder",
-        "description": "Two-tower architecture that encodes queries and documents separately into vectors, enabling fast indexed retrieval.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/bi-encoder",
-        "termCode": "bi-encoder"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between bi-encoder and cross-encoder?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A bi-encoder encodes query and document separately and compares their vectors; a cross-encoder feeds both together into the model and outputs a single relevance score. Bi-encoders are faster; cross-encoders are more accurate for ranking."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use a bi-encoder for real-time retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, query encoding is fast (~10–50ms). Document indexing is offline, so if documents change infrequently, real-time retrieval works. High-velocity document streams require careful batch-reindexing strategy."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is a bi-encoder the same as an embedding model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not exactly. An embedding model is a general term for any encoder that produces vectors. A bi-encoder is a specific architecture using two independent encodings. All bi-encoders are embedding models, but not all embedding models are bi-encoders."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do people use bi-encoders if cross-encoders are more accurate?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Speed. Bi-encoders precompute document vectors once; cross-encoders must score every candidate per query. For 1M+ documents, bi-encoder retrieval + cross-encoder reranking is faster than cross-encoder-only scoring."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I combine bi-encoder retrieval with a reranker?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—this is the standard practice in production RAG. Bi-encoder retrieves top-k candidates fast, then a cross-encoder or LLM reranks them for final precision."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Bi-Encoder",
+      "description": "Two-tower architecture that encodes queries and documents separately into vectors, enabling fast indexed retrieval.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/bi-encoder",
+      "termCode": "bi-encoder"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:11:17Z"
@@ -299,61 +203,13 @@
       "BM25 algorithm"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "BM25",
-        "description": "Sparse retrieval algorithm scoring documents by term frequency, inverse document frequency, and length normalization.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/bm25",
-        "termCode": "bm25"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is BM25 different from TF-IDF?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "BM25 extends TF-IDF with saturation (term frequency stops increasing at k1) and explicit length normalization (parameter b). This prevents long documents from dominating rankings and makes scores more stable across document collections."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Should I use BM25 or embeddings?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Neither—use both. BM25 excels at exact and rare-term matches; embeddings find semantic neighbors. Hybrid search ranks by combining both signals, then re-ranks with a cross-encoder for best results."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What are k1 and b parameters and how do I tune them?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "k1 (default 1.2) controls how much term frequency matters—higher values reward repeated terms more. b (default 0.75) controls length normalization—0 disables it, 1 normalizes fully. Tune both on a labeled test set of query-document pairs you've marked as relevant or irrelevant."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use BM25 for non-English text?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but results depend on tokenization and stemming. BM25 is language-agnostic; the quality comes from how you preprocess—proper stemming or lemmatization for your language matters more than the algorithm itself."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does BM25 work for very long documents?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It handles them, but with caveats. Parameter b normalizes length, so a 10-page document isn't unfairly boosted. However, splitting into smaller chunks often improves ranking because queries match discrete topics better than whole documents."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "BM25",
+      "description": "Sparse retrieval algorithm scoring documents by term frequency, inverse document frequency, and length normalization.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/bm25",
+      "termCode": "bm25"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:15:07Z"
@@ -423,61 +279,13 @@
       "text chunking strategy"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Chunking (Document Chunking)",
-        "description": "Split documents into smaller pieces before embedding. Chunk size and boundaries directly control RAG retrieval quality.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/chunking",
-        "termCode": "chunking"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between chunking and tokenization?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Tokenization breaks text into individual tokens (words, subwords). Chunking groups many tokens into logical pieces for embedding and retrieval. Tokenization is a step within chunking."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I choose chunk size?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start at 300–500 tokens for dense retrieval (BERT-like models) or 512–1024 for larger models. Test on a holdout set and adjust if retrieval accuracy drops or noise increases. Document type matters: code needs smaller chunks than narrative."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does chunk overlap really prevent information loss?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Overlap reduces loss at chunk boundaries but does not eliminate it. A sentence split across two chunks may lose context. Semantic or sentence-aware chunking is more reliable than overlap alone."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use the same chunk size for all my documents?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Structured data (code, JSON, tables) needs smaller, syntax-aware chunks. Narrative prose tolerates larger chunks. Mixed documents need multiple strategies or post-processing to preserve structure."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Should I chunk before or after removing stop words?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Chunk first, on raw text. Stop-word removal is a preprocessing step for sparse retrieval (BM25), not dense retrieval (embeddings). For RAG, preserve original text during chunking to maintain meaning."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Chunking (Document Chunking)",
+      "description": "Split documents into smaller pieces before embedding. Chunk size and boundaries directly control RAG retrieval quality.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/chunking",
+      "termCode": "chunking"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:15:40Z"
@@ -542,61 +350,13 @@
       "late interaction"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "ColBERT (Late Interaction Retrieval)",
-        "description": "Retrieval model that scores documents by matching individual query tokens to document tokens, balancing speed and ranking quality.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/colbert",
-        "termCode": "colbert"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is ColBERT different from a bi-encoder?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A bi-encoder computes one vector per document and one per query, then ranks via single dot product. ColBERT computes a vector per token, then ranks by matching tokens individually. ColBERT ranks higher quality but costs more at retrieval time."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can ColBERT replace a cross-encoder?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not exactly. Cross-encoders are more accurate when you have few candidates (< 100). ColBERT is faster and more practical at scale. Many pipelines use ColBERT to retrieve hundreds, then a cross-encoder to rerank the top 10–20."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does ColBERT require GPU to run?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not mandatory, but GPU makes token matching fast. CPU inference is possible for small collections but will be slow. Most production setups use GPU or quantized embeddings (ColBERTv2) to keep latency under 100ms."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much memory does indexing with ColBERT use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Memory scales with total number of tokens across all documents. A 1M-document corpus with average 150 tokens per doc = ~150M tokens. At 128 dims and 4 bytes per float, that's ~80 GB before compression. ColBERTv2 quantization reduces this to ~1–2 GB."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What does late interaction mean in ColBERT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Late interaction means you compute token similarities only at retrieval time, not during indexing. You store all token embeddings and match them on demand, rather than precomputing query-document scores. This lets you reuse the index for different queries."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "ColBERT (Late Interaction Retrieval)",
+      "description": "Retrieval model that scores documents by matching individual query tokens to document tokens, balancing speed and ranking quality.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/colbert",
+      "termCode": "colbert"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:46Z"
@@ -660,61 +420,13 @@
       "token compression RAG"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Contextual Compression (Retrieval)",
-        "description": "Filter retrieved documents through an LLM to extract only sentences answering your query before passing to the generator.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/contextual-compression",
-        "termCode": "contextual-compression"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is contextual compression different from reranking?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Reranking sorts chunks by relevance score; compression extracts relevant spans within each chunk. Reranking picks which chunks to keep; compression extracts what within them matters. Both reduce noise, but compression is more granular."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What model should I use to compress?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use a lightweight LLM (7B–13B) if token budget allows, or train a learned token classifier on labeled query-chunk-span triples if you have clean data. For quick prototyping, any LLM works; for production, smaller models or classifiers are faster and cheaper."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does compression hurt answer quality?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not if tuned carefully. Compression often improves quality by removing distractors, but weak compressors can strip critical context. Validate on your domain's queries and documents before deploying."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I combine compression with other retrieval steps?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Common stacks are: retrieve → rerank → compress → generate. Reranking filters which chunks; compression refines what stays in each chunk. Order matters—usually rerank first (cheaper, bulk filter), then compress (finer-grained)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the typical token reduction?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Contextual compression typically reduces token count by 40–70% depending on document density and query specificity. You trade some compressor latency (~100–300ms for an LLM per chunk) for generator savings."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Contextual Compression (Retrieval)",
+      "description": "Filter retrieved documents through an LLM to extract only sentences answering your query before passing to the generator.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/contextual-compression",
+      "termCode": "contextual-compression"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:52Z"
@@ -780,61 +492,13 @@
       "embedding distance"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Cosine Similarity",
-        "description": "Measures angle between embedding vectors; ignores magnitude. Ranges -1 to 1; 0.8+ signals semantic relevance.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/cosine-similarity",
-        "termCode": "cosine-similarity"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between cosine similarity and Euclidean distance?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Cosine similarity measures angle (direction); Euclidean distance measures straight-line magnitude. For normalized embeddings, cosine is invariant to vector length, making it more reliable for text. Euclidean distance favors vectors closer to the origin, which can distort retrieval."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "When should I use a 0.8 vs 0.9 threshold?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use 0.9+ for high-precision retrieval (near-duplicates, exact-match intent). Use 0.75–0.85 for high-recall (catch all related documents). Your choice depends on whether you'd rather miss relevant results or waste reranking on borderline matches."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does cosine similarity work with all embedding models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It works best with models trained with cosine or contrastive loss (BERT, Sentence Transformers, modern text-embedding models). It can fail silently on models trained with L2 loss, where dot product may be more reliable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why is cosine similarity used in RAG instead of dot product?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "They're equivalent if embeddings are normalized. Cosine is preferred because it's invariant to vector magnitude—two embeddings pointing the same way are similar regardless of length. This makes thresholds more interpretable across different inputs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can cosine similarity detect near-duplicates?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but imperfectly. True duplicates score >0.95–0.99. Near-duplicates (same content, different wording) typically score 0.85–0.95. Use rerankers for nuanced tasks; cosine alone conflates surface-level similarity with semantic equivalence."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Cosine Similarity",
+      "description": "Measures angle between embedding vectors; ignores magnitude. Ranges -1 to 1; 0.8+ signals semantic relevance.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/cosine-similarity",
+      "termCode": "cosine-similarity"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:44Z"
@@ -893,53 +557,13 @@
       "cross encoder reranker"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Cross-Encoder",
-        "description": "A model that scores query-document pairs together for high-accuracy reranking, at higher computational cost.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/cross-encoder",
-        "termCode": "cross-encoder"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between a cross-encoder and a bi-encoder?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A bi-encoder scores query and document separately and compares embeddings; a cross-encoder scores them together in a single forward pass. Cross-encoders are more accurate but slower per document."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use a cross-encoder to retrieve documents from a large corpus?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Technically yes, but it's prohibitively expensive—you'd score every document at query time. Use a bi-encoder or BM25 for initial retrieval, then cross-encoder to rerank the top candidates."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much faster is a cross-encoder compared to using an LLM to rerank?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Cross-encoders are 10–100× faster and cheaper per ranking decision than querying an LLM, making them practical for reranking 50+ candidates in real time."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do cross-encoders work for ranking beyond document relevance?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Any ranking task benefit from direct token interaction—relevance, semantic similarity, question-answer alignment, or query-passage pairing."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Cross-Encoder",
+      "description": "A model that scores query-document pairs together for high-accuracy reranking, at higher computational cost.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/cross-encoder",
+      "termCode": "cross-encoder"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:28Z"
@@ -1007,61 +631,13 @@
       "dense vector search"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Dense Retrieval",
-        "description": "Retrieval that embeds queries and documents into vectors, then finds matches by similarity distance in that shared space.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/dense-retrieval",
-        "termCode": "dense-retrieval"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is dense retrieval better than BM25?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not universally. Dense handles paraphrases and synonyms well; BM25 wins on rare terms and exact matches. Use both in hybrid search for the best of each."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What embedding model should I use for dense retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with a general model (BGE, nomic-embed, e5) unless your domain is specialized (finance, biomedical). Fine-tune on your own data if generic embeddings don't capture your jargon."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does dense retrieval slow down search compared to keyword search?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Embedding a query is milliseconds; ANN lookup is also fast. Bottleneck is often the embedding model itself and network latency to your index, not the algorithm."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use dense retrieval on a billion documents?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, with product quantization or IVF-PQ to compress vectors, and distributed systems like FAISS on GPUs. Trade-off: compression reduces recall slightly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to reindex documents if I change embedding models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—vectors from different models are incompatible. Plan for offline reindexing or shadow deploy the new model before swapping it in production."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Dense Retrieval",
+      "description": "Retrieval that embeds queries and documents into vectors, then finds matches by similarity distance in that shared space.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/dense-retrieval",
+      "termCode": "dense-retrieval"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:10:58Z"
@@ -1128,61 +704,13 @@
       "FAISS index types"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "FAISS",
-        "description": "Meta's open-source library for fast nearest-neighbor search on dense vectors using optimized CPU and GPU indexes.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/faiss",
-        "termCode": "faiss"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is FAISS a vector database?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. FAISS is a search library for in-memory indexes. It doesn't store data persistently or handle updates—you manage the vectors and rebuild indexes as needed. Vector databases like Milvus and LanceDB often use FAISS as their index engine."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I choose between IVF, HNSW, and PQ in FAISS?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "IVF is fastest for large datasets and GPU; HNSW has better accuracy with fewer tuning knobs; PQ saves memory for very large embeddings. Start with IVF for RAG (tuning nprobe), switch to HNSW if accuracy degrades and latency allows."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can FAISS handle real-time data updates?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "FAISS is not designed for frequent updates. You either rebuild indexes offline or use incremental index types (IDMap), which are slower. For continuously changing data, use a vector database that handles updates natively."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the maximum dataset size FAISS can handle?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A single FAISS process can handle ~100M to 1B vectors depending on index type and hardware. Beyond that, shard vectors across machines and maintain separate FAISS indexes, then merge results (reducing recall at scale)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does FAISS require GPU?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No, FAISS works on CPU, but GPU (NVIDIA/AMD) accelerates search 5–20x depending on index type and batch size. GPU is optional and most useful for high-throughput serving."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "FAISS",
+      "description": "Meta's open-source library for fast nearest-neighbor search on dense vectors using optimized CPU and GPU indexes.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/faiss",
+      "termCode": "faiss"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:45Z"
@@ -1246,61 +774,13 @@
       "knowledge graph RAG"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Graph RAG",
-        "description": "RAG system that extracts entities and relationships from documents, builds a knowledge graph, and traverses connections to answer multi-hop questions.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/graph-rag",
-        "termCode": "graph-rag"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is Graph RAG the same as knowledge graph retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Related but distinct. A knowledge graph is the data structure; Graph RAG is a retrieval pattern that builds and queries a knowledge graph specifically for answering questions. You can build a knowledge graph without using RAG, and you can use RAG without a graph."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much faster is Graph RAG than regular RAG?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "On multi-hop questions, Graph RAG often returns more relevant context per query. Wall-clock latency depends on graph size and indexing—traversal can add 100–500ms per query, offset by needing fewer LLM calls if context is more precise."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can Graph RAG work without an LLM for extraction?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, you can use rule-based extractors, NER models, or dependency parsers; however, LLM-based extraction is more flexible for domain-specific relations. The tradeoff is cost and latency during indexing."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the minimum corpus size for Graph RAG to be worth it?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Below ~100 interconnected documents with clear entity relationships, the overhead of graph construction often outweighs the retrieval benefit. Start with regular RAG and add a graph layer if you see patterns of missed connections."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Graph RAG hallucinate less than regular RAG?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not inherently—hallucination depends on the LLM and prompt. Graph RAG reduces hallucination by providing more grounded context via explicit relationships, but a poor extraction model can introduce false relations that propagate downstream."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Graph RAG",
+      "description": "RAG system that extracts entities and relationships from documents, builds a knowledge graph, and traverses connections to answer multi-hop questions.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/graph-rag",
+      "termCode": "graph-rag"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:13:49Z"
@@ -1367,61 +847,13 @@
       "vector search algorithm"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "HNSW (Hierarchical Navigable Small World)",
-        "description": "Multi-layer graph algorithm that finds nearest vectors in log(N) time instead of scanning all vectors.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/hnsw",
-        "termCode": "hnsw"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between HNSW and IVF?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "IVF partitions vectors into clusters (like bucketing), while HNSW builds a navigable graph layer by layer. HNSW typically offers better recall at the same speed; IVF is simpler to build and update. Most modern vector DBs default to HNSW."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does HNSW work for any vector size?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, HNSW works for any dimension. Memory overhead (graph pointers) is roughly constant per vector regardless of dimension, so high-dimensional embeddings (e.g., 1536D) don't significantly increase HNSW footprint beyond the base vector storage."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I tune M and ef for HNSW?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with M=16–32 and ef_construct=200 for indexing. At query time, set ef equal to your desired limit (e.g., ef=100 for top-100 neighbors). Benchmark recall@k on your data; increase both if recall is below 0.95, reduce if speed is unacceptable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I update HNSW indexes without rebuilding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Insertions are fast (add node, connect to M neighbors), but deletions do not compact the graph; rebuild periodically if delete rate exceeds 10–20% to reclaim memory and maintain query performance."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is HNSW used in all vector databases?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "HNSW dominates (Qdrant, Pinecone, pgvector, Milvus). Some use alternatives like IVF-FLAT or HNSW variants (e.g., DiskANN for disk-based search), but HNSW remains the production standard for in-memory approximate nearest-neighbor search."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "HNSW (Hierarchical Navigable Small World)",
+      "description": "Multi-layer graph algorithm that finds nearest vectors in log(N) time instead of scanning all vectors.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/hnsw",
+      "termCode": "hnsw"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:16:02Z"
@@ -1494,61 +926,13 @@
       "keyword + semantic search"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Hybrid Search",
-        "description": "Search combining keyword matching (BM25) and vector similarity to catch exact terms and semantic paraphrases.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/hybrid-search",
-        "termCode": "hybrid-search"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between hybrid search and re-ranking?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Hybrid search fuses two parallel retrievers (keyword + vector) at the retrieval stage. Re-ranking scores an existing result set from a single retriever, using a heavier model. They often pair: retrieve with hybrid, then re-rank with a cross-encoder."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why use RRF instead of averaging BM25 and vector scores?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "BM25 scores (5–500+) and cosine similarity (0–1) are on different scales. RRF avoids the need to normalize them by working only with ranks, making it more stable across different datasets without manual tuning."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does hybrid search work with sparse vectors like SPLADE?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. You can use Reciprocal Rank Fusion with dense vectors *and* sparse vectors (e.g., SPLADE outputs) for a three-way fusion. Qdrant and Weaviate both support this natively."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much slower is hybrid search than vector-only search?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Roughly 1.5–2× latency because you run two retrievals in parallel plus fusion overhead. If your BM25 is already indexed (likely), the marginal cost is one extra index lookup. Batch retrieval (Prefetch in Qdrant) keeps it sub-50ms for most setups."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I tune the k parameter in RRF for my dataset?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, and you should. k=60 is a convention; lower k (20–40) weights recent ranks more heavily, raising recall. Run A/B tests on a held-out query set with your actual corpus to find the sweet spot."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Hybrid Search",
+      "description": "Search combining keyword matching (BM25) and vector similarity to catch exact terms and semantic paraphrases.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/hybrid-search",
+      "termCode": "hybrid-search"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:24:08Z"
@@ -1612,61 +996,13 @@
       "hypothetical document"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Hypothetical Document Embeddings (HyDE)",
-        "description": "LLM generates a hypothetical answer to your query, which gets embedded and used to search for similar real documents.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/hyde",
-        "termCode": "hyde"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Does HyDE work better than BM25?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "HyDE typically outperforms sparse retrieval (BM25) on zero-shot tasks when embedding models are strong, but it adds latency and cost. BM25 is still faster and requires no LLM; hybrid search often beats both alone."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does HyDE slow down my retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "One LLM call per query. For a 100-token model running at 50 tokens/sec, expect 2–4 seconds latency added per request, depending on your LLM provider and concurrency."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use HyDE with a small or quantized LLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but quality degrades. Smaller models hallucinate more and have weaker world knowledge, so the synthetic document may not resemble your corpus. Test with your actual data before deploying."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is HyDE the same as query expansion?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Query expansion generates multiple query variants; HyDE generates a single hypothetical document. Different mechanics, but both solve the query-document mismatch problem."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to tune HyDE or is it truly zero-shot?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "HyDE is zero-shot out of the box, but you can improve it by tuning the LLM's instructions, using a domain-aware model, or combining it with reranking for production systems."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Hypothetical Document Embeddings (HyDE)",
+      "description": "LLM generates a hypothetical answer to your query, which gets embedded and used to search for similar real documents.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/hyde",
+      "termCode": "hyde"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:50Z"
@@ -1731,61 +1067,13 @@
       "k-means clustering vectors"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "IVF (Inverted File Index)",
-        "description": "Vector index that clusters embeddings via k-means; queries search only nearby clusters instead of the full corpus.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/ivf-index",
-        "termCode": "ivf-index"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between IVF and HNSW?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "IVF partitions vectors into static clusters via k-means; all vectors in a cluster are checked. HNSW builds a navigational graph with probabilistic links. IVF is faster for very large corpora but requires retraining; HNSW adapts incrementally but has higher memory overhead."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I choose nlist and nprobe?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with nlist = sqrt(corpus_size) and nprobe = sqrt(nlist). Profile your recall-latency tradeoff; increase nprobe if recall is too low, decrease if latency exceeds budget."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does IVF work with compressed vectors (PQ)?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—IVF-PQ combines both. IVF clusters vectors, then product quantization compresses each cluster, cutting memory by 40–90× while keeping search fast."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens to IVF performance when I add new vectors?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "New vectors get assigned to existing clusters without retraining. Over time, cluster imbalance increases, degrading search quality. Periodic retraining (weekly/monthly, depending on ingestion rate) is required."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is IVF better than flat search for RAG?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "For <100k vectors, flat search is often faster. For >1M vectors, IVF is essential—flat search becomes a bottleneck. Choose based on corpus size and latency requirements."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "IVF (Inverted File Index)",
+      "description": "Vector index that clusters embeddings via k-means; queries search only nearby clusters instead of the full corpus.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/ivf-index",
+      "termCode": "ivf-index"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:03Z"
@@ -1849,61 +1137,13 @@
       "graph RAG"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Knowledge Graph (RAG Context)",
-        "description": "A structured database of entities and relationships that enables multi-hop reasoning in RAG systems.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/knowledge-graph",
-        "termCode": "knowledge-graph"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is a knowledge graph different from vector search?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Vector search finds semantically similar text; knowledge graphs explicitly traverse relationships. Graphs excel at multi-hop reasoning (A→B→C); vectors excel at fuzzy matching. Most systems combine both."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use a knowledge graph without an LLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Graph traversal and SPARQL/Cypher queries are deterministic. You can extract relationships rule-based or via NER. LLMs help with extraction quality and converting natural language to queries, but aren't required."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between a knowledge graph and a vector database?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A vector database stores and searches embeddings by similarity. A knowledge graph stores explicit nodes and edges, queried by relationship paths. They solve different problems and work best together in hybrid RAG."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I extract entities and relationships from raw text?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Options: rule-based NER (spaCy, regex), supervised NER models (fine-tuned BERT), or LLM prompting. Quality varies; investment in labeling or evaluation (benchmark against a gold set) is critical."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does a knowledge graph work for unstructured documents?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You must first extract structure (entities and relationships) from unstructured text. If extraction is unreliable, graph reasoning will fail silently. Hybrid RAG—combining graph + vector search—mitigates this risk."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Knowledge Graph (RAG Context)",
+      "description": "A structured database of entities and relationships that enables multi-hop reasoning in RAG systems.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/knowledge-graph",
+      "termCode": "knowledge-graph"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:26:09Z"
@@ -1968,61 +1208,13 @@
       "metadata filter"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Metadata Filtering (Vector DB)",
-        "description": "Restrict vector search results to documents matching specific conditions before ranking by similarity.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/metadata-filtering",
-        "termCode": "metadata-filtering"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between metadata filtering and post-filtering?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Metadata filtering applies constraints before the vector search runs, shrinking the candidate pool. Post-filtering applies constraints after, which can return fewer results than requested. Pre-filtering is faster and more predictable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do all vector databases support metadata filtering?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Most production vector DBs (Qdrant, Pinecone, Weaviate, Milvus) support it natively. Simple or in-memory stores may not. Check the database documentation for filter syntax and performance."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I filter by multiple conditions at once?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Most vector DBs support AND, OR, and NOT operators. Use AND to narrow scope (safe for multi-tenancy) and OR to broaden (risky if it crosses tenant boundaries)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does metadata filtering affect query latency?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Well-indexed metadata filters reduce latency by shrinking the search space. Poorly indexed or high-cardinality metadata (e.g., unique user IDs) can slow queries. Test with your data volume."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is metadata filtering enough for data isolation in a multi-tenant RAG?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It's necessary but not sufficient. Combine it with access control checks in your application layer, encryption at rest, and audit logging to ensure true isolation."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Metadata Filtering (Vector DB)",
+      "description": "Restrict vector search results to documents matching specific conditions before ranking by similarity.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/metadata-filtering",
+      "termCode": "metadata-filtering"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:26Z"
@@ -2087,61 +1279,13 @@
       "multi-variant retrieval"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Multi-Query Retrieval",
-        "description": "LLM rewrites a query multiple ways, retrieves for each variant, and merges results to improve recall.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/multi-query-retrieval",
-        "termCode": "multi-query-retrieval"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How many query variants should I generate?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "3–5 is typical. Fewer misses gains; more than 5 rarely improves recall meaningfully and burns latency and tokens. Tune on your eval set."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is multi-query the same as query rewriting?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Query rewriting fixes a single query; multi-query generates many. Query rewriting is preprocessing; multi-query is ensemble retrieval."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use multi-query with vector databases?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Multi-query works with any retriever—BM25, dense embeddings, hybrid, or graph-based. The variants just need to work with your backend."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What if the LLM generates gibberish queries?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Add examples and constraints to your prompt. Use JSON schema enforcement or guided generation to ensure variants are valid. Test on a validation set first."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does multi-query replace a reranker?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Multi-query improves recall by retrieving more relevant docs; a reranker improves precision by re-ranking them. Use both for best results."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Multi-Query Retrieval",
+      "description": "LLM rewrites a query multiple ways, retrieves for each variant, and merges results to improve recall.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/multi-query-retrieval",
+      "termCode": "multi-query-retrieval"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:34Z"
@@ -2204,61 +1348,13 @@
       "parent document retrieval"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Parent-Document Retriever",
-        "description": "Index small chunks for precision, return their parent document for context to the LLM.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/parent-document-retriever",
-        "termCode": "parent-document-retriever"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is parent-document retrieval the same as sentence-window retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Sentence-window retrieval returns N sentences around a matched sentence; parent-document retrieval returns a pre-defined logical parent section (a paragraph, subsection, or heading group). Parent-document is faster because parents are pre-stored, not computed on-the-fly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I define what counts as a parent document?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Parents are typically defined by document structure: a section under a heading, a bounded subsection, or a paragraph group. You specify this during chunking. Some systems auto-detect via formatting; others require manual annotation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does parent-document retrieval slow down queries?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Retrieval speed is unchanged because you still search the small-chunk index. The lookup from chunk to parent is a fast hash or database join. Total latency is negligible."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What if a chunk doesn't have an obvious parent?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Create synthetic parents—group orphan chunks into logical sets before indexing. Or use the document itself as the parent. The goal is to return enough context; the parent size is tunable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much larger should the parent be than the chunk?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No hard rule, but 3–5x is common: 300-token chunks with 1000–1500-token parents. Larger parents add more context but consume more LLM context window. Test with your retrieval precision metric and LLM latency budget."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Parent-Document Retriever",
+      "description": "Index small chunks for precision, return their parent document for context to the LLM.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/parent-document-retriever",
+      "termCode": "parent-document-retriever"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:11:37Z"
@@ -2324,61 +1420,13 @@
       "approximate nearest neighbor compression"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Product Quantization (PQ)",
-        "description": "Vector compression that splits vectors into chunks, quantizes each independently, shrinking index size 10–100x.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/product-quantization",
-        "termCode": "product-quantization"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How does Product Quantization differ from other quantization methods?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "PQ divides vectors into independent sub-vectors and quantizes each separately, preserving relative distances within sub-vector groups. Scalar quantization quantizes each dimension individually (worse) and binary quantization rounds to bits (more aggressive but more lossy). PQ offers a middle ground: ~10x compression with acceptable recall."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is IVF-PQ and why combine them?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "IVF (Inverted File) partitions vectors into clusters; PQ quantizes within each cluster. IVF cuts search space 1000x (coarse), PQ handles fine-grained ranking (fine), so together they scale to billions of vectors while staying fast."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can you update a Product Quantization index without retraining?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Adding new vectors is fast: encode them with the existing codebooks in O(M) time. But retraining codebooks requires re-encoding all vectors. FAISS and other libraries support incremental clustering for updates, but full retraining every few months is still common practice."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Product Quantization work with asymmetric search?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Asymmetric PQ (APQ) encodes database vectors tightly but computes query distances in higher precision, trading slightly slower search for better recall. Most production systems use this variant."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What recall drop should I expect with Product Quantization?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Typical IVF-PQ systems achieve 92–98% recall of the exhaustive top-100 results, depending on M and data dimensionality. Validate on your own queries offline before deploying."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Product Quantization (PQ)",
+      "description": "Vector compression that splits vectors into chunks, quantizes each independently, shrinking index size 10–100x.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/product-quantization",
+      "termCode": "product-quantization"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:41Z"
@@ -2444,61 +1492,13 @@
       "query expansion RAG"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Query Rewriting",
-        "description": "Transform user questions into retriever-friendly queries before lookup to improve RAG hit rates.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/query-rewriting",
-        "termCode": "query-rewriting"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is query rewriting the same as prompt engineering?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Prompt engineering shapes instructions to the LLM itself; query rewriting transforms the user's input before retrieval. Query rewriting is a retrieval-specific tactic."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How many rewrites should I generate?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with 3–5 variants. Diminishing returns kick in after 5; measure retrieval recall and latency cost to find your sweet spot."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does query rewriting work with hybrid search?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. You can rewrite once and route to both dense and sparse (BM25) retrievers, or rewrite separately for each modality if lexical and semantic intent differ."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between query rewriting and step-back prompting?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Query rewriting keeps the same query scope. Step-back prompting abstracts the query first ('facts about X') then retrieves, trading specificity for broader coverage."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I rewrite without adding latency?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Partially. Batch-rewrite user queries during off-peak ingestion if you can predict common question patterns, or cache rewrites for common queries."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Query Rewriting",
+      "description": "Transform user questions into retriever-friendly queries before lookup to improve RAG hit rates.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/query-rewriting",
+      "termCode": "query-rewriting"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:15:09Z"
@@ -2558,61 +1558,13 @@
     "meta_description": "Fetch relevant documents first, then feed them to the LLM so it answers based on your data.",
     "seo_variations": [],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "RAG (Retrieval Augmented Generation)",
-        "description": "Fetch relevant documents first, then feed them to the LLM so it answers based on your data.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/rag",
-        "termCode": "rag"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between RAG and fine-tuning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RAG retrieves external documents at query time and feeds them into the LLM's context; fine-tuning bakes knowledge into model weights during training. RAG is faster to update (add new docs anytime), fine-tuning is slower but lets the model learn deeper patterns and use fewer tokens."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does RAG work with proprietary data?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Your documents never leave your infrastructure—they stay in your vector database. Only the user's question goes to the LLM (unless you're using a managed service), so proprietary text remains internal."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I know if my RAG system retrieved the right information?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Test retrieval quality separately from LLM quality. Use metrics like NDCG or mean reciprocal rank on a labeled dataset of queries and relevant documents. Common tools: RAGAS, LangSmith, or manual spot-checks on sample queries."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can RAG handle long documents?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RAG handles any document length by breaking it into chunks and retrieving only the most relevant ones. If you need reasoning across the entire document, consider hybrid approaches like small-to-big retrieval or re-ranking retrieved chunks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the latency cost of RAG?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Retrieval typically adds 50–500ms depending on your vector database size and indexing method (HNSW is faster than IVF). For real-time chat, this is usually acceptable; for ultra-low-latency systems, cache or pre-compute common queries."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "RAG (Retrieval Augmented Generation)",
+      "description": "Fetch relevant documents first, then feed them to the LLM so it answers based on your data.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/rag",
+      "termCode": "rag"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:09:18Z"
@@ -2674,61 +1626,13 @@
       "RAG fusion pattern"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "RAG Fusion",
-        "description": "RAG pattern that generates multiple query variants, retrieves results for each, and merges them using reciprocal rank fusion.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/rag-fusion",
-        "termCode": "rag-fusion"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is RAG Fusion the same as multi-query retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RAG Fusion is one implementation of multi-query retrieval. Multi-query retrieval is the broader idea of generating multiple phrasings; RAG Fusion specifically combines it with reciprocal rank fusion (RRF) for merging. Other patterns merge differently (e.g., simple dedup or learned weights)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does RAG Fusion cost compared to normal RAG?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RAG Fusion typically costs 3–5× more in retrieval calls because you run retrieve once per variant. If you use an embedding model it's negligible; if you're calling an API per retrieve, it adds up. Measure latency and cost on your workload before committing."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use RAG Fusion with BM25 or only embeddings?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RAG Fusion works with any retrieval method—BM25, dense embeddings, sparse retrieval (SPLADE), or hybrid search. The variant generation and RRF merge are retrieval-agnostic. Hybrid retrieval often yields the best results."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if my LLM generates bad query variants?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Poor variants hurt recall because you miss relevant documents. Use explicit prompting (e.g., 'Generate 5 alternative wordings that change syntax but preserve meaning') or sample-based quality checks. Temperature control helps reduce repetitive variants."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need reciprocal rank fusion or can I just merge lists differently?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RRF is one merge strategy; others include simple dedup, concatenation with reranking, or learned weighted fusion. RRF is simple and interpretable but not always optimal. Compare against reranking-based fusion on your specific corpus."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "RAG Fusion",
+      "description": "RAG pattern that generates multiple query variants, retrieves results for each, and merges them using reciprocal rank fusion.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/rag-fusion",
+      "termCode": "rag-fusion"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:13:33Z"
@@ -2793,61 +1697,13 @@
       "rank fusion"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Reciprocal Rank Fusion (RRF)",
-        "description": "Merge ranked lists from multiple retrievers by summing reciprocal ranks, ignoring score scales.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/reciprocal-rank-fusion",
-        "termCode": "reciprocal-rank-fusion"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What does RRF stand for?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Reciprocal Rank Fusion. It sums reciprocal ranks (1/rank) across multiple result lists to create a unified ranking."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How is RRF different from averaging scores?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RRF ignores the magnitude of scores and only looks at position in each list, so it doesn't require score normalization. Averaging raw scores fails if one retriever outputs 0–1 and another outputs 0–100."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What value should k be?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "k=60 is the original and widely-used default. It smooths the contribution of lower-ranked items. For very short result lists, k=10–20 may work better; for very long lists, k=100+ is sometimes used."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does RRF require the same number of results from each retriever?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. If one retriever returns 5 results and another returns 100, RRF still works—items not in a retriever's list simply don't vote in that column."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use RRF with more than two retrievers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. RRF sums over all retrievers, so it scales to three, four, or more sources. Each missing retriever just contributes zero to that document's vote."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Reciprocal Rank Fusion (RRF)",
+      "description": "Merge ranked lists from multiple retrievers by summing reciprocal ranks, ignoring score scales.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/reciprocal-rank-fusion",
+      "termCode": "reciprocal-rank-fusion"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:55Z"
@@ -2913,61 +1769,13 @@
       "cross-encoder reranking"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Reranking",
-        "description": "A second retrieval pass using a more accurate model to re-score top candidates from a fast first pass.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/reranking",
-        "termCode": "reranking"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between a reranker and an embedding model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Embedding models encode text independently into fixed vectors; rerankers see query and document together and output a relevance score. Embeddings can be precomputed; rerankers cannot."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does reranking slow down retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Typically 10–50ms per query depending on model size and candidate count. BM25 + rerank is often faster than embedding-only retrieval while ranking better."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use reranking without embeddings?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. BM25 (sparse retrieval) + reranker is a common hybrid approach. Embeddings are one fast first-pass option; BM25, keyword search, or graph traversal also work."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does reranking help with non-English queries?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Depends on the reranker. Multilingual models like BAAI/bge-reranker-v2-m3 or Cohere Rerank support 100+ languages; monolingual rerankers do not."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How many candidates should I rerank?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Typically 20–100. Below 20, you lose benefit; above 100, latency grows linearly. Start with top 50 and measure recall vs. latency on your data."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Reranking",
+      "description": "A second retrieval pass using a more accurate model to re-score top candidates from a fast first pass.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/reranking",
+      "termCode": "reranking"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:15:22Z"
@@ -3031,61 +1839,13 @@
       "IR"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Retrieval (IR)",
-        "description": "Finding relevant documents from a corpus to answer a query—the first step in RAG pipelines.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/retrieval",
-        "termCode": "retrieval"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between sparse and dense retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sparse (BM25, TF-IDF) matches keywords and term frequencies; it's fast and works for exact-match queries but misses paraphrases. Dense (embedding-based) maps documents to vectors and finds semantic similarity; it catches intent better but is slower and requires embedding models. Most production systems use hybrid to get both."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I evaluate if my retriever is good?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use recall@k (did the correct document appear in top-k?), MRR (mean reciprocal rank of the first relevant result), or nDCG (ranking quality). Run a small eval set of queries with known relevant documents, then measure these metrics. Aim for recall@5 >0.8 for most RAG tasks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can a good language model fix poor retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. If the retriever returns irrelevant documents, the generator can only hallucinate or refuse. Retrieval sets the ceiling on RAG quality. Focus retrieval optimization first, then tune the generator."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What chunk size should I use for retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "There is no universal answer; it depends on your use case and embedding model. Smaller chunks (100 tokens) increase retrieval granularity but may lose context. Larger chunks (500+ tokens) preserve context but dilute relevance signals. Start with 256–512 tokens and measure recall@k on your eval set."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does reranking improve retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Reranking runs a second-stage model (often a cross-encoder) that re-scores the top-k results from the initial retriever. It's slower but more accurate; use it when the first retriever is noisy or when you can afford the latency."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Retrieval (IR)",
+      "description": "Finding relevant documents from a corpus to answer a query—the first step in RAG pipelines.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/retrieval",
+      "termCode": "retrieval"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:43Z"
@@ -3148,61 +1908,13 @@
       "self-query retriever"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Self-Query Retrieval",
-        "description": "LLM extracts semantic queries and metadata filters from natural language, applying structured constraints before vector search.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/self-query-retrieval",
-        "termCode": "self-query-retrieval"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between self-query retrieval and just metadata filtering?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Metadata filtering requires users or engineers to manually specify constraints; self-query retrieval extracts constraints from natural language via the LLM, combining semantic understanding with structured filtering automatically."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does self-query retrieval work with any vector database?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, as long as the vector DB supports metadata filtering. LangChain and LlamaIndex abstract over FAISS, Pinecone, Weaviate, and others; the self-query layer handles LLM parsing, and the framework handles the underlying DB call."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if the LLM extracts a filter that doesn't match any documents?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You get zero results. Handle this with fallback logic: re-run without strict filters, loosen date ranges, or ask the user to clarify. Some frameworks support optional filters to avoid complete misses."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is self-query retrieval slower than regular vector search?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—there's an extra LLM call to parse the query. If latency matters, cache common patterns, batch queries, or use faster LLMs. The speed/precision tradeoff is usually worth it for recall-critical applications."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use self-query retrieval without an LLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No, the whole pattern depends on the LLM to parse natural language into structured filters. For rule-based filtering, use traditional metadata-filtering or hybrid search without the self-query layer."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Self-Query Retrieval",
+      "description": "LLM extracts semantic queries and metadata filters from natural language, applying structured constraints before vector search.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/self-query-retrieval",
+      "termCode": "self-query-retrieval"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:31Z"
@@ -3269,61 +1981,13 @@
       "semantic similarity caching"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Semantic Caching",
-        "description": "Cache LLM responses by semantic similarity, not exact text match, to reuse answers for similar queries.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/semantic-caching",
-        "termCode": "semantic-caching"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is semantic caching different from prompt caching?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Prompt caching (e.g., Claude's prefix caching) reuses KV-cache tokens for identical prefixes in a single request or session. Semantic caching matches across different requests by meaning, storing full responses in a separate cache layer. They're complementary: use prompt caching within a conversation, semantic caching across users."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What embedding model should I use for semantic caching?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use a small, fast embedding model (e.g., bge-small, all-MiniLM-L6-v2) that runs locally or via a cached service. Avoid large models; the embedding latency will outweigh cache savings. Match your embedding to your domain if possible (e.g., domain-specific MTEB leaders)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can semantic caching work with multi-turn conversations?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but carefully. Cache individual Q&A pairs separately from multi-turn context. A new question in a conversation can hit a cached response from a standalone query if they're semantically close. Store the full conversation context if you need turn-aware behavior."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What threshold similarity should I set?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start at 0.85–0.90 and tune based on your false-positive rate (incorrect cache hits). For safety-critical queries, use 0.95+. For FAQ bots, 0.80–0.85 is often aggressive but acceptable. Monitor hit rate vs. response quality continuously."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does semantic caching work for real-time or time-sensitive queries?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not reliably. If the answer changes frequently (stock prices, current weather), cached responses become stale. Add a TTL (time-to-live) or skip caching for time-sensitive queries based on metadata or query intent classification."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Semantic Caching",
+      "description": "Cache LLM responses by semantic similarity, not exact text match, to reuse answers for similar queries.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/semantic-caching",
+      "termCode": "semantic-caching"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:13:18Z"
@@ -3387,61 +2051,13 @@
       "sentence window RAG"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Sentence Window Retrieval",
-        "description": "Index sentences individually but retrieve surrounding context windows to balance precision with interpretability.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/sentence-window-retrieval",
-        "termCode": "sentence-window-retrieval"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is sentence window retrieval different from paragraph chunking?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Paragraph chunking indexes fixed-size blocks. Sentence windows index individual sentences but retrieve wider context, letting you tune indexing precision independently of LLM context size. This often improves recall on narrow facts while reducing irrelevant surrounding text compared to large paragraphs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What window size should I use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with 2–3 sentences before and after (total 5–7). Denser, more technical documents benefit from wider windows (4–5). Test on your domain; wider windows reduce hallucination but increase token cost and noise if context is sparse."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does sentence window retrieval work with long documents?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, it handles length well—you index sentences individually so scale is linear. But very long documents risk windows that still miss important context if the answer depends on information far away; pair with reranking or document-level filtering for reliability."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I combine sentence window retrieval with other RAG techniques?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Pair it with reranking to filter noisy windows, semantic caching to avoid redundant retrievals, or graph-based retrieval to link related sentences across documents. Sentence-window indexing is a building block, not a complete solution."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if sentences don't split cleanly?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use a tokenizer-aware splitter (spaCy, NLTK) instead of naive regex. For tables, code, or structured data, preprocess into pseudo-sentences or fall back to fixed-size chunks. Garbage splits corrupt windows and hurt retrieval quality."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Sentence Window Retrieval",
+      "description": "Index sentences individually but retrieve surrounding context windows to balance precision with interpretability.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/sentence-window-retrieval",
+      "termCode": "sentence-window-retrieval"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:13:34Z"
@@ -3503,61 +2119,13 @@
       "auto merging retrieval"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Small-to-Big Retrieval",
-        "description": "Embed small chunks for precision, return progressively larger context based on token budget.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/small-to-big-retrieval",
-        "termCode": "small-to-big-retrieval"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is small-to-big retrieval different from parent-document retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Parent-document retrieval embeds at one granularity (e.g., sentence) but always returns the parent (e.g., paragraph). Small-to-big embeds at the smallest granularity but escalates the returned context dynamically based on token budget, returning sentence → paragraph → document progressively."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to embed sentences, paragraphs, and documents separately?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Embed only the smallest unit (sentence). Store hierarchical pointers to parents. At retrieval time, match against the smallest embeddings, then traverse upward to return larger context blocks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can small-to-big work with variable-length documents?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. The token budget controls escalation, not document size. Short documents may return fully; long ones return sentence + paragraph. Tune per-use case."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does this increase retrieval latency?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Minimally. Sentence-level embedding search is fast. Parent traversal is metadata lookup. The cost is storage for pointer hierarchies, not retrieval speed."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What if my documents don't have natural paragraph breaks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Create synthetic paragraphs using fixed window size (e.g., 3–5 sentences). Small-to-big still works; quality depends on whether your synthetic grouping aligns with semantic boundaries."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Small-to-Big Retrieval",
+      "description": "Embed small chunks for precision, return progressively larger context based on token budget.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/small-to-big-retrieval",
+      "termCode": "small-to-big-retrieval"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:57Z"
@@ -3621,61 +2189,13 @@
       "sparse search"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Sparse Retrieval",
-        "description": "Token-based retrieval using BM25, TF-IDF, or learned sparse models like SPLADE that match exact keywords.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/sparse-retrieval",
-        "termCode": "sparse-retrieval"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between sparse and dense retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sparse retrieval matches exact keywords using BM25 or learned term weights. Dense retrieval embeds meaning into vectors and finds semantic similarity. Sparse is interpretable and fast for exact matches; dense catches paraphrases and synonyms."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is BM25 still competitive in 2024?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. BM25 remains the baseline on many benchmarks and often outperforms dense retrieval alone on keyword-heavy queries. Hybrid search combining BM25 + dense embedding beats either alone."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's SPLADE and when should I use it?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SPLADE uses an LLM to expand terms and assign learned weights, bridging sparse and dense. Use it if you have domain-specific terminology or need better-than-BM25 recall without full dense-embedding cost."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can sparse retrieval handle synonyms?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not natively—'synonyms' and 'similar words' have zero token overlap. You need query expansion, semantic preprocessing, or a hybrid approach with dense embeddings to handle synonym variation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How fast is sparse retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Very fast. BM25 on an indexed corpus is O(log n) and returns results in milliseconds. Dense embedding similarity is also fast but requires vector math; sparse is often 2–10x quicker on large corpora."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Sparse Retrieval",
+      "description": "Token-based retrieval using BM25, TF-IDF, or learned sparse models like SPLADE that match exact keywords.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/sparse-retrieval",
+      "termCode": "sparse-retrieval"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:15:08Z"
@@ -3738,61 +2258,13 @@
       "learned sparse retrieval"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "SPLADE (Sparse Learned Retrieval)",
-        "description": "Sparse retrieval model using BERT to weight vocabulary terms learned end-to-end, deployable on inverted indexes.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/splade",
-        "termCode": "splade"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is SPLADE the same as BM25?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. BM25 is unsupervised and counts term frequency; SPLADE is learned end-to-end, predicting term importance via neural networks. SPLADE typically ranks better but requires training data and inference compute."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use SPLADE without a vector database?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. SPLADE outputs sparse vectors that work directly in Elasticsearch or Lucene using inverted indexes. You don't need a separate vector DB, unlike dense retrievers."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much slower is SPLADE than BM25?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SPLADE adds one BERT forward pass per query, typically 50–200ms. BM25 is faster at query time, but SPLADE offsets this with better ranking, reducing reranking overhead downstream."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is query expansion in SPLADE?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SPLADE implicitly expands queries by assigning learned weights to related terms you didn't type. The model predicts which untyped vocabulary words are semantically relevant and weights them accordingly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to retrain SPLADE for my domain?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Ideally yes—fine-tuning on your domain's relevance labels significantly improves ranking. Generic pretrained SPLADE models exist but will underperform a domain-adapted version."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "SPLADE (Sparse Learned Retrieval)",
+      "description": "Sparse retrieval model using BERT to weight vocabulary terms learned end-to-end, deployable on inverted indexes.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/splade",
+      "termCode": "splade"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:18Z"

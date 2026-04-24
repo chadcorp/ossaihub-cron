@@ -269,31 +269,23 @@ def validate_record(rec: dict, expected_slug: str) -> list:
 
 
 def build_jsonld(rec: dict) -> dict:
-    """Generate DefinedTerm + FAQPage JSON-LD blocks."""
+    """Generate a flat DefinedTerm JSON-LD block.
+
+    Base44 injects schema_jsonld verbatim as a single <script>, so we must emit
+    a single schema.org object at the top level (not a wrapper like
+    {DefinedTerm: {...}, FAQPage: {...}} — that gave a null-@type script).
+    FAQPage is synthesized at render time from the faq field.
+    """
     slug = rec["slug"]
     url = f"{SITE_ORIGIN}/glossary/{slug}"
     return {
-        "DefinedTerm": {
-            "@context": "https://schema.org",
-            "@type": "DefinedTerm",
-            "name": rec["title"],
-            "description": rec["tldr"],
-            "inDefinedTermSet": f"{SITE_ORIGIN}/Glossary",
-            "url": url,
-            "termCode": slug,
-        },
-        "FAQPage": {
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": [
-                {
-                    "@type": "Question",
-                    "name": q["q"],
-                    "acceptedAnswer": {"@type": "Answer", "text": q["a"]},
-                }
-                for q in (rec.get("faq") or [])
-            ],
-        },
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": rec["title"],
+        "description": rec["tldr"],
+        "inDefinedTermSet": f"{SITE_ORIGIN}/Glossary",
+        "url": url,
+        "termCode": slug,
     }
 
 

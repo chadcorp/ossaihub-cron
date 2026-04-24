@@ -61,61 +61,13 @@
       "randomized experiment LLM"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "A/B Testing (LLM)",
-        "description": "Run randomized experiments where user groups receive different model versions or prompts, then measure impact on product metrics.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/ab-test-llm",
-        "termCode": "ab-test-llm"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How long should I run an A/B test for an LLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "At least 1–2 weeks, ideally longer. LLM outputs are stochastic, so you need large sample sizes to detect real effects. Run until you reach statistical power (typically 80% or higher) for your chosen metric and minimum effect size."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between A/B testing and canary deployment?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A/B testing randomly assigns users to measure which variant is better; canary deployment gradually rolls out a change to catch errors, not to compare. You can combine both: canary first to catch bugs, then A/B test to measure impact."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I A/B test two different LLMs at the same time?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, that's a common use case. Randomly assign requests to Claude, GPT-4, or Llama in equal proportions, then compare their performance on your metric. This helps you choose the best model for your product and budget."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What sample size do I need to detect a real difference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use a power calculator (common tools: G*Power, Evan's online calc). Input your expected effect size (e.g., 5% improvement), significance level (0.05), and desired power (0.80), and it tells you samples per group."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Should I measure single-turn or multi-turn conversation performance?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Measure at the level that matches your product. If users have one query, measure per request. If they chat over multiple turns, randomize per session or user and track outcomes across the whole conversation."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "A/B Testing (LLM)",
+      "description": "Run randomized experiments where user groups receive different model versions or prompts, then measure impact on product metrics.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/ab-test-llm",
+      "termCode": "ab-test-llm"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:08:18Z"
@@ -182,61 +134,13 @@
       "labeling strategy"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Active Learning",
-        "description": "Strategy where the model picks which examples to label next, cutting annotation costs 30–70% by flagging the most informative unlabeled data.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/active-learning",
-        "termCode": "active-learning"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How much annotation budget does active learning actually save?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "In well-tuned setups with reliable uncertainty estimates, 30–70% is typical. Medical imaging and NLP often see 50%+ savings. But poor uncertainty estimates (e.g., from overconfident models) can halve the benefit."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use active learning with LLMs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but differently. Instead of model uncertainty, you sample the LLM multiple times on each prompt and flag high disagreement. This signals where the model needs SFT or preference data, but costs more compute than classification-based active learning."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between active learning and human-in-the-loop?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Active learning *selects* which examples a human should label to maximize model improvement. Human-in-the-loop is the broader workflow where humans and models iterate together; active learning is one component of it."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need a large initial labeled dataset to start active learning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No, but you need enough (typically 50–500 examples) to train a model with meaningful uncertainty estimates. Too few examples and uncertainty scores are noise."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does active learning work if my unlabeled data is biased?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. If unlabeled data doesn't represent your target distribution, active learning will preferentially label off-distribution examples. You'll improve model accuracy on the biased set, not on production data."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Active Learning",
+      "description": "Strategy where the model picks which examples to label next, cutting annotation costs 30–70% by flagging the most informative unlabeled data.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/active-learning",
+      "termCode": "active-learning"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:19Z"
@@ -303,61 +207,13 @@
       "SWE-Bench"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "AgentBench / AgentEval",
-        "description": "Benchmarks measuring LLM agents on multi-step real-world tasks—not single Q&A—in shells, browsers, databases, OSes.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/agent-benchmark",
-        "termCode": "agent-benchmark"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between AgentBench and WebArena?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "AgentBench covers diverse tasks (writing, math, interaction) in heterogeneous environments. WebArena focuses specifically on realistic e-commerce and logistics websites. Use AgentBench for breadth, WebArena for web-interaction depth."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do LLMs score so much lower on agent benchmarks than on text QA?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Agent tasks require sustained planning across many steps, recovery from errors, and reading contextual state (screenshots, API responses). A single reasoning error or hallucination compounds; on QA, you get one shot."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run agent benchmarks locally?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Some benchmarks like SWE-Bench can run locally with Docker and git. Others like WebArena require containerized browser instances and are compute-intensive. Check each benchmark's documentation; cloud-based evaluation is often easier."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I know which agent benchmark to use for my product?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Match the benchmark's environment to your use case: SWE-Bench for code tasks, WebArena for web interaction, OSWorld for system administration, τ-Bench for diverse tool-heavy tasks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is a 40% pass rate on an agent benchmark acceptable?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Context matters. For research, 40% on hard tasks is solid. For production, 40% on critical tasks is too low unless you have robust fallbacks and human review. Measure against your reliability requirements, not just the benchmark median."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "AgentBench / AgentEval",
+      "description": "Benchmarks measuring LLM agents on multi-step real-world tasks—not single Q&A—in shells, browsers, databases, OSes.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/agent-benchmark",
+      "termCode": "agent-benchmark"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:24:41Z"
@@ -424,61 +280,13 @@
       "token cost monitoring"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "AI Observability",
-        "description": "Monitoring LLM systems in production—token usage, costs, output quality, safety events—to debug, improve, and trust deployments.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/ai-observability",
-        "termCode": "ai-observability"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between AI observability and application observability?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Traditional observability (logs, metrics, traces) monitors infrastructure and code flow. AI observability adds LLM-specific signals: token counts, semantic drift, output quality via evals, and hallucination detection. You need both."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does AI observability cost?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Platforms like Langfuse offer free tiers for small volumes. Costs scale with trace volume and data retention. Helicone and Arize Phoenix also have usage-based pricing. Compare against your LLM API costs—observability is usually <5% of that."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Datadog or New Relic instead of an LLM-specific tool?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You can collect logs and basic metrics there, but you'll miss LLM-specific insights: token-level cost breakdowns, output quality evals, and semantic drift patterns. Use LLM-native tools, or send LLM traces to them via OpenTelemetry bridges."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What should I log without violating privacy?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Log metadata (model name, latency, token count, cost, eval scores) always. Hash or redact PII in prompts/responses, or use differential privacy. Check your data residency requirements; some platforms store data in specific regions."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How often should I run quality evaluations in production?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Run continuous or daily evals on a sample (e.g., 5–10% of traffic). For high-stakes use cases, evaluate every request. Balance coverage against eval cost and latency."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "AI Observability",
+      "description": "Monitoring LLM systems in production—token usage, costs, output quality, safety events—to debug, improve, and trust deployments.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/ai-observability",
+      "termCode": "ai-observability"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:29Z"
@@ -545,61 +353,13 @@
       "label data"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Annotation (Data Labeling)",
-        "description": "Humans label examples—text spans, class labels, preferences, ratings—to create training or evaluation data for models.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/annotation",
-        "termCode": "annotation"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between annotation and labeling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Annotation is the act of marking up data with metadata or tags; labeling is assigning class labels or categories. In practice, the terms overlap—annotation is the broader process, labeling is one type of annotation task."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do you measure annotation quality?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use inter-annotator agreement (Cohen's kappa, Fleiss' kappa, Krippendorff's alpha) to see if raters agree on the same examples. Compare annotations to a golden set verified by an expert. Track rates of disagreement and rework over time."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How many annotators do I need per example?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "For high-stakes tasks (medical, legal), use 3–5 annotators per example and majority-vote. For lower-stakes tasks (general content classification), 1–2 annotators is often enough if you have clear instructions and spot-check regularly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What causes annotator disagreement?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Unclear instructions, ambiguous examples, rater fatigue, and inconsistent interpretation of edge cases. High disagreement usually signals you need to refine your guidelines or remove the problematic examples."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can LLMs replace human annotators?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LLMs can scale annotation cost, but human raters are still needed to verify quality, define guidelines, and label edge cases. Use LLMs as a first pass, then have humans review and correct for critical tasks."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Annotation (Data Labeling)",
+      "description": "Humans label examples—text spans, class labels, preferences, ratings—to create training or evaluation data for models.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/annotation",
+      "termCode": "annotation"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:59Z"
@@ -664,61 +424,13 @@
       "open-source LLM tracing"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Arize Phoenix",
-        "description": "Open-source LLM observability platform using OpenTelemetry for tracing, RAG evaluation, and drift detection.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/arize-phoenix",
-        "termCode": "arize-phoenix"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is OpenInference and how does it relate to OpenTelemetry?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "OpenInference is an OpenTelemetry standard for LLM/AI traces. It defines the schema for capturing prompts, completions, embeddings, and retrieval steps. You use OpenInference inside your OTel instrumentation to send LLM-specific data to Phoenix."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Phoenix with LangChain, LlamaIndex, or other frameworks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Phoenix works with any framework that you can instrument with OpenInference. LangChain and LlamaIndex have built-in OpenInference support; others require manual instrumentation via the OpenTelemetry SDK."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I have to pay for Arize to use Phoenix?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Phoenix is open-source and free. Arize (the commercial product) extends Phoenix with managed hosting, advanced drift detection, and guardrails, but Phoenix alone costs nothing."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How accurate are Phoenix's built-in evaluators?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Accuracy depends on the evaluator type. RAG evaluators (relevance, Q&A correctness) use LLM-as-a-judge patterns, which are ~70–85% accurate without fine-tuning. Hallucination and toxicity detection are heuristic-based and less precise; consider them flags, not ground truth."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between Phoenix and Langfuse?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Both offer tracing and evaluation for LLMs. Phoenix emphasizes local execution and OpenTelemetry standards. Langfuse is SaaS-first with more UI polish and a broader ecosystem. Choose Phoenix for self-hosting; choose Langfuse for hands-off cloud observability."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Arize Phoenix",
+      "description": "Open-source LLM observability platform using OpenTelemetry for tracing, RAG evaluation, and drift detection.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/arize-phoenix",
+      "termCode": "arize-phoenix"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:06Z"
@@ -784,61 +496,13 @@
       "retrieval generalization benchmark"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "BEIR (Retrieval Benchmark)",
-        "description": "Standard benchmark testing retrieval models on 18 out-of-domain datasets to measure generalization.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/beir",
-        "termCode": "beir"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is BEIR?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "BEIR is a zero-shot retrieval benchmark with 18 diverse datasets (news, biomedical, Wikipedia, finance, fact-checking) used to test whether retrieval models generalize beyond their training domain."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is BEIR the same as MTEB?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. BEIR is a standalone benchmark from 2021. MTEB (2023) is a larger suite that includes BEIR as a subset plus additional tasks (classification, clustering, STS). Many teams now cite MTEB scores instead."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why is BM25 so hard to beat on BEIR?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "BM25 is a simple lexical method with no training, so it has no domain bias. Dense retrievers trained on narrow corpora often overfit; BEIR's zero-shot setting exposes this. Modern large embeddings (trained on web-scale data) now beat BM25."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I fine-tune my model on BEIR?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Technically yes, but it violates the zero-shot premise and makes your score incomparable to baselines. If you optimize on BEIR, you're no longer measuring generalization—you're measuring fitting to BEIR."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does a high BEIR score guarantee good production retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. BEIR measures rank quality (NDCG, MRR) on diverse datasets, not latency, cost, or real user satisfaction. A 50.0 BEIR-average model might still be too slow or expensive for your use case."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "BEIR (Retrieval Benchmark)",
+      "description": "Standard benchmark testing retrieval models on 18 out-of-domain datasets to measure generalization.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/beir",
+      "termCode": "beir"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:39Z"
@@ -898,61 +562,13 @@
       "BigCodeBench"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "BigCodeBench",
-        "description": "Coding benchmark with 1,140 library-heavy tasks that tests real-world Python ability beyond algorithmic puzzles.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/bigcodebench",
-        "termCode": "bigcodebench"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How does BigCodeBench differ from HumanEval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "HumanEval tests algorithmic puzzles with no external libraries; BigCodeBench tests real-world Python using 139 libraries (pandas, requests, scikit-learn, etc.). BigCodeBench scores are typically 30–50 points lower, reflecting the added complexity."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What does 'Complete vs. Instruct' mean in BigCodeBench?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Complete: the model receives a function signature and must fill the body. Instruct: the model receives only a natural-language description and must write the entire function. Instruct is usually harder."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use BigCodeBench to compare my model to GPT-4?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but only if both are tested on the same split (Complete or Instruct). BigCodeBench publishes baseline scores; compare your model's results directly against those, not against HumanEval scores."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What does branch-coverage mean in BigCodeBench scoring?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The benchmark checks not just that a program produces correct output, but that the model's code exercises all logical branches. This catches solutions that hardcode answers or skip error handling."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Should I use BigCodeBench alone to evaluate code generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Combine it with LiveCodeBench (for evolving APIs) and domain-specific benchmarks or real user tasks. BigCodeBench is static; production code must adapt to library updates."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "BigCodeBench",
+      "description": "Coding benchmark with 1,140 library-heavy tasks that tests real-world Python ability beyond algorithmic puzzles.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/bigcodebench",
+      "termCode": "bigcodebench"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:24:48Z"
@@ -1017,61 +633,13 @@
       "prompt variant testing"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Braintrust",
-        "description": "Platform for versioning LLM datasets, running experiments with scorers, and logging production traces for offline evaluation.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/braintrust",
-        "termCode": "braintrust"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is Braintrust different from Langsmith or Promptfoo?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Langsmith focuses on tracing and observability; Promptfoo is a lightweight CLI for prompt testing. Braintrust is a full platform for versioned datasets, experiments with scorers, and production-log linkage. Pick Braintrust if you need persistent experiment history and scorer reuse."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use my own scoring function instead of LLM-as-judge?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. You can write Python scoring functions (e.g., exact match, BLEU, custom logic) and mix them with LLM judges in the same experiment."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the typical cost to run evaluations on Braintrust?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Cost depends on dataset size and scorer choice. LLM-as-judge scales with API calls (OpenAI/Anthropic); custom functions are free. Braintrust also charges a platform subscription. Run a small pilot (50–100 examples) to estimate."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Braintrust work with local or open-source models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Braintrust's playground and SDKs work with any model via API; open-source models require a separate inference server (e.g., vLLM, Ollama) or cloud provider. Custom Python scorers can call local models directly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I link production logs back to Braintrust experiments?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Log LLM outputs using Braintrust's SDK in production, tagging them with the prompt/model version. The platform correlates live data with historical experiment results so you spot when production deviates from test performance."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Braintrust",
+      "description": "Platform for versioning LLM datasets, running experiments with scorers, and logging production traces for offline evaluation.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/braintrust",
+      "termCode": "braintrust"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:24:54Z"
@@ -1132,61 +700,13 @@
       "progressive rollout"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Canary Deployment",
-        "description": "Route a small percentage of traffic to a new model version, monitor metrics, and roll back if it degrades.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/canary-deployment",
-        "termCode": "canary-deployment"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between canary deployment and shadow deployment?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Canary routes a small percentage of live traffic to the new version and returns its output to users. Shadow sends the same traffic to both versions but only returns the stable version's output to users. Canary is faster to validate; shadow is safer for initial offline comparison."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long should I run a canary before promoting to 100%?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Duration depends on traffic volume and metric noise. High-traffic systems may validate in minutes; low-traffic systems may need hours or days. Watch for at least one full business cycle (e.g., peak and off-peak hours) to catch time-dependent regressions."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run multiple canaries at the same time?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but carefully. You can test multiple new versions in parallel (e.g., 5% to version A, 5% to version B, 90% to stable) as long as metrics remain independent and rollback logic is clear. Overlapping canaries complicate root cause analysis."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What metrics should I monitor in a canary?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Monitor business metrics (accuracy, CTR, conversion), user experience (latency, error rate), and operational cost (tokens per request, GPU utilization). Define rollback thresholds for each before deploying."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is canary deployment the same as progressive rollout?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—canary and progressive rollout are synonymous terms. Both describe gradually increasing traffic to a new version while monitoring for issues."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Canary Deployment",
+      "description": "Route a small percentage of traffic to a new model version, monitor metrics, and roll back if it degrades.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/canary-deployment",
+      "termCode": "canary-deployment"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:31:02Z"
@@ -1247,61 +767,13 @@
       "LLM Arena"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Chatbot Arena (LMSYS)",
-        "description": "Crowd-sourced LLM evaluation where users vote on anonymous model responses, producing Elo leaderboard rankings.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/chatbot-arena",
-        "termCode": "chatbot-arena"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is Arena Elo different from benchmark scores?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Benchmarks test models on fixed, curated question sets. Arena measures user preference on open-ended prompts from real conversations. Benchmarks are reproducible; Arena is dynamic and reflects shifting user tastes."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I submit my own model to Chatbot Arena?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Arena is run by LMSYS and typically includes public models. You cannot directly submit proprietary models, but you can run Arena-style evaluation locally using Arena-Hard-Auto and your own LLM judge."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Arena voting bias favor certain model types?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Longer, more explanatory responses tend to win even when short answers are correct. Models trained for verbosity rank higher. Arena also favors politeness, which can disadvantage direct or technical models."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is Arena-Hard-Auto and when should I use it?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Arena-Hard-Auto uses LLM judges (like GPT-4) instead of human votes to score model pairs. It's faster and cheaper for internal evaluation, but less representative of actual user preference than crowdsourced Arena."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How frequently does the Arena leaderboard update?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The leaderboard updates continuously as new votes roll in. Significant rank changes typically take weeks of voting. New models may take months to accumulate enough votes for stable ranking."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Chatbot Arena (LMSYS)",
+      "description": "Crowd-sourced LLM evaluation where users vote on anonymous model responses, producing Elo leaderboard rankings.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/chatbot-arena",
+      "termCode": "chatbot-arena"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:33:07Z"
@@ -1365,61 +837,13 @@
       "LLM unit economics"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Cost per Query (CPQ)",
-        "description": "Total LLM spend for one user interaction: input tokens, output tokens, reasoning, tool calls, and embeddings.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/cost-per-query",
-        "termCode": "cost-per-query"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How do I calculate cost per query?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Multiply input tokens (system + history + context + user message) by input price, output tokens by output price, reasoning tokens by reasoning price, then add any tool-call costs. Sum all components."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why is my cost per query higher than expected?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Common causes: large context windows or chat history in each query, inefficient retrieval returning too many documents, verbose system prompts, or using a high-reasoning-token model. Log the token breakdown to spot the leak."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does prompt caching reduce cost per query?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—caching allows you to pay a fraction of the input-token price for repeated context (like system prompts or retrieved documents). Only effective if you run multiple queries with overlapping input."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does CPQ differ from total LLM spend?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "CPQ is per-query unit cost; total spend is CPQ × query volume. Optimizing CPQ is more predictable than cutting queries—you can't control user volume, but you can control what you send to the model."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Should I use a cheaper model to lower CPQ?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Only if output quality remains acceptable. A cheaper model that requires longer responses or more retries may have similar or higher CPQ than a pricier model that solves the problem in fewer tokens."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Cost per Query (CPQ)",
+      "description": "Total LLM spend for one user interaction: input tokens, output tokens, reasoning, tool calls, and embeddings.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/cost-per-query",
+      "termCode": "cost-per-query"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:27:01Z"
@@ -1484,61 +908,13 @@
       "training data quality"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Data Quality",
-        "description": "Measurable properties—accuracy, completeness, consistency, freshness—that determine whether a dataset produces reliable model outputs.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/data-quality",
-        "termCode": "data-quality"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between data quality and data validation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Validation checks whether data meets a schema (correct types, ranges). Quality measures whether the data is fit for purpose (correct labels, representative distribution). Validation is necessary but not sufficient."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I detect labeling errors in training data?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Train a model and inspect high-loss examples—often they are mislabeled. Use crowdsourcing with label agreement metrics (if 3 annotators disagree, re-label). For large datasets, run a confidence-based review: retag rows where your current model disagrees with the label."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can bad data quality ever be acceptable?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, for exploratory phases or non-critical tasks. For production systems—especially high-stakes domains like healthcare or lending—plan on spending 50–70% of effort on data collection and cleaning."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What metrics should I track for data quality?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with: labeling agreement (inter-annotator correlation), label distribution (does it match production?), missing values per column, and a sample audit rate (% of data manually re-checked monthly)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does data quality affect LLM pretraining?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Duplicate, toxic, or low-quality text in the corpus wastes compute and degrades model behavior. Deduplication, PII scrubbing, and quality filtering can improve benchmark scores by 1–3 percentage points without adding parameters."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Data Quality",
+      "description": "Measurable properties—accuracy, completeness, consistency, freshness—that determine whether a dataset produces reliable model outputs.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/data-quality",
+      "termCode": "data-quality"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:54Z"
@@ -1599,53 +975,13 @@
       "deepeval pytest LLM evaluation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "DeepEval",
-        "description": "Open-source pytest-style framework that runs LLM quality metrics as test assertions in your CI pipeline.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/deepeval",
-        "termCode": "deepeval"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between DeepEval and Promptfoo?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "DeepEval is pytest-native and designed for CI integration; Promptfoo is a web-based playground for comparing prompts and models. DeepEval suits teams that want eval logic in version control; Promptfoo suits teams doing ad-hoc testing."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does DeepEval compare to RAGAS?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RAGAS is a standalone evaluation library focused on RAG quality metrics (answer relevance, context recall). DeepEval includes RAGAS metrics but wraps them in a test framework. Pick RAGAS if you only need RAG metrics; pick DeepEval if you want a unified testing framework."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to run DeepEval on every commit?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. You can run evals on pull requests, main branch pushes, or on a schedule. Heavy LLM-as-judge evals can be batched weekly; faster metrics can run per-commit."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can DeepEval detect hallucinations without an external LLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "DeepEval offers both parametric methods (semantic similarity against context) and LLM-as-judge approaches. Parametric detection is faster and cheaper but less accurate; LLM-based is slower and costlier but catches subtle hallucinations."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "DeepEval",
+      "description": "Open-source pytest-style framework that runs LLM quality metrics as test assertions in your CI pipeline.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/deepeval",
+      "termCode": "deepeval"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:25:02Z"
@@ -1708,61 +1044,13 @@
       "concept drift"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Drift Detection",
-        "description": "Monitor when input data, labels, or model predictions shift away from training conditions, degrading accuracy.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/drift-detection",
-        "termCode": "drift-detection"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between data drift and concept drift?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Data drift (covariate or label shift) means the inputs or outputs changed distribution. Concept drift means the relationship between them broke—new inputs no longer predict the old outputs. Both require detection but concept drift often demands retraining, while mild covariate drift may only need recalibration."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How often should I check for drift?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Check as frequently as your model makes predictions—hourly batches, per-request, or streaming. Set up continuous monitoring rather than scheduled checks. The lag between drift onset and detection directly affects how stale your model becomes."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use simple threshold rules instead of statistical tests?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Simple rules (e.g., 'alert if feature X > Y') are easy but brittle. Statistical tests like KS test or KL divergence compare current distributions to a historical baseline, accounting for natural variance. They're more robust but require calibration on your data."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does drift detection work for large language models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but differently. LLM inputs are high-dimensional text, so you monitor embedding-space shifts or topic distribution changes in user queries rather than individual feature histograms. Proxy signals like rejection rates or user feedback also work well."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What should I do when drift is detected?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Options depend on urgency: immediately trigger a retraining job, shadow-deploy a retrained model, alert humans to review, or temporarily reduce traffic. The right action depends on how much accuracy loss you can tolerate and how fast you can retrain."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Drift Detection",
+      "description": "Monitor when input data, labels, or model predictions shift away from training conditions, degrading accuracy.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/drift-detection",
+      "termCode": "drift-detection"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:29Z"
@@ -1832,61 +1120,13 @@
       "model testing framework"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Eval Harness (Evaluation Framework)",
-        "description": "Automated testing framework that runs models against test datasets, scores results with metrics, and compares performance across versions.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/eval-harness",
-        "termCode": "eval-harness"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between an eval harness and a benchmark?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A benchmark is a public, standardized dataset (MMLU, GSM8K). An eval harness is the framework that *runs* benchmarks or custom datasets. You use a harness to measure performance; you use a benchmark to compare across teams."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need an eval harness for a small team?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if you're iterating on prompts or models weekly. A simple harness with 50 hand-picked test cases catches most regressions. EleutherAI's lm-evaluation-harness or Promptfoo are low overhead."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can an eval harness replace manual testing?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. A harness catches *quantified* regressions but misses edge cases and user experience issues. Use it alongside spot-checking and user feedback."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long does a full eval run take?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "500 test cases with concurrent execution typically takes 5–15 minutes depending on model latency and parallelism. Larger runs can exceed 30 minutes; optimize with batching and cached inference."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the most common eval harness mistake?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Building a beautiful harness around a weak dataset. If your test cases don't reflect real use, high scores mean nothing. Spend 70% effort on dataset design, 30% on tooling."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Eval Harness (Evaluation Framework)",
+      "description": "Automated testing framework that runs models against test datasets, scores results with metrics, and compares performance across versions.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/eval-harness",
+      "termCode": "eval-harness"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:08:45Z"
@@ -1947,53 +1187,13 @@
       "training serving skew"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Feature Store",
-        "description": "Centralized registry that computes, versions, and serves ML features consistently for training and production inference.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/feature-store",
-        "termCode": "feature-store"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between a feature store and a data warehouse?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A data warehouse is optimized for analytic queries across millions of rows; a feature store is optimized for sub-second retrieval of a single entity's features. They're complementary: your warehouse produces raw data, the feature store engineers and serves it."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need a feature store if I'm just building a one-off model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Feature stores shine when you're deploying models to production and want to guarantee that training and serving use identical feature definitions. For research or one-time analysis, they add overhead."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can a feature store replace my batch ML pipeline?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. The feature store handles feature definition and serving; you still need a batch training pipeline to compute training datasets, tune hyperparameters, and log experiment artifacts."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if my feature store goes down during inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Your models fail unless you've implemented fallback logic (cached features, stale-read tolerance, circuit breakers). Feature stores are critical path; uptime and SLAs matter as much as the database behind them."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Feature Store",
+      "description": "Centralized registry that computes, versions, and serves ML features consistently for training and production inference.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/feature-store",
+      "termCode": "feature-store"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:31:09Z"
@@ -2057,61 +1257,13 @@
       "LLM evaluation chain-of-thought"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "G-Eval",
-        "description": "LLM-as-judge method using chain-of-thought reasoning to score generation quality with human-correlated scores.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/g-eval",
-        "termCode": "g-eval"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is G-Eval different from just asking an LLM to score something?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "G-Eval adds chain-of-thought reasoning before the score. The LLM explains *why* it's scoring the way it does, making judgments more consistent and transparent. Single-prompt scoring often produces arbitrary or drifting results."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use G-Eval to evaluate code or technical outputs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but you must define clear criteria first (e.g., \"Does the code run without error?\", \"Does it follow the style guide?\"). G-Eval works best when criteria are checkable by an LLM without needing to run code yourself."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does G-Eval cost compared to human evaluation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "G-Eval costs pennies to dollars per sample depending on your model choice. Human evaluation costs $5–50+ per sample. G-Eval is cheaper but less reliable for nuanced or domain-expert judgments."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to use a specific LLM for G-Eval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. G-Eval is a prompting pattern, not a model. Stronger models (GPT-4, Claude) tend to produce more reliable reasoning steps and better-calibrated scores, but you can use any LLM-as-judge."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I know if my G-Eval criteria are working?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Correlate your G-Eval scores against human ratings on a holdout set. Target correlation ≥0.75. If lower, refine your criteria to be more specific and mutually exclusive."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "G-Eval",
+      "description": "LLM-as-judge method using chain-of-thought reasoning to score generation quality with human-correlated scores.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/g-eval",
+      "termCode": "g-eval"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:23Z"
@@ -2179,61 +1331,13 @@
       "ground truth dataset"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Golden Dataset (Eval Dataset)",
-        "description": "Hand-vetted test cases with expected outputs you use to catch regressions and measure LLM quality changes.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/golden-dataset",
-        "termCode": "golden-dataset"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How big should my golden dataset be?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with 50–100 diverse cases for early products; scale to 1,000–5,000 for mature ones. Diversity matters more than size—cover happy paths, failures, multilingual, and adversarial inputs. Quality is the bottleneck, not quantity."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is a golden dataset the same as a benchmark?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Benchmarks (MMLU, GSM8K) are public, fixed, and measure absolute model capability. Golden datasets are yours—private, product-specific, and designed to catch *your* regressions and edge cases."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use synthetic data in my golden dataset?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not for the ground truth. LLM-generated examples embed the generator's biases and blind spots. Use synthetic data for data augmentation, but hand-vet or hand-write the cases you measure against."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I score open-ended tasks in a golden dataset?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use a rubric (checklist of required elements) or an LLM-as-judge that scores consistency, relevance, and safety. For reproducibility, freeze the judge model and prompt once it's tuned."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How often should I update my golden dataset?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Add cases whenever you find a regression in production or a class of inputs you're not covering well. Quarterly, audit coverage gaps. Don't remove old cases—keep them to prevent regression creep."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Golden Dataset (Eval Dataset)",
+      "description": "Hand-vetted test cases with expected outputs you use to catch regressions and measure LLM quality changes.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/golden-dataset",
+      "termCode": "golden-dataset"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:09:49Z"
@@ -2294,61 +1398,13 @@
       "grad QA"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "GPQA (Graduate-Level Google-Proof QA)",
-        "description": "A 448-question benchmark of graduate-level science questions that measure reasoning beyond simple lookup or memorization.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/gpqa",
-        "termCode": "gpqa"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is GPQA?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "GPQA is a 448-question benchmark of graduate-level science questions designed to test reasoning that cannot be solved by internet search alone. Questions cover physics, biology, and chemistry and are written and verified by PhD experts."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is GPQA harder than MMLU?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. MMLU tests knowledge breadth across many domains with 14,000+ questions; GPQA tests deep reasoning in science with only 448 questions. GPQA's questions are intentionally unsearchable and require multi-step reasoning."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What scores do frontier models get on GPQA?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Claude 3.5 Sonnet, GPT-4o, and o1 score between 50–65% on the full benchmark; some versions (GPQA Diamond) show higher performance. PhD humans without internet access score ~65%, non-experts ~30%."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use GPQA to evaluate my own model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but the benchmark is small and computationally expensive. It's best for published benchmarking (model releases), not iteration. For faster iteration, use MATH or GSM8K; validate with GPQA at the end."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why is GPQA called 'Google-proof'?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Because answers are not found by searching the web. Each question requires reasoning and understanding, not lookup. A model cannot cheat by memorizing common search results."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "GPQA (Graduate-Level Google-Proof QA)",
+      "description": "A 448-question benchmark of graduate-level science questions that measure reasoning beyond simple lookup or memorization.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/gpqa",
+      "termCode": "gpqa"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:27:24Z"
@@ -2412,61 +1468,13 @@
       "grade school math benchmark"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "GSM8K",
-        "description": "Benchmark of 8,500 grade-school math word problems testing multi-step reasoning; now saturated by most frontier models.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/gsm8k",
-        "termCode": "gsm8k"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is GSM8K still useful for evaluating modern LLMs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, as a sanity check—most frontier models exceed 90%, so failure signals a serious problem. But you cannot use it to compare GPT-4o to Llama-3; use AIME or GPQA for that."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is the difference between GSM8K and MATH benchmark?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "GSM8K uses grade-school arithmetic; MATH uses competition-level problems (algebra, geometry, calculus). MATH is significantly harder and not yet saturated."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can a model score high on GSM8K without understanding math?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—it can memorize patterns or exploit biases in the dataset. Chain-of-thought prompting makes memorization harder but not impossible; adversarial variants test robustness better."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long does it take to evaluate a model on GSM8K?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Varies by model size and batch size. A small model might take minutes; a frontier model with slow reasoning could take hours. LM-evaluation-harness handles batching efficiently."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why did chain-of-thought unlock GSM8K performance?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Without CoT, models must predict the answer directly from the problem text, which requires implicit multi-step logic. CoT lets models write intermediate steps, making the reasoning explicit and testable."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "GSM8K",
+      "description": "Benchmark of 8,500 grade-school math word problems testing multi-step reasoning; now saturated by most frontier models.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/gsm8k",
+      "termCode": "gsm8k"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:27:54Z"
@@ -2531,61 +1539,13 @@
       "Helicone caching"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Helicone",
-        "description": "API proxy that logs LLM requests, tracks costs, caches responses, and rate-limits — one URL change to adopt.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/helicone",
-        "termCode": "helicone"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Does Helicone slow down my API calls?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Helicone adds ~10–50ms of proxy latency depending on region and network conditions. For most applications, this is acceptable; for latency-critical features (real-time chat), measure the impact in your region first."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Helicone with local or self-hosted models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No—Helicone proxies calls to external API providers. For local models, use VLLMs built-in logging or open-source observability tools like OpenTelemetry."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if Helicone goes down?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Your requests fail because they're routed through Helicone's servers. Helicone is a critical dependency, not optional middleware—plan for it in your reliability strategy."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Helicone's caching work across different users?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—semantic caching matches prompts by embedding similarity, not exact string match. Caches are shared across your workspace unless you configure user-level isolation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does Helicone cost?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Helicone is free up to 100K requests/month. Paid tiers scale with volume; exact pricing depends on whether you use advanced features like semantic caching."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Helicone",
+      "description": "API proxy that logs LLM requests, tracks costs, caches responses, and rate-limits — one URL change to adopt.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/helicone",
+      "termCode": "helicone"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:24:59Z"
@@ -2650,61 +1610,13 @@
       "code model evaluation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "HumanEval (Benchmark)",
-        "description": "OpenAI's 164-problem Python benchmark that measures whether code models pass hidden unit tests; now saturated and outdated.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/humaneval",
-        "termCode": "humaneval"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is HumanEval still useful for evaluating code models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No for new models. Frontier models score 90%+, so the benchmark is saturated and contaminated. Use LiveCodeBench or SWE-Bench for meaningful signal."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What does pass@k mean in HumanEval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Pass@k means the model generates k attempts and at least one passes all hidden tests. Pass@1 is stricter (first try); pass@10 is much easier but still counts as success."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does HumanEval compare to SWE-Bench?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "HumanEval grades isolated functions on unit tests. SWE-Bench grades code in full repository context solving real GitHub issues—much harder and more realistic."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why is HumanEval contaminated?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The 164 problems were published in 2021 and likely included in training data for models released after 2022. Models memorize patterns rather than solving novel problems."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What replaced HumanEval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LiveCodeBench (monthly-refreshed problems), BigCodeBench (multi-language, 1000+ problems), and SWE-Bench (repository-level tasks) are current standards."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "HumanEval (Benchmark)",
+      "description": "OpenAI's 164-problem Python benchmark that measures whether code models pass hidden unit tests; now saturated and outdated.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/humaneval",
+      "termCode": "humaneval"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:13:46Z"
@@ -2762,61 +1674,13 @@
     "meta_description": "Running a trained model to produce output, measured in tokens per second.",
     "seo_variations": [],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Inference",
-        "description": "Running a trained model to produce output, measured in tokens per second.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/inference",
-        "termCode": "inference"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between training and inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Training updates model weights using data (one-time cost, millions of dollars). Inference runs the frozen model to generate outputs (per-request cost, milliseconds to seconds)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do people run inference locally instead of using an API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Local inference avoids per-token API costs (important for high-volume use), keeps data private, and works offline. Trade-off: you manage hardware and latency yourself."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I measure inference speed?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Tokens per second (TPS) measures throughput; time to first token (TTFT) measures latency. A model generating 50 TPS with 2-second TTFT feels responsive for chat."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does quantization hurt model accuracy during inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "4-bit quantization usually maintains 95–98% accuracy on most tasks. Math and reasoning tasks degrade 2–5%. Test on your specific use case before deploying."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I batch inference requests to save cost?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Batching multiple requests through one inference pass increases throughput per dollar. Trade-off: adds latency per-request if you wait for the batch to fill."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Inference",
+      "description": "Running a trained model to produce output, measured in tokens per second.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/inference",
+      "termCode": "inference"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:10:10Z"
@@ -2881,61 +1745,13 @@
       "Langfuse vs LangSmith"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Langfuse",
-        "description": "Open-source LLM observability platform: traces, prompt management, evals, feedback—self-hostable alternative to LangSmith.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/langfuse",
-        "termCode": "langfuse"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is Langfuse different from LangSmith?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LangSmith is proprietary SaaS with managed hosting. Langfuse is open-source and self-hostable, giving you data control and no vendor lock-in. Both trace LLM apps and run evals; Langfuse costs nothing to self-host but requires ops."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Langfuse without LangChain?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. You can send traces via the REST API, OpenTelemetry, or SDKs in Python/TypeScript. LangChain/LlamaIndex just add automatic instrumentation, but any LLM framework or custom code can log to Langfuse."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What data storage do I need to self-host Langfuse?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Langfuse requires PostgreSQL and S3-compatible object storage (or local disk). Storage scales with trace volume; typical production setups use 50 GB–1 TB per month depending on log depth and retention."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Langfuse support real-time alerts on model failures?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Langfuse excels at post-hoc analysis via traces and dashboards but does not ship built-in alerting. You can query the API to trigger alerts in Datadog, Sentry, or PagerDuty on custom conditions."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Langfuse for cost tracking across multiple LLM providers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Traces capture token counts and model names, so you can aggregate costs by provider, user, or endpoint. Export to your billing system via API or scheduled reports."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Langfuse",
+      "description": "Open-source LLM observability platform: traces, prompt management, evals, feedback—self-hostable alternative to LangSmith.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/langfuse",
+      "termCode": "langfuse"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:59Z"
@@ -3001,61 +1817,13 @@
       "LangSmith traces"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "LangSmith",
-        "description": "LangChain's observability platform that captures LLM execution traces, builds evaluation datasets, and runs evals.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/langsmith",
-        "termCode": "langsmith"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Does LangSmith work with non-LangChain code?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. LangSmith supports raw OpenAI, Anthropic, and LlamaIndex SDKs via their Python SDK and API. LangChain integration is deepest, but you can trace any LLM call if you manually instrument it."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How is LangSmith different from Langfuse?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Both capture traces and run evals. LangSmith is LangChain's native tool with tighter integration. Langfuse is independent, works with any stack, and is open-source. Pick LangSmith if you're deep in LangChain; pick Langfuse for flexibility or self-hosting."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use LangSmith for real-time production monitoring?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LangSmith is better for offline evaluation and regression testing than real-time alerting. For live monitoring (latency, errors, cost spikes), pair it with a general observability tool like OpenTelemetry or Arize Phoenix."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens to my trace data?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Traces are stored in LangSmith's servers by default. You can set retention windows or delete old runs. For privacy-sensitive data, carefully review your logging scope or self-host via local mode."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does LangSmith cost?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LangSmith is free for small projects (limited trace history and API calls), with paid plans scaling by trace volume and storage. Evaluate costs upfront for high-volume production apps."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "LangSmith",
+      "description": "LangChain's observability platform that captures LLM execution traces, builds evaluation datasets, and runs evals.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/langsmith",
+      "termCode": "langsmith"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:13:02Z"
@@ -3118,61 +1886,13 @@
       "uncontaminated code evaluation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "LiveCodeBench",
-        "description": "A continuously updated coding benchmark using problems posted after model training cutoffs to prevent contamination.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/livecodebench",
-        "termCode": "livecodebench"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is LiveCodeBench different from HumanEval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "HumanEval is static with 164 problems from 2021 — models trained after that date see the problems during pretraining. LiveCodeBench continuously adds problems posted after each model's cutoff, preventing memorization and providing fresh evaluation data."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use LiveCodeBench to compare old and new models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not directly for time-series trends. New problems added after an old model's cutoff won't be in its training data, biasing newer models upward. Instead, use the fixed subset of problems available at the time each model was trained."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What languages and problem types does LiveCodeBench cover?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It sources from competitive programming sites (LeetCode, AtCoder, Codeforces) covering Python, C++, Java, and others. Problem types are algorithm-heavy: sorting, graphs, dynamic programming, and string manipulation — not typical production code patterns."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How often does LiveCodeBench update?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It rolls forward continuously as new problems are published. For reproducibility, snapshots are released at intervals; always specify the date/version when reporting results."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Should I use LiveCodeBench or SWE-Bench for evaluating code models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LiveCodeBench measures algorithm solving ability on fresh problems; SWE-Bench evaluates software engineering tasks like bug fixing and feature addition. Choose based on whether you care about pure coding or engineering-in-context."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "LiveCodeBench",
+      "description": "A continuously updated coding benchmark using problems posted after model training cutoffs to prevent contamination.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/livecodebench",
+      "termCode": "livecodebench"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:24:45Z"
@@ -3239,61 +1959,13 @@
       "automated LLM evaluation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "LLM-as-Judge",
-        "description": "Use one LLM to grade another's output against a rubric—the scalable alternative to human evaluation.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/llm-as-judge",
-        "termCode": "llm-as-judge"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is LLM-as-judge the same as automated evaluation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Automated evaluation includes any metric without humans—BLEU, ROUGE, regex matching. LLM-as-judge is one subset: using a language model as the evaluator."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use the same model as both generator and judge?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Technically yes, but it inflates scores. The model grades its own outputs higher. Use a different model family, or at minimum a different scale (e.g., judge with GPT-4, generate with Llama)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does it cost to LLM-as-judge 10,000 outputs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Roughly $3–10 depending on model (GPT-4 Turbo ≈ $0.001 per eval, Claude 3.5 Sonnet ≈ $0.003). Humans cost $20–50 per 100 labels."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What domains does LLM-as-judge work poorly in?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Math proofs, code correctness, and specialized medical/legal reasoning where the judge lacks training. For these, prefer reference-based metrics or human review."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I reduce judge bias in my evaluations?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use a rubric anchored to examples, randomize A/B order, test the judge against a gold-standard holdout, and specify what you're NOT looking for (e.g., 'ignore length')."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "LLM-as-Judge",
+      "description": "Use one LLM to grade another's output against a rubric—the scalable alternative to human evaluation.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/llm-as-judge",
+      "termCode": "llm-as-judge"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:10:24Z"
@@ -3357,61 +2029,13 @@
       "automated eval"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "LLM-as-Judge",
-        "description": "Use a strong LLM to score or compare other LLMs' outputs—faster than humans, but prone to measurable biases.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/llm-judge",
-        "termCode": "llm-judge"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between LLM-as-judge and human evaluation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LLM-as-judge scores outputs in seconds at zero marginal cost; human eval takes days and costs money but catches nuances judges miss. Use judges for fast filtering, humans for validation or high-stakes calls."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use the same model as both judge and candidate?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Technically yes, but it will rate its own outputs ~10% higher. Best practice: use a stronger or different model as judge, or explicitly tell the judge it's evaluating its own outputs and penalize self-preference in scoring."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I reduce judge bias?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Shuffle input positions, use explicit rubrics with examples, constrain output length in the prompt, run pairwise comparisons instead of absolute scores, and average results across multiple judges or models."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I validate that my judge is actually good?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Annotate 50–100 examples with humans, then measure agreement (Cohen's kappa or Pearson correlation) between judge and human scores. Aim for kappa > 0.6; if lower, your rubric is ambiguous or your judge is too weak."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is LLM-as-judge reliable enough to ship to production?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, for filtering and ranking—not for final decisions. Use it to surface top-N candidates, then either sample-check with humans or pair it with other signals (user feedback, explicit metrics)."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "LLM-as-Judge",
+      "description": "Use a strong LLM to score or compare other LLMs' outputs—faster than humans, but prone to measurable biases.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/llm-judge",
+      "termCode": "llm-judge"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:13:29Z"
@@ -3485,61 +2109,13 @@
       "production LLM debugging"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Observability (LLM Observability)",
-        "description": "Capture and replay every LLM call in production—prompts, responses, tokens, latency, cost—to debug and improve reliably.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/llm-observability",
-        "termCode": "llm-observability"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between LLM observability and regular monitoring?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Regular monitoring tracks system health (CPU, uptime, error rates). LLM observability tracks the LLM's behavior: prompt versions, token usage, response quality, and user feedback. You need both, but observability is what lets you debug why an LLM started producing worse outputs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to rewrite my code to add observability?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Tools like Langfuse and LangSmith offer auto-instrumented SDKs for OpenAI, Anthropic, and other providers. You replace your import and get logging for free; adding metadata requires one extra parameter in each call."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What should I log for every LLM call?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "At minimum: prompt (or prompt template version), response, model, latency, token count, cost, and user_id. Ideally also session_id, prompt_version, and user_feedback (thumbs-up/down). This lets you correlate failures, measure drift, and replay scenarios."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How is prompt versioning different from model versioning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Model versioning tracks which LLM (gpt-4-turbo vs gpt-4o) you called. Prompt versioning tracks the exact instructions you sent. Both change output quality; observability must track both to isolate the cause."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use observability to catch hallucinations?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Partially. Observability captures what the LLM said; you then run evaluations (external fact-checks or LLM-as-judge) on those captured outputs to detect hallucinations, then replay the traces to find which prompts or models trigger them most."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Observability (LLM Observability)",
+      "description": "Capture and replay every LLM call in production—prompts, responses, tokens, latency, cost—to debug and improve reliably.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/llm-observability",
+      "termCode": "llm-observability"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:15:17Z"
@@ -3599,61 +2175,13 @@
     "meta_description": "Local AI runs on your hardware; cloud AI runs on remote servers. Trade privacy and latency for capability and cost.",
     "seo_variations": [],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Local vs Cloud AI",
-        "description": "Local AI runs on your hardware; cloud AI runs on remote servers. Trade privacy and latency for capability and cost.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/local-vs-cloud",
-        "termCode": "local-vs-cloud"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's cheaper, local or cloud AI?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Cloud is cheaper for light usage (<$500/month in tokens). Local becomes cheaper at heavy sustained usage, but only if hardware depreciation and electricity amortize to <1% per token. Most teams hit the crossover around 200M tokens/month."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run GPT-4 locally?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. GPT-4 and Sonnet aren't open-weight. You can run open equivalents like Llama 3.1 (405B on 8× H100) or DeepSeek-R1, but they require enterprise-grade hardware. Cloud is your only option for closed models."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does local AI mean data stays completely private?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if your local instance has no network access. But most local setups log queries and telemetry—check Ollama/LM Studio config. True air-gapped isolation requires deliberate setup."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How fast is local inference compared to cloud?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Local TTFT (time-to-first-token) is typically 50–200ms depending on hardware and prefill batch size. Cloud is 500ms–2s due to network latency. But cloud's throughput (tokens/sec) often exceeds local due to more parallelism."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use both local and cloud in the same app?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—route sensitive queries locally via vLLM, general queries to cloud via LiteLLM router. But you'll need observability to track which path each request took, or costs spiral."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Local vs Cloud AI",
+      "description": "Local AI runs on your hardware; cloud AI runs on remote servers. Trade privacy and latency for capability and cost.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/local-vs-cloud",
+      "termCode": "local-vs-cloud"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:16:57Z"
@@ -3717,61 +2245,13 @@
       "context window benchmark"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "LongBench / RULER",
-        "description": "Benchmarks that test whether LLMs actually use their claimed context window on multi-hop reasoning, retrieval, and summarization tasks.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/long-context-benchmark",
-        "termCode": "long-context-benchmark"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between LongBench and RULER?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LongBench (Tsinghua 2023) covers five diverse task types up to 300k tokens and focuses on realistic long-document problems. RULER (Nvidia 2024) specializes in extreme scale (128k+), offers finer control over position and complexity, and includes more synthetic variants for reproducibility. Use RULER if you need precise, scalable diagnostics; use LongBench for breadth across real-world task types."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does a high LongBench score mean the model is good at long-context tasks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not always. Check the position-specific breakdown. Many models score well on retrieval at the start and end but fail in the middle. A uniform score across document positions is the real signal."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use these benchmarks to test my own retrieval pipeline?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but be careful. These benchmarks test the model's raw long-context ability in isolation. If you add chunking, reranking, or retrieval-augmented generation, you're testing a different system. Use them to validate the model, then benchmark your full pipeline separately."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long do LongBench and RULER take to run?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RULER typically takes hours to days depending on model size and hardware. LongBench is slower because it covers more diverse, longer tasks. Budget a full evaluation run at 4-8 hours for a single model on consumer hardware."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Which models score highest on LongBench and RULER?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "As of 2024, Claude, GPT-4, and Gemini models consistently score well, but newer open-source models (Llama 3, Qwen) are closing the gap. Check the latest leaderboard releases; scores change rapidly as models improve."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "LongBench / RULER",
+      "description": "Benchmarks that test whether LLMs actually use their claimed context window on multi-hop reasoning, retrieval, and summarization tasks.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/long-context-benchmark",
+      "termCode": "long-context-benchmark"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:27:34Z"
@@ -3834,61 +2314,13 @@
       "competition math LLM"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "MATH (Competition Math Benchmark)",
-        "description": "12,500-problem benchmark covering AMC/AIME-level math; much harder than GSM8K, still useful for sub-6B models.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/math-benchmark",
-        "termCode": "math-benchmark"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between MATH and GSM8K?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "GSM8K contains 8,500 middle-school-level word problems; MATH has 12,500 competition-math problems (algebra, calculus, geometry, number theory) and is significantly harder. GSM8K is largely saturated by modern models; MATH remains challenging for sub-6B models."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why does MATH matter if reasoning models score over 90%?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Those 90%+ scores come from test-time compute (RL, extended thinking) and don't reflect standard inference. MATH remains a useful difficulty signal for smaller models and for measuring improvements in reasoning training approaches."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do you score answers on MATH?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Most scoring uses normalized string matching (comparing final numeric/symbolic answers after stripping whitespace and handling equivalent forms like 0.5 vs 1/2). Some teams use a checker LLM to validate the full derivation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use MATH to evaluate my fine-tuned model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, especially for models under 6B parameters. For very large or reasoning-focused models, MATH is often combined with GPQA, long-context benchmarks, and domain-specific tests for a fuller picture."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is MATH a good benchmark for production math tasks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No — MATH is pure academic competition math. For production systems (financial forecasting, engineering calculations, data analysis), use domain-specific benchmarks or real-world test sets."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "MATH (Competition Math Benchmark)",
+      "description": "12,500-problem benchmark covering AMC/AIME-level math; much harder than GSM8K, still useful for sub-6B models.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/math-benchmark",
+      "termCode": "math-benchmark"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:25:07Z"
@@ -3953,61 +2385,13 @@
       "experiment tracking"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "MLflow",
-        "description": "Open-source platform for tracking experiments, versioning models, and managing the ML lifecycle end-to-end.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mlflow",
-        "termCode": "mlflow"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between MLflow and Weights & Biases?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "MLflow is open-source and self-hosted by default; W&B is a managed SaaS with stronger built-in visualization and collaboration. MLflow integrates closer with model deployment tools; W&B excels at real-time monitoring and team dashboards."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can MLflow replace Kubernetes for model serving?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. MLflow standardizes the model format and can generate serving containers, but you still need Kubernetes, Docker, or another deployment platform to actually run the models in production."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need a database to use MLflow?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No for single-user local work—MLflow writes to your disk by default. For shared teams, you need a backend database (PostgreSQL, MySQL) and a central artifact store (S3, GCS) to avoid conflicts."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does MLflow work with LLMs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Recent versions track prompts, token usage, and LLM-specific metrics. The AI Gateway routes requests to different models and logs performance, but it's lighter than full experiment tracking for inference-only workflows."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I migrate models from MLflow to production?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Load the model with mlflow.pyfunc.load_model(), wrap it in a Docker container or FastAPI service, and deploy to your target platform. Many tools (TensorFlow Serving, Ray Serve, SageMaker) have MLflow integrations."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "MLflow",
+      "description": "Open-source platform for tracking experiments, versioning models, and managing the ML lifecycle end-to-end.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mlflow",
+      "termCode": "mlflow"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:20Z"
@@ -4072,61 +2456,13 @@
       "MMLU evaluation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "MMLU (Benchmark)",
-        "description": "57-subject multiple-choice benchmark that measures broad-knowledge reasoning across STEM, law, and humanities.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mmlu",
-        "termCode": "mmlu"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is MMLU the best benchmark for LLMs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. MMLU is broad but shallow—it measures multiple-choice recall, not reasoning depth or instruction-following. Use GPQA for graduate-level reasoning, GSM8K for math, or domain-specific benchmarks for specialized tasks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between MMLU and MMLU-Pro?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "MMLU-Pro is harder: each question has 10 answer choices instead of 4, and questions are selected to reduce test-data contamination. MMLU-Pro scores are lower but more reliable for newer models."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run MMLU myself?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Use lm-evaluation-harness, which automates MMLU evaluation against any model with an API or local weights. Runtime depends on model size and question count—expect 10 minutes to a few hours."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do open-weight models score higher on MMLU now?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Training-data contamination: many open datasets and web scrapes include MMLU questions, so models memorize answers instead of learning reasoning. This is why MMLU-Pro and other newer benchmarks exist."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does a 90% MMLU model work better for my chatbot?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not necessarily. MMLU measures broad knowledge, not instruction-following, conciseness, or refusal to hallucinate. Test on your actual use case with domain-relevant questions first."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "MMLU (Benchmark)",
+      "description": "57-subject multiple-choice benchmark that measures broad-knowledge reasoning across STEM, law, and humanities.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mmlu",
+      "termCode": "mmlu"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:13:38Z"
@@ -4190,61 +2526,13 @@
       "MMLU vs MMLU-Pro"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "MMLU-Pro",
-        "description": "Harder successor to MMLU with 10 answer choices and deeper questions, reducing guessing and contamination.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mmlu-pro",
-        "termCode": "mmlu-pro"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is MMLU-Pro and why is it better than MMLU?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "MMLU-Pro is a harder version of MMLU that uses 10 answer choices instead of 4 and includes only difficult questions. Models score 20–30 points lower, so it better differentiates capability and is harder to game through test-taking skill rather than knowledge."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I compare MMLU and MMLU-Pro scores directly?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. A model scoring 95% on MMLU and 88% on MMLU-Pro is not declining 7 points in absolute knowledge—MMLU-Pro is simply a harder test. Only compare MMLU-Pro scores against other MMLU-Pro scores."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I run MMLU-Pro on my model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use eval-harness or a benchmark framework like lm-eval. Load MMLU-Pro, run your model in greedy-decoding mode with the model's standard chat template, and report accuracy across all 14,000+ questions across 57 subjects."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does MMLU-Pro test reasoning or just knowledge?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Mostly knowledge, though some questions (especially in abstract algebra and logic) require multi-step reasoning. For pure reasoning, use GPQA or GSM8K. MMLU-Pro is breadth-first, not depth-first."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is MMLU-Pro contaminated in newer training data?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "MMLU-Pro is harder to contaminate because it's newer and uses different questions, but contamination is always possible. Monitor for unusually high scores (>92%) relative to the model's other capabilities."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "MMLU-Pro",
+      "description": "Harder successor to MMLU with 10 answer choices and deeper questions, reducing guessing and contamination.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mmlu-pro",
+      "termCode": "mmlu-pro"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:13Z"
@@ -4308,61 +2596,13 @@
       "model deployment tracking"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Model Registry",
-        "description": "Versioned catalog of trained models with metadata and deployment stages that controls which model runs in production.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/model-registry",
-        "termCode": "model-registry"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between a model registry and a model store?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A model store holds binary weights and artifacts; a registry wraps that store with versioning, metadata (metrics, stage, lineage), and approval workflows. Most registries include storage, but not all stores include governance."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does a model registry handle deployment?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It orchestrates the hand-off—moving a model to \"production\" stage can trigger deployment—but it doesn't run the servers. It typically webhooks or polls a separate deployment system (Kubernetes, Lambda, SageMaker Endpoint)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use a model registry for LLMs or just traditional ML?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Both. MLflow, Vertex AI, and SageMaker now track adapters, quantized variants, and prompt templates. Some teams also version system prompts and chat templates in the registry for reproducibility."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I automate the decision to promote a model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Write a promotion job that queries the candidate and prod model, runs them on a shared eval set, and programmatically transition the winner to \"production\" if it beats a threshold. Most registries expose REST APIs for this."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if I need to rollback to an earlier model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The registry stores all versions with their metadata. You query the previous version, move it back to \"production\" stage, and your deployment system picks up the change—usually within seconds."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Model Registry",
+      "description": "Versioned catalog of trained models with metadata and deployment stages that controls which model runs in production.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/model-registry",
+      "termCode": "model-registry"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:03Z"
@@ -4429,61 +2669,13 @@
       "intelligent model dispatch"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "LLM Router / Model Routing",
-        "description": "Dispatch queries to the cheapest capable model—small model for simple tasks, expensive model only when needed.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/model-routing",
-        "termCode": "model-routing"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between model routing and load balancing?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Load balancing spreads identical queries across multiple instances of the same model for throughput and uptime. Routing picks different models based on query characteristics. You can combine both: route to a model family, then load-balance across instances of that family."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I build a router if I don't know which queries are hard?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start simple: route by query length or keyword heuristics, then compare model outputs and cost. Use an LLM-as-judge to label a sample of your queries by difficulty, train a classifier on that labeled set, and iterate as patterns emerge."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does routing add latency?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Good routing adds 10–50ms overhead. If your model response time is 500ms+, that overhead is negligible. If you're targeting sub-100ms latency, you need a very fast router (often a small neural net or rule-based classifier)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I route to open-source and closed-source models together?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Route to any model accessible via API or local inference. Many teams use small open models (Mistral, Phi) for easy queries and closed APIs (GPT-4, Claude) for hard ones, mixing cost control with quality guarantees."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if my router gets the classification wrong?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Wrong classifications degrade quality (cheap model fails) or waste money (expensive model tackles easy queries). Monitor token counts and latency per route to catch silent misclassification; retrain the router quarterly as query distribution shifts."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "LLM Router / Model Routing",
+      "description": "Dispatch queries to the cheapest capable model—small model for simple tasks, expensive model only when needed.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/model-routing",
+      "termCode": "model-routing"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:26:52Z"
@@ -4555,61 +2747,13 @@
       "model hosting"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Model Serving",
-        "description": "Infrastructure that runs trained models behind an API with low latency, high availability, and scaling for production traffic.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/model-serving",
-        "termCode": "model-serving"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between model serving and batch inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Serving handles real-time requests with low latency (ms); batch inference processes many inputs together offline (minutes to hours). Serving needs autoscaling and health checks; batch is purely cost-optimized compute."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run a model server on CPU instead of GPU?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but latency and throughput suffer dramatically. Use CPU only for small models (<5B params), low QPS (<1/sec), or testing. Production LLM serving almost always needs GPUs for acceptable latency."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I choose between vLLM, TGI, and Triton?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "vLLM and TGI are LLM-specific with continuous batching; pick based on framework preference and ops maturity. Triton is language-agnostic but requires manual KV cache tuning for LLMs. Use Triton for multi-modal or non-LLM workloads."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is continuous batching and why does it matter for LLMs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Traditional batching waits for all requests to finish before batching new ones, wasting GPU. Continuous batching streams in new requests mid-batch, keeping GPU busy. For LLMs, this can double or triple throughput."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I measure if my model server is production-ready?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Track p99 latency under load, error rate during failover, time-to-scale, and cost per query. Aim for <1% error, <10s scale-up time, and latency aligned with user expectations (typically <500ms for chat)."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Model Serving",
+      "description": "Infrastructure that runs trained models behind an API with low latency, high availability, and scaling for production traffic.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/model-serving",
+      "termCode": "model-serving"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:34Z"
@@ -4675,61 +2819,13 @@
       "compare embedding models"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "MTEB (Massive Text Embedding Benchmark)",
-        "description": "Standardized benchmark suite testing embedding models across 50+ retrieval, classification, and clustering tasks.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mteb",
-        "termCode": "mteb"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is MTEB and why should I care?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "MTEB is a leaderboard comparing 100+ embedding models across 56 standardized tasks. It's the fastest way to pick an embedding model without building your own evaluation pipeline."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is MTEB the same as BEIR?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. BEIR is one retrieval benchmark (13 datasets). MTEB includes BEIR plus 40+ other tasks: clustering, classification, STS, reranking. MTEB is broader."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does MTEB score predict my RAG performance?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Partially. High MTEB retrieval scores correlate with good RAG recall, but your actual relevance depends on query type, corpus domain, and reranking. Use MTEB to shortlist models, then validate on your data."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between MTEB and MMTEB?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "MTEB tests English models on 56 tasks. MMTEB (Multilingual MTEB) evaluates models on 100+ languages and uses different language-weighted task splits, so scores are not directly comparable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How often does the MTEB leaderboard update?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "New model submissions are added continuously by researchers and companies. The leaderboard refreshes as new results arrive; check the submission date to ensure you're comparing fairly recent models."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "MTEB (Massive Text Embedding Benchmark)",
+      "description": "Standardized benchmark suite testing embedding models across 50+ retrieval, classification, and clustering tasks.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mteb",
+      "termCode": "mteb"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:58Z"
@@ -4792,61 +2888,13 @@
       "fact retrieval test"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Needle in a Haystack",
-        "description": "A test that buries a fact in huge irrelevant context and checks if the model retrieves it correctly.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/needle-in-a-haystack",
-        "termCode": "needle-in-a-haystack"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What does NIAH stand for?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "NIAH stands for Needle in a Haystack. It's named after the common phrase describing searching for something tiny in a huge pile of irrelevant material."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Who created the needle in a haystack test?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Greg Kamradt popularized NIAH as a simple sanity check for long-context models. It became widely used because it's cheap to run and instantly reveals if a model can retrieve facts."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between NIAH and RULER or LongBench?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "NIAH tests retrieval of a single fact at various positions and context lengths. RULER and LongBench are more rigorous: they test multi-needle retrieval, multi-hop reasoning, and more complex long-context tasks. NIAH is a quick gate; the others are thorough validators."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can a model pass NIAH but fail at real long-context tasks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, absolutely. NIAH only tests fact retrieval. Real tasks require reasoning over multiple facts, understanding relationships, and avoiding hallucination—all absent from NIAH. Always pair it with domain-specific evaluation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why does NIAH show a 'lost in the middle' pattern?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Many models attend more to tokens at the start and end of context and pay less attention to the middle. This creates a dip in performance when the needle is placed mid-document, even if beginning and end retrieval works fine."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Needle in a Haystack",
+      "description": "A test that buries a fact in huge irrelevant context and checks if the model retrieves it correctly.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/needle-in-a-haystack",
+      "termCode": "needle-in-a-haystack"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:13:44Z"
@@ -4912,61 +2960,13 @@
       "open-weights leaderboard"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Open LLM Leaderboard",
-        "description": "Hugging Face's standardized benchmark table ranking open-weight LLMs; the default reference for choosing which model to try.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/open-llm-leaderboard",
-        "termCode": "open-llm-leaderboard"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How often does the Open LLM Leaderboard update?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Results update as new model submissions arrive and pass validation. Major benchmark refresh cycles happen quarterly or when contamination is detected. There's no strict schedule—follow their GitHub or RSS for changes."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I submit my own model to the Open LLM Leaderboard?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. You need a Hugging Face account, a model card, and model weights on the Hub. Submissions are validated for completion before evaluation runs. Turnaround is typically 1–2 weeks depending on queue."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is the Open LLM Leaderboard the same as LMSYS Chatbot Arena?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. The leaderboard uses automated benchmarks and is model-agnostic; Arena uses human raters comparing model outputs side-by-side on real user queries. They rank models differently and both are useful."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why did some models drop in rank between V1 and V2?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "V2 switched to harder, less-contaminated benchmarks. Models that scored high in V1 by overfitting to public test sets now score lower. This is intentional—V2 better reflects real generalization."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does the Open LLM Leaderboard test instruction-following?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, via IFEval, which measures whether models follow written instructions (e.g., format output as JSON, avoid certain words). The other benchmarks also penalize poor instruction adherence."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Open LLM Leaderboard",
+      "description": "Hugging Face's standardized benchmark table ranking open-weight LLMs; the default reference for choosing which model to try.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/open-llm-leaderboard",
+      "termCode": "open-llm-leaderboard"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:26:49Z"
@@ -5029,61 +3029,13 @@
       "OpenInference"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "OpenTelemetry (GenAI / OpenInference)",
-        "description": "Standard for tracing LLM applications: OpenTelemetry conventions plus LLM-specific attributes like tokens, cost, and prompts.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/opentelemetry-genai",
-        "termCode": "opentelemetry-genai"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is OpenTelemetry GenAI the same as OpenInference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. OpenTelemetry is the vendor-neutral standard; OpenInference (Arize's extension) adds ML-specific schemas on top. Most platforms now align with OTel rather than OpenInference alone."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I have to use OpenTelemetry if I use Langfuse or LangSmith?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No—both platforms have native SDKs. But using OTel conventions makes it easier to switch later. Some platforms export both native and OTLP formats simultaneously."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between OpenTelemetry tracing and logging?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Tracing captures structured spans (start time, duration, attributes) for individual requests; logging is unstructured text. OTel unifies both, but for LLMs, tracing is more useful for cost and latency analysis."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Will OpenTelemetry GenAI conventions break my existing traces?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Possibly. The spec is still maturing (2024+); vendor implementations vary. Pin your instrumentation library version if stability is critical."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use OpenTelemetry without a dedicated observability platform?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—you can export OTLP traces to any OTLP-compatible backend (Jaeger, Grafana, self-hosted). You don't need Arize or Langfuse."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "OpenTelemetry (GenAI / OpenInference)",
+      "description": "Standard for tracing LLM applications: OpenTelemetry conventions plus LLM-specific attributes like tokens, cost, and prompts.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/opentelemetry-genai",
+      "termCode": "opentelemetry-genai"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:08Z"
@@ -5148,61 +3100,13 @@
       "text-generation pipeline"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Pipeline (LLM Serving Pipeline)",
-        "description": "A bundled sequence of inference components—tokenizer, model, sampler, decoder—exposed as a single callable function.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/pipeline",
-        "termCode": "pipeline"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between a Hugging Face pipeline and a model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A model is just the weights and architecture. A pipeline wraps the model with tokenization, sampling, and decoding, so you pass raw strings and get raw strings back. Models require you to handle each step."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I batch requests with a pipeline?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Pipelines support a list of inputs and return a list of outputs, but no dynamic batching or async. For high throughput, use a serving framework like vLLM instead."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I customize temperature or sampling in a pipeline?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Pass task-specific keyword arguments to the pipeline call: pipeline(text, temperature=0.5, top_p=0.9). Not all tasks support all parameters; check the task documentation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is a pipeline the same as a model card?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. A model card documents the model's training, capabilities, and limitations. A pipeline is runtime code that combines a model with utilities. They're complementary."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "When should I move from pipeline to a production serving setup?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Move when you need sub-second latency, concurrent requests, or observability. Pipelines are single-threaded by design; serving frameworks unlock batching, GPU multiplexing, and monitoring."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Pipeline (LLM Serving Pipeline)",
+      "description": "A bundled sequence of inference components—tokenizer, model, sampler, decoder—exposed as a single callable function.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/pipeline",
+      "termCode": "pipeline"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:00Z"
@@ -5268,61 +3172,13 @@
       "multi-provider LLM routing"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Portkey",
-        "description": "LLM gateway that routes requests across providers, caches responses, enforces guardrails, and tracks costs.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/portkey",
-        "termCode": "portkey"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is Portkey different from LiteLLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LiteLLM is a lightweight routing library you run in your own codebase; Portkey is a hosted gateway with extra features like caching, observability dashboards, and guardrails. LiteLLM suits simple routing; Portkey suits teams needing shared governance and audit trails."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Portkey work with local or open-source models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Portkey supports most API-based providers (OpenAI, Anthropic, local OpenAI-compatible servers). If your model runs locally without an API, you'll need to expose it as an endpoint first."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the pricing model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Portkey charges a per-request fee plus any compute costs from downstream providers. Free tier exists for light testing; pricing scales with volume."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Portkey for real-time streaming?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, Portkey supports streaming responses via Server-Sent Events. Routing and caching still apply, but latency-sensitive use cases should measure end-to-end impact."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if my guardrail blocks a request?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Portkey returns a rejection response (configurable format) without reaching the LLM provider. You can log, alert, or retry with a different prompt."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Portkey",
+      "description": "LLM gateway that routes requests across providers, caches responses, enforces guardrails, and tracks costs.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/portkey",
+      "termCode": "portkey"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:25:02Z"
@@ -5386,61 +3242,13 @@
       "LLM regression testing"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "PromptFoo",
-        "description": "Open-source CLI for testing, evaluating, and red-teaming LLM prompts in CI pipelines with regression detection.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/promptfoo",
-        "termCode": "promptfoo"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is PromptFoo the same as a unit test framework?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. PromptFoo tests prompt behavior and LLM outputs, not code logic. It handles non-deterministic outputs and semantic assertions, which traditional unit tests don't."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use PromptFoo to compare different LLM models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Define multiple model configs in your test file and PromptFoo runs the same test cases against each, generating side-by-side comparison reports."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long does it take to run PromptFoo tests?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Runtime depends on model latency and test count. A 50-test suite typically takes 2–10 minutes for cloud APIs; local models are faster. Results are cached to speed up reruns."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to host PromptFoo, or is it just a CLI?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It's primarily a CLI you run locally or in CI. Reports are static HTML you can commit or upload. No server required."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can PromptFoo detect prompt injection attacks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not automatically. But red-teaming mode lets you add adversarial test cases (e.g., injection payloads) and assert the model rejects them or handles them safely."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "PromptFoo",
+      "description": "Open-source CLI for testing, evaluating, and red-teaming LLM prompts in CI pipelines with regression detection.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/promptfoo",
+      "termCode": "promptfoo"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:27:38Z"
@@ -5503,61 +3311,13 @@
       "RAG eval"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "RAGAS (RAG Assessment)",
-        "description": "Open-source framework that scores RAG quality across faithfulness, relevance, and retrieval precision without hand-labeled answers.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/ragas",
-        "termCode": "ragas"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between RAGAS and ground-truth evaluation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Ground-truth evaluation compares your output to a correct answer written by a human. RAGAS skips the human labels and uses an LLM to judge each answer dimension. RAGAS is faster and cheaper; ground-truth is slower but may catch failures RAGAS misses if the judge LLM is weak."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use RAGAS in production?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RAGAS is designed for CI testing, not real-time production grading. It's too slow and costly to run on every query. Use it to catch regressions before deploy, then monitor actual user behavior in production."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does RAGAS work with any LLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, you can plug in any LLM via LiteLLM or similar. Stronger models (GPT-4, Claude) tend to be more reliable judges than weaker ones, but add cost. Start with a cheaper model and validate its grades match your intuition."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What if my Context Recall is low?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Low Context Recall means you're not retrieving enough relevant documents for your retriever to find them. Expand top-k, improve your embedding model, add BM25 hybrid search, or rewrite your queries with query rewriting."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is RAGAS the standard for RAG evaluation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RAGAS is the most widely adopted open-source RAG eval framework, but 'standard' overstates it. Combine RAGAS scores with user metrics, task-specific evals, and periodic human review for a complete picture."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "RAGAS (RAG Assessment)",
+      "description": "Open-source framework that scores RAG quality across faithfulness, relevance, and retrieval precision without hand-labeled answers.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/ragas",
+      "termCode": "ragas"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:49Z"
@@ -5618,61 +3378,13 @@
       "mirror traffic"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Shadow Deployment",
-        "description": "Run a new model in parallel on live traffic without serving its output to users, capturing paired samples for offline comparison.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/shadow-deployment",
-        "termCode": "shadow-deployment"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is shadow deployment the same as A/B testing?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. A/B testing splits users between two models; shadow mode runs both on every request without changing the user's experience. Shadow is safer for risky changes; A/B testing gives direct user signal."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does shadow deployment cost?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Roughly 2x your current inference cost during the shadow window, because you run both models on every request. Keep shadow windows short (hours to days) unless you sample traffic."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run shadow mode on live traffic without slowing down user requests?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if you run the candidate model asynchronously or on separate hardware. If you wait for both models before responding to the user, latency will increase by the candidate model's inference time."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What should I compare in shadow mode?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Compare outputs directly (exact match, cosine similarity), measure speed (latency, throughput), and check error rates. Then audit failures—false positives, hallucinations, or semantic drift—by hand or with an LLM judge."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to log all shadow outputs or can I sample?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sampling is fine and cuts storage cost. Log a stratified sample across time of day, user segment, and request type to capture distribution shifts, not random batches."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Shadow Deployment",
+      "description": "Run a new model in parallel on live traffic without serving its output to users, capturing paired samples for offline comparison.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/shadow-deployment",
+      "termCode": "shadow-deployment"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:29:17Z"
@@ -5737,61 +3449,13 @@
       "GitHub issue resolution agent"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "SWE-Agent / Agentless",
-        "description": "Two approaches to code-writing agents: SWE-Agent uses a custom interface; Agentless proves simpler pipelines work.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/swe-agent",
-        "termCode": "swe-agent"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between SWE-Agent and Agentless?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SWE-Agent gives the LLM custom commands for code navigation and editing; Agentless uses a simpler three-step pipeline (localize, patch, validate). Agentless often matches SWE-Agent's accuracy at lower cost."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Which one is better?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Neither is universally better. SWE-Agent excels on complex, multi-step problems; Agentless is faster and cheaper for straightforward changes. Your choice depends on problem complexity and budget."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use SWE-Agent or Agentless in production?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Both are research prototypes from 2024. They benchmark on SWE-Bench but require additional hardening, error handling, and integration work before production deployment."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does it cost to run either framework?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Cost scales with issue difficulty and token budget. Agentless is cheaper per-issue because it avoids iteration; SWE-Agent may use more tokens due to exploring multiple code paths and retrying."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need a custom interface to build a code-writing agent?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Agentless proves a basic LLM prompt plus function calls work well. Start simple (file search, patch generation, test) and add custom interfaces only if needed."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "SWE-Agent / Agentless",
+      "description": "Two approaches to code-writing agents: SWE-Agent uses a custom interface; Agentless proves simpler pipelines work.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/swe-agent",
+      "termCode": "swe-agent"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:25:02Z"
@@ -5857,61 +3521,13 @@
       "AI code generation evaluation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "SWE-Bench",
-        "description": "Benchmark measuring whether an AI can fix real GitHub issues by writing code that passes a repo's tests.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/swe-bench",
-        "termCode": "swe-bench"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is SWE-Bench Verified?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A curated 500-issue subset where human experts confirmed the fix is correct and minimal. Most frontier labs report scores on this stricter set because pass rates are more reproducible and comparable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does SWE-Bench differ from HumanEval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "HumanEval tests self-contained functions; SWE-Bench requires navigating real repositories, understanding context, and passing integration tests. SWE-Bench is closer to production debugging but also significantly harder."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can closed-source models see training data in SWE-Bench?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SWE-Bench issues were collected through mid-2023, and maintainers actively remove leaked examples, but cutoff contamination is always a risk. Use Verified subset for stronger claims."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does SWE-Bench require a real Python environment?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. The model must execute tests and validate its patch. Sandbox-based evaluation (Docker, isolated VMs) is standard; tools like SWE-agent automate this setup."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's a good score on SWE-Bench?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Claude 3.5 Sonnet reaches ~55% on Verified; most open models score 5–25%. Agentic workflows with planning and iteration add 10–20 percentage points over single-turn completions."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "SWE-Bench",
+      "description": "Benchmark measuring whether an AI can fix real GitHub issues by writing code that passes a repo's tests.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/swe-bench",
+      "termCode": "swe-bench"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:30:46Z"
@@ -5981,61 +3597,13 @@
       "synthetic dataset generation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Synthetic Data",
-        "description": "Training data generated by an LLM instead of human annotation—fast and cheap but risks inheriting the generator's biases.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/synthetic-data",
-        "termCode": "synthetic-data"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is synthetic data the same as data augmentation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not quite. Data augmentation modifies existing examples (paraphrase, backtranslate). Synthetic data generates entirely new examples from scratch via an LLM. Augmentation assumes source quality; synthetic data quality depends entirely on the generator."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I know if my synthetic data is good?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Filter by quality score (perplexity, a judge model, or task-specific metrics), then evaluate your fine-tuned model on human-written test data. If performance lags a baseline trained on human data, your synthetic data is carrying generator artifacts."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I mix synthetic and human data?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—this is best practice. Mix filtered synthetic data (top 20–30% by quality) with human examples in a 70:30 or 80:20 ratio. This scales annotation while anchor human data preserves diversity and grounds the model to real task distribution."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does synthetic data work for preference data and DPO?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, and it's now standard. Use an LLM to generate instruction-response pairs, then score or rank them to create preference pairs for DPO. UltraFeedback and similar datasets prove this scales instruction-following."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if I train only on synthetic data?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The model converges to the generator's distribution, losing task diversity. Evaluating on human test data reveals gaps the model could not see because it never trained on examples outside the generator's domain."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Synthetic Data",
+      "description": "Training data generated by an LLM instead of human annotation—fast and cheap but risks inheriting the generator's biases.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/synthetic-data",
+      "termCode": "synthetic-data"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:17:33Z"
@@ -6096,61 +3664,13 @@
       "Sierra tau bench"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Tau-Bench (τ-Bench)",
-        "description": "Public benchmark measuring LLM agent performance on customer-support tasks via APIs and user simulation.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/tau-bench",
-        "termCode": "tau-bench"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is Tau-Bench?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A public benchmark from Sierra (Yao et al. 2024) that evaluates LLM agents on customer-support tasks by simulating multi-turn conversations with users and requiring successful API calls to mock backends."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does Tau-Bench differ from other agent benchmarks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Most agent benchmarks test tool-calling or reasoning separately. Tau-Bench couples user interaction, API calls, and state verification—so agents fail only when they both follow instructions and achieve the correct final outcome."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What do typical pass rates mean?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Frontier models hit 50–70% on first attempts, but rates drop on consecutive tasks. This reveals agents struggle with error recovery and context retention—common in production."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Tau-Bench for my specific industry?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Tau-Bench includes airline and retail domains. For niche verticals (insurance, legal, healthcare), you'll need to build a custom variant with domain-specific APIs and success criteria."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I integrate Tau-Bench into my eval pipeline?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Run agents against the provided domain simulations, collect pass/fail results, and track both conversation-level compliance and state-matching accuracy to detect failure modes."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Tau-Bench (τ-Bench)",
+      "description": "Public benchmark measuring LLM agent performance on customer-support tasks via APIs and user simulation.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/tau-bench",
+      "termCode": "tau-bench"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:28:06Z"
@@ -6214,61 +3734,13 @@
       "time to first token"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Time to First Token (TTFT)",
-        "description": "Latency from request to first output token, dominated by prefill time; critical for user-perceived responsiveness.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/time-to-first-token",
-        "termCode": "time-to-first-token"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is TTFT and why does it matter?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "TTFT (Time to First Token) is how long users wait before the model outputs anything. It drives perceived responsiveness in chat and voice apps. Sub-500ms feels responsive; over 2s feels sluggish."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How is TTFT different from tokens per second?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "TTFT is dominated by prefill (processing input), while tokens-per-second measures decode speed (generating output). Optimizing one doesn't help the other; chat apps need both low TTFT and decent TPS."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the biggest factor affecting TTFT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Prompt length. Prefill cost scales linearly with input tokens, so a 50k-token prompt takes much longer to process than a 500-token one, even on identical hardware."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How can I reduce TTFT in production?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use prompt caching to skip reprocessing repeated system prompts; enable prefix caching at the inference engine level; try chunked prefill; or route to smaller models for the first token via speculative decoding."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is TTFT the same as latency?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Latency usually means total time-to-completion. TTFT is the time to the first token only. A response can have low TTFT but high total latency if decode is slow."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Time to First Token (TTFT)",
+      "description": "Latency from request to first output token, dominated by prefill time; critical for user-perceived responsiveness.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/time-to-first-token",
+      "termCode": "time-to-first-token"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:09:35Z"
@@ -6334,61 +3806,13 @@
       "token generation rate"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Token Per Second (TPS)",
-        "description": "Throughput metric measuring how many tokens an LLM generates per second during inference.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/tokens-per-second",
-        "termCode": "tokens-per-second"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between TPS and time-to-first-token?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "TTFT measures how long before you see the first token (prefill latency). TPS measures sustained generation speed. Both matter: TTFT controls perceived responsiveness, TPS controls throughput."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why does TPS vary so much between models and hardware?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Model size, quantization, batch size, hardware memory bandwidth, and context length all shift TPS. A 70B model on CPU is memory-starved; the same model on H100 with optimizations hits 10x higher TPS."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I measure TPS for my own inference setup?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Run a fixed batch of requests, divide total tokens generated by elapsed time, then exclude the prefill phase for decode-phase TPS. Tools like vLLM and TGI expose metrics automatically."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does TPS stay constant during deployment?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. TPS drops under concurrent load as requests compete for memory bandwidth. It also degrades with longer context windows. Monitor real traffic, not just idle benchmarks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is 100 TPS enough for production?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Depends on concurrency and use case. A chatbot with 50 concurrent users needs ~2 tokens/second per user = 100 TPS total. A high-volume batch job might need 500+ TPS."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Token Per Second (TPS)",
+      "description": "Throughput metric measuring how many tokens an LLM generates per second during inference.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/tokens-per-second",
+      "termCode": "tokens-per-second"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:27:11Z"
@@ -6451,61 +3875,13 @@
       "Weights and Biases"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Weights & Biases (W&B)",
-        "description": "Platform that logs metrics, hyperparameters, and artifacts from training runs for experiment tracking and model monitoring.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/weights-and-biases",
-        "termCode": "weights-and-biases"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How does W&B differ from MLflow?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "W&B is primarily a managed SaaS platform with richer visualization and native LLM tracing (via Weave). MLflow is open-source and self-hosted, offering more control but less polish. W&B is popular in research; MLflow is common in enterprises with compliance constraints."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use W&B offline or on-premise?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "W&B is cloud-first by design. Local mode exists for development but still requires internet to sync. For fully air-gapped setups, MLflow or a custom logging solution is more suitable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does W&B work with non-PyTorch frameworks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. W&B integrates with TensorFlow, JAX, scikit-learn, and any Python training loop via the generic `wandb.log()` API. It also has first-class integrations with Hugging Face Trainer and Lightning."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens to my data when I delete a W&B project?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Deleted projects are retained in W&B's archive for 30 days before permanent removal. Enterprise plans allow longer retention policies."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is there a free tier?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. W&B offers free tier with unlimited projects, runs, and team seats, but limited storage and compute for Sweeps. Teams and enterprise plans add priority support and higher quotas."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Weights & Biases (W&B)",
+      "description": "Platform that logs metrics, hyperparameters, and artifacts from training runs for experiment tracking and model monitoring.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/weights-and-biases",
+      "termCode": "weights-and-biases"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:31:07Z"

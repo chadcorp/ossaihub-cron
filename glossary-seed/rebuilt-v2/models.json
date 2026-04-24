@@ -59,61 +59,13 @@
       "encoder-decoder transformer"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "BART",
-        "description": "Encoder-decoder transformer pretrained to denoise corrupted text; strong at summarization and sequence-to-sequence tasks.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/bart",
-        "termCode": "bart"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is BART the same as T5?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Both are encoder-decoder transformers, but T5 uses a unified text-to-text framework (all tasks prefixed, e.g., 'summarize:') and trains on more diverse data. BART is task-specific at pretraining. T5 generalizes better on large datasets; BART is smaller and faster."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does BART compare to BERT for summarization?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "BERT is encoder-only, so it can't generate text—you'd need to add a decoder head. BART's pretrained decoder lets it generate fluent summaries directly. BART outperforms BERT-based two-stage approaches on abstractive summarization."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use BART for machine translation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, BART fine-tunes on translation pairs, but mBART (multilingual BART) is better because it's pretrained on 25 languages. Monolingual BART requires more finetuning data and converges slower on translation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the typical inference speed for BART-large?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "On an A100 GPU, 100–300 tokens/second depending on beam width and max length. BART-base is 2–3× faster. On CPU it's 10–50 tokens/second; consider quantization (GPTQ, 8-bit) or distillation for mobile."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to continue pretraining BART on my domain?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Only if your domain is radically different from news/Wikipedia (e.g., biomedical, legal, code). For most standard text, direct finetuning on downstream task data works fine. Domain-specific pretraining helps mainly if your labeled finetuning data is under 5k examples."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "BART",
+      "description": "Encoder-decoder transformer pretrained to denoise corrupted text; strong at summarization and sequence-to-sequence tasks.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/bart",
+      "termCode": "bart"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:59Z"
@@ -173,53 +125,13 @@
       "foundational model before fine-tuning"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Base Model",
-        "description": "A pretrained LLM that predicts text but doesn't follow instructions—useful for further training, rarely deployed directly.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/base-model",
-        "termCode": "base-model"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between a base model and an instruction model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A base model predicts text; an instruction model (like Llama-3-8B-Instruct) is a base model fine-tuned to follow commands, refuse harmful requests, and format responses. Instruction models are what you chat with; base models are training starting points."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use a base model directly for a chatbot?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Technically yes, but it won't work well. Base models generate text without understanding instructions, so responses are often off-topic, verbose, or repetitive. Always use an instruction-tuned variant for user-facing applications."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why would I choose one base model over another?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Base model choice affects ceiling performance on your downstream task. Larger base models (more parameters, more training data) generalize better but cost more. Domain-specific base models (trained on code, science, etc.) can outperform general ones after fine-tuning on your data."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does instruction tuning change a base model's knowledge?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Instruction tuning teaches format and safety, not facts. If a base model doesn't know something, fine-tuning won't teach it. Continued pretraining on domain data adds knowledge; SFT only teaches how to use what it already knows."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Base Model",
+      "description": "A pretrained LLM that predicts text but doesn't follow instructions—useful for further training, rarely deployed directly.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/base-model",
+      "termCode": "base-model"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:44Z"
@@ -288,61 +200,13 @@
       "BERT vs GPT"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "BERT (Bidirectional Encoder Representations from Transformers)",
-        "description": "Google's 2018 encoder-only transformer for text classification and retrieval via masked language modeling.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/bert",
-        "termCode": "bert"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between BERT and GPT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "BERT is bidirectional (reads left and right context at once) and is an encoder—outputs embeddings. GPT is unidirectional (left-to-right only) and is a decoder—generates text. BERT excels at understanding; GPT at generation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use BERT to generate text?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No, BERT is not designed for generation. It's an encoder that outputs embeddings or classification predictions. For generation, use GPT, LLaMA, or other decoder-only models."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I fine-tune BERT for my task?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Load a pretrained BERT from Hugging Face, add a task head (dense layer for classification or span selection for QA), and train on your labeled data for 2–10 epochs with a small learning rate (1e-5 to 5e-5) and early stopping to avoid overfitting."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is BERT still used in 2024?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, for classification and dense retrieval. It's been surpassed by LLMs for generation and reasoning, but BERT and its variants (RoBERTa, DeBERTa) remain the standard for fast, cheap ranking and labeling in production systems."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I get sentence embeddings from BERT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use Sentence-Transformers library (built on BERT), which fine-tunes BERT with contrastive loss for semantic similarity. Raw BERT embeddings are not well-suited to sentence-level tasks without additional pooling or fine-tuning."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "BERT (Bidirectional Encoder Representations from Transformers)",
+      "description": "Google's 2018 encoder-only transformer for text classification and retrieval via masked language modeling.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/bert",
+      "termCode": "bert"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:31Z"
@@ -407,61 +271,13 @@
       "BAAI General Embedding"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "BGE Embeddings",
-        "description": "BAAI's open-weights embedding models for retrieval; BGE-M3 adds multilingual and sparse search support.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/bge-embeddings",
-        "termCode": "bge-embeddings"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is BGE better than other open-source embeddings?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "BGE ranks highest on MTEB (the standard benchmark) in its size class. BGE-M3 is stronger overall but slower; smaller models like Nomic Embed may outperform for specific domains."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I fine-tune BGE for my domain?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Use the sentence-transformers library with your own labeled pairs (query-document or document-document). Fine-tuning typically improves domain recall by 5–15% if you have 500+ labeled examples."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between BGE and BGE-M3?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "BGE is English-focused, faster, and lighter. BGE-M3 supports 100+ languages, includes sparse and multi-vector modes for hybrid search, but is 3–4x slower in inference."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to store all three representations from BGE-M3?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. You can store just the dense vector for most use cases and generate sparse vectors at query time, or use a specialized vector database (like Milvus or Weaviate) that handles all three natively."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does BGE compare to proprietary embeddings like OpenAI's?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "BGE is open-weight and free to run, so no per-token cost. OpenAI's embeddings often rank slightly higher on MTEB but require an API call and licensing."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "BGE Embeddings",
+      "description": "BAAI's open-weights embedding models for retrieval; BGE-M3 adds multilingual and sparse search support.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/bge-embeddings",
+      "termCode": "bge-embeddings"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:58Z"
@@ -523,61 +339,13 @@
       "ternary LLM"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "BitNet (1.58-bit Models)",
-        "description": "Microsoft research LLMs with ternary weights trained to cut memory 10x and speed inference 3–4x versus bf16.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/bitnet",
-        "termCode": "bitnet"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is BitNet and how does it differ from regular quantization?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "BitNet uses only three weight values (−1, 0, +1) versus standard 8-bit or 16-bit quantization. This extreme compression is trained end-to-end with QAT, not applied after training, and requires custom inference kernels to recover speed gains."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does BitNet reduce model size and inference cost?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Memory footprint drops ~10× versus bf16; inference throughput rises 3–4× on supported hardware. A 7B model shrinks from ~14 GB (bf16) to ~1.4 GB ternary, with per-token latency typically improving from 10–20ms to 2–5ms."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does BitNet lose quality compared to full-precision models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No significant loss on benchmarks like MMLU, GSM8K, and HUMANEVAL at 3B–70B scale; quality stays within 2–5% of bf16. However, very long-context reasoning and tasks requiring fine numerical precision may degrade more noticeably."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I fine-tune BitNet models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Fine-tuning BitNet is less stable than standard models because you're updating ternary weights. You can use LoRA or other adapter methods to avoid retraining the full ternary structure, though dedicated research is ongoing."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What hardware do I need to run BitNet fast?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "BitNet performance gains require optimized ternary kernels (custom CUDA ops or Triton implementations). Without them, inference falls back to standard matmul and loses most speed advantages. CPU inference is not a primary use case."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "BitNet (1.58-bit Models)",
+      "description": "Microsoft research LLMs with ternary weights trained to cut memory 10x and speed inference 3–4x versus bf16.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/bitnet",
+      "termCode": "bitnet"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:24:49Z"
@@ -639,61 +407,13 @@
       "chat tuned model"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Chat Model (Instruct Model)",
-        "description": "A base model fine-tuned to follow instructions, refuse harmful requests, and hold conversations.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/chat-model",
-        "termCode": "chat-model"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between a chat model and a base model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A base model outputs text conditioned on a prompt but does not understand instructions or conversation structure. A chat model is fine-tuned to interpret instructions, maintain context, and refuse harmful requests. Use chat models for applications; base models for further training."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use a base model instead of a chat model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Technically yes, but it's inefficient and unreliable. Base models do not follow instructions consistently, so you'd need to engineer prompts carefully and often see poor results. Chat models are optimized for this task out of the box."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is a chat model the same as an aligned model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Chat models are instruction-tuned, meaning they follow directions and understand conversation format. Aligned models are trained to be helpful, harmless, and honest. A chat model may still hallucinate or be jailbroken; alignment is a separate property."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I know if a model is a chat model or base model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Check the model name. Names ending in '-Instruct', '-Chat', or '-Chatbot' are chat models. Names without a suffix (e.g., Llama-3.1-8B, not Llama-3.1-8B-Instruct) are usually base variants. Check the model card to confirm."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I fine-tune a chat model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. You can do continued fine-tuning (SFT) on a chat model for domain-specific tasks, but it's more expensive than starting with a base model because the chat model already includes instruction-tuning overhead. Start with base if you're doing substantial training."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Chat Model (Instruct Model)",
+      "description": "A base model fine-tuned to follow instructions, refuse harmful requests, and hold conversations.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/chat-model",
+      "termCode": "chat-model"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:55Z"
@@ -758,61 +478,13 @@
       "Anthropic Claude"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Claude (Model Family)",
-        "description": "Anthropic's LLM family spanning Haiku, Sonnet, and Opus variants, known for writing quality and agentic capability.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/claude",
-        "termCode": "claude"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between Claude Sonnet and Claude Opus?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Opus is larger and stronger, with better reasoning on complex tasks; Sonnet is faster and cheaper, suitable for most production workloads. Use Opus for one-shot hard problems, Sonnet for volume and speed."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run Claude locally?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Claude models are closed-source and available only through Anthropic's API, Claude.ai web app, AWS Bedrock, and Google Vertex. You cannot download and run Claude on your own hardware."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is Claude's context window?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Claude 3 and 3.5 models support 200k tokens natively (roughly 150,000 words). Earlier Claude 2 had 100k. This allows you to include large documents or conversation histories in a single prompt without hitting limits."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does Claude compare to GPT-4?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Both are frontier-class models. Claude excels at writing and agentic tasks; GPT-4 has broader training data. Choice depends on your use case, pricing, and platform lock-in tolerance."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Claude better for coding than GPT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Claude 3.5 Sonnet performs comparably to GPT-4 on coding benchmarks and often outperforms on longer code generation. Both are strong; test on your specific codebase."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Claude (Model Family)",
+      "description": "Anthropic's LLM family spanning Haiku, Sonnet, and Opus variants, known for writing quality and agentic capability.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/claude",
+      "termCode": "claude"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:11:35Z"
@@ -874,53 +546,13 @@
       "CLIP vision encoder"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "CLIP (Contrastive Language-Image Pretraining)",
-        "description": "OpenAI model that learns shared embeddings for images and text via contrastive learning on 400M pairs.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/clip",
-        "termCode": "clip"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is CLIP different from traditional image classifiers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Traditional classifiers require labels for every class at training time. CLIP learns from image-caption pairs and applies its learned space to any text description without retraining, enabling zero-shot generalization to new categories."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use CLIP on my own dataset?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—OpenCLIP provides open-source code and pre-trained weights. You can fine-tune on your domain data or use pre-trained embeddings as features for a supervised head. For production, cache embeddings to avoid repeated encoding cost."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between CLIP and SigLIP?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SigLIP improves CLIP's training recipe using sigmoid loss instead of softmax, reducing memory and enabling better scaling. Both work the same way at inference; SigLIP is faster to train and often outperforms CLIP on benchmarks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do vision-language models like LLaVA use CLIP?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "CLIP's image encoder converts images into a dense embedding space that aligns with language. LLaVA feeds these embeddings into a text decoder, avoiding the need to train a vision model from scratch."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "CLIP (Contrastive Language-Image Pretraining)",
+      "description": "OpenAI model that learns shared embeddings for images and text via contrastive learning on 400M pairs.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/clip",
+      "termCode": "clip"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:11:56Z"
@@ -984,61 +616,13 @@
       "Meta CodeLlama"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "CodeLlama",
-        "description": "Meta's code-specialized Llama 2 variant, fine-tuned on 500B+ code tokens with fill-in-the-middle support.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/codellama",
-        "termCode": "codellama"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is CodeLlama better than GitHub Copilot?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "CodeLlama is weaker at frontier (70B vs GPT-4), but stronger for self-hosted use: no API calls, lower cost, no code transmission. Copilot trains on more data and integrates tighter into IDEs. Pick based on deployment model, not raw quality."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What size CodeLlama should I use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "7B runs on consumer GPUs (8GB VRAM), 13B on mid-range GPUs (16GB), 34B/70B need 24GB+. Most deployments use 7B or 13B for latency; 34B/70B only if you have VRAM and can accept slower inference."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use CodeLlama for languages other than Python?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, it covers Java, C++, JavaScript, and others, but Python performance is strongest. Non-Python code quality drops; test on your language before committing to production."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does CodeLlama work offline?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Once downloaded, CodeLlama runs fully local with no internet or API calls required, making it ideal for air-gapped systems and data-sensitive environments."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does CodeLlama's fill-in-the-middle compare to other tools?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Fill-in-the-middle works well but isn't as polished as Copilot or Codeium for IDE integration. Accuracy is strong in Python, weaker in dynamically-typed languages."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "CodeLlama",
+      "description": "Meta's code-specialized Llama 2 variant, fine-tuned on 500B+ code tokens with fill-in-the-middle support.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/codellama",
+      "termCode": "codellama"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:49Z"
@@ -1103,61 +687,13 @@
       "Cohere Command"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Command R (Cohere)",
-        "description": "Cohere's open-weight LLM family (35B and 104B) built for enterprise RAG with citations and tool use.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/command-r",
-        "termCode": "command-r"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Can I run Command R locally?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Command R is open-weight, so you can download it and run it on your own hardware using frameworks like vLLM or Ollama. The license is CC-BY-NC for research; commercial use requires Cohere's commercial license."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Command R better than Llama for RAG?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Command R was specifically optimized for RAG with citations and tool use, whereas Llama is a general foundation model. For RAG, Command R often performs better out-of-the-box; Llama requires more fine-tuning to add citation behavior."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between Command R and Command R+?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Command R is 35B parameters; Command R+ is 104B. R+ has longer context (up to 10k tokens) and stronger performance on complex tasks, but requires more compute. R is faster and works on smaller GPUs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Command R support function calling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. You can define tool/function schemas and Command R will decide when to call them and format the output correctly. Accuracy depends on schema clarity and task alignment."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What languages does Command R support?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Command R was trained on 10 major business languages including English, Spanish, French, German, Portuguese, Italian, Dutch, Japanese, Korean, and Arabic."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Command R (Cohere)",
+      "description": "Cohere's open-weight LLM family (35B and 104B) built for enterprise RAG with citations and tool use.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/command-r",
+      "termCode": "command-r"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:15:12Z"
@@ -1225,61 +761,13 @@
       "decoder architecture"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Decoder",
-        "description": "Model component that generates text one token at a time, using causal attention so each token sees only past tokens.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/decoder",
-        "termCode": "decoder"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between a decoder and encoder?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "An encoder processes bidirectional context—it can see both past and future tokens—useful for understanding tasks like classification. A decoder sees only past tokens (causal) and generates future ones autoregressively. Modern LLMs are decoder-only; BERT is encoder-only."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do decoders use causal attention?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Causal masking ensures the model can't cheat by peeking at answers during training. It forces the model to learn genuine next-token prediction. At inference, causality is automatic—the model simply hasn't generated future tokens yet."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is decoder-only slower than encoder-decoder for generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Decoder-only has one forward pass per token (faster per-token latency); encoder-decoder encodes the input once then decodes (lower total latency for short outputs). Decoder-only wins on very long sequences where the encoder-decoder cost is amortized; for typical queries, either is viable depending on model size."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens to a decoder's KV cache during generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The cache stores computed key and value vectors from each past layer and position. On each new token, the decoder computes new keys/values for just that token and appends them to the cache, avoiding redundant computation. This makes inference linear in sequence length instead of quadratic."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can a decoder generate multiple outputs at once?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not natively—decoders generate one token at a time. Batching and speculative decoding run multiple sequences in parallel, but each sequence still advances one token per forward pass. Parallel decoding (e.g., Medusa, eagle-decoding) attempts to predict multiple future tokens in a single pass."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Decoder",
+      "description": "Model component that generates text one token at a time, using causal attention so each token sees only past tokens.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/decoder",
+      "termCode": "decoder"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:13:59Z"
@@ -1343,61 +831,13 @@
       "DeepSeek R1"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "DeepSeek (Model Family)",
-        "description": "Open-weights Chinese models (V2, V3, R1) notable for strong reasoning and low training cost.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/deepseek",
-        "termCode": "deepseek"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between DeepSeek V3 and R1?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "V3 is a dense MoE model optimized for general language tasks. R1 adds reinforcement learning to teach step-by-step reasoning, matching o1 on math and code but with a permissive open-weights license. Pick V3 for translation, summarization, coding; pick R1 for reasoning-heavy tasks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run DeepSeek on my GPU?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but it depends on your GPU memory. V3 (~671B) needs quantization (AWQ, GGUF) to fit on consumer hardware. R1-Distill (smaller student models) runs on H100s or A100s with moderate quantization. Use vLLM or Ollama to manage memory efficiently."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is DeepSeek free to use commercially?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The model weights are open-source (MIT-style), but check your jurisdiction's export controls and the model card. No licensing fees apply to inference, but use at your own legal risk in restricted regions."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I use DeepSeek-R1-Distill instead of full R1?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Distilled variants (available for Qwen and Llama base models) are smaller student models trained on R1's reasoning outputs. They're 2–4× faster, use less memory, and cost less to serve—ideal for production when you don't need full reasoning depth."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does DeepSeek replace commercial reasoning models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "For on-premise deployments and custom fine-tuning, yes. For guaranteed latency, support, and audit logs, commercial models still win. Many teams run DeepSeek locally for development and use paid APIs for production."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "DeepSeek (Model Family)",
+      "description": "Open-weights Chinese models (V2, V3, R1) notable for strong reasoning and low training cost.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/deepseek",
+      "termCode": "deepseek"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:07Z"
@@ -1462,61 +902,13 @@
       "DeepSeek Coder code completion"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "DeepSeek Coder",
-        "description": "Open-weights LLM family optimized for code completion and infilling, trained on 87 programming languages up to 128k context.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/deepseek-coder",
-        "termCode": "deepseek-coder"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is DeepSeek Coder better than CodeLlama?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "On coding benchmarks (HumanEval, MBPP), DeepSeek-Coder-V2 typically outperforms CodeLlama-34B. CodeLlama is better supported in older tooling. DeepSeek-V2's 128k context is a significant advantage for long files."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use DeepSeek Coder for commercial products?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, both V1 and V2 are released under permissive licenses (MIT-style). You can use the weights commercially, though you should audit generated code for compliance with training data licenses."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much VRAM do I need to run DeepSeek Coder?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The 6.7B variant runs on 16GB GPUs; 33B requires 40GB+ (A100, H100, or dual L40S). For the 236B MoE variant, you need multi-GPU or use techniques like tensor parallelism and quantization (8-bit brings it under 80GB)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does DeepSeek Coder support infilling on its own?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, it was trained with fill-in-the-middle tasks. You mark the prefix and suffix, and the model generates the middle. Most frameworks (vLLM, Ollama) expose this directly through chat templates."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does DeepSeek Coder compare to GitHub Copilot?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "GitHub Copilot (Codex/GPT-4-based) is faster for IDE snippets due to distillation and caching. DeepSeek Coder is more accurate on complex tasks and competitive on most benchmarks, but you host it yourself—different tradeoff."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "DeepSeek Coder",
+      "description": "Open-weights LLM family optimized for code completion and infilling, trained on 87 programming languages up to 128k context.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/deepseek-coder",
+      "termCode": "deepseek-coder"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:51Z"
@@ -1581,61 +973,13 @@
       "open-weights o1 alternative"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "DeepSeek R1",
-        "description": "Open-weights reasoning model matching OpenAI o1 performance via RL-trained chain-of-thought on a mixture-of-experts base.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/deepseek-r1",
-        "termCode": "deepseek-r1"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is DeepSeek R1 the same as o1?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "R1 matches o1's performance on math, code, and logic benchmarks, but it's open-weights and permissively licensed. o1 is closed; you access it via API. Both use RL-trained reasoning, but o1 is proprietary."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run DeepSeek R1 locally?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. The base R1 (671B) requires 4–8 H100 GPUs. Distilled variants (8B–70B) run on consumer hardware (A100, H100, RTX 4090) via vLLM or Ollama."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between R1 and R1-Distill?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "R1 is the full 671B mixture-of-experts model. R1-Distill variants (8B–70B) are smaller dense models trained on R1's reasoning traces via supervised fine-tuning. Distills are faster and cheaper but less capable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does R1 work for non-reasoning tasks?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "R1 is optimized for reasoning-heavy tasks. On simple factual questions or creative writing, it underperforms vanilla models because its reasoning overhead adds latency without improving output quality."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does it cost to use R1?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "If self-hosted, cost is hardware (GPU hours). Via API (not DeepSeek's official channel yet), pricing varies by provider. Token costs are higher than standard models due to reasoning overhead."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "DeepSeek R1",
+      "description": "Open-weights reasoning model matching OpenAI o1 performance via RL-trained chain-of-thought on a mixture-of-experts base.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/deepseek-r1",
+      "termCode": "deepseek-r1"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:35Z"
@@ -1698,61 +1042,13 @@
       "Detection Transformer"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "DETR (Detection Transformer)",
-        "description": "Object detector using transformers and Hungarian matching instead of anchor boxes and NMS.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/detr",
-        "termCode": "detr"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is DETR different from YOLO?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "YOLO predicts boxes via regression on a spatial grid and uses hand-tuned anchors; DETR treats detection as set prediction and matches predictions to ground truth via Hungarian algorithm. YOLO trains faster but requires anchor engineering; DETR is anchor-free and more modular but converges slower."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why does DETR converge slowly?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The Hungarian matching cost is high and the loss landscape is harder to optimize early in training. Successors like Deformable DETR add spatial attention priors and iterative refinement to warm-start convergence."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can DETR detect small objects?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Original DETR struggles with small objects because the encoder receptive field is limited. Use multi-scale backbones (Deformable DETR) or explicit small-object branches to improve performance."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to use DETR over YOLO for my dataset?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Choose DETR if you want modularity and low engineering overhead; choose YOLO if speed and simplicity are priorities. Modern variants like RT-DETR bridge the gap on latency."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What does the N in N box predictions mean?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "N is a hyperparameter you set—the fixed number of boxes DETR outputs, regardless of image content. Set N slightly higher than the maximum objects you expect in any image."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "DETR (Detection Transformer)",
+      "description": "Object detector using transformers and Hungarian matching instead of anchor boxes and NMS.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/detr",
+      "termCode": "detr"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:09:49Z"
@@ -1826,61 +1122,13 @@
       "image diffusion model"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Diffusion Model",
-        "description": "A generative model that learns to reverse noise: start with random noise, iteratively denoise it to produce images, video, or audio.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/diffusion",
-        "termCode": "diffusion"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between diffusion and GANs?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "GANs use adversarial training (generator vs. discriminator) and produce output in one forward pass. Diffusion trains a single denoising network and requires many iterative steps at inference—slower but typically more stable to train and more flexible for conditioning (e.g., text-to-image)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do diffusion models generate diverse outputs from the same prompt?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The initial noise sample is random. Two runs with different random seeds will follow slightly different denoising paths, producing different images even with identical prompts and settings. You can fix the seed for reproducibility."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How many denoising steps do I need?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It depends on the model and your quality target. DDPM typically uses 1000 steps; DDIM or flow-matching can achieve similar quality in 20–50 steps. Fewer steps = faster but noisier; more steps = slower but often cleaner."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use diffusion for real-time generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not with standard inference—50+ steps at several ms each is too slow for interactive video. Speculative decoding and model distillation (student diffusion models) can reduce latency, but real-time remains challenging outside specialized hardware (e.g., on-device optimizations)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What does 'classifier-free guidance' do?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It boosts the influence of your conditioning signal (e.g., text prompt) during denoising by amplifying the difference between guided and unconditional predictions. Higher guidance strength → better prompt adherence but lower diversity and often visual artifacts."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Diffusion Model",
+      "description": "A generative model that learns to reverse noise: start with random noise, iteratively denoise it to produce images, video, or audio.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/diffusion",
+      "termCode": "diffusion"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:37Z"
@@ -1944,61 +1192,13 @@
       "DINOv2 self-distillation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "DINOv2 (Self-Supervised Vision)",
-        "description": "Meta's self-supervised vision transformer that learns image features without labels, transferring to classification, segmentation, and retrieval.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/dinov2",
-        "termCode": "dinov2"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is DINOv2 different from CLIP?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "CLIP aligns images and text, making it ideal for caption-based retrieval and zero-shot classification. DINOv2 learns pure visual features without text and often outperforms CLIP on dense prediction tasks (segmentation, depth) and non-text visual search."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to fine-tune DINOv2 for my downstream task?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not always. For standard tasks (classification, retrieval), training just a linear probe on frozen DINOv2 features often rivals fully fine-tuned supervised models. Only fine-tune the backbone if your domain is very different from natural images or your task is highly specialized."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What model size should I use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Start with ViT-B/14 for a balance of accuracy and speed. Use ViT-S/14 if latency or memory is tight; use ViT-L/14 or g/14 for maximum accuracy on fine-grained or dense tasks, accepting the inference cost."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does DINOv2 work on images outside natural photography?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "DINOv2 is trained on natural images and can struggle with medical, satellite, or microscopy images without adaptation. Domain-specific fine-tuning on even a small labeled set usually improves performance significantly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use DINOv2 for video understanding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "DINOv2 is frame-level; it extracts features from individual images. For temporal video understanding, you need additional temporal modeling or a video-specific model like VideoMAE, though you can use DINOv2 as a backbone for frame encoding."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "DINOv2 (Self-Supervised Vision)",
+      "description": "Meta's self-supervised vision transformer that learns image features without labels, transferring to classification, segmentation, and retrieval.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/dinov2",
+      "termCode": "dinov2"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:48Z"
@@ -2066,61 +1266,13 @@
       "vector embedding model"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Embedding Model",
-        "description": "A neural network that converts text, images, or other data into fixed-size vectors where similar inputs sit close together.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/embedding-model",
-        "termCode": "embedding-model"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between an embedding model and an embedding?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "An embedding model is the neural network that does the work. An embedding is the output—the list of numbers. The model is the tool; the embedding is what it produces."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use one embedding model for both text and images?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Multimodal models like CLIP can embed both, but they're trained differently. Most text-only models (text-embedding-3, BGE-M3) work only on text; vision models are separate. Cross-modal embeddings let you search images with text queries, but they sacrifice per-modality quality."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I know which embedding model to pick?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Benchmark on MTEB with your data. Check latency, cost-per-query, and output dimension. Larger models (1024+ dims) are slower but often more accurate. Smaller models (384 dims) are faster and cheaper. Test on your actual retrieval task, not just benchmark leaderboards."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to retrain an embedding model on my own data?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Only if your domain is niche (legal, medical, scientific code) and general models miss key vocabulary. Most teams use pre-trained models; retraining is expensive and risky. Matryoshka models let you truncate dimensions for speed without retraining."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is Matryoshka representation learning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A training technique that makes one model produce useful vectors at multiple truncated dimensions—e.g., use 768 dims for high accuracy or 256 for speed. You don't retrain; you just slice the output."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Embedding Model",
+      "description": "A neural network that converts text, images, or other data into fixed-size vectors where similar inputs sit close together.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/embedding-model",
+      "termCode": "embedding-model"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:53Z"
@@ -2186,61 +1338,13 @@
       "encoder architecture"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Encoder",
-        "description": "A model component that converts input tokens into context-aware vector representations using bidirectional attention.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/encoder",
-        "termCode": "encoder"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is an encoder the same as BERT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "BERT is an encoder—specifically, a bidirectional transformer pretrained on masked language modeling. But not all encoders are BERT. RoBERTa and T5's encoder half are also encoders. The term 'encoder' is architectural; BERT is one implementation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can an encoder generate text?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. An encoder outputs fixed vectors (one per input token), not new tokens. To generate, pair it with a decoder or use a decoder-only model. You can use encoder outputs as features for generation, but the encoder itself doesn't produce text."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between an encoder and a bi-encoder?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A bi-encoder is a specific use of two encoders—one for queries, one for documents—to independently embed both and compare them. An encoder is the architectural component itself. Bi-encoders are efficient for retrieval because you embed the corpus once; cross-encoders use a single encoder for pairwise ranking, which is slower but more accurate."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why does bidirectional attention matter?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Bidirectional attention lets each token see all others simultaneously, creating richer context than causal (left-to-right) attention. This is why encoders outperform decoders on understanding tasks—but it breaks for generation, where you can't peek at tokens you haven't predicted yet."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use an encoder for retrieval?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—that's one of its primary use cases. Encode documents and queries into vectors, then rank by cosine similarity. This is how semantic search and dense retrieval work. Encoders are preferred here because bidirectional attention creates more meaningful embeddings than causal attention."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Encoder",
+      "description": "A model component that converts input tokens into context-aware vector representations using bidirectional attention.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/encoder",
+      "termCode": "encoder"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:38Z"
@@ -2305,61 +1409,13 @@
       "sequence to sequence"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Encoder-Decoder",
-        "description": "An architecture that reads input with an encoder, then generates output with a decoder using cross-attention between them.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/encoder-decoder",
-        "termCode": "encoder-decoder"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between encoder-decoder and decoder-only models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Decoder-only models (GPT, Llama) generate text by predicting one token at a time, attending only to prior tokens. Encoder-decoder models (T5, BART) read the full input first via an encoder, then decode using cross-attention to that frozen context. Decoder-only scales better; encoder-decoder is more efficient for constrained seq2seq tasks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is encoder-decoder the same as seq2seq?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Encoder-decoder is one architecture for seq2seq (sequence-to-sequence) tasks. Other seq2seq approaches exist (e.g., RNN-based, attention-only decoders), but modern seq2seq work uses encoder-decoder transformers."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use an encoder-decoder model for chat or open-ended generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Technically yes, but you'll hit limitations: encoder-decoder models expect bounded inputs and are trained for specific tasks. They lack the instruction-following and in-context learning of decoder-only LLMs. Use them only if you have a narrow task and training data."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why did encoder-decoder architecture fall out of favor?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "As model scale increased, decoder-only architectures (GPT) proved simpler to train, cheaper to fine-tune, and more general. Encoder-decoder requires separate encoder and decoder training, higher inference latency, and task-specific tuning—trade-offs not worth it at 10B+ parameters."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What are good encoder-decoder models to use today?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "T5, BART, MarianMT, and mT5 remain production-ready for translation, summarization, and extraction. For new projects, evaluate whether a smaller encoder-decoder or a quantized decoder-only LLM solves your problem faster and cheaper."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Encoder-Decoder",
+      "description": "An architecture that reads input with an encoder, then generates output with a decoder using cross-attention between them.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/encoder-decoder",
+      "termCode": "encoder-decoder"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:16Z"
@@ -2428,61 +1484,13 @@
       "RefinedWeb corpus"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Falcon (Model Family)",
-        "description": "TII's open-weight LLM family (7B to 180B) trained on RefinedWeb, briefly leading open-source scale.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/falcon",
-        "termCode": "falcon"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between Falcon and Llama?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Falcon emphasizes training data quality (RefinedWeb) and was released earlier; Llama offers larger context windows, better instruction-following, and now stronger reasoning. For most use cases, Llama 2 or 3 are now preferred, but Falcon remains a viable lighter-weight option."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Falcon commercially?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Falcon models are open-weight under TII's license, which allows commercial use without vendor approval. You must review the exact license terms for compliance in regulated sectors."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Falcon 180B still the biggest open model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Llama 3.1 405B and other 200B+ variants are now larger. Falcon 180B was the largest when released in September 2023, but it's no longer a size benchmark."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is RefinedWeb and why does it matter?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RefinedWeb is a filtered subset of Common Crawl web text with deduplication and quality heuristics. It showed that aggressive curation could reduce dataset size while maintaining or improving model quality—an insight adopted by later projects like Cosmopedia."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Should I use Falcon or Mistral for my project?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Mistral has newer architectural improvements and better instruction-following; Falcon is simpler and has more third-party fine-tuning examples. For new projects, Mistral is usually the safer choice unless you have specific Falcon experience."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Falcon (Model Family)",
+      "description": "TII's open-weight LLM family (7B to 180B) trained on RefinedWeb, briefly leading open-source scale.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/falcon",
+      "termCode": "falcon"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:02Z"
@@ -2546,61 +1554,13 @@
       "Black Forest Labs"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Flux (Black Forest Labs)",
-        "description": "Open-weights text-to-image diffusion transformer by Black Forest Labs; three variants serve different speed and access needs.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/flux",
-        "termCode": "flux"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between FLUX.1 [dev], [schnell], and [pro]?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "[dev] is free, open-weights, non-commercial research only. [schnell] is open-weights, commercial-friendly, and optimized for speed. [pro] is a closed API, highest quality, slowest, no local control."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use FLUX.1 commercially?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "[dev] weights cannot be used commercially; [schnell] and [pro] both allow commercial use. Check your deployment: local inference uses [schnell], API calls use [pro]."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much faster is FLUX.1 [schnell] than Stable Diffusion XL?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "[schnell] generates a 1024×1024 image in ~1 second on A100; SDXL takes 3–5 seconds. Speed gains come from architecture and optimization, not just pruning."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need a GPU to run FLUX.1 locally?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. [schnell] on A100/H100 is recommended; on RTX 4090 it's feasible but slow without quantization. CPU inference is impractical."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is FLUX.1 better than Midjourney?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "On prompt adherence and fine detail, FLUX.1 is competitive. Midjourney excels at aesthetic curation and style consistency. FLUX wins on reproducibility and local control."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Flux (Black Forest Labs)",
+      "description": "Open-weights text-to-image diffusion transformer by Black Forest Labs; three variants serve different speed and access needs.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/flux",
+      "termCode": "flux"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:25Z"
@@ -2670,61 +1630,13 @@
       "foundational model"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Foundation Model",
-        "description": "Large model trained on broad unlabeled data that you adapt to specific tasks via fine-tuning.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/foundation-model",
-        "termCode": "foundation-model"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between a foundation model and an instruct model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A foundation model is pre-trained on broad unlabeled data; an instruct model is a foundation model further fine-tuned with SFT and alignment techniques to follow instructions. Instruct models have opinionated behavior and refusals baked in."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why should I fine-tune from the base model instead of the instruct version?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Fine-tuning from base gives you a cleaner slate. Instruct versions inherit their training-time personality, safety constraints, and response patterns, which can conflict with or dilute your custom training signal."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is foundation model the same as pre-trained model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Foundation model is a term coined in 2021 by Stanford HAI to describe any large model pre-trained on broad, unlabeled data and designed for task-agnostic capability."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use a foundation model directly without fine-tuning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, via in-context learning or prompting, but results are usually weaker than instruct models for instruction-following tasks. Foundation models lack task-specific alignment."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do foundation models need to be huge to work?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Scale matters less than broad pre-training. A smaller model trained on diverse, high-quality data can outperform a larger model trained on narrow data."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Foundation Model",
+      "description": "Large model trained on broad unlabeled data that you adapt to specific tasks via fine-tuning.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/foundation-model",
+      "termCode": "foundation-model"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:15:20Z"
@@ -2788,61 +1700,13 @@
       "OpenAI reasoning models 2025"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "OpenAI o4 / Frontier Reasoning",
-        "description": "Post-o1 reasoning models trained with RL on verifiable tasks, achieving record scores on math, code, and science benchmarks.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/frontier-reasoning",
-        "termCode": "frontier-reasoning"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between o1 and o4?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "o1 (2024) pioneered RL training for reasoning. o3, o4, and o4-mini are successors with longer reasoning traces, better tool integration, and higher accuracy on benchmarks. o4-mini trades some accuracy for lower cost and latency."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How is frontier reasoning different from chain-of-thought prompting?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Chain-of-thought asks the model to write out steps; frontier reasoning trains the model with RL rewards to optimize those steps for correctness. You don't prompt for reasoning—it's baked into the model via training."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use frontier reasoning for creative tasks like writing or design?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. These models are optimized for verifiable, objective tasks. On subjective tasks, the RL training signal collapses and performance drops below standard models."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does frontier reasoning cost compared to GPT-4?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Typically 2–10× the per-token cost, depending on reasoning budget. A single o4 query with 50k reasoning tokens may cost $0.50–$2.00 vs. $0.03–$0.10 for GPT-4."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Are there open-source alternatives to OpenAI's frontier reasoning models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "DeepSeek-R1, Qwen-QwQ, and community RL fine-tunes of Llama achieve similar results. They're slower and less polished but available under open licenses."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "OpenAI o4 / Frontier Reasoning",
+      "description": "Post-o1 reasoning models trained with RL on verifiable tasks, achieving record scores on math, code, and science benchmarks.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/frontier-reasoning",
+      "termCode": "frontier-reasoning"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:09:20Z"
@@ -2906,61 +1770,13 @@
       "Gemini Ultra"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Gemini (Model Family)",
-        "description": "Google's multimodal LLM family with 1M-token context, native video/audio understanding, and competitive long-context performance.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/gemini",
-        "termCode": "gemini"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between Gemini Pro, Ultra, and Flash?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Pro is the balanced option (strong reasoning, 1M context). Ultra is the most capable variant for complex tasks. Flash prioritizes speed and cost for simpler workloads. All support multimodal input."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Gemini offline or on-device?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Gemini Nano runs on-device on Android and ChromeOS for low-latency use cases. Larger variants require API calls to Google servers."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does Gemini's long context compare to Claude or GPT-4?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Gemini 1.5 Pro supports 1M tokens; Claude 3.5 Sonnet supports 200k; GPT-4 Turbo supports 128k. Gemini leads in raw context, but all three show retrieval-augmentation benefits on dense document tasks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Gemini cheaper than GPT-4 or Claude for long documents?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Gemini's per-token pricing is competitive, but a 1M-token request costs more in absolute dollars than shorter alternatives. Batching and caching reduce per-request cost."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Gemini support function calling and structured output?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Gemini supports function calling, JSON Schema enforcement, and tool-use patterns through both the direct API and through Vertex AI's agent frameworks."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Gemini (Model Family)",
+      "description": "Google's multimodal LLM family with 1M-token context, native video/audio understanding, and competitive long-context performance.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/gemini",
+      "termCode": "gemini"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:31Z"
@@ -3031,61 +1847,13 @@
       "Gemma model"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Gemma (Model Family)",
-        "description": "Google's open-weights language models (1B–27B parameters) optimized for efficiency and instruction-following, derived from Gemini research.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/gemma",
-        "termCode": "gemma"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How does Gemma 2 differ from Gemma 1?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Gemma 2 introduces interleaved local-global attention for longer contexts and improved training stability. It outperforms Gemma 1 across most benchmarks at the same size. Gemma 1 is no longer actively supported."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Gemma for commercial applications?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but you must comply with Google's Responsible AI use clause included in the license. Review the clause for your specific use case before deployment."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is the difference between Gemma and Gemini?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Gemini is Google's closed, larger model available only via API. Gemma is the open-weights sibling derived from similar research but smaller and locally deployable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much VRAM do I need to run Gemma?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Gemma 7B requires ~14GB VRAM with KV-cache; Gemma 27B needs ~40–50GB. Quantization (INT8, FP8) can reduce requirements by 50–75%."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Gemma support function calling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Gemma 2 and later support function-calling through proper chat templates and JSON schema enforcement tools like Outlines or Instructor."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Gemma (Model Family)",
+      "description": "Google's open-weights language models (1B–27B parameters) optimized for efficiency and instruction-following, derived from Gemini research.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/gemma",
+      "termCode": "gemma"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:20Z"
@@ -3151,61 +1919,13 @@
       "what is GPT"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "GPT (Generative Pre-trained Transformer)",
-        "description": "Decoder-only transformer architecture that predicts the next token; the template for nearly all modern LLMs.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/gpt",
-        "termCode": "gpt"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is GPT the same as ChatGPT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. GPT is the underlying architecture and model family (GPT-2, GPT-3, GPT-3.5, GPT-4). ChatGPT is OpenAI's fine-tuned product built on top of GPT-3.5 or GPT-4, optimized for conversation via RLHF."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is the difference between GPT and BERT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "GPT is decoder-only (autoregressive, left-to-right), while BERT is encoder-only (bidirectional). GPT is designed for generation; BERT is designed for understanding tasks like classification and semantic search."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do all large language models use the GPT architecture?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Most do—Llama, Mistral, Qwen, Falcon all use decoder-only transformers with causal masking. Some exceptions like Mamba use state-space models, but GPT-style decoder remains the dominant pattern."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why does GPT predict one token at a time instead of the whole answer at once?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Token-by-token prediction is how transformers are trained and how they maintain context. Predicting one token, then feeding it back as input, lets the model incorporate its own output and correct errors over longer sequences."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use GPT offline or do I need an API?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "OpenAI's GPT-3.5/GPT-4 require their API. But open-source GPT-architecture models like Llama or Mistral can run locally on your own hardware using frameworks like Ollama or vLLM."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "GPT (Generative Pre-trained Transformer)",
+      "description": "Decoder-only transformer architecture that predicts the next token; the template for nearly all modern LLMs.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/gpt",
+      "termCode": "gpt"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:11:06Z"
@@ -3265,53 +1985,13 @@
       "Granite 3"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Granite (IBM Model Family)",
-        "description": "IBM's open-weight LLMs with documented training data, IP indemnification, and Apache 2.0 licensing for regulated industries.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/granite",
-        "termCode": "granite"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between Granite and Llama for enterprise use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Llama is larger and faster on benchmarks, but training data provenance is opaque. Granite trades some benchmark performance for full data lineage, compliance reporting, and IP indemnification—valuable in regulated industries."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Granite without IBM's watsonx platform?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, you can run Granite weights anywhere (Apache 2.0 license). However, the IP indemnification guarantee only applies through watsonx, so your legal protection is limited."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Granite 3 support code generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, Granite 3 includes 34B code-specialized variants trained on permissively-licensed code repositories. They outperform the base model on CodeXGLUE and similar benchmarks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Granite suitable for fine-tuning in compliance-sensitive applications?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but document your fine-tuning data source separately. The original training provenance is protected; your additions remain your responsibility."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Granite (IBM Model Family)",
+      "description": "IBM's open-weight LLMs with documented training data, IP indemnification, and Apache 2.0 licensing for regulated industries.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/granite",
+      "termCode": "granite"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:11Z"
@@ -3372,61 +2052,13 @@
       "AI21 Jamba"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Jamba (Hybrid Mamba-Transformer)",
-        "description": "AI21 Labs hybrid model interleaving Mamba and transformer layers, handling 256k tokens with lower latency than pure transformers.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/jamba",
-        "termCode": "jamba"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between Jamba and a standard transformer?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Jamba replaces some transformer layers with Mamba (state-space) blocks, cutting attention computation. This makes it faster and cheaper per token but requires its hybrid design to maintain long-range accuracy. Pure transformers are slower but simpler."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can Jamba actually use 256k tokens, or is it marketing?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It can use 256k tokens, but retrieval-focused benchmarks (needle-in-haystack) show it performs better than pure attention on that window size. Real-world performance depends on your data distribution—dense reasoning over scattered facts may still favor smaller context windows with pure attention."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Jamba cheaper to run than GPT-4?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Jamba has lower latency and VRAM cost than comparably sized transformers, but pricing depends on the inference provider. Check cost-per-million-tokens against your baseline; the real win is inference speed and on-device feasibility."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Jamba work well for fine-tuning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, you can fine-tune Jamba with LoRA or full-parameter methods. The hybrid architecture doesn't block training, but you'll need to understand how Mamba blocks backprop differs from attention. Start with an established library like PEFT."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why does Jamba use mixture-of-experts if Mamba is already fast?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "MoE gates different tokens to specialized sub-networks, avoiding computing all parameters for every token. It's a scaling trick: Jamba can match larger models' quality without 2x the compute cost per token."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Jamba (Hybrid Mamba-Transformer)",
+      "description": "AI21 Labs hybrid model interleaving Mamba and transformer layers, handling 256k tokens with lower latency than pure transformers.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/jamba",
+      "termCode": "jamba"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:10:51Z"
@@ -3495,61 +2127,13 @@
       "Llama 405B"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Llama (Model Family)",
-        "description": "Meta's open-weights LLM family—Llama, Llama 2, Llama 3, Llama 4—defining the open-source baseline since 2023.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/llama",
-        "termCode": "llama"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between Llama 3 and Llama 3.1?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Llama 3.1 extends context to 128K (vs. 8K), adds vision-language capabilities in 3.2 variants, and improves structured output. 3.1 is backward compatible but may show different formatting."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run Llama 3 70B on my laptop?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, with quantization. Use 4-bit quantization (llama.cpp with Q4_K_M) to fit ~40GB into ~20GB VRAM, though inference slows to 5–10 tokens/sec vs. 30+ on H100."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Llama better than GPT-3.5?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Llama 3 405B matches or exceeds GPT-3.5 on most benchmarks. Llama 3 70B is competitive but 405B requires more compute. For reasoning, GPT-4o and o1 still lead."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need a commercial license to use Llama?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Llama 2+ has a permissive commercial license. Llama 1 (2023) had restrictions; always check the license header in model cards. Meta's Community License covers most business uses."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between Llama and CodeLlama?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "CodeLlama is fine-tuned on code; Llama is general-purpose. CodeLlama excels at generation, infilling, and instruction-following on code; Llama is better for text and reasoning."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Llama (Model Family)",
+      "description": "Meta's open-weights LLM family—Llama, Llama 2, Llama 3, Llama 4—defining the open-source baseline since 2023.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/llama",
+      "termCode": "llama"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:21Z"
@@ -3615,61 +2199,13 @@
       "LLaVA fine-tuning"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "LLaVA",
-        "description": "Open-source vision-language model that connects a frozen image encoder to an LLM via a lightweight adapter layer.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/llava",
-        "termCode": "llava"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between LLaVA and other vision-language models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LLaVA uses a frozen vision encoder and lightweight adapter—simpler and cheaper to train than end-to-end models like BLIP-2. Most open-source VLMs now follow this same recipe."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use LLaVA without fine-tuning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Pre-trained LLaVA checkpoints work out-of-the-box for general image questions. Fine-tuning on your domain typically improves accuracy 10–30% depending on task overlap."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does it cost to train LLaVA on my own data?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Fine-tuning 1000 image-text pairs takes 1–4 GPU-hours on an H100 or A100. Instruction-tuning at scale (100k examples) may cost $500–$2000 in cloud compute, depending on your chosen infra and image resolution."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is LLaVA better than GPT-4V?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "GPT-4V has superior visual reasoning and handles edge cases better, but costs 10–100× more per query. LLaVA trades accuracy for cost and control—useful for high-volume, lower-accuracy tasks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does LLaVA support video?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Standard LLaVA processes single images. You can sample frames and feed them as a multi-image input to LLaVA-OneVision, but this is not true video understanding—reasoning across temporal dynamics is limited."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "LLaVA",
+      "description": "Open-source vision-language model that connects a frozen image encoder to an LLM via a lightweight adapter layer.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/llava",
+      "termCode": "llava"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:11:25Z"
@@ -3731,61 +2267,13 @@
     "meta_description": "An AI trained on billions of text examples that predicts the next word—the foundation of ChatGPT, Claude, and most text-generating AI tools.",
     "seo_variations": [],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "LLM (Large Language Model)",
-        "description": "An AI trained on billions of text examples that predicts the next word—the foundation of ChatGPT, Claude, and most text-generating AI tools.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/llm",
-        "termCode": "llm"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between an LLM and a foundation model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "An LLM is a specific type of foundation model trained on text. Foundation models are broader—they can also be vision-only or multimodal. All LLMs are foundation models, but not all foundation models are LLMs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do LLMs actually understand language?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. LLMs are statistical pattern-matchers that predict the next token based on learned correlations. They're remarkable at mimicking understanding, but they don't model meaning the way humans do. This is why they can sound coherent yet fail on simple reasoning tasks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much does it cost to run an LLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Cost depends on model size, inference speed, and token usage. Cloud APIs charge per token (often $0.001–$0.10 per 1K tokens). Running open-source models locally saves per-token costs but requires GPU hardware ($500–$10K+)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use an LLM offline?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, with open-source models like Llama or Mistral deployed locally or via tools like Ollama. Closed APIs like OpenAI's require internet. Local inference trades latency and convenience for privacy and cost control."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between GPT, Claude, and Llama?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "All three are LLMs but differ in architecture, training data, and licensing. GPT and Claude are closed, proprietary models; Llama is open-source. Performance and strengths vary by task—GPT excels at code, Claude at nuance, Llama at cost-efficiency."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "LLM (Large Language Model)",
+      "description": "An AI trained on billions of text examples that predicts the next word—the foundation of ChatGPT, Claude, and most text-generating AI tools.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/llm",
+      "termCode": "llm"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:09:34Z"
@@ -3846,61 +2334,13 @@
       "state space LLM"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Mamba (State Space Model)",
-        "description": "LLM architecture using selective state-space layers instead of attention, achieving linear-time inference and strong long-context performance.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mamba",
-        "termCode": "mamba"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is Mamba different from a transformer?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Mamba replaces the all-pairs attention mechanism with a selective state-space layer that updates a single hidden state per token. This reduces inference complexity from quadratic to linear in sequence length and eliminates KV cache growth."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can you fine-tune a Mamba model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Standard supervised fine-tuning and LoRA work on Mamba, but adapter methods designed for attention don't transfer directly. Most practitioners use full fine-tuning or LoRA with adjusted learning rates."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Mamba faster than GPT-4 on long documents?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Mamba has lower latency per token on very long sequences (100k+), but absolute throughput depends on implementation. Hybrid models like Mamba-2 often outperform pure Mamba on perplexity while keeping speed gains."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What hardware does Mamba need?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Mamba runs on NVIDIA GPUs with custom kernels (Flash-Mamba, etc.). Without optimized kernels, it's slower than reference transformers. AMD and CPU inference are possible but require fallback implementations."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Mamba production-ready?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes for inference on hardware with kernel support. Training and serving libraries like vLLM and Ollama now include Mamba. Ecosystem support is smaller than transformers but growing."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Mamba (State Space Model)",
+      "description": "LLM architecture using selective state-space layers instead of attention, achieving linear-time inference and strong long-context performance.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mamba",
+      "termCode": "mamba"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:00Z"
@@ -3968,61 +2408,13 @@
       "Mixtral 8x7B"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Mistral (Model Family)",
-        "description": "Mistral AI's open-weights model family, ranging from 7B to 72B parameters, known for efficiency and pioneering mixture-of-experts at scale.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mistral",
-        "termCode": "mistral"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between Mistral 7B and Mixtral 8x7B?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Mistral 7B is a dense model with one feedforward layer per token. Mixtral 8x7B uses mixture-of-experts: 8 expert networks, and only 2 activate per token, cutting total compute while keeping quality. Mixtral is faster but uses more peak VRAM."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run Mistral models on my laptop?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Mistral 7B quantized to 4-bit (Q4_K_M) fits on 8 GB VRAM. Use llama.cpp or Ollama. Inference will be slower than GPU (a few tokens/second), but works for local experimentation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Mistral open-source or open-weights?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Mistral 7B and Mixtral 8x7B are open-weights under Apache 2.0 (you can modify and use commercially). Mistral Large and Ministral are closed or research-only. Check the license before deploying."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does Mistral compare to Llama 2?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Mistral 7B matches or beats Llama 2 13B on most benchmarks with half the parameters. Llama 3 is stronger overall, but Mistral remains competitive for efficiency-focused deployments."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Mistral support function calling and structured output?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Mistral Large supports function calling and JSON schema enforcement natively. Open-weights Mistral 7B/Mixtral need post-processing with tools like Outlines or Guidance for structured output."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Mistral (Model Family)",
+      "description": "Mistral AI's open-weights model family, ranging from 7B to 72B parameters, known for efficiency and pioneering mixture-of-experts at scale.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mistral",
+      "termCode": "mistral"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:04Z"
@@ -4087,61 +2479,13 @@
       "Mixtral MoE"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Mixtral",
-        "description": "Mistral's open-weight mixture-of-experts models routing each token to 2 of 8 experts, cutting inference cost while matching larger dense models.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mixtral",
-        "termCode": "mixtral"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between Mixtral 8×7B and 8×22B?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "8×7B has 8 experts of 7B each (46B total, ~13B active per token); 8×22B has larger experts (141B total, ~39B active). 8×22B is more capable but needs more VRAM and compute per token."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Mixtral faster than Llama 2 70B?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, significantly faster for throughput and latency. Mixtral uses ~13B active parameters vs. Llama 2's 70B, so you get 5–10× more tokens/second per GPU at similar quality."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run Mixtral on a single consumer GPU?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "8×7B fits on an RTX 4090 or A6000 (48GB VRAM), though quantization (4-bit, 8-bit) makes it faster. 8×22B requires 80GB+ or multi-GPU setup."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does Mixtral handle expert imbalance?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The gating network learns routing naturally, but load balancing losses during training (auxiliary loss) prevent all tokens from routing to the same experts. If routing collapses, you lose the MoE benefit."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Mixtral support fine-tuning?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, via LoRA or QLoRA on Hugging Face Transformers, though expert routing is typically frozen. Full fine-tuning requires careful gradient handling across expert layers."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Mixtral",
+      "description": "Mistral's open-weight mixture-of-experts models routing each token to 2 of 8 experts, cutting inference cost while matching larger dense models.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mixtral",
+      "termCode": "mixtral"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:24Z"
@@ -4210,61 +2554,13 @@
       "conditional computation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Mixture of Experts (MoE)",
-        "description": "Architecture that activates only a subset of parameters per token, delivering large-model quality at smaller compute cost.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/mixture-of-experts",
-        "termCode": "mixture-of-experts"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Does mixture of experts reduce VRAM requirements?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. All expert parameters must stay in memory even if only 2 out of 8 are active per token. You need the same VRAM as a dense model of the same total parameter count."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why is Mixtral 8×7B faster than a 46B dense model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Because only ~13B parameters compute per token instead of all 46B. The router picks 2 of 8 experts, cutting computation roughly 2.5× while storing the same knowledge."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What happens if the router always picks the same experts?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You get load imbalance: unused experts waste memory, training doesn't benefit from full capacity, and you're effectively running a smaller model. Auxiliary loss during training prevents this."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does MoE inference get slower in large batches?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Different tokens route to different experts, so batches stall waiting for the slowest expert group. Batch-size-1 shows maximum speedup; large batches see diminishing returns."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use MoE on CPU?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Technically yes, but routing overhead and memory bandwidth make it impractical. MoE is designed for GPU; sparse computation gains vanish without parallel hardware."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Mixture of Experts (MoE)",
+      "description": "Architecture that activates only a subset of parameters per token, delivering large-model quality at smaller compute cost.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/mixture-of-experts",
+      "termCode": "mixture-of-experts"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:24:12Z"
@@ -4330,61 +2626,13 @@
       "reproducible embeddings"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Nomic Embed",
-        "description": "Open-weights text embedding model with reproducible training, open data, and MTEB-competitive performance.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/nomic-embed",
-        "termCode": "nomic-embed"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is Nomic Embed free to use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, the weights and code are free, but check the license (currently commercial-friendly but not fully open-source). Inference is free once downloaded; no API costs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does Nomic Embed compare to OpenAI embeddings?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Nomic Embed matches OpenAI on MTEB benchmarks and costs nothing to run, but you must self-host. OpenAI's API is easier for managed inference and supports larger text lengths (8k tokens vs. 8k for Nomic)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Nomic Embed for non-English text?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "v1.5 and later versions support multilingual embeddings. v1.0 is English-only. Check the model card for supported languages."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is Matryoshka truncation in Nomic Embed?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It lets you keep only the first N dimensions of the vector (e.g., 256 instead of 768) without retraining, cutting memory use. MTEB scores drop slightly but remain competitive if dimensions are chosen carefully."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need GPU to run Nomic Embed?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. CPU inference works fine for most workloads, though GPU speeds it up significantly. Batch processing on CPU is practical for offline indexing."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Nomic Embed",
+      "description": "Open-weights text embedding model with reproducible training, open data, and MTEB-competitive performance.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/nomic-embed",
+      "termCode": "nomic-embed"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:11:12Z"
@@ -4450,61 +2698,13 @@
       "inference-time reasoning"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "OpenAI o1 / o3 (Reasoning Models)",
-        "description": "Models that spend compute at inference time on hidden reasoning before answering, trading latency and cost for accuracy on hard tasks.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/openai-o1",
-        "termCode": "openai-o1"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between o1 and o3?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "o1 (Sept 2024) introduced hidden chain-of-thought reasoning. o3 (2025) added agentic tool use, higher compute budgets, and stronger performance on graduate-level benchmarks like ARC-AGI. Both use the same core mechanism; o3 is larger and more capable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I see what the model is thinking?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. The thinking tokens are hidden from you; the API returns only the final answer. You cannot inspect or debug the reasoning process."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much more expensive is o1 than GPT-4?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A typical o1 query costs 5–10x more in tokens than GPT-4 because it uses millions of hidden reasoning tokens. Exact pricing depends on your input and the model's reasoning budget."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does o1 work better for coding than writing?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. o1 shows the most gains on competition math, code debugging, and formal reasoning. Writing and summarization see smaller improvements and may not justify the cost."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is o1 faster or slower than GPT-4?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Slower. Inference latency often exceeds 10–30 seconds because the model must complete its internal reasoning chain before responding. Use it when accuracy matters more than speed."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "OpenAI o1 / o3 (Reasoning Models)",
+      "description": "Models that spend compute at inference time on hidden reasoning before answering, trading latency and cost for accuracy on hard tasks.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/openai-o1",
+      "termCode": "openai-o1"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:11:58Z"
@@ -4562,61 +2762,13 @@
     "meta_description": "Learned weights in a neural network; parameter count determines model capability, memory use, and inference speed.",
     "seo_variations": [],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Parameters (Model Size)",
-        "description": "Learned weights in a neural network; parameter count determines model capability, memory use, and inference speed.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/parameters",
-        "termCode": "parameters"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What do parameters actually do in a neural network?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Parameters (weights and biases) are the learned values that transform input data into output predictions. Each parameter contributes a weighted sum to the model's decisions. During training, parameters are adjusted to minimize error."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much VRAM do I need for a 7B parameter model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Roughly 14–16GB for inference in float16 precision (2 bytes per parameter). With 4-bit quantization, you'll need ~3–4GB. Add 20–50% headroom for activations and KV cache, depending on batch size and context length."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is a 13B model always better than a 7B model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not necessarily. A 13B model has more capacity but trains slower and uses more memory. A smaller model trained on higher-quality data often outperforms a larger model trained on noisy data."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do some models have the same parameter count but different sizes?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Different quantization levels and formats (float32, float16, int8, int4) produce different file sizes. A 7B model in float32 is ~28GB; in int4 with safetensors, it's ~3.5GB."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do parameters affect inference speed?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "More parameters mean more multiplication operations, so inference is slower. On the same GPU, a 70B model will generate tokens 5–10× slower than a 7B model, all else equal."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Parameters (Model Size)",
+      "description": "Learned weights in a neural network; parameter count determines model capability, memory use, and inference speed.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/parameters",
+      "termCode": "parameters"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:16:29Z"
@@ -4678,61 +2830,13 @@
       "Phi-4"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Phi (Small Language Model Family)",
-        "description": "Microsoft's small models (3.8B–14B) that match larger ones through curated training data instead of scale.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/phi",
-        "termCode": "phi"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between Phi-3 and Phi-4?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Phi-3 is a general-purpose chat model (3.8B, 7B, 14B) tuned for multi-task instruction following. Phi-4 (2024–2025) focuses on reasoning and uses synthetic data from a frontier teacher, trading some generalist ability for stronger logic and math."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run Phi on my laptop or phone?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Phi-3 7B quantized to 4-bit fits on most modern phones and laptops. You'll need ~4GB VRAM; tools like Ollama, MLX, or ONNX Runtime make this easy."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does Phi compare to Llama?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Llama is a family covering 8B–70B+ with broad availability and community tooling. Phi is smaller (3.8B–14B) with higher curated-data investment, so Phi often matches Llama's quality at smaller sizes but may underperform on tasks outside its training distribution."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Phi work for my specific domain?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Phi is trained on general reasoning tasks and English chat. Fine-tune on your domain data if performance lags; distillation from a larger domain model often works better than starting from Phi."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why is Phi so small but still capable?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "High-quality training data (textbook examples, synthetic reasoning, filtering noise) teaches models to generalize better. Phi proves that data quality can offset much of the loss from reducing parameters, though it still has limits at very small sizes."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Phi (Small Language Model Family)",
+      "description": "Microsoft's small models (3.8B–14B) that match larger ones through curated training data instead of scale.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/phi",
+      "termCode": "phi"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:11:34Z"
@@ -4801,61 +2905,13 @@
       "Qwen open source"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Qwen (Model Family)",
-        "description": "Alibaba's open-weights LLM family spanning 1B–70B+ parameters, particularly strong for multilingual and Chinese-language tasks.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/qwen",
-        "termCode": "qwen"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between Qwen2 and Qwen2.5?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Qwen2.5 (late 2024) improves math, code, and agentic performance over Qwen2, and matches GPT-4o mini on many benchmarks at smaller model sizes. Use Qwen2.5 for new deployments."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Qwen commercially without paying Alibaba?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, Qwen weights use permissive licenses (primarily Apache 2.0 or similar). You can use them in commercial products without royalties, though you must respect the license terms."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Qwen better than Llama for Chinese?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Qwen generally outperforms Llama on Chinese-language benchmarks, especially at smaller model sizes (7–14B). For English-dominant use cases, Llama is often competitive or better."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What hardware do I need to run Qwen?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Qwen 7B fits on a single A100 or H100 with 16–40GB VRAM depending on precision. Smaller 1–2B models run on consumer GPUs or CPUs. Use quantization (GGUF, AWQ) to reduce memory footprint."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Qwen support function calling and tool use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, Qwen2.5 and newer versions support structured tool calls via chat templates. Integration with agents like AutoGen or CrewAI is well-tested."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Qwen (Model Family)",
+      "description": "Alibaba's open-weights LLM family spanning 1B–70B+ parameters, particularly strong for multilingual and Chinese-language tasks.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/qwen",
+      "termCode": "qwen"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:11:49Z"
@@ -4918,61 +2974,13 @@
       "Qwen2.5-Coder"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Qwen Coder",
-        "description": "Alibaba's code-focused Qwen variant for repo-level tasks, multilingual programming, and agentic coding workflows.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/qwen-coder",
-        "termCode": "qwen-coder"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How does Qwen Coder differ from the base Qwen model?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Base Qwen is general-purpose; Qwen Coder applies additional training on code repositories and programming tasks, making it far better at code generation, debugging, and repo-level reasoning. General instruction-following is retained."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run Qwen Coder on my local machine?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Variants up to 7B parameters fit on consumer GPUs (8GB VRAM); 32B requires 80GB+ (A100/H100). Use GGUF quantization via Ollama or llama.cpp to reduce memory footprint by 50–75%."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Qwen Coder better than CodeLlama?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "On many recent code benchmarks (BigCodeBench, HumanEval), Qwen2.5-Coder 7B/32B outperforms CodeLlama 7B/34B. CodeLlama may be more stable in older production setups, but Qwen Coder is the safer choice for new projects."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Qwen Coder for code generation in production?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, all variants are Apache-2.0 licensed. You can self-host, fine-tune, or embed in products without paying per token or sharing code with third parties."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Qwen Coder understand Chinese code comments?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, it was trained on bilingual code corpora and handles Chinese variable names, docstrings, and comments significantly better than English-only models."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Qwen Coder",
+      "description": "Alibaba's code-focused Qwen variant for repo-level tasks, multilingual programming, and agentic coding workflows.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/qwen-coder",
+      "termCode": "qwen-coder"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:15Z"
@@ -5034,61 +3042,13 @@
       "thinking model"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Reasoning Model (Category)",
-        "description": "LLM trained to produce extended internal reasoning chains before answering, excelling at math and coding.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/reasoning-model",
-        "termCode": "reasoning-model"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between a reasoning model and a regular LLM?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Reasoning models generate long internal thought chains before answering; regular LLMs produce answers directly. Reasoning models are trained with reinforcement learning on verifiable tasks, making them stronger at analytical work but slower and more expensive."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I see the reasoning a reasoning model produces?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It depends on the model. Some expose the reasoning tokens (OpenAI o1 can output thinking in API mode), others hide it. Exposing reasoning makes it slower but more interpretable."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How much slower are reasoning models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Expect 5–30 second latencies for complex problems versus 1–2 seconds for standard models. Cost per query is also 5–10× higher due to longer token sequences."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do reasoning models work for non-analytical tasks like writing or customer service?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "They work, but inefficiently. Since training optimizes for analytical correctness, they often perform worse than general-purpose models on creative or conversational tasks while costing more."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Which reasoning models exist today?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "OpenAI o1/o3/o4, Anthropic's extended-thinking mode, DeepSeek-R1, Qwen-QwQ, and Gemini 2 Thinking are current examples. Availability and capabilities evolve rapidly."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Reasoning Model (Category)",
+      "description": "LLM trained to produce extended internal reasoning chains before answering, excelling at math and coding.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/reasoning-model",
+      "termCode": "reasoning-model"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:26:43Z"
@@ -5154,61 +3114,13 @@
       "RoBERTa pretraining"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "RoBERTa",
-        "description": "BERT retrained on more data, larger batches, longer steps, and without next-sentence prediction—consistently outperforms BERT on text classification.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/roberta",
-        "termCode": "roberta"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is RoBERTa the same as BERT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. RoBERTa uses BERT's architecture but improves the pretraining recipe by adding more data, larger batches, longer training, and removing the NSP task. The architecture is identical; the training method is different."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Should I always use RoBERTa instead of BERT?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Usually yes for classification tasks—RoBERTa scores consistently higher on GLUE. But BERT is slightly smaller and trains faster if you have compute constraints. The choice depends on your accuracy target and training budget."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use RoBERTa for question-answering or text generation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RoBERTa works well for reading-comprehension question-answering (like SQuAD) because it's an encoder. It cannot generate text; use encoder-decoder models like T5 or decoder-only models like GPT for generation."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long does it take to fine-tune RoBERTa?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "On a single GPU, fine-tuning RoBERTa on a typical classification task (2–3 epochs) takes 10–30 minutes depending on dataset size. With distributed training, it's faster; with very large datasets, several hours."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does RoBERTa work for non-English languages?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The base RoBERTa is English-only. Use XLM-RoBERTa if you need multilingual support; it covers 100+ languages and was trained on comparable data."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "RoBERTa",
+      "description": "BERT retrained on more data, larger batches, longer steps, and without next-sentence prediction—consistently outperforms BERT on text classification.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/roberta",
+      "termCode": "roberta"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:23:09Z"
@@ -5271,61 +3183,13 @@
       "linear attention inference"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "RWKV",
-        "description": "RNN-transformer hybrid that trains efficiently in parallel but runs inference in linear time with constant memory.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/rwkv",
-        "termCode": "rwkv"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is RWKV different from Mamba?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Both are state-space alternatives to transformers, but RWKV uses gated linear attention while Mamba uses selective state-space models with scan operations. RWKV trains in parallel like a transformer; Mamba does not parallelize training as easily. They compete on similar use cases but have different architectural philosophies."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can RWKV do in-context learning like transformers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, RWKV demonstrates in-context learning on few-shot tasks, though typically 2–5% weaker than comparably-sized transformers. The linear attention mechanism limits how sharply it can select context, but the gating mechanism allows learning task-relevant state updates."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does RWKV really have O(1) memory during inference?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes for the KV cache—the hidden state is constant-size. Total memory also includes model weights and embeddings, which scale with parameter count. But per-token memory cost is constant, unlike transformers where KV cache grows linearly with context."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is RWKV production-ready?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RWKV-7 models are stable and open-weight, but production tooling is younger. Deployment is viable for teams comfortable with less battle-tested inference stacks and willing to use community-maintained frameworks like ollama or custom TensorFlow/PyTorch code."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I fine-tune RWKV models?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes—RWKV supports LoRA, full fine-tuning, and instruction-tuning via projects like Axolotl. Fine-tuning recipes are less documented than for LLaMA, so you may need to adapt transformer workflows."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "RWKV",
+      "description": "RNN-transformer hybrid that trains efficiently in parallel but runs inference in linear time with constant memory.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/rwkv",
+      "termCode": "rwkv"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:36Z"
@@ -5391,61 +3255,13 @@
       "zero-shot segmentation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "SAM (Segment Anything Model)",
-        "description": "Meta's foundation model that generates precise object masks from point, box, or mask prompts—zero-shot.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/sam",
-        "termCode": "sam"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between SAM and SAM 2?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SAM (April 2023) works on static images. SAM 2 (July 2024) adds temporal memory to track objects across video frames without re-prompting every frame, making it 10–100× faster on video sequences."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can SAM work without any prompt?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. SAM is a prompt-based model—it requires at least one visual cue (point, box, mask, or text) to generate a segmentation. It doesn't segment objects automatically without user guidance."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is SAM faster than manual segmentation?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. One prompt typically produces a mask in <100ms. For annotation tasks, SAM reduces time from minutes per image to seconds, though you'll often refine masks with follow-up clicks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does SAM require fine-tuning for new domains?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. SAM generalizes zero-shot across domains—medical, aerial, industrial imagery all work out-of-the-box. Fine-tuning can improve results on very specialized domains but isn't required."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use SAM for real-time applications?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but plan around latency. CPU inference is 1–2 seconds; GPU is <100ms. SAM 2 adds memory overhead on video, so benchmark on your hardware."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "SAM (Segment Anything Model)",
+      "description": "Meta's foundation model that generates precise object masks from point, box, or mask prompts—zero-shot.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/sam",
+      "termCode": "sam"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:10:59Z"
@@ -5510,61 +3326,13 @@
       "SigLIP vs CLIP"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "SigLIP",
-        "description": "Google's vision encoder that replaces CLIP's softmax loss with sigmoid, enabling better zero-shot performance at smaller batch sizes.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/siglip",
-        "termCode": "siglip"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between SigLIP and CLIP?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SigLIP replaces CLIP's softmax loss (which compares a pair against all negatives in the batch) with sigmoid loss (which treats each pair independently). This removes the dependency on very large batch sizes and improves embedding quality."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use SigLIP as a drop-in replacement for CLIP?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not directly. The embeddings are not identical, and models trained on CLIP embeddings will need retraining or fine-tuning to work well with SigLIP. New projects should use SigLIP; existing CLIP pipelines benefit from gradual migration."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does SigLIP work with small batch sizes?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. SigLIP's sigmoid formulation makes it effective at batch sizes of 1,024 or smaller, whereas CLIP requires 32,768+ to be stable. This is a key advantage for resource-constrained training."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Which vision-language models use SigLIP?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "LLaVA-Next, Gemma 2-Vision, and Qwen VL series use SigLIP as their vision encoder. It has become the standard in modern open-source VLMs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do I need to fine-tune SigLIP for my task?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No; SigLIP zero-shot performance is strong enough for many tasks. Fine-tune only if you have domain-specific images or text that differ significantly from training data."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "SigLIP",
+      "description": "Google's vision encoder that replaces CLIP's softmax loss with sigmoid, enabling better zero-shot performance at smaller batch sizes.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/siglip",
+      "termCode": "siglip"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:10:44Z"
@@ -5627,61 +3395,13 @@
       "Sora video generation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Sora (Video Generation)",
-        "description": "OpenAI's text-to-video diffusion model that generates multi-second HD video clips from text prompts.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/sora",
-        "termCode": "sora"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is Sora different from Runway Gen-3 or Kling?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sora generates longer clips (up to ~60 seconds) with higher consistency, but Runway and Kling are faster and open-source-adjacent, offering more user control. Sora's main edge is coherence and quality; competitors trade speed and accessibility."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can you fine-tune Sora on your own videos?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Sora is closed-access via OpenAI's API only. You cannot download weights, run it locally, or customize it with your own training data."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long does it take to generate a video?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Generation typically takes 1–10 minutes for a 5–20 second clip, depending on resolution and batch size. It is not real-time."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What aspect ratios and resolutions does Sora support?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sora handles variable aspect ratios (square, widescreen, vertical) and resolutions up to 1920×1080, trained on mixed-resolution data so it adapts without retraining."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Sora work for animation or only photorealistic video?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sora can generate both stylized and photorealistic outputs depending on your prompt. It is not limited to realism but struggles with extreme style consistency and hand-crafted animation aesthetics."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Sora (Video Generation)",
+      "description": "OpenAI's text-to-video diffusion model that generates multi-second HD video clips from text prompts.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/sora",
+      "termCode": "sora"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:15:02Z"
@@ -5752,61 +3472,13 @@
       "open-source image generation"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Stable Diffusion",
-        "description": "Open-weight text-to-image model that generates images in a compressed latent space, dramatically cheaper than pixel-space diffusion.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/stable-diffusion",
-        "termCode": "stable-diffusion"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between Stable Diffusion and DALL·E?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Stable Diffusion is open-weight and runs locally; DALL·E is closed-source and API-only. SD lets you fine-tune, control inference, and avoid per-image fees; DALL·E offers higher-quality faces and brand consistency out-of-box."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Stable Diffusion commercially?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, Stability AI's license permits commercial use of generated images and model weights. However, training-data copyright disputes (Getty, artist collectives) create legal gray areas in some jurisdictions; review your local laws."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What GPU do I need to run Stable Diffusion locally?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "SDXL runs on 8 GB VRAM (RTX 4070, RTX 3070) with quantization; SD 1.5 fits on 4 GB. Inference takes 5–30 seconds per image depending on steps and hardware; CPU-only is feasible but slow (minutes per image)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I fine-tune Stable Diffusion on my own images?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Use LoRA (Low-Rank Adaptation) with tools like Axolotl or Kohya SS. Train on 5–50 representative images at learning rate 0.0001 for 1000–5000 steps; this costs <1 hour on a 24 GB GPU and produces reusable style adapters."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Stable Diffusion work for text, logos, and hands?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not reliably. SD struggles with legible text, precise logos, and anatomically correct hands. ControlNet (canny, pose) improves structure; specialized models (InstructPix2Pix, text-to-image fine-tunes) help, but expect post-processing or inpainting."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Stable Diffusion",
+      "description": "Open-weight text-to-image model that generates images in a compressed latent space, dramatically cheaper than pixel-space diffusion.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/stable-diffusion",
+      "termCode": "stable-diffusion"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:34Z"
@@ -5870,61 +3542,13 @@
       "BigCode"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "StarCoder (Code Model)",
-        "description": "Open-source code LLM trained on permissively licensed GitHub repos; supports fill-in-the-middle completion.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/starcoder",
-        "termCode": "starcoder"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between StarCoder and CodeLlama?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "StarCoder is trained on GitHub code under permissive licenses; CodeLlama is Meta's proprietary variant trained on code and instruction-tuned. StarCoder is smaller (3B–15B) but fully open; CodeLlama focuses on instruction-following. Choose StarCoder for license clarity and local control."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I run StarCoder on a CPU?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but it's slow. Quantized variants (4-bit or 8-bit) run on CPU, but GPU is 10–50x faster. For production, target NVIDIA/AMD GPUs or Apple Metal for reasonable latency."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does StarCoder work with any programming language?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "It works best on Python, JavaScript, TypeScript, C++, and Java. Performance degrades on esoteric or domain-specific languages. Test your language before committing to production."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is StarCoder better than GitHub Copilot?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No—Copilot has better instruction-tuning and real-world context from GitHub telemetry. StarCoder trades capability for openness: you control the model, avoid vendor lock-in, and pay no API costs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is The Stack and why does it matter?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The Stack is a curated dataset of 358M permissively licensed GitHub files. It excludes GPL and other restrictive licenses, ensuring you can legally ship and modify StarCoder without legal overhead."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "StarCoder (Code Model)",
+      "description": "Open-source code LLM trained on permissively licensed GitHub repos; supports fill-in-the-middle completion.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/starcoder",
+      "termCode": "starcoder"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:11:03Z"
@@ -5988,61 +3612,13 @@
       "linear-time sequence model"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "State Space Model",
-        "description": "Sequence model using linear recurrence to process tokens in linear time, enabling efficient long-context inference.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/state-space-model",
-        "termCode": "state-space-model"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is a state space model different from a Transformer?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Transformers use attention (quadratic complexity) to directly compare all token pairs. SSMs use a fixed hidden state (linear complexity) that gets updated sequentially. Transformers are more flexible with token interactions; SSMs are much faster at inference on long sequences."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is the difference between S4 and Mamba?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "S4 discretizes continuous-time dynamics for all positions the same way. Mamba adds selectivity—each position's state transition learns whether to update or forget based on the current input. Mamba performs better on real tasks because it can adaptively compress information."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I fine-tune an SSM the same way as a Transformer?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Mostly yes, but training is less optimized. Standard data-parallel fine-tuning works. However, advanced techniques like FlashAttention have no SSM equivalent yet, and gradient checkpointing strategies differ due to the sequential nature of recurrence."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Do state space models use less memory than Transformers?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "During inference, yes—no KV cache needed. During training, memory savings are modest because the model still stores activations for backprop through the recurrence. Main advantage is inference memory and latency on long sequences."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Are state space models ready for production?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Mamba-based models are production-viable for long-context tasks. Inference is fast and mature frameworks exist (vLLM, TGI). Training and fine-tuning tooling lag Transformers, and edge cases with short, task-specific benchmarks may still favor Transformers."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "State Space Model",
+      "description": "Sequence model using linear recurrence to process tokens in linear time, enabling efficient long-context inference.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/state-space-model",
+      "termCode": "state-space-model"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:02Z"
@@ -6108,61 +3684,13 @@
       "FLAN-T5"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "T5 (Text-to-Text Transfer Transformer)",
-        "description": "Google's encoder-decoder model that treats all NLP tasks as text-in, text-out generation.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/t5",
-        "termCode": "t5"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What's the difference between T5 and BART?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Both are encoder-decoder models, but T5's pretraining (span corruption) differs from BART's (noising + denoising). T5 tends to generalize better across tasks; BART excels at summarization and translation. T5 has more official variants (FLAN-T5)."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use T5 for question answering?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Prefix your input with \"question: <q>; context: <text>\" and T5 will generate the answer. However, fine-tuning on a QA dataset (SQuAD, etc.) improves accuracy over zero-shot."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does T5 compare to GPT-3 in cost and speed?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "T5-base runs on a single GPU and costs nearly nothing to host; GPT-3 requires paid API calls. T5 is 10–100× faster for classification and summarization but lacks the open-ended conversational fluency of large LLMs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is FLAN-T5 better than base T5?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "FLAN-T5 is instruction-tuned and stronger at zero-shot tasks and following natural prompts. Base T5 may perform better if you have a large labeled dataset for your specific task and can fine-tune it."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the training objective 'span corruption'?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The model masks random spans of text (e.g., 2–4 tokens) with a special token and learns to predict what was masked. This teaches contextual understanding more efficiently than token-level masking used in BERT."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "T5 (Text-to-Text Transfer Transformer)",
+      "description": "Google's encoder-decoder model that treats all NLP tasks as text-in, text-out generation.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/t5",
+      "termCode": "t5"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:17Z"
@@ -6221,61 +3749,13 @@
     "meta_description": "Neural network architecture using self-attention to process sequences in parallel, enabling modern LLMs like GPT and Claude.",
     "seo_variations": [],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Transformer",
-        "description": "Neural network architecture using self-attention to process sequences in parallel, enabling modern LLMs like GPT and Claude.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/transformer",
-        "termCode": "transformer"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between a Transformer and an RNN?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "RNNs process tokens sequentially, one at a time, making them slow on long sequences. Transformers process all tokens in parallel using self-attention, enabling massive GPU parallelization and training on larger datasets. This parallelism is why Transformers power modern LLMs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why is self-attention called attention?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Self-attention computes weights showing how much each token should 'pay attention to' every other token. These weights determine which context the model prioritizes when generating predictions, mimicking selective focus."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does a Transformer understand the order of words?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Not inherently. Transformers use positional encodings (typically RoPE or absolute embeddings) to inject position information. Without them, a Transformer treats 'cat chased dog' the same as 'dog chased cat,' which is why positional embeddings are essential."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Why do Transformers need more memory for longer contexts?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Self-attention creates a matrix comparing every token to every other token. A 4K context creates a 4K × 4K matrix; a 32K context creates a 32K × 32K matrix. Memory grows quadratically, not linearly."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can Transformers handle real-time streaming?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but with tradeoffs. Streaming Transformers must cache KV pairs and recompute attention at each new token, which is slower than batch inference. For true low-latency streaming, some practitioners use smaller models or speculative decoding."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Transformer",
+      "description": "Neural network architecture using self-attention to process sequences in parallel, enabling modern LLMs like GPT and Claude.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/transformer",
+      "termCode": "transformer"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:24:00Z"
@@ -6336,61 +3816,13 @@
       "Veo 3"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Veo (Google Video Model)",
-        "description": "Google's text-to-video model that generates HD video with strong motion and synchronization, available via VideoFX and Vertex AI.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/veo",
-        "termCode": "veo"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How does Veo compare to Sora or Runway Gen-3?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "All three generate high-quality video from text, but differ in availability, cost, and features. Veo 3 has native audio sync; Sora is closed to select users; Runway emphasizes motion control. Each has different latency and quality tradeoffs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Veo for commercial projects?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, Google allows commercial use of Veo outputs via VideoFX and Vertex AI, but review the terms for your specific tier. Attribution or usage restrictions may apply depending on your plan."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How long does a Veo video take to generate?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Generation time depends on video length and resolution. Typically 60 seconds at 1080p takes 5–15 minutes; 4K takes longer. Vertex AI offers batch processing for cost optimization."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Veo work better for certain video types?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Veo excels at product shots, cinematic scenes, and motion-heavy content. It struggles with extreme close-ups, rapid scene cuts, and scenes requiring precise text rendering or legible logos."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Veo open-source or closed?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Veo is closed-source and proprietary to Google. You access it via APIs or web interfaces, not local weights. For open alternatives, see Stable Diffusion or other open-weight video models."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Veo (Google Video Model)",
+      "description": "Google's text-to-video model that generates HD video with strong motion and synchronization, available via VideoFX and Vertex AI.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/veo",
+      "termCode": "veo"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:15:12Z"
@@ -6458,61 +3890,13 @@
       "patch-based vision"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Vision Transformer (ViT)",
-        "description": "Transformer architecture that processes images as patch sequences, replacing CNNs in modern vision models.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/vision-transformer",
-        "termCode": "vision-transformer"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How is Vision Transformer different from a CNN?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "CNNs use learned filters that slide across an image; ViT divides the image into patches and treats them like tokens in a sequence. ViT has no inductive bias for locality or translation invariance—it learns these properties from data instead."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does ViT work on small datasets?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. ViT underperforms CNNs on ImageNet-scale datasets without pretraining. It needs 100M+ images to compete. For small datasets, use a pretrained ViT or stick with CNNs."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What is the [CLS] token in Vision Transformer?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "A learnable token prepended to the patch sequence (borrowed from BERT). Its output embedding after the transformer serves as the image representation for classification or downstream tasks."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can ViT handle different image sizes?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "ViT is trained on a fixed input size. For different sizes, you can interpolate positional embeddings or use dynamic patching, but performance degrades if the new size is far from training resolution."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What are Vision Transformer patches?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "ViT divides an image into non-overlapping rectangular tiles (e.g., 16×16 pixels). Each patch is flattened and projected into a fixed-size embedding vector, creating a sequence the transformer can process."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Vision Transformer (ViT)",
+      "description": "Transformer architecture that processes images as patch sequences, replacing CNNs in modern vision models.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/vision-transformer",
+      "termCode": "vision-transformer"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:11:17Z"
@@ -6578,61 +3962,13 @@
       "Whisper ASR"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "Whisper (Speech Recognition)",
-        "description": "OpenAI's open-weight speech-to-text model trained on 680k hours of multilingual audio, transcribing 99 languages with strong noise robustness.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/whisper",
-        "termCode": "whisper"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is Whisper free to use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. The model weights are MIT-licensed and open-weight. You can download and run them on your own hardware for free. OpenAI also offers a paid API, but you're not required to use it."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can Whisper translate speech to English?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, but only to English. Whisper has a separate translation task that converts audio in any of 99 languages directly to English text. It does not translate to the original language."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How fast is Whisper on a laptop?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The tiny model runs in real-time on CPU; base and small models need a GPU for reasonable speed. faster-whisper can process 1 minute of audio in 5–30 seconds on a typical laptop, depending on model size and hardware."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What's the difference between Whisper and commercial speech-to-text?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Commercial services (Google Cloud, AWS) often have lower word-error-rates and support real-time streaming, but cost per hour and require internet. Whisper is offline, cheaper at scale, but less accurate on specialized domains."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Whisper work on low-resource devices?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, if you use the tiny (39M) or base (74M) model quantized with tools like gguf. Expect 5–10 seconds per minute of audio on a Raspberry Pi 4; larger models require a GPU."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "Whisper (Speech Recognition)",
+      "description": "OpenAI's open-weight speech-to-text model trained on 680k hours of multilingual audio, transcribing 99 languages with strong noise robustness.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/whisper",
+      "termCode": "whisper"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:12:12Z"
@@ -6698,61 +4034,13 @@
       "object detection inference"
     ],
     "schema_jsonld": {
-      "DefinedTerm": {
-        "@context": "https://schema.org",
-        "@type": "DefinedTerm",
-        "name": "YOLO (You Only Look Once)",
-        "description": "Real-time object detection model that predicts bounding boxes and classes in one forward pass instead of two stages.",
-        "inDefinedTermSet": "https://ossaihub.com/Glossary",
-        "url": "https://ossaihub.com/glossary/yolo",
-        "termCode": "yolo"
-      },
-      "FAQPage": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the difference between YOLOv8 and YOLO11?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "YOLO11 (2024) adds improved backbone efficiency and post-processing speed over YOLOv8 (2023). Both share the same architecture philosophy; YOLO11 is faster and slightly more accurate on benchmark datasets. Most production systems can use either; upgrade when you hit latency walls."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can YOLO run on a phone or Raspberry Pi?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes with caveats. Quantized YOLO models (INT8 or FP16) run on mobile hardware and Raspberry Pi, but inference slows to 0.5–2 FPS. For real-time mobile detection, use model pruning or distillation, or offload to edge servers."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does YOLO differ from DETR?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "YOLO predicts all boxes in one grid-based pass. DETR (Detection Transformer) uses query embeddings and cross-attention, which is more flexible for dense scenes but slower. YOLO is faster; DETR generalizes better to new object counts."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What if I need to detect objects YOLO doesn't recognize?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Fine-tune YOLO on your custom dataset with labeled bounding boxes. Even 100–500 examples of new objects can work if you use data augmentation and pretrained weights as initialization."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does YOLO support 3D bounding box detection?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Standard YOLO outputs 2D boxes. YOLOv8 and YOLO11 have experimental 3D modes for autonomous driving, but they require stereo or depth inputs and specialized training data."
-            }
-          }
-        ]
-      }
+      "@context": "https://schema.org",
+      "@type": "DefinedTerm",
+      "name": "YOLO (You Only Look Once)",
+      "description": "Real-time object detection model that predicts bounding boxes and classes in one forward pass instead of two stages.",
+      "inDefinedTermSet": "https://ossaihub.com/Glossary",
+      "url": "https://ossaihub.com/glossary/yolo",
+      "termCode": "yolo"
     },
     "rewrite_version": "v2",
     "rewritten_at": "2026-04-24T03:14:16Z"
