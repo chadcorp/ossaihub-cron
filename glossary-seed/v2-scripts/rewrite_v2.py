@@ -394,8 +394,14 @@ def main():
     if args.category:
         terms = [t for t in terms if t.get("category") == args.category]
 
-    done = {} if args.force else load_done(out_dir)
-    todo = [t for t in terms if t["slug"] not in done]
+    # Always load existing records so a force-rerun of one term doesn't wipe
+    # the other records in the same category file when we flush. `--force`
+    # only widens `todo`, it must not drop previously-successful work.
+    done = load_done(out_dir)
+    if args.force:
+        todo = list(terms)
+    else:
+        todo = [t for t in terms if t["slug"] not in done]
     if args.limit:
         todo = todo[: args.limit]
 

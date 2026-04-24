@@ -1,0 +1,2842 @@
+[
+  {
+    "slug": "alpaca-format",
+    "title": "Alpaca Format",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "tldr": "Simple instruction-tuning prompt template using '### Instruction:', '### Input:', '### Response:' headers, now largely superseded by ChatML.",
+    "plain_english": "Alpaca format is a way to structure prompts for models trained to follow instructions. Think of it as a standardized form with labeled sections: one for your instruction, one for optional input, and one where the model fills in its response. It's human-readable and doesn't require special tokens, but it has no built-in support for multi-turn conversations.",
+    "how_it_works": "You format your prompt using plaintext headers separated by newlines. A basic template looks like: '### Instruction:\\n{your_task}\\n\\n### Response:\\n'. The model learns during training to recognize these headers and generate text after '### Response:'. There's no enforced structure for conversation history or role markers—it relies on the model's learned pattern matching. This simplicity works for single-turn tasks but breaks down when you need to track speaker turns or system-level directives.",
+    "why_it_matters": "Many 2023 open-source models (Alpaca, Vicuña, early Llama fine-tunes) were trained on this format. If you use ChatML or other templates against them, output quality drops because the model never learned to handle those markers. Choosing the wrong format for your base model is a silent failure—the model doesn't error, it just performs worse.",
+    "example": "A 2023 research team fine-tuning Llama 7B on medical QA used Alpaca format because it matched the original training data. When they later deployed the model behind an API that auto-wrapped queries in ChatML format, accuracy fell 8–12 points. Switching back to Alpaca templating in their prompt layer fixed it.",
+    "pitfalls": [
+      "Easy to confuse with regular document text if your dataset contains '###' headers naturally—the model may fail to distinguish instructions from content.",
+      "No native multi-turn support; chaining conversations requires manual context concatenation, which breaks with long histories.",
+      "Newer models trained on ChatML or vendor formats will ignore Alpaca headers and treat them as literal text.",
+      "Whitespace sensitivity—inconsistent spacing around newlines can degrade performance."
+    ],
+    "when_use": "Use Alpaca format when deploying or fine-tuning models explicitly trained on it (Alpaca, early Vicuña, some Llama 1 derivatives), or when you control the entire training-to-inference pipeline and want human-readable prompts without special tokens.",
+    "when_avoid": "Avoid it for multi-turn chat applications, models trained after mid-2023 (default to ChatML), production APIs mixing model families, or when your dataset has natural '###' content that could collide with headers.",
+    "related_terms": [
+      "chat-template",
+      "chatml",
+      "instruction-tuning",
+      "prompt-engineering",
+      "special-tokens",
+      "sharegpt-format"
+    ],
+    "related_tools": [],
+    "faq": [
+      {
+        "q": "Is Alpaca format the same as ChatML?",
+        "a": "No. Alpaca uses plaintext headers like '### Instruction:'; ChatML uses special tokens like '<|im_start|>assistant'. Models trained on one don't generalize well to the other."
+      },
+      {
+        "q": "Can I use Alpaca format with any model?",
+        "a": "Only with models explicitly trained on it. Newer models (Claude, GPT-4, Llama 2/3, Mistral) expect ChatML or their own proprietary format and will treat Alpaca headers as literal text."
+      },
+      {
+        "q": "How do I know if my model uses Alpaca format?",
+        "a": "Check the model card or training details. If it was fine-tuned on Stanford Alpaca, Vicuña, or early open-source instruction datasets from 2023, it likely expects Alpaca. Test with a simple prompt to confirm."
+      },
+      {
+        "q": "Can I convert Alpaca format to ChatML?",
+        "a": "Yes, you can transform prompts programmatically by replacing headers, but you cannot retrain a model trained on Alpaca to understand ChatML without additional fine-tuning."
+      },
+      {
+        "q": "Why is Alpaca format still used?",
+        "a": "Legacy models and fine-tuned derivatives from 2023 still expect it. Some researchers prefer it for interpretability because it doesn't hide structure in special tokens."
+      }
+    ],
+    "meta_title": "Alpaca Format — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Simple instruction-tuning prompt template using plaintext headers, now mostly superseded by ChatML. Used by 2023 open-source models.",
+    "seo_variations": [
+      "Alpaca prompt format",
+      "Alpaca instruction format",
+      "Alpaca template"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Alpaca Format",
+        "description": "Simple instruction-tuning prompt template using '### Instruction:', '### Input:', '### Response:' headers, now largely superseded by ChatML.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/alpaca-format",
+        "termCode": "alpaca-format"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is Alpaca format the same as ChatML?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Alpaca uses plaintext headers like '### Instruction:'; ChatML uses special tokens like '<|im_start|>assistant'. Models trained on one don't generalize well to the other."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use Alpaca format with any model?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Only with models explicitly trained on it. Newer models (Claude, GPT-4, Llama 2/3, Mistral) expect ChatML or their own proprietary format and will treat Alpaca headers as literal text."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I know if my model uses Alpaca format?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Check the model card or training details. If it was fine-tuned on Stanford Alpaca, Vicuña, or early open-source instruction datasets from 2023, it likely expects Alpaca. Test with a simple prompt to confirm."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I convert Alpaca format to ChatML?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, you can transform prompts programmatically by replacing headers, but you cannot retrain a model trained on Alpaca to understand ChatML without additional fine-tuning."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why is Alpaca format still used?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Legacy models and fine-tuned derivatives from 2023 still expect it. Some researchers prefer it for interpretability because it doesn't hide structure in special tokens."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:32:27Z"
+  },
+  {
+    "slug": "bos-token",
+    "title": "Prefix Tokens / BOS (Beginning of Sequence)",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "tldr": "Special token prepended to sequence start so model knows where input begins; mismatch with training breaks inference.",
+    "plain_english": "Think of a BOS token like a left bracket that marks the start of a message. Your model learned to expect this signal during training, so it uses it to anchor where context begins. Different model families use different brackets—Llama uses <|begin_of_text|>, BERT uses [CLS], GPT-2 expects none—but if you skip it at inference when the model was trained with it, quality drops noticeably.",
+    "how_it_works": "During tokenization, the BOS token is inserted as the first token before any input text. The model's attention mechanism treats this token as an anchor point; it has special learned representations that initialize context processing. At inference, your tokenizer or chat template must insert the same BOS token your model saw during pretraining. If training data had BOS but inference omits it, the model operates in an unfamiliar state—attention weights don't align with learned patterns. Similarly, adding BOS when the model wasn't trained with it wastes a token and skews the context window.",
+    "why_it_matters": "A missed BOS is a silent quality bug. The model won't crash, but response coherence and accuracy degrade because the first token position lacks expected initialization signals. This is especially dangerous in production: the degradation is subtle enough to slip past casual testing. Chat templates usually handle BOS automatically, but custom inference pipelines, model merging, or format conversions often introduce this bug.",
+    "example": "You fine-tune Llama 2 on a chat dataset where BOS is always prepended. At inference, you build a custom endpoint and forget to add BOS before encoding the user prompt. The model still generates output, but it's less coherent and repetitive compared to the official API. You debug for hours before realizing the tokenizer sequence differs from training. Adding BOS back fixes the issue.",
+    "pitfalls": [
+      "Assuming no BOS is needed because the model accepts text without it—compatibility is not correctness.",
+      "Duplicating BOS (prepending it twice) causes the model to process an extra unused token, wasting context window.",
+      "Changing BOS during fine-tuning without retraining the first token's embeddings breaks alignment with learned representations.",
+      "Mixing tokenizers from different model families in a pipeline; each has its own BOS convention."
+    ],
+    "when_use": "Use explicit BOS token awareness when building custom inference code, merging models, or fine-tuning from a base model trained with a specific BOS convention.",
+    "when_avoid": "Avoid manual BOS handling if you're using a model's official API or a high-level library like Hugging Face transformers with the correct chat template—these handle it automatically.",
+    "related_terms": [
+      "special-tokens",
+      "chat-template",
+      "tokenizer",
+      "eos-token",
+      "pad-token",
+      "token"
+    ],
+    "related_tools": [],
+    "faq": [
+      {
+        "q": "What is the difference between BOS and EOS tokens?",
+        "a": "BOS (Beginning of Sequence) marks where input starts; EOS (End of Sequence) marks where it ends. Both are learned; removing either breaks the model's expected token boundaries."
+      },
+      {
+        "q": "Does every model require a BOS token?",
+        "a": "No. GPT-2 and many decoder-only models don't use BOS by default. Always check your model's tokenizer config or training code—the tokenizer object usually encodes this automatically."
+      },
+      {
+        "q": "What happens if I use the wrong BOS token?",
+        "a": "The model still processes text, but the first token lacks proper initialization. Outputs become less coherent, repetitive, or off-topic. The bug is subtle—no error message, just degraded quality."
+      },
+      {
+        "q": "How do I know if my tokenizer is adding BOS automatically?",
+        "a": "Call `tokenizer.encode('<your text>')` and compare the token IDs with and without calling `tokenizer.apply_chat_template()`. If the first token ID differs, the chat template is adding BOS."
+      },
+      {
+        "q": "Can I add BOS manually if the tokenizer already adds it?",
+        "a": "Not safely. You'll waste a token slot and shift all downstream tokens. Use the tokenizer's native behavior or override it uniformly, never both."
+      }
+    ],
+    "meta_title": "BOS Token (Beginning of Sequence) — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Special token prepended to sequence start so model knows where input begins; mismatch with training breaks inference.",
+    "seo_variations": [
+      "BOS token",
+      "begin of sequence",
+      "beginning of sequence token"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Prefix Tokens / BOS (Beginning of Sequence)",
+        "description": "Special token prepended to sequence start so model knows where input begins; mismatch with training breaks inference.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/bos-token",
+        "termCode": "bos-token"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is the difference between BOS and EOS tokens?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "BOS (Beginning of Sequence) marks where input starts; EOS (End of Sequence) marks where it ends. Both are learned; removing either breaks the model's expected token boundaries."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does every model require a BOS token?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. GPT-2 and many decoder-only models don't use BOS by default. Always check your model's tokenizer config or training code—the tokenizer object usually encodes this automatically."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens if I use the wrong BOS token?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The model still processes text, but the first token lacks proper initialization. Outputs become less coherent, repetitive, or off-topic. The bug is subtle—no error message, just degraded quality."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I know if my tokenizer is adding BOS automatically?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Call `tokenizer.encode('<your text>')` and compare the token IDs with and without calling `tokenizer.apply_chat_template()`. If the first token ID differs, the chat template is adding BOS."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I add BOS manually if the tokenizer already adds it?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Not safely. You'll waste a token slot and shift all downstream tokens. Use the tokenizer's native behavior or override it uniformly, never both."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:32:06Z"
+  },
+  {
+    "slug": "bpe",
+    "title": "BPE (Byte Pair Encoding)",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "tldr": "Tokenization algorithm that repeatedly merges frequent byte pairs to build a fixed vocabulary of subword units.",
+    "plain_english": "BPE breaks text into small pieces, then glues the most common pairs together over and over until you have a workable dictionary. Think of it like creating abbreviations: if you see 'th' together 10,000 times, you make it one symbol instead of two. The result: every possible text can be encoded, common words stay short, and rare words split into recognizable parts.",
+    "how_it_works": "Start with individual bytes or characters. Count adjacent pairs in your training data and merge the most frequent one. Repeat this process thousands of times (typically 30,000–200,000 merges) on a large corpus. Each merge becomes a new token in your vocabulary. At inference, encode any string by greedily applying the learned merges in order. The final vocabulary is fixed: common words like 'hello' compress to one token, while rare words like 'hallucinat' + 'ion' split into multiple. Byte-level BPE (GPT-2, GPT-4) operates on raw bytes and handles any Unicode without special handling; character-level variants like SentencePiece add explicit whitespace tokens.",
+    "why_it_matters": "BPE directly controls model cost and behavior. Mandarin text tokenizes denser than English, so the same content costs more. Unusual punctuation or formatting (trailing spaces, double newlines) can unexpectedly split into extra tokens. Understanding tokenization explains why 'CATS' costs more than 'cats' and why certain prompts in niche domains or languages have inflated token counts. It also reveals edge cases in prompt injection attacks and why Unicode handling varies across models.",
+    "example": "With GPT-4's tokenizer (built on byte-level BPE), the phrase 'The quick brown fox' encodes as 4 tokens: ['The', ' quick', ' brown', ' fox']. The word 'eating' is 1 token, but 'pneumonoultramicroscopicsilicovolcanoconiosis' splits into ~15 tokens. A team using the OpenAI API at $0.03 per 1K tokens will see a 3x cost difference between prompts with common vocabulary versus rare or mixed-case words, even at the same word count.",
+    "pitfalls": [
+      "Confusing word count with token count: 'running' might be 1 token but 'RUNNING' costs 2; this breaks cost estimation and billing assumptions.",
+      "Assuming tokenization is language-agnostic: CJK languages, code, and specialized domains (medical Latin, mathematical notation) tokenize at different rates, making cross-lingual and cross-domain pricing unpredictable.",
+      "Not accounting for whitespace tokens: leading/trailing spaces, newlines, and indentation become separate tokens, so formatting-heavy prompts (like tables or code) inflate unexpectedly.",
+      "Treating BPE vocabulary as static: different models (GPT-4 vs. Llama vs. Gemma) have different vocabularies, so the same text encodes differently across providers."
+    ],
+    "when_use": "Use BPE understanding whenever you estimate token costs, compare model pricing, debug prompt injection vulnerabilities, or optimize prompts for length-sensitive applications.",
+    "when_avoid": "Avoid over-optimizing for token counts in low-cost scenarios; the cognitive load of hand-tuning prompts to save 5% of tokens rarely justifies the effort except at massive scale.",
+    "related_terms": [
+      "token",
+      "tokenizer",
+      "special-tokens",
+      "byte-level-bpe",
+      "sentencepiece",
+      "context-window",
+      "subword-tokenization"
+    ],
+    "related_tools": [
+      "tiktoken",
+      "tokenizers",
+      "sentencepiece",
+      "huggingface-transformers"
+    ],
+    "faq": [
+      {
+        "q": "Why does 'CATS' tokenize into more tokens than 'cats'?",
+        "a": "BPE builds vocabulary on lowercased or mixed-case training data. Uppercase variants often appear less frequently, so they don't get their own token and must be split. GPT-4, for example, treats 'CATS' as 2–3 tokens but 'cats' as 1."
+      },
+      {
+        "q": "What's the difference between byte-level BPE and character-level BPE?",
+        "a": "Byte-level BPE (GPT-2, GPT-4) works on raw bytes and handles any Unicode automatically, even characters not in training. Character-level BPE (T5, older models) operates on characters and requires explicit handling of whitespace and unknown scripts. Byte-level is more robust but slightly less token-efficient."
+      },
+      {
+        "q": "Can I change a model's vocabulary or tokenizer after training?",
+        "a": "No. Vocabulary is frozen at model release. You cannot add new tokens or merge existing ones without retraining embeddings. Some frameworks like LLaMA support vocab extension plugins, but they are fragile and not standard practice."
+      },
+      {
+        "q": "Why does tokenization vary across models if they all use BPE?",
+        "a": "Each model is trained on different data and uses different vocabulary sizes and merge rules. OpenAI's GPT-4, Meta's Llama, and Google's Gemma all use BPE but learned different token boundaries, so 'hello' might be 1 token in one and 2 in another."
+      },
+      {
+        "q": "How does BPE handle code and special characters?",
+        "a": "Byte-level BPE encodes any byte, so code and symbols are handled, but often at low efficiency. A single tab or special Unicode character can consume multiple tokens. This is why code-specific models (CodeLlama) sometimes retrain tokenizers with wider vocabulary coverage for common programming characters."
+      }
+    ],
+    "meta_title": "BPE (Byte Pair Encoding) — Tokenization Algorithm Definition | OSS AI Hub",
+    "meta_description": "Tokenization algorithm that repeatedly merges frequent byte pairs to build a fixed vocabulary of subword units.",
+    "seo_variations": [
+      "BPE",
+      "Byte Pair Encoding",
+      "subword tokenization",
+      "BPE tokenization",
+      "byte pair encoding algorithm"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "BPE (Byte Pair Encoding)",
+        "description": "Tokenization algorithm that repeatedly merges frequent byte pairs to build a fixed vocabulary of subword units.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/bpe",
+        "termCode": "bpe"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Why does 'CATS' tokenize into more tokens than 'cats'?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "BPE builds vocabulary on lowercased or mixed-case training data. Uppercase variants often appear less frequently, so they don't get their own token and must be split. GPT-4, for example, treats 'CATS' as 2–3 tokens but 'cats' as 1."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What's the difference between byte-level BPE and character-level BPE?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Byte-level BPE (GPT-2, GPT-4) works on raw bytes and handles any Unicode automatically, even characters not in training. Character-level BPE (T5, older models) operates on characters and requires explicit handling of whitespace and unknown scripts. Byte-level is more robust but slightly less token-efficient."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I change a model's vocabulary or tokenizer after training?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Vocabulary is frozen at model release. You cannot add new tokens or merge existing ones without retraining embeddings. Some frameworks like LLaMA support vocab extension plugins, but they are fragile and not standard practice."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does tokenization vary across models if they all use BPE?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Each model is trained on different data and uses different vocabulary sizes and merge rules. OpenAI's GPT-4, Meta's Llama, and Google's Gemma all use BPE but learned different token boundaries, so 'hello' might be 1 token in one and 2 in another."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does BPE handle code and special characters?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Byte-level BPE encodes any byte, so code and symbols are handled, but often at low efficiency. A single tab or special Unicode character can consume multiple tokens. This is why code-specific models (CodeLlama) sometimes retrain tokenizers with wider vocabulary coverage for common programming characters."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:23:31Z"
+  },
+  {
+    "slug": "byte-level-bpe",
+    "title": "Byte-Level BPE",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "tldr": "BPE starting from raw UTF-8 bytes instead of characters, guaranteeing any input encodes with no out-of-vocabulary tokens.",
+    "plain_english": "Instead of breaking text into word pieces, byte-level BPE breaks it into the 256 possible byte values. This means any text—emoji, Chinese characters, corrupted data—always has a valid encoding. The tradeoff: non-Latin scripts use more tokens per character because their multi-byte UTF-8 representations get split across token boundaries.",
+    "how_it_works": "Byte-level BPE starts with a 256-token alphabet (one per byte value 0–255). It then learns merge rules by scanning training text and repeatedly combining the two most-frequent adjacent byte sequences until reaching a target vocabulary size (typically 50K tokens). At inference, any input is first converted to UTF-8 bytes, then encoded using the learned merge rules. Because every possible byte is in the base alphabet, encoding never fails—there is no unknown-token fallback.",
+    "why_it_matters": "LLMs never crash or refuse tokens on unfamiliar Unicode. But for users typing in CJK, Arabic, or emoji-heavy text, byte-level BPE costs more per character, increasing both latency and API bills. Understanding this tradeoff explains why GPT-4 appears to handle any input yet charges more for non-Latin text.",
+    "example": "A user types 'Hello 你好 🎉' into Claude. The English 'Hello' encodes to roughly 1–2 tokens. But the Chinese characters and emoji each take 3–6 tokens because their UTF-8 byte sequences don't match common merge patterns in English-heavy training data. A token counter shows the same character costs 3× more in Chinese than in English, directly affecting cost-per-request.",
+    "pitfalls": [
+      "Assuming all UTF-8 characters cost equally: CJK, emoji, and accented text are consistently more expensive per character than ASCII.",
+      "Thinking byte-level BPE is lossless for binary data: it encodes bytes faithfully but may split semantically meaningful structures (e.g., protobuf messages) inefficiently.",
+      "Confusing byte-level BPE with character-level tokenization: character-level fails on new Unicode blocks; byte-level never does but uses more tokens.",
+      "Using byte-level BPE when you expect your users to be mostly non-Latin: consider SentencePiece or unigram LM tokenizers trained on multilingual data instead."
+    ],
+    "when_use": "Use byte-level BPE when you need guaranteed encoding of any input (including adversarial or non-UTF-8 text), can tolerate higher token counts for non-Latin scripts, and want a simple, well-tested design.",
+    "when_avoid": "Avoid byte-level BPE if your users are primarily non-Latin (Chinese, Arabic, Indic scripts), token efficiency is critical to cost or latency, or you need tight control over how specific Unicode blocks tokenize.",
+    "related_terms": [
+      "bpe",
+      "subword-tokenization",
+      "tokenizer",
+      "sentencepiece",
+      "wordpiece",
+      "token"
+    ],
+    "related_tools": [
+      "tiktoken"
+    ],
+    "faq": [
+      {
+        "q": "What's the difference between byte-level BPE and character-level tokenization?",
+        "a": "Character-level tokenization breaks text into individual Unicode characters, which fails on unseen scripts. Byte-level BPE breaks text into bytes first, so any Unicode input encodes—but uses more tokens for non-ASCII text."
+      },
+      {
+        "q": "Why does Chinese text cost more tokens in GPT models?",
+        "a": "GPT models use byte-level BPE trained primarily on English. Chinese characters require 3–4 UTF-8 bytes each, and those byte sequences don't merge efficiently in an English-optimized vocabulary, so you need more tokens."
+      },
+      {
+        "q": "Can byte-level BPE encode binary data?",
+        "a": "Yes, it converts any byte sequence to tokens. However, binary data may tokenize inefficiently because merge rules were learned from text, not raw bytes."
+      },
+      {
+        "q": "How is byte-level BPE different from SentencePiece?",
+        "a": "Byte-level BPE always starts from bytes. SentencePiece can use bytes or characters and is often trained on multilingual data, making it more efficient for non-Latin scripts."
+      },
+      {
+        "q": "Will I ever get an unknown token with byte-level BPE?",
+        "a": "No. Because the base alphabet includes all 256 byte values, any input can be encoded, even if individual bytes must be output as single tokens."
+      }
+    ],
+    "meta_title": "Byte-Level BPE — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "BPE starting from raw UTF-8 bytes instead of characters, guaranteeing any input encodes with no out-of-vocabulary tokens.",
+    "seo_variations": [
+      "BBPE",
+      "byte BPE"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Byte-Level BPE",
+        "description": "BPE starting from raw UTF-8 bytes instead of characters, guaranteeing any input encodes with no out-of-vocabulary tokens.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/byte-level-bpe",
+        "termCode": "byte-level-bpe"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What's the difference between byte-level BPE and character-level tokenization?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Character-level tokenization breaks text into individual Unicode characters, which fails on unseen scripts. Byte-level BPE breaks text into bytes first, so any Unicode input encodes—but uses more tokens for non-ASCII text."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does Chinese text cost more tokens in GPT models?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "GPT models use byte-level BPE trained primarily on English. Chinese characters require 3–4 UTF-8 bytes each, and those byte sequences don't merge efficiently in an English-optimized vocabulary, so you need more tokens."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can byte-level BPE encode binary data?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, it converts any byte sequence to tokens. However, binary data may tokenize inefficiently because merge rules were learned from text, not raw bytes."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How is byte-level BPE different from SentencePiece?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Byte-level BPE always starts from bytes. SentencePiece can use bytes or characters and is often trained on multilingual data, making it more efficient for non-Latin scripts."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Will I ever get an unknown token with byte-level BPE?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Because the base alphabet includes all 256 byte values, any input can be encoded, even if individual bytes must be output as single tokens."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:32:54Z"
+  },
+  {
+    "slug": "chat-template",
+    "title": "Chat Template",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "tldr": "The exact text format a model expects for conversations—specifying where user messages, assistant replies, and system instructions go.",
+    "plain_english": "Every instruction-tuned model was trained on conversations formatted a specific way. Think of it like an envelope: the model knows where to find the sender, recipient, and message body because they're always in the same spots. If you put text in the wrong slots, the model gets confused and performs poorly. Each model family (Llama, Mistral, Qwen) has its own envelope format.",
+    "how_it_works": "During training, conversations are wrapped in special tokens and delimiters. Llama 3 uses `<|start_header_id|>user<|end_header_id|>` to mark role boundaries. Mistral uses `[INST]` and `[/INST]`. ChatML (used by GPT-4, Qwen) uses `<|im_start|>` and `<|im_end|>`. The HuggingFace `transformers` library stores this template as a Jinja string in `tokenizer.chat_template`. You pass a list of message dictionaries with roles ('system', 'user', 'assistant') and content to `tokenizer.apply_chat_template()`, and it returns the properly formatted string. Using the wrong template causes the model to ignore instructions, hallucinates, or over-refuses.",
+    "why_it_matters": "Mismatched chat templates are the single most common cause of local models underperforming compared to API versions. Fixing this one issue often recovers 20–40% of output quality. Getting it right ensures the model interprets your instructions instead of treating them as noise.",
+    "example": "You're running Llama 3.3-70B locally. You pass `{'role': 'user', 'content': 'Summarize this text'}` directly to the tokenizer without applying the chat template, and the model ignores your instruction. You switch to `tokenizer.apply_chat_template([{'role': 'user', 'content': 'Summarize this text'}], tokenize=False, add_generation_prompt=True)`, and the model suddenly follows directions because it now sees the message in the format it was trained on.",
+    "pitfalls": [
+      "Chat templates are not interchangeable—using Llama 3's template on Qwen produces garbage or refusals.",
+      "If you omit the system role entirely, you may activate the model's default safety behavior instead of your custom instructions.",
+      "The `add_generation_prompt=True` flag is required for single-turn prompts; omitting it leaves the model waiting for more input.",
+      "Some tools (like older versions of Ollama) apply the template automatically; double-applying it creates malformed input."
+    ],
+    "when_use": "Use chat templates whenever you format messages for any instruction-tuned model—always retrieve the official template from the model's tokenizer or documentation.",
+    "when_avoid": "Avoid manually constructing chat formats from scratch; always use the model's bundled or documented template to prevent role confusion or token leakage.",
+    "related_terms": [
+      "special-tokens",
+      "system-prompt",
+      "tokenizer",
+      "instruction-tuning",
+      "token",
+      "bpe",
+      "prompt-engineering"
+    ],
+    "related_tools": [
+      "transformers",
+      "ollama",
+      "llama.cpp"
+    ],
+    "faq": [
+      {
+        "q": "What happens if I use the wrong chat template?",
+        "a": "The model treats your formatted input as raw text instead of structured conversation, causing it to ignore instructions, hallucinate, or refuse reasonable requests."
+      },
+      {
+        "q": "Can I use the same chat template for different models?",
+        "a": "No. Each model family (Llama, Mistral, Qwen, etc.) has its own template. Using the wrong one degrades output quality significantly."
+      },
+      {
+        "q": "How do I find the correct chat template for a model?",
+        "a": "Check `tokenizer.chat_template` in the HuggingFace model repo, or run `tokenizer.chat_template` after loading the tokenizer via `AutoTokenizer.from_pretrained()`."
+      },
+      {
+        "q": "Do I need to know the chat template to use an API?",
+        "a": "No. APIs like OpenAI handle formatting internally. You only need to understand templates when running local models or working with raw tokenizers."
+      },
+      {
+        "q": "What is add_generation_prompt=True?",
+        "a": "It appends the assistant role header to signal the model to start generating a response, rather than waiting for more input."
+      }
+    ],
+    "meta_title": "Chat Template — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "The exact text format a model expects for conversations—specifying where user messages, assistant replies, and system instructions go.",
+    "seo_variations": [
+      "chat template",
+      "prompt template",
+      "ChatML",
+      "Llama chat format",
+      "chat template format",
+      "message format model"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Chat Template",
+        "description": "The exact text format a model expects for conversations—specifying where user messages, assistant replies, and system instructions go.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/chat-template",
+        "termCode": "chat-template"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What happens if I use the wrong chat template?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The model treats your formatted input as raw text instead of structured conversation, causing it to ignore instructions, hallucinate, or refuse reasonable requests."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use the same chat template for different models?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Each model family (Llama, Mistral, Qwen, etc.) has its own template. Using the wrong one degrades output quality significantly."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I find the correct chat template for a model?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Check `tokenizer.chat_template` in the HuggingFace model repo, or run `tokenizer.chat_template` after loading the tokenizer via `AutoTokenizer.from_pretrained()`."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need to know the chat template to use an API?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. APIs like OpenAI handle formatting internally. You only need to understand templates when running local models or working with raw tokenizers."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is add_generation_prompt=True?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "It appends the assistant role header to signal the model to start generating a response, rather than waiting for more input."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:24:12Z"
+  },
+  {
+    "slug": "chat-template-jinja",
+    "title": "Chat Template (Jinja)",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "tldr": "Jinja template shipped with a tokenizer that formats messages into the model's expected prompt structure.",
+    "plain_english": "Each chat model expects messages formatted a specific way—with special tokens, system messages, and tool calls in precise places. Rather than guessing that format, tokenizers ship with a Jinja template that does the work for you. Think of it like a recipe that takes your ingredients (user message, system prompt, tool calls) and arranges them exactly how the model was trained to read them.",
+    "how_it_works": "The tokenizer's `chat_template` attribute holds a Jinja string. You pass it a list of messages (with roles like 'user', 'assistant', 'system') to `apply_chat_template()`. Jinja renders the template, inserting BOS tokens, EOS tokens, role markers, and tool-use syntax in the right spots. The output is a single formatted prompt string ready to tokenize. Never concatenate messages manually—the template captures nuances the model depends on.",
+    "why_it_matters": "Hand-rolled prompt formatting is a frequent source of subtle bugs: wrong token placement, missing system-message delimiters, or tool-use syntax that doesn't match training. The template is the source of truth for what the model expects. Using it guarantees compatibility and eliminates an entire class of format-related failures, especially when switching models.",
+    "example": "You use Hugging Face Transformers to load Llama 2 and pass it messages: `[{\"role\": \"user\", \"content\": \"Hello\"}]`. Instead of manually adding `<s>` and `</s>` tokens, you call `tokenizer.apply_chat_template(messages)`, which applies Llama's built-in Jinja template and outputs the correct formatted string with all tokens in the right order.",
+    "pitfalls": [
+      "Assuming all models use the same format—they don't; always use the shipped template, not a generic one.",
+      "Concatenating strings instead of calling apply_chat_template, losing special tokens and role delimiters.",
+      "Not checking if the tokenizer has a template before calling apply_chat_template; some older models lack one.",
+      "Editing or overriding the template without understanding the model's training format, breaking inference."
+    ],
+    "when_use": "Use chat templates whenever you load a chat model from Hugging Face and have messages to format into a prompt.",
+    "when_avoid": "Avoid overriding the template unless you are explicitly fine-tuning on a new format and understand the model's tokenization deeply.",
+    "related_terms": [
+      "chat-template",
+      "chatml",
+      "tokenizer",
+      "special-tokens",
+      "chat-model",
+      "bos-token",
+      "eos-token"
+    ],
+    "related_tools": [
+      "huggingface-transformers"
+    ],
+    "faq": [
+      {
+        "q": "What is apply_chat_template and how do I use it?",
+        "a": "It's a tokenizer method that takes a list of messages and applies the Jinja template to format them into a single prompt string. Call `tokenizer.apply_chat_template(messages, tokenize=False)` to get the formatted string, or `tokenize=True` to get tokens directly."
+      },
+      {
+        "q": "Do all models have a chat_template?",
+        "a": "Most modern chat models do, but older base models and custom fine-tunes may not. Check `tokenizer.chat_template` to see if it exists; if it's None, you'll need to define one or use a reference template."
+      },
+      {
+        "q": "Can I use the same template for different models?",
+        "a": "No. Each model was trained on a specific format. Using the wrong template (e.g., Llama's template for Mistral) breaks the model's expectations and degrades quality. Always use the model's shipped template."
+      },
+      {
+        "q": "What happens if I manually add tokens instead of using the template?",
+        "a": "You risk missing role markers, tool-use syntax, or special tokens the model expects. The template is precise; manual concatenation is error-prone and hard to debug."
+      },
+      {
+        "q": "How do I add tool definitions to the chat template?",
+        "a": "Include them in the messages list with role 'tool' or as part of the system prompt, then pass to apply_chat_template. The template handles placement and formatting based on the model's training."
+      }
+    ],
+    "meta_title": "Chat Template (Jinja) — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Jinja template shipped with a tokenizer that formats messages into the model's expected prompt structure.",
+    "seo_variations": [
+      "apply_chat_template",
+      "Jinja chat template",
+      "chat template format",
+      "tokenizer chat template"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Chat Template (Jinja)",
+        "description": "Jinja template shipped with a tokenizer that formats messages into the model's expected prompt structure.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/chat-template-jinja",
+        "termCode": "chat-template-jinja"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is apply_chat_template and how do I use it?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "It's a tokenizer method that takes a list of messages and applies the Jinja template to format them into a single prompt string. Call `tokenizer.apply_chat_template(messages, tokenize=False)` to get the formatted string, or `tokenize=True` to get tokens directly."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do all models have a chat_template?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Most modern chat models do, but older base models and custom fine-tunes may not. Check `tokenizer.chat_template` to see if it exists; if it's None, you'll need to define one or use a reference template."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use the same template for different models?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Each model was trained on a specific format. Using the wrong template (e.g., Llama's template for Mistral) breaks the model's expectations and degrades quality. Always use the model's shipped template."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens if I manually add tokens instead of using the template?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You risk missing role markers, tool-use syntax, or special tokens the model expects. The template is precise; manual concatenation is error-prone and hard to debug."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I add tool definitions to the chat template?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Include them in the messages list with role 'tool' or as part of the system prompt, then pass to apply_chat_template. The template handles placement and formatting based on the model's training."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:33:20Z"
+  },
+  {
+    "slug": "chatml",
+    "title": "ChatML",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "tldr": "Chat message format using special tokens to mark role boundaries between turns in conversation logs.",
+    "plain_english": "ChatML is a way to mark where each speaker starts and stops in a conversation. Instead of relying on punctuation or line breaks, you wrap each turn with special tokens (like `<|im_start|>` and `<|im_end|>`) and label the role (user, assistant, or system). This makes it unambiguous for the model to parse who said what.",
+    "how_it_works": "Each message is wrapped in `<|im_start|>` and `<|im_end|>` tokens. The role label (user, assistant, or system) appears immediately after the start token. Example: `<|im_start|>user\\nWhat is 2+2?<|im_end|>\\n<|im_start|>assistant\\n4<|im_end|>`. During training and inference, the model sees these exact boundaries, so it learns to recognize turn structure reliably. Misformatting at either training or inference time causes silent quality degradation—the model doesn't error; it just produces worse outputs.",
+    "why_it_matters": "Chat models must know who is speaking to respond appropriately. ChatML is now the de facto standard for open-source models because it's simple, unambiguous, and reproducible. Getting the template wrong is a common source of poor LLM behavior that's hard to debug because the model won't raise an error.",
+    "example": "When you fine-tune Llama 2 or Mistral on conversation data, you format training examples using ChatML. If you forget to include `<|im_start|>system` for the system prompt, the model may ignore it at inference. A team training a customer-support bot discovered their model was ignoring safety guidelines—root cause was a missing system-role token in the chat template.",
+    "pitfalls": [
+      "Mismatched templates between training and inference silently degrade outputs; always version your template alongside your model checkpoint.",
+      "Inconsistent whitespace or newlines around tokens (e.g., `<|im_start|> user` vs `<|im_start|>user`) breaks parsing if the model wasn't trained on that variant.",
+      "Forgetting to include or properly format system-role messages; many models rely on system context for instruction-following and safety.",
+      "Using ChatML with models not trained on it (e.g., base models or models with a different template) produces incoherent outputs."
+    ],
+    "when_use": "Use ChatML when fine-tuning or deploying chat models that were trained with this format, or when you want a standard, model-agnostic way to structure multi-turn conversations.",
+    "when_avoid": "Avoid ChatML if your model uses a different chat template (check its documentation); forcing the wrong template on a model is worse than using its native format.",
+    "related_terms": [
+      "chat-template",
+      "special-tokens",
+      "tokenizer",
+      "chat-model",
+      "fine-tuning",
+      "instruction-tuning"
+    ],
+    "related_tools": [],
+    "faq": [
+      {
+        "q": "What is ChatML format?",
+        "a": "ChatML is an OpenAI-originated template that uses `<|im_start|>` and `<|im_end|>` tokens to mark message boundaries, with the role (user, assistant, system) labeled after the start token. Most open-source chat models now use it or a close variant."
+      },
+      {
+        "q": "Is ChatML the same as chat template?",
+        "a": "ChatML is one specific chat template. Other templates exist (e.g., Alpaca format, or model-specific variants), but ChatML has become the lingua franca for open-source models."
+      },
+      {
+        "q": "Why does ChatML matter if I'm just using an API?",
+        "a": "If you're calling an API (OpenAI, Anthropic), the provider handles templating for you. ChatML matters when you fine-tune your own model, run local inference, or build a custom chat pipeline."
+      },
+      {
+        "q": "What happens if I get the ChatML format wrong?",
+        "a": "The model won't error—it will just produce lower-quality outputs because it wasn't trained on that token structure. The degradation is silent and hard to debug."
+      },
+      {
+        "q": "Do I need to know ChatML to prompt an LLM?",
+        "a": "No. ChatML is internal to how the model processes multi-turn conversations. When you use a chat API or fine-tuned model, the framework handles formatting automatically."
+      }
+    ],
+    "meta_title": "ChatML — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Chat message format using special tokens to mark role boundaries between turns in conversation logs.",
+    "seo_variations": [
+      "ChatML format",
+      "ChatML tokens",
+      "chat template",
+      "im_start im_end"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "ChatML",
+        "description": "Chat message format using special tokens to mark role boundaries between turns in conversation logs.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/chatml",
+        "termCode": "chatml"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is ChatML format?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "ChatML is an OpenAI-originated template that uses `<|im_start|>` and `<|im_end|>` tokens to mark message boundaries, with the role (user, assistant, system) labeled after the start token. Most open-source chat models now use it or a close variant."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is ChatML the same as chat template?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "ChatML is one specific chat template. Other templates exist (e.g., Alpaca format, or model-specific variants), but ChatML has become the lingua franca for open-source models."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does ChatML matter if I'm just using an API?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "If you're calling an API (OpenAI, Anthropic), the provider handles templating for you. ChatML matters when you fine-tune your own model, run local inference, or build a custom chat pipeline."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens if I get the ChatML format wrong?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The model won't error—it will just produce lower-quality outputs because it wasn't trained on that token structure. The degradation is silent and hard to debug."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need to know ChatML to prompt an LLM?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. ChatML is internal to how the model processes multi-turn conversations. When you use a chat API or fine-tuned model, the framework handles formatting automatically."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:33:26Z"
+  },
+  {
+    "slug": "eos-token",
+    "title": "EOS (End of Sequence) Token",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "tldr": "A special token that signals when the model should stop generating text during inference.",
+    "plain_english": "Think of EOS as a period at the end of a sentence—but for the entire model output. When the model outputs this token, the inference engine knows to stop decoding and return the result. Without it, or if misconfigured, the model keeps generating forever.",
+    "how_it_works": "During training, you include EOS as a target token in the loss function so the model learns to emit it when generation should end. At inference time, you register EOS (or its string representation like `</s>`, `<|eot_id|>`, or `<|end_of_text|>`) as a stop sequence. When the model outputs this token, the decoder halts immediately. Chat templates typically insert EOS after each turn to mark conversational boundaries. If your tokenizer doesn't recognize the stop token or you forget to add it to the stop sequence list, decoding continues past the intended endpoint.",
+    "why_it_matters": "Misconfigured EOS handling is one of the top sources of 'infinite generation' bugs in production. Incomplete responses, memory waste, and timeout errors all stem from missing or mismatched stop tokens. Verifying that your stop token list matches your model's training format prevents hours of debugging.",
+    "example": "A team fine-tunes Llama 2 on instruction-response pairs, marking each response end with `</s>`. At inference, they forget to add `</s>` to their stop sequences. The model generates correct responses but continues writing hallucinated follow-up text. Adding `</s>` to the stop list immediately fixes the issue.",
+    "pitfalls": [
+      "Using the wrong token string for your model (e.g., `<|end_of_text|>` when your model uses `</s>`) causes the model to never recognize the stop signal.",
+      "Training without explicit EOS tokens in the target sequence teaches the model that generation has no defined end.",
+      "Chat templates that insert EOS inconsistently across turns confuse the model about when to stop.",
+      "Not registering EOS as a stop token in your inference engine means the token gets decoded but ignored."
+    ],
+    "when_use": "Use EOS whenever you need finite, bounded text generation—chat responses, summarization, code completion, or any task where you want the model to know when to stop.",
+    "when_avoid": "Avoid relying solely on EOS for open-ended tasks like continued story generation where you want the model to decide its own stopping point; combine with other termination signals like max_tokens.",
+    "related_terms": [
+      "bos-token",
+      "stop-sequences",
+      "special-tokens",
+      "chat-template",
+      "tokenizer",
+      "token"
+    ],
+    "related_tools": [],
+    "faq": [
+      {
+        "q": "What is the difference between EOS and stop sequences?",
+        "a": "EOS is a token the model learns to emit; a stop sequence is an instruction to the inference engine to halt when it sees that token (or string). You need both—training teaches EOS emission, stop sequences enforce it."
+      },
+      {
+        "q": "Why does my model keep generating past where it should stop?",
+        "a": "Either EOS wasn't included in training targets (so the model never learned to emit it), or EOS isn't registered in your inference stop list, or the token string doesn't match what your tokenizer produces."
+      },
+      {
+        "q": "Can different models use different EOS tokens?",
+        "a": "Yes. Llama uses `</s>`, GPT uses `<|endoftext|>`, Qwen uses `<|im_end|>`. Always check your model's tokenizer and documentation."
+      },
+      {
+        "q": "Does EOS work for multi-turn conversations?",
+        "a": "Yes, if your chat template inserts EOS after each assistant message. The model learns that EOS marks the end of its current turn, not the entire conversation."
+      },
+      {
+        "q": "What happens if I set max_tokens instead of using EOS?",
+        "a": "max_tokens is a hard cutoff; EOS is semantic. EOS respects natural stopping points; max_tokens cuts off mid-sentence. Use both for safety—EOS first, max_tokens as a fallback."
+      }
+    ],
+    "meta_title": "EOS (End of Sequence) Token — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "A special token that signals when the model should stop generating text during inference.",
+    "seo_variations": [
+      "EOS token",
+      "end of sequence",
+      "end of sequence token",
+      "stop token"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "EOS (End of Sequence) Token",
+        "description": "A special token that signals when the model should stop generating text during inference.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/eos-token",
+        "termCode": "eos-token"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is the difference between EOS and stop sequences?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "EOS is a token the model learns to emit; a stop sequence is an instruction to the inference engine to halt when it sees that token (or string). You need both—training teaches EOS emission, stop sequences enforce it."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does my model keep generating past where it should stop?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Either EOS wasn't included in training targets (so the model never learned to emit it), or EOS isn't registered in your inference stop list, or the token string doesn't match what your tokenizer produces."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can different models use different EOS tokens?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Llama uses `</s>`, GPT uses `<|endoftext|>`, Qwen uses `<|im_end|>`. Always check your model's tokenizer and documentation."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does EOS work for multi-turn conversations?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, if your chat template inserts EOS after each assistant message. The model learns that EOS marks the end of its current turn, not the entire conversation."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens if I set max_tokens instead of using EOS?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "max_tokens is a hard cutoff; EOS is semantic. EOS respects natural stopping points; max_tokens cuts off mid-sentence. Use both for safety—EOS first, max_tokens as a fallback."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:31:25Z"
+  },
+  {
+    "slug": "pad-token",
+    "title": "Pad Token",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "tldr": "Special token used to fill short sequences to a uniform length for batched GPU processing.",
+    "plain_english": "When you process multiple text sequences at once (a batch), they need to be the same length to fit in a tensor. Pad tokens are dummy placeholders that extend shorter sequences to match the longest one. Think of it like adding blank lines to align columns in a spreadsheet—the model learns to ignore them during training.",
+    "how_it_works": "During batching, you identify the maximum sequence length in the batch and append pad tokens to all shorter sequences until they match. You then create an attention mask—a binary tensor that flags which positions are real tokens (1) and which are padding (0). The attention mechanism uses this mask to exclude pad positions from computations. During training, loss is computed only on real tokens; padded positions are ignored. Decoder-only models (like GPT) typically use left-padding (padding on the left) so generated content aligns to the same position regardless of input length.",
+    "why_it_matters": "Incorrect padding causes silent training bugs: unmasked pads leak into loss computation, skewing gradients; wrong padding side breaks generation consistency; reusing EOS as a pad token conflates two distinct roles. These errors are hard to catch because training still runs—output just diverges subtly. Correct padding is foundational to reproducible, efficient batch processing.",
+    "example": "A fine-tuning script for Llama 2 processes a batch of four chat completions with lengths [156, 89, 203, 142] tokens. The trainer sets max_length=256 and pads the sequences to 256 using a designated pad token (ID 0). An attention mask is applied: `[ones(156), zeros(100), ones(203), ones(114)]`. During backward pass, gradients flow only through the real tokens. Left-padding ensures the model's EOS prediction aligns across all sequences in the batch.",
+    "pitfalls": [
+      "Forgetting the attention mask—pad tokens then influence loss and attention weights, corrupting training.",
+      "Padding on the right in decoder-only models—breaks generation because the model expects real content at a consistent position.",
+      "Sharing pad token ID with EOS or special control tokens—causes the model to confuse sequence end with padding.",
+      "Not excluding pad tokens from loss computation in custom training loops—gradients update on meaningless positions."
+    ],
+    "when_use": "Use pad tokens whenever you batch sequences of variable length—nearly all practical training and inference pipelines with batching.",
+    "when_avoid": "Avoid padding if you process one sequence at a time (no batching) or if you pad to extremely long lengths unnecessarily, wasting compute on empty positions.",
+    "related_terms": [
+      "special-tokens",
+      "bos-token",
+      "eos-token",
+      "tokenizer",
+      "attention",
+      "batching",
+      "token"
+    ],
+    "related_tools": [],
+    "faq": [
+      {
+        "q": "What is the difference between pad token and EOS token?",
+        "a": "EOS (end-of-sequence) signals the natural end of meaningful content and is always included in loss; pad tokens are placeholders added artificially to reach batch length and are masked out. Reusing the same ID for both breaks training."
+      },
+      {
+        "q": "Why do decoder models pad on the left instead of the right?",
+        "a": "Left-padding preserves position alignment—the last real token always ends at the same position in the sequence. This keeps generated output consistent across batch size and prevents the model from learning spurious position-dependent biases."
+      },
+      {
+        "q": "Does padding slow down training?",
+        "a": "Yes—padding adds empty computation on GPUs and increases memory use proportionally. Minimizing padding (e.g., via bucketing—grouping similar-length sequences) speeds up training significantly."
+      },
+      {
+        "q": "What happens if I forget to mask pad tokens?",
+        "a": "The model treats padding as real data: it updates weights based on pad tokens, attends over them, and includes them in loss. This corrupts learned representations and typically manifests as worse downstream performance or training instability."
+      },
+      {
+        "q": "Can I use any token ID as padding?",
+        "a": "Technically yes, but use a reserved or explicitly declared pad token. Reusing a common word token (e.g., the token for 'the') causes the model to conflate semantic content with padding, harming learning."
+      }
+    ],
+    "meta_title": "Pad Token — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Special token used to fill short sequences to a uniform length for batched GPU processing.",
+    "seo_variations": [
+      "padding token"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Pad Token",
+        "description": "Special token used to fill short sequences to a uniform length for batched GPU processing.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/pad-token",
+        "termCode": "pad-token"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is the difference between pad token and EOS token?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "EOS (end-of-sequence) signals the natural end of meaningful content and is always included in loss; pad tokens are placeholders added artificially to reach batch length and are masked out. Reusing the same ID for both breaks training."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why do decoder models pad on the left instead of the right?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Left-padding preserves position alignment—the last real token always ends at the same position in the sequence. This keeps generated output consistent across batch size and prevents the model from learning spurious position-dependent biases."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does padding slow down training?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes—padding adds empty computation on GPUs and increases memory use proportionally. Minimizing padding (e.g., via bucketing—grouping similar-length sequences) speeds up training significantly."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens if I forget to mask pad tokens?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The model treats padding as real data: it updates weights based on pad tokens, attends over them, and includes them in loss. This corrupts learned representations and typically manifests as worse downstream performance or training instability."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use any token ID as padding?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Technically yes, but use a reserved or explicitly declared pad token. Reusing a common word token (e.g., the token for 'the') causes the model to conflate semantic content with padding, harming learning."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:31:56Z"
+  },
+  {
+    "slug": "sentencepiece",
+    "title": "SentencePiece",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "tldr": "Google's tokenizer that treats raw text as characters, supporting BPE and Unigram LM without pre-tokenization.",
+    "plain_english": "SentencePiece works on raw text directly, encoding spaces as a special character so it doesn't assume words are pre-separated. Think of it like learning to read a language that has no spaces—you figure out where words start and end on your own. This makes it work equally well for English, Chinese, Arabic, or any other language without extra setup steps.",
+    "how_it_works": "SentencePiece trains directly on raw character sequences, replacing spaces with a placeholder token (▁). You choose either BPE (byte-pair encoding) or Unigram LM as the training algorithm. It learns which character sequences to merge into subword tokens by analyzing frequency or probability across the entire corpus. At inference, it splits new text into the same subword tokens without requiring a separate word-boundary step. This is why it works identically for languages with no spaces (Japanese, Chinese) and those with whitespace (English, German).",
+    "why_it_matters": "Most multilingual and non-English models use SentencePiece because it eliminates language-specific preprocessing. You don't need different tokenization rules for different languages, which cuts deployment complexity and lets you scale to new languages faster. T5, ALBERT, XLNet, Llama, and nearly all modern multilingual systems rely on it.",
+    "example": "A team training a machine translation system for English, Mandarin, and Arabic can use the same SentencePiece configuration for all three languages. The tokenizer learns character patterns in each language independently—no need to write language-specific rules or handle the fact that Chinese has no spaces. When they deploy, one tokenizer handles input preprocessing across all languages.",
+    "pitfalls": [
+      "Choosing too large or too small a vocabulary (typical range: 8k–32k tokens) can hurt efficiency; benchmark on your dataset.",
+      "Forgetting that SentencePiece encodes spaces as ▁, so decoded text may need post-processing to remove them.",
+      "Assuming Unigram LM always beats BPE; test both on your corpus—BPE is often faster and equally effective.",
+      "Not controlling special tokens properly; define your BOS, EOS, UNK tokens explicitly before training."
+    ],
+    "when_use": "Use SentencePiece when training or fine-tuning on multiple languages, working with languages without word boundaries, or building multilingual systems where language-agnostic tokenization saves engineering effort.",
+    "when_avoid": "Avoid it if you already have a working, language-specific tokenizer and don't plan to scale to other languages; the overhead is unjustified for single-language English models.",
+    "related_terms": [
+      "bpe",
+      "subword-tokenization",
+      "unigram-lm-tokenizer",
+      "tokenizer",
+      "special-tokens",
+      "wordpiece"
+    ],
+    "related_tools": [
+      "sentencepiece"
+    ],
+    "faq": [
+      {
+        "q": "What's the difference between SentencePiece and BPE?",
+        "a": "SentencePiece is a library that *implements* BPE (and Unigram LM). BPE is an algorithm; SentencePiece is a training framework that lets you use BPE or Unigram LM on raw text without pre-tokenization."
+      },
+      {
+        "q": "Does SentencePiece work for English?",
+        "a": "Yes, it works fine for English. It's most valuable when you need the same tokenizer for multiple languages at once, but it's language-agnostic so you can use it for English-only models too."
+      },
+      {
+        "q": "How do I train SentencePiece on my own data?",
+        "a": "You pass raw text directly to `spm.SentencePieceTrainer.train()` with your corpus, specify vocab size and algorithm (BPE or Unigram), and it outputs a model file and vocabulary. No separate word-splitting or tokenization step is needed."
+      },
+      {
+        "q": "Can I use a pre-trained SentencePiece tokenizer from Hugging Face?",
+        "a": "Yes. Most Hugging Face models include a `sentencepiece.model` file. Load it with `transformers.AutoTokenizer.from_pretrained()` and it handles SentencePiece decoding internally."
+      },
+      {
+        "q": "Why do decoded SentencePiece tokens have underscores?",
+        "a": "SentencePiece encodes spaces as ▁ (U+2581) during training. When you decode, you may see underscores where spaces were. Post-process by replacing them or using the tokenizer's `decode()` method, which handles this automatically."
+      }
+    ],
+    "meta_title": "SentencePiece — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Google's tokenizer that treats raw text as characters, supporting BPE and Unigram LM without pre-tokenization.",
+    "seo_variations": [
+      "SentencePiece tokenizer",
+      "SentencePiece BPE",
+      "SentencePiece training",
+      "multilingual tokenizer SentencePiece"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "SentencePiece",
+        "description": "Google's tokenizer that treats raw text as characters, supporting BPE and Unigram LM without pre-tokenization.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/sentencepiece",
+        "termCode": "sentencepiece"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What's the difference between SentencePiece and BPE?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "SentencePiece is a library that *implements* BPE (and Unigram LM). BPE is an algorithm; SentencePiece is a training framework that lets you use BPE or Unigram LM on raw text without pre-tokenization."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does SentencePiece work for English?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, it works fine for English. It's most valuable when you need the same tokenizer for multiple languages at once, but it's language-agnostic so you can use it for English-only models too."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I train SentencePiece on my own data?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You pass raw text directly to `spm.SentencePieceTrainer.train()` with your corpus, specify vocab size and algorithm (BPE or Unigram), and it outputs a model file and vocabulary. No separate word-splitting or tokenization step is needed."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use a pre-trained SentencePiece tokenizer from Hugging Face?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Most Hugging Face models include a `sentencepiece.model` file. Load it with `transformers.AutoTokenizer.from_pretrained()` and it handles SentencePiece decoding internally."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why do decoded SentencePiece tokens have underscores?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "SentencePiece encodes spaces as ▁ (U+2581) during training. When you decode, you may see underscores where spaces were. Post-process by replacing them or using the tokenizer's `decode()` method, which handles this automatically."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:31:29Z"
+  },
+  {
+    "slug": "sharegpt-format",
+    "title": "ShareGPT Format",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "tldr": "JSON format for multi-turn conversations: arrays of {from, value} objects. Standard for instruction-tuning datasets.",
+    "plain_english": "ShareGPT format is a simple way to store a back-and-forth conversation between a human and an AI. Instead of one long text block, you organize it as a list of messages, each labeled with who said it (human or assistant) and what they said. Think of it like storing a chat log where each message has a clear sender tag.",
+    "how_it_works": "Data is stored as JSON arrays where each message is an object with two fields: 'from' (either 'human' or 'gpt') and 'value' (the text content). A single conversation is one array; a dataset is multiple arrays, often in a JSONL file (one array per line). Training frameworks like Axolotl and Unsloth parse this structure natively, mapping 'human' messages to the input sequence and 'gpt' messages to the training target. The format preserves turn order and role distinction, which matters for chat template assembly during tokenization.",
+    "why_it_matters": "Most open-source instruction datasets (Vicuna, WizardLM, community fine-tunes from 2023–2024) use this format. If you download a dataset from Hugging Face for chat model training, it's likely ShareGPT. Understanding the shape saves debugging time when loading data into training pipelines and ensures you apply the correct chat template during tokenization.",
+    "example": "A team fine-tuning Llama 2 on custom customer-support conversations would export their logs as a JSONL file where each line is [{from: 'human', value: 'How do I reset my password?'}, {from: 'gpt', value: 'Go to Settings > Account > Reset Password.'}]. Axolotl reads this directly, pairs human messages as input and gpt messages as output, and tokenizes them with the correct chat template. No intermediate conversion needed.",
+    "pitfalls": [
+      "Assuming 'gpt' and 'human' are the only valid role values — some datasets use 'assistant' or 'user' instead; check your training framework's expectations.",
+      "Forgetting to pair the ShareGPT format with the correct chat template; the JSON structure alone doesn't define how roles map to special tokens.",
+      "Not validating role order — the format allows malformed sequences (e.g., two human turns in a row), which breaks training if your framework doesn't catch it.",
+      "Mixing different role naming conventions within a single dataset, causing parse failures or silent role misassignment during tokenization."
+    ],
+    "when_use": "Use ShareGPT format when you have multi-turn conversations and need to load them into Axolotl, LLaMA-Factory, or other frameworks that natively support it, or when you're downloading instruction datasets from Hugging Face.",
+    "when_avoid": "Avoid it if you're training on single-turn prompt–completion pairs (use Alpaca format instead) or if your training framework expects a different schema (check the framework's docs first).",
+    "related_terms": [
+      "alpaca-format",
+      "chat-template",
+      "instruction-tuning",
+      "chatml",
+      "tokenizer",
+      "fine-tuning"
+    ],
+    "related_tools": [
+      "axolotl",
+      "unsloth"
+    ],
+    "faq": [
+      {
+        "q": "What's the difference between ShareGPT format and Alpaca format?",
+        "a": "Alpaca format stores single turn-pairs as {instruction, input, output}. ShareGPT stores multi-turn conversations as arrays of {from, value} objects. Use ShareGPT for back-and-forth dialogues, Alpaca for single Q&A pairs."
+      },
+      {
+        "q": "Do I need to use a specific chat template with ShareGPT format?",
+        "a": "Yes. ShareGPT defines the data shape, but you still need a chat template (e.g., ChatML, Llama 2) to map roles to special tokens during training. The framework handles this if you specify the template in config."
+      },
+      {
+        "q": "Can I convert my dataset to ShareGPT format?",
+        "a": "Yes, it's straightforward — parse your raw conversations and emit them as JSON arrays with {from, value} objects. Most datasets on Hugging Face provide conversion scripts or already exist in ShareGPT."
+      },
+      {
+        "q": "What frameworks support ShareGPT format natively?",
+        "a": "Axolotl, LLaMA-Factory, and Unsloth all parse it directly. If your framework doesn't list it, you'll need a conversion step first."
+      },
+      {
+        "q": "Is ShareGPT format tied to ChatGPT data?",
+        "a": "No — it's just named after the ShareGPT dataset (early ChatGPT conversation dumps). The format itself is framework-agnostic and works with any conversation data."
+      }
+    ],
+    "meta_title": "ShareGPT Format — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "JSON format for multi-turn conversations: arrays of {from, value} objects. Standard for instruction-tuning datasets.",
+    "seo_variations": [
+      "ShareGPT dataset format"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "ShareGPT Format",
+        "description": "JSON format for multi-turn conversations: arrays of {from, value} objects. Standard for instruction-tuning datasets.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/sharegpt-format",
+        "termCode": "sharegpt-format"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What's the difference between ShareGPT format and Alpaca format?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Alpaca format stores single turn-pairs as {instruction, input, output}. ShareGPT stores multi-turn conversations as arrays of {from, value} objects. Use ShareGPT for back-and-forth dialogues, Alpaca for single Q&A pairs."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need to use a specific chat template with ShareGPT format?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. ShareGPT defines the data shape, but you still need a chat template (e.g., ChatML, Llama 2) to map roles to special tokens during training. The framework handles this if you specify the template in config."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I convert my dataset to ShareGPT format?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, it's straightforward — parse your raw conversations and emit them as JSON arrays with {from, value} objects. Most datasets on Hugging Face provide conversion scripts or already exist in ShareGPT."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What frameworks support ShareGPT format natively?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Axolotl, LLaMA-Factory, and Unsloth all parse it directly. If your framework doesn't list it, you'll need a conversion step first."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is ShareGPT format tied to ChatGPT data?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No — it's just named after the ShareGPT dataset (early ChatGPT conversation dumps). The format itself is framework-agnostic and works with any conversation data."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:32:07Z"
+  },
+  {
+    "slug": "special-tokens",
+    "title": "Special Tokens (BOS, EOS, PAD)",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "tldr": "Reserved token IDs that mark sequence structure—beginning (BOS), end (EOS), padding (PAD)—configured by the tokenizer, not learned from text.",
+    "plain_english": "Think of special tokens as punctuation marks your tokenizer adds automatically. BOS (beginning of sequence) is like an opening bracket, EOS (end of sequence) tells the model to stop generating, and PAD (padding) fills gaps when sequences are shorter than expected. They have fixed IDs in your vocabulary and control how the model understands where content starts, stops, and gets aligned.",
+    "how_it_works": "Your tokenizer defines special tokens in its configuration file, mapping them to integer IDs (e.g., BOS=1, EOS=2, PAD=0). During preprocessing, BOS is prepended and EOS appended to sequences. During generation, the model predicts tokens until it outputs the EOS token ID—unless you override this with a custom stop sequence. PAD tokens fill sequences to uniform length for batch processing; during training, loss is computed only on non-pad positions if you set `labels=-100` on pad token positions.",
+    "why_it_matters": "Misaligned special tokens are the root cause of fine-tuned models that ramble indefinitely, chat templates that produce malformed output, and loss spikes during training. Getting these right eliminates a major class of production bugs and ensures your model respects conversation boundaries and dataset structure.",
+    "example": "A Llama-3.3 fine-tune on a custom chat dataset: if your dataset uses `<|eot_id|>` to mark turn boundaries but you don't set `eos_token_id=[128009, 128001]` in generation config, the model never learns when to stop—it keeps outputting tokens past the conversation boundary. Explicitly mapping both end-of-turn and end-of-text tokens in your stop criteria fixes this.",
+    "pitfalls": [
+      "EOS is not always a single token—models like Llama-3 have distinct end-of-turn and end-of-document tokens; stop criteria must include all relevant ones or generation continues.",
+      "Padding tokens corrupt fine-tuning loss unless you set `labels=-100` on pad positions—forgetting this treats pad tokens as supervised targets and tanks training.",
+      "Chat template special tokens (e.g., `<|im_start|>`, `<|im_end|>`) differ per model family; copying a template between models without updating special token IDs causes silent output corruption.",
+      "BOS/EOS token IDs can shift when you extend vocabulary for domain-specific tokens; always verify token IDs after tokenizer modification, not by name."
+    ],
+    "when_use": "Use special token configuration explicitly whenever you fine-tune on custom datasets, implement inference with early stopping, or adapt a tokenizer for new domains.",
+    "when_avoid": "Avoid manually specifying BOS/EOS if you're using high-level APIs (e.g., OpenAI chat completions) that handle special tokens internally—override only when you need custom control.",
+    "related_terms": [
+      "token",
+      "tokenizer",
+      "bos-token",
+      "eos-token",
+      "pad-token",
+      "chat-template",
+      "stop-sequences"
+    ],
+    "related_tools": [
+      "tokenizers",
+      "transformers"
+    ],
+    "faq": [
+      {
+        "q": "What is the difference between EOS and EOT tokens?",
+        "a": "EOS (end of sequence) marks the end of the entire input or output; EOT (end of turn) marks the end of a single turn in multi-turn conversation. Llama-3 uses both—`<|end_of_text|>` for document boundary and `<|eot_id|>` for conversation turns. In generation, you often need both in your stop criteria."
+      },
+      {
+        "q": "Do special tokens count toward token limits?",
+        "a": "Yes, BOS, EOS, and PAD tokens all count toward your token usage and context window. PAD tokens also consume KV cache memory during inference, so padding to sequence length unnecessarily wastes compute."
+      },
+      {
+        "q": "Why does my fine-tuned model keep generating after EOS?",
+        "a": "The model learned EOS from training data, but without explicit stop criteria during inference, it treats EOS as just another possible token. Set `eos_token_id` in `model.generate()` and include it in `stopping_criteria` to enforce early termination."
+      },
+      {
+        "q": "Can I add custom special tokens to an existing tokenizer?",
+        "a": "Yes, using `tokenizer.add_special_tokens({'additional_special_tokens': ['<custom>']})`, but this extends vocabulary size and typically requires retraining the embedding layer or initializing new token embeddings randomly—plan for loss spikes or fine-tune to recover."
+      },
+      {
+        "q": "How do I check what special tokens a model uses?",
+        "a": "Call `tokenizer.special_tokens_map` to see the mapping, and `print(tokenizer.bos_token_id, tokenizer.eos_token_id, tokenizer.pad_token_id)` to inspect IDs. Always verify after loading a pretrained tokenizer."
+      }
+    ],
+    "meta_title": "Special Tokens (BOS, EOS, PAD) — Definition, Usage & Examples | OSS AI Hub",
+    "meta_description": "Reserved token IDs that mark sequence structure—beginning (BOS), end (EOS), padding (PAD)—configured by the tokenizer, not learned from text.",
+    "seo_variations": [
+      "special tokens",
+      "BOS EOS",
+      "stop tokens",
+      "EOT tokens",
+      "end of sequence token",
+      "beginning of sequence token",
+      "padding tokens"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Special Tokens (BOS, EOS, PAD)",
+        "description": "Reserved token IDs that mark sequence structure—beginning (BOS), end (EOS), padding (PAD)—configured by the tokenizer, not learned from text.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/special-tokens",
+        "termCode": "special-tokens"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is the difference between EOS and EOT tokens?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "EOS (end of sequence) marks the end of the entire input or output; EOT (end of turn) marks the end of a single turn in multi-turn conversation. Llama-3 uses both—`<|end_of_text|>` for document boundary and `<|eot_id|>` for conversation turns. In generation, you often need both in your stop criteria."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do special tokens count toward token limits?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, BOS, EOS, and PAD tokens all count toward your token usage and context window. PAD tokens also consume KV cache memory during inference, so padding to sequence length unnecessarily wastes compute."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does my fine-tuned model keep generating after EOS?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The model learned EOS from training data, but without explicit stop criteria during inference, it treats EOS as just another possible token. Set `eos_token_id` in `model.generate()` and include it in `stopping_criteria` to enforce early termination."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I add custom special tokens to an existing tokenizer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, using `tokenizer.add_special_tokens({'additional_special_tokens': ['<custom>']})`, but this extends vocabulary size and typically requires retraining the embedding layer or initializing new token embeddings randomly—plan for loss spikes or fine-tune to recover."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I check what special tokens a model uses?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Call `tokenizer.special_tokens_map` to see the mapping, and `print(tokenizer.bos_token_id, tokenizer.eos_token_id, tokenizer.pad_token_id)` to inspect IDs. Always verify after loading a pretrained tokenizer."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:23:39Z"
+  },
+  {
+    "slug": "subword-tokenization",
+    "title": "Subword Tokenization",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "tldr": "Breaking text into units smaller than words—common words as single tokens, rare words as sequences.",
+    "plain_english": "Subword tokenization splits text into chunks that sit between characters and full words. Think of it like a postal system: common words are single packages, but unfamiliar words get broken into smaller, reusable pieces your model has already learned. This way, typos, new words, and foreign scripts don't crash the system because the model can reconstruct them from familiar pieces.",
+    "how_it_works": "The tokenizer learns a vocabulary during training by repeatedly merging the most common adjacent pairs of characters or subwords. BPE (Byte-Pair Encoding) starts with characters and merges upward. WordPiece starts with words and splits downward, preferring longer known subwords. At inference, the tokenizer scans input left-to-right and greedily matches the longest subword in its vocabulary, splitting unknown sequences into smaller pieces. Byte-level variants (like Byte-BPE) guarantee no out-of-vocabulary errors by falling back to raw bytes.",
+    "why_it_matters": "Subword tokenization lets models handle real-world text without ballooning vocabulary size or failing on typos and new words. It's the reason modern LLMs gracefully handle code, foreign scripts, URLs, and misspellings instead of crashing. This efficiency reduces memory and compute costs while improving robustness.",
+    "example": "A model trained with BPE might assign token IDs to 'play', 'ing', and 'er' separately. When it sees 'playing', it matches all three and produces three token IDs. When it encounters 'playful' (a word it never saw), it matches 'play', then breaks 'ful' into 'f', 'u', 'l'—all pieces it knows. Without subword tokenization, 'playful' would trigger an out-of-vocabulary error.",
+    "pitfalls": [
+      "Vocabulary size and merge count are independent trade-offs; a large vocabulary doesn't guarantee shorter sequences for rare words.",
+      "Token boundaries don't align with morpheme boundaries, so a model cannot always interpret subword meanings compositionally.",
+      "Byte-level tokenization is slower and more token-heavy than character-level; you trade robustness for sequence length.",
+      "Different tokenizers (BPE vs. WordPiece vs. Unigram) produce different token sequences for the same input, breaking reproducibility across models."
+    ],
+    "when_use": "Use subword tokenization for any LLM or language model handling diverse, open-ended text including code, multiple languages, or user-generated content.",
+    "when_avoid": "Avoid subword tokenization if your text is strictly controlled (e.g., a fixed set of medical codes) where word-level tokenization is sufficient, or if you need interpretability at the token level.",
+    "related_terms": [
+      "bpe",
+      "wordpiece",
+      "sentencepiece",
+      "byte-level-bpe",
+      "tokenizer",
+      "token",
+      "vocabulary-size"
+    ],
+    "related_tools": [
+      "tokenizers"
+    ],
+    "faq": [
+      {
+        "q": "What's the difference between subword and byte-level tokenization?",
+        "a": "Byte-level tokenization always encodes input as raw bytes, guaranteeing no out-of-vocabulary errors but producing longer token sequences. Subword tokenization uses a learned vocabulary of variable-length pieces, typically more efficient but may fail on unseen characters without byte fallback."
+      },
+      {
+        "q": "Why can't I just use word-level tokenization?",
+        "a": "Word-level tokenization requires a vocabulary entry for every possible word, which explodes for rare words, typos, and inflections. Subword tokenization reuses pieces, so rare words are handled gracefully and vocabulary size stays manageable."
+      },
+      {
+        "q": "Does subword tokenization work the same way in all models?",
+        "a": "No. BPE, WordPiece, and Unigram LM use different merge strategies and greedy algorithms, producing different token sequences for identical input. Always use the original model's tokenizer for compatibility."
+      },
+      {
+        "q": "How does subword tokenization handle emoji and special characters?",
+        "a": "If the tokenizer was trained on emoji, they appear as tokens. Otherwise, they fall back to character or byte representation, which uses multiple tokens per emoji. Byte-level variants handle any Unicode without failure."
+      },
+      {
+        "q": "Can I merge or extend a pretrained tokenizer's vocabulary?",
+        "a": "Yes, but it changes token IDs globally. Tools like HuggingFace's `tokenizers` library support adding tokens, but weights for new tokens must be initialized, and existing model outputs won't align."
+      }
+    ],
+    "meta_title": "Subword Tokenization — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Breaking text into units smaller than words—common words as single tokens, rare words as sequences.",
+    "seo_variations": [
+      "subword tokens"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Subword Tokenization",
+        "description": "Breaking text into units smaller than words—common words as single tokens, rare words as sequences.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/subword-tokenization",
+        "termCode": "subword-tokenization"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What's the difference between subword and byte-level tokenization?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Byte-level tokenization always encodes input as raw bytes, guaranteeing no out-of-vocabulary errors but producing longer token sequences. Subword tokenization uses a learned vocabulary of variable-length pieces, typically more efficient but may fail on unseen characters without byte fallback."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why can't I just use word-level tokenization?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Word-level tokenization requires a vocabulary entry for every possible word, which explodes for rare words, typos, and inflections. Subword tokenization reuses pieces, so rare words are handled gracefully and vocabulary size stays manageable."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does subword tokenization work the same way in all models?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. BPE, WordPiece, and Unigram LM use different merge strategies and greedy algorithms, producing different token sequences for identical input. Always use the original model's tokenizer for compatibility."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does subword tokenization handle emoji and special characters?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "If the tokenizer was trained on emoji, they appear as tokens. Otherwise, they fall back to character or byte representation, which uses multiple tokens per emoji. Byte-level variants handle any Unicode without failure."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I merge or extend a pretrained tokenizer's vocabulary?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, but it changes token IDs globally. Tools like HuggingFace's `tokenizers` library support adding tokens, but weights for new tokens must be initialized, and existing model outputs won't align."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:33:03Z"
+  },
+  {
+    "slug": "tiktoken",
+    "title": "Tiktoken",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "tldr": "OpenAI's fast tokenizer library that counts tokens for GPT models before API calls.",
+    "plain_english": "Tiktoken breaks text into chunks called tokens the same way OpenAI's models do. Instead of guessing how many tokens your prompt will use, you feed text into tiktoken and get an exact count. It's written in Rust so it runs 5–10× faster than pure Python alternatives.",
+    "how_it_works": "You import tiktoken, specify which OpenAI model you're targeting (e.g., 'gpt-4o'), and call encode() on your text. Tiktoken returns a list of integer token IDs matching that model's vocabulary. Call decode() to reverse it. Under the hood, it uses byte-pair encoding (BPE) with a pre-trained vocabulary—cl100k_base for GPT-4 and GPT-3.5, o200k_base for GPT-4o and o1. The Rust backend handles the heavy computation; Python is just a wrapper.",
+    "why_it_matters": "Counting tokens before sending a request lets you estimate API costs, detect context-window overflow before a failed call, and avoid billing surprises. For high-volume production systems, this prevents wasted API calls and lets you bail out on oversized requests upfront.",
+    "example": "A customer support team runs OpenAI API calls on user messages. Before sending each message to GPT-4o, they encode it with tiktoken to check if it fits within the 128k context window and estimate the cost. A message that's 50k tokens would cost roughly $0.75 in input tokens alone. Without tiktoken, they'd hit the API, wait seconds, then fail.",
+    "pitfalls": [
+      "Mixing encodings: using cl100k_base to count tokens for an o1 model will give wrong counts because o200k_base has different token boundaries.",
+      "Forgetting that system prompts, function definitions, and tool descriptions all consume tokens—encode everything that leaves your application.",
+      "Assuming token count equals cost: special tokens, formatting overhead, and reasoning tokens (in models like o1) add invisible overhead.",
+      "Loading the encoding once per request instead of at startup—tiktoken initialization is fast but don't repeat it in a loop."
+    ],
+    "when_use": "Use tiktoken whenever you call OpenAI's API and need to know token count upfront, budget API spend, or enforce context-window limits before making the request.",
+    "when_avoid": "Avoid tiktoken if you're using a different API provider (Anthropic, Mistral, etc.) with their own tokenizers, or if you don't need cost/length estimates and can tolerate API failures.",
+    "related_terms": [
+      "tokenizer",
+      "bpe",
+      "token",
+      "special-tokens",
+      "context-window",
+      "gpt",
+      "openai-batch",
+      "chat-completions-api"
+    ],
+    "related_tools": [
+      "tiktoken"
+    ],
+    "faq": [
+      {
+        "q": "What's the difference between tiktoken and other tokenizers?",
+        "a": "Tiktoken is OpenAI's official tokenizer and matches exactly how GPT models split text. Other libraries (like sentencepiece or transformers' built-in tokenizers) use different vocabularies and will give different token counts for the same text."
+      },
+      {
+        "q": "Do I need tiktoken if I'm using a non-OpenAI model?",
+        "a": "No. If you're using Claude, Mistral, Llama, or others, use their respective tokenizers (e.g., Anthropic's tokenizer, sentencepiece for Llama). Tiktoken only matches OpenAI models."
+      },
+      {
+        "q": "How accurate is tiktoken's token count?",
+        "a": "Exact for the model you specify. Tiktoken uses the same vocabulary and encoding logic as OpenAI's servers, so your count will match what the API charges."
+      },
+      {
+        "q": "Can tiktoken encode images or multimodal content?",
+        "a": "No. Tiktoken handles text only. For multimodal models like GPT-4V, you must manually estimate image tokens (typically 170 tokens per 256×256 tile) and add them to your text token count."
+      },
+      {
+        "q": "Is tiktoken free and open source?",
+        "a": "Yes. OpenAI released it under the MIT license. You can install it via pip with no cost or license restrictions."
+      }
+    ],
+    "meta_title": "Tiktoken — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "OpenAI's fast tokenizer library that counts tokens for GPT models before API calls.",
+    "seo_variations": [
+      "tiktoken library",
+      "GPT tokenizer",
+      "token counter OpenAI"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Tiktoken",
+        "description": "OpenAI's fast tokenizer library that counts tokens for GPT models before API calls.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/tiktoken",
+        "termCode": "tiktoken"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What's the difference between tiktoken and other tokenizers?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Tiktoken is OpenAI's official tokenizer and matches exactly how GPT models split text. Other libraries (like sentencepiece or transformers' built-in tokenizers) use different vocabularies and will give different token counts for the same text."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need tiktoken if I'm using a non-OpenAI model?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. If you're using Claude, Mistral, Llama, or others, use their respective tokenizers (e.g., Anthropic's tokenizer, sentencepiece for Llama). Tiktoken only matches OpenAI models."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How accurate is tiktoken's token count?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Exact for the model you specify. Tiktoken uses the same vocabulary and encoding logic as OpenAI's servers, so your count will match what the API charges."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can tiktoken encode images or multimodal content?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Tiktoken handles text only. For multimodal models like GPT-4V, you must manually estimate image tokens (typically 170 tokens per 256×256 tile) and add them to your text token count."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is tiktoken free and open source?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. OpenAI released it under the MIT license. You can install it via pip with no cost or license restrictions."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:33:01Z"
+  },
+  {
+    "slug": "token",
+    "title": "Token",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "tldr": "A token is a chunk of text—roughly a word or subword—that AI models process as a single unit.",
+    "plain_english": "AI models don't read text the way you do. They chop text into small pieces called tokens before processing. In English, one token is usually 3–4 characters or about 3/4 of a word. Tokens matter because every model has a fixed limit on how much text it can handle at once, and cloud API charges are per-token.",
+    "how_it_works": "A tokenizer breaks your input text into tokens using rules or learned patterns. Common tokenizers (like BPE or SentencePiece) map text to a fixed vocabulary—each token is a number, not letters. The model processes these numbers sequentially, one token at a time. Your API bill counts every token you send plus every token the model generates. Most models use byte-pair encoding (BPE), which merges common character pairs into single tokens to save space.",
+    "why_it_matters": "Tokens directly control two costs: how much text you can fit in one request (your context window), and how much you pay per API call. A 100K token context window sounds large until you realize a typical 60-page document is ~15K tokens. Understanding token math prevents surprise bills and forces you to choose between longer context or cheaper, shorter requests.",
+    "example": "You're building a customer support bot using Claude. A user's 2000-character email is ~500 tokens. If your model costs $0.003 per 1K input tokens, that email costs $0.0015 to process. If you batch 10 emails in a single Batch API call, you save 50% on input costs. Without counting tokens first, you'd discover the per-token cost only after your first bill.",
+    "pitfalls": [
+      "Tokens are not 1:1 with words; 'Hello world' is 2 tokens, but 'unhappy' might be 2 tokens too, making estimates unreliable.",
+      "Different models use different tokenizers—the same text costs more tokens on GPT-4 than Llama 2, so you must test per-model.",
+      "Special tokens (BOS, EOS, padding) are invisible in your prompt but count toward your context window and bill.",
+      "Counting tokens in your head fails at scale; always use the tokenizer library (tiktoken for OpenAI, sentencepiece for Llama) before deployment."
+    ],
+    "when_use": "Use token counting before sending any production API request, when estimating costs, or when hitting context limits in long-document tasks.",
+    "when_avoid": "Avoid manual token estimation; always use the official tokenizer. Don't assume tokens map 1:1 to words when planning prompt length.",
+    "related_terms": [
+      "tokenizer",
+      "context-window",
+      "bpe",
+      "subword-tokenization",
+      "special-tokens",
+      "tiktoken",
+      "sentencepiece",
+      "llm"
+    ],
+    "related_tools": [],
+    "faq": [
+      {
+        "q": "How many tokens is 1000 words?",
+        "a": "Roughly 1200–1500 tokens, depending on language and tokenizer. English prose averages 0.75–1.3 tokens per word. Use the official tokenizer for your model—guessing wastes money."
+      },
+      {
+        "q": "Does every model use the same tokenizer?",
+        "a": "No. OpenAI models use tiktoken, Llama uses sentencepiece, Anthropic's Claude has its own. The same text costs different token counts on different models."
+      },
+      {
+        "q": "What are special tokens and do they cost money?",
+        "a": "Special tokens mark structure (BOS for start, EOS for end, padding). Yes, they count toward both your context limit and your bill, even though you don't write them."
+      },
+      {
+        "q": "Can I reduce token count without losing meaning?",
+        "a": "Yes. Remove filler words, compress whitespace, use abbreviations, and ask the model to be concise. Prompt engineering directly lowers your token bill."
+      },
+      {
+        "q": "What's the difference between tokens and characters?",
+        "a": "Characters are individual letters; tokens are semantic chunks. Tokens are more efficient for models but harder for humans to predict. A token might be one letter (rare) or ten letters (common in code)."
+      }
+    ],
+    "meta_title": "Token — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "A token is a chunk of text—roughly a word or subword—that AI models process as a single unit.",
+    "seo_variations": [],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Token",
+        "description": "A token is a chunk of text—roughly a word or subword—that AI models process as a single unit.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/token",
+        "termCode": "token"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How many tokens is 1000 words?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Roughly 1200–1500 tokens, depending on language and tokenizer. English prose averages 0.75–1.3 tokens per word. Use the official tokenizer for your model—guessing wastes money."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does every model use the same tokenizer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. OpenAI models use tiktoken, Llama uses sentencepiece, Anthropic's Claude has its own. The same text costs different token counts on different models."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What are special tokens and do they cost money?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Special tokens mark structure (BOS for start, EOS for end, padding). Yes, they count toward both your context limit and your bill, even though you don't write them."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I reduce token count without losing meaning?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Remove filler words, compress whitespace, use abbreviations, and ask the model to be concise. Prompt engineering directly lowers your token bill."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What's the difference between tokens and characters?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Characters are individual letters; tokens are semantic chunks. Tokens are more efficient for models but harder for humans to predict. A token might be one letter (rare) or ten letters (common in code)."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:23:58Z"
+  },
+  {
+    "slug": "token-budget",
+    "title": "Token Budget",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "tldr": "Maximum tokens you allocate to one LLM call: system prompt + messages + context + output space.",
+    "plain_english": "Think of token budget like a fuel tank for a single API call. You get a hard limit (the model's context window) and you decide a soft limit (what you'll actually spend). You fill it with system instructions, conversation history, retrieved documents, and reserve space for the model to write its answer. Run out of space and you truncate, summarize, or lose information.",
+    "how_it_works": "Every LLM request has a context window—the model's maximum capacity. You split this into: (1) system prompt (fixed, usually 100–500 tokens), (2) user messages and history (you control how many turns fit), (3) retrieved context from RAG (the most flexible lever), and (4) reserved output tokens (what the model can generate). You design to this budget by truncating old turns, compressing chunks, or using sparse retrieval. Exceed it and the API rejects the call or truncates silently.",
+    "why_it_matters": "Token budget is where LLM economics meet feature design. Every retrieved chunk, every turn of history, every system instruction costs money and latency. Designing to budget first—before picking a larger model—forces you to prioritize what information actually matters. Mismanaging budget kills RAG quality (too little context) or explodes costs (too much retrieved data).",
+    "example": "A customer-support chatbot retrieves 10 similar past tickets for context. With a 4K token budget and a 500-token system prompt, you have ~3.5K tokens left. If each ticket is 400 tokens and conversation history is 800 tokens, you can only fit 6 tickets instead of 10. You either truncate to top-3 tickets (higher precision, lower recall) or use a reranker to pick the 2 most relevant ones.",
+    "pitfalls": [
+      "Retrieving everything: throwing all search results at the LLM wastes tokens and often reduces accuracy—rerank first, then fit to budget.",
+      "Not reserving output tokens: if you allocate 3.9K of 4K to input, the model can only generate 100 tokens; it will cut off mid-sentence.",
+      "Forgetting system prompt size: a detailed system prompt (600+ tokens) shrinks usable budget by 15–20%; measure it once, account for it always.",
+      "Treating budget as infinite with large-context models: even 100K-token windows are finite; bad retrieval and stale history still waste half of it."
+    ],
+    "when_use": "Use token budgeting when you're building RAG, multi-turn chat, or any system where you control what gets sent to the LLM; it's essential as soon as you retrieve external documents or maintain conversation history.",
+    "when_avoid": "Avoid obsessing over token budget in early prototypes or one-off completions where you control all inputs; start counting only when cost or latency becomes measurable.",
+    "related_terms": [
+      "context-window",
+      "chunking",
+      "rag",
+      "prompt-caching",
+      "kv-cache",
+      "contextual-compression",
+      "cost-per-query"
+    ],
+    "related_tools": [],
+    "faq": [
+      {
+        "q": "What's the difference between context window and token budget?",
+        "a": "Context window is the model's hard limit (e.g., 8K tokens for GPT-3.5). Token budget is *your* soft limit—how much of that window you actually use per call. You set it based on cost tolerance and retrieval strategy."
+      },
+      {
+        "q": "How do I calculate how many tokens my system prompt uses?",
+        "a": "Use your tokenizer: `len(encoding.encode(system_prompt))` in Python with tiktoken or transformers. Measure once, include it in every budget calculation. A typical detailed system prompt runs 200–800 tokens."
+      },
+      {
+        "q": "Can I retrieve 100 documents and trim inside the token budget?",
+        "a": "You can, but it's wasteful. Retrieve 10–20 candidates, rerank by relevance, *then* fit the top-3 or top-5 to budget. Reranking is cheaper than sending irrelevant text to the LLM."
+      },
+      {
+        "q": "What happens if I exceed my token budget?",
+        "a": "The API returns a max-tokens error and rejects the request, or your input gets truncated silently by the model. Either way, the call fails or returns incomplete results. Always verify budget before sending."
+      },
+      {
+        "q": "Does token budget change between models?",
+        "a": "Context window size does (GPT-4 has 128K, Llama 2 has 4K), but the *principle* of budgeting stays the same. Larger windows let you retrieve more, but don't justify retrieving everything—rerank and prioritize always."
+      }
+    ],
+    "meta_title": "Token Budget — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Maximum tokens you allocate to one LLM call: system prompt + messages + context + output space.",
+    "seo_variations": [
+      "LLM token budget"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Token Budget",
+        "description": "Maximum tokens you allocate to one LLM call: system prompt + messages + context + output space.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/token-budget",
+        "termCode": "token-budget"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What's the difference between context window and token budget?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Context window is the model's hard limit (e.g., 8K tokens for GPT-3.5). Token budget is *your* soft limit—how much of that window you actually use per call. You set it based on cost tolerance and retrieval strategy."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I calculate how many tokens my system prompt uses?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Use your tokenizer: `len(encoding.encode(system_prompt))` in Python with tiktoken or transformers. Measure once, include it in every budget calculation. A typical detailed system prompt runs 200–800 tokens."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I retrieve 100 documents and trim inside the token budget?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You can, but it's wasteful. Retrieve 10–20 candidates, rerank by relevance, *then* fit the top-3 or top-5 to budget. Reranking is cheaper than sending irrelevant text to the LLM."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens if I exceed my token budget?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The API returns a max-tokens error and rejects the request, or your input gets truncated silently by the model. Either way, the call fails or returns incomplete results. Always verify budget before sending."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does token budget change between models?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Context window size does (GPT-4 has 128K, Llama 2 has 4K), but the *principle* of budgeting stays the same. Larger windows let you retrieve more, but don't justify retrieving everything—rerank and prioritize always."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:32:07Z"
+  },
+  {
+    "slug": "token-cost",
+    "title": "Token Cost",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "tldr": "Price per million input and output tokens—the unit economics of every LLM API call you make.",
+    "plain_english": "Every time you send text to an LLM API, you pay based on how many tokens you send (input) and how many it returns (output). Output tokens cost 3–5× more than input tokens because the model has to do more work to generate them. It's like paying per word, but tokens are smaller units than words.",
+    "how_it_works": "Providers publish prices as dollars-per-million-tokens, split into input and output rates. You multiply your token count by the rate to get the bill for that request. Output is more expensive because generating each token requires a forward pass, while reading input is cheaper. Techniques like prompt caching, batch APIs, and context windows affect the total cost per feature or user. Monitor cost per request, per user, or per feature to catch runaway expenses before they hit your bill.",
+    "why_it_matters": "LLM products sink or float on cost per interaction. If you can't track where money goes, you'll either underprice your product or discover massive bills after launch. Uncontrolled retrieval contexts and agent loops can multiply costs 10–100×, turning a profitable feature into a loss.",
+    "example": "A customer support team builds a RAG chatbot. They retrieve 10 documents (5,000 tokens) and the model generates a response (200 tokens). At Claude's rates ($0.80 per 1M input, $2.40 per 1M output), that's ~$0.0054 per query. Scale to 10,000 queries/day and you hit $54/day. But if retrieval balloons to 50 documents, costs triple. Tracking cost-per-ticket tells you when to optimize chunking or reranking.",
+    "pitfalls": [
+      "Exploding retrieval context: dumping entire documents into prompts instead of extracting relevant passages costs 10–100× more per query.",
+      "Cached-but-still-paid content: some providers bill for cached tokens at lower rates, but caching still has setup costs; benchmark the breakeven point.",
+      "Agent loops without guardrails: agents calling tools and re-prompting can spiral into 50+ API calls per user action if you don't set call limits.",
+      "Ignoring output length variance: a model generating a 500-token response vs. 100 tokens on the same input multiplies cost by 5× for that request."
+    ],
+    "when_use": "Use token cost tracking when you operate any LLM feature at scale—production chatbots, RAG pipelines, agent loops—or when you're choosing between models or prompt strategies.",
+    "when_avoid": "Skip detailed cost tracking for one-off experiments or internal prototypes where a few dollars don't matter; start tracking before scaling to production or paying users.",
+    "related_terms": [
+      "token",
+      "token-budget",
+      "tokenizer",
+      "prompt-caching",
+      "batch-api",
+      "llm-gateway",
+      "context-window",
+      "rag",
+      "inference"
+    ],
+    "related_tools": [],
+    "faq": [
+      {
+        "q": "Why is output more expensive than input?",
+        "a": "The model generates output tokens one at a time, each requiring a full forward pass through its parameters. Input tokens are processed in parallel, so bulk reading is cheaper. That's why output typically costs 3–5× more per token."
+      },
+      {
+        "q": "How do I estimate cost for my LLM feature?",
+        "a": "Count average input tokens per request, average output tokens per response, multiply by your per-million rates, then multiply by expected requests per month. Run a small test batch first to calibrate actual token counts—many people underestimate retrieval contexts."
+      },
+      {
+        "q": "Does prompt caching reduce token cost?",
+        "a": "Yes, but with a tradeoff. Cached tokens cost ~10–25% less per token, but caching has a one-time setup cost. Only pay off if the same prompt is reused 3+ times; otherwise, standard pricing is cheaper."
+      },
+      {
+        "q": "How much cheaper is batch API?",
+        "a": "Batch APIs typically cost 50% of real-time pricing because the provider queues requests and processes them when compute is idle. Trade latency (hours to a day) for cost savings; useful for overnight data processing, not real-time user queries."
+      },
+      {
+        "q": "Can I reduce token cost without changing my product?",
+        "a": "Yes: chunk retrieval smaller (fewer tokens in context), limit agent tool calls with strict guardrails, use a cheaper model for easy queries (routing), or serve cached responses for repeated questions. Test each change on a sample of your queries first."
+      }
+    ],
+    "meta_title": "Token Cost — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Price per million input and output tokens—the unit economics of every LLM API call you make.",
+    "seo_variations": [
+      "cost per token",
+      "LLM pricing",
+      "token pricing",
+      "API cost calculator"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Token Cost",
+        "description": "Price per million input and output tokens—the unit economics of every LLM API call you make.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/token-cost",
+        "termCode": "token-cost"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Why is output more expensive than input?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The model generates output tokens one at a time, each requiring a full forward pass through its parameters. Input tokens are processed in parallel, so bulk reading is cheaper. That's why output typically costs 3–5× more per token."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I estimate cost for my LLM feature?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Count average input tokens per request, average output tokens per response, multiply by your per-million rates, then multiply by expected requests per month. Run a small test batch first to calibrate actual token counts—many people underestimate retrieval contexts."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does prompt caching reduce token cost?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, but with a tradeoff. Cached tokens cost ~10–25% less per token, but caching has a one-time setup cost. Only pay off if the same prompt is reused 3+ times; otherwise, standard pricing is cheaper."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How much cheaper is batch API?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Batch APIs typically cost 50% of real-time pricing because the provider queues requests and processes them when compute is idle. Trade latency (hours to a day) for cost savings; useful for overnight data processing, not real-time user queries."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I reduce token cost without changing my product?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes: chunk retrieval smaller (fewer tokens in context), limit agent tool calls with strict guardrails, use a cheaper model for easy queries (routing), or serve cached responses for repeated questions. Test each change on a sample of your queries first."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:31:30Z"
+  },
+  {
+    "slug": "token-healing",
+    "title": "Token Healing",
+    "category": "tokenization",
+    "difficulty_tier": "advanced",
+    "tldr": "Backtrack one token before constrained decoding to align prefix tokenization with model generation, improving structured output quality.",
+    "plain_english": "When you feed a fixed prefix to a model and ask it to generate JSON or regex-constrained output, the tokenizer may have split that prefix differently than the model would naturally produce it. Token healing undoes the last token of the prefix, lets the model regenerate it from scratch under the constraint, then continues. Think of it like re-anchoring a rope before pulling.",
+    "how_it_works": "At the start of constrained generation, the framework identifies the final token of the input prefix. It removes that token, reducing the sequence length by one. The model then regenerates that token while respecting the grammar or schema constraint for all downstream tokens. Because the model produced the token itself—rather than inheriting a tokenizer boundary—the subsequent constraint enforcement aligns with natural generation patterns. This prevents subtle misalignment between prefix tokenization and model output tokenization.",
+    "why_it_matters": "Constrained decoding without healing can produce valid JSON or regex that feels stilted or violates the model's own token boundaries. Healing ensures structured output respects the model's native tokenization patterns, improving readability, reducing parsing errors, and maintaining generation quality when strict formatting is required.",
+    "example": "A team using Outlines to generate JSON responses from a Claude or Llama model provides a fixed prefix like `{\"user_id\": 42, `. The tokenizer may split this as `[ ... ] [\"user_id] [:] 42, ]`, but the model would emit `[{ ] [\"user_id] [\":] [42] [,] `. Token healing backs up one token, lets the model re-emit the comma in its own way, then continues constrained generation. The final JSON parses cleanly without format conflicts.",
+    "pitfalls": [
+      "Token healing assumes the prefix is well-formed; corrupting the backtrack point breaks downstream constraints.",
+      "Not all frameworks implement healing—check Guidance or Outlines version; older versions may not expose it.",
+      "Healing adds one extra forward pass; in high-throughput systems, the latency cost may outweigh quality gains for simple constraints.",
+      "If the prefix itself violates the target schema, healing cannot repair structural mismatches—only tokenization alignment."
+    ],
+    "when_use": "Use token healing when generating constrained output (JSON, regex, formal grammar) from a fixed prefix and you observe tokenization misalignment artifacts or stilted formatting.",
+    "when_avoid": "Avoid if your prefix is already tokenized in the model's vocabulary without boundary issues, or if latency is critical and constraints are loose enough that misalignment does not affect output quality.",
+    "related_terms": [
+      "constrained-decoding",
+      "tokenizer",
+      "guidance",
+      "outlines",
+      "structured-output",
+      "json-schema-enforcement",
+      "prefix-caching"
+    ],
+    "related_tools": [
+      "guidance",
+      "outlines"
+    ],
+    "faq": [
+      {
+        "q": "What is token healing and why do I need it?",
+        "a": "Token healing realigns the input prefix's tokenization with the model's native token boundaries before constrained decoding. You need it when structured output (JSON, regex) shows formatting errors or awkward token splits at the prefix boundary."
+      },
+      {
+        "q": "Is token healing the same as prefix caching?",
+        "a": "No. Prefix caching reuses computation for repeated prefixes. Token healing modifies the prefix boundary itself to improve tokenization alignment before constraint enforcement. They can be used together."
+      },
+      {
+        "q": "Does token healing work with all constrained decoding frameworks?",
+        "a": "No. Guidance and Outlines support it; other frameworks may not expose the mechanism. Check your library's documentation for `token_healing` or `heal` parameters."
+      },
+      {
+        "q": "How much latency does token healing add?",
+        "a": "One extra forward pass of one token. For typical interactive latency (100–500ms), this adds 5–50ms; the quality improvement often justifies the cost for strict schema requirements."
+      },
+      {
+        "q": "Can I use token healing with any model?",
+        "a": "Yes, token healing is model-agnostic. It works with any tokenizer and model. The benefit depends on how often the prefix and model tokenization conflict."
+      }
+    ],
+    "meta_title": "Token Healing — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Backtrack one token before constrained decoding to align prefix tokenization with model generation, improving structured output quality.",
+    "seo_variations": [
+      "healing tokens",
+      "token healing constrained decoding",
+      "prefix tokenization alignment"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Token Healing",
+        "description": "Backtrack one token before constrained decoding to align prefix tokenization with model generation, improving structured output quality.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/token-healing",
+        "termCode": "token-healing"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is token healing and why do I need it?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Token healing realigns the input prefix's tokenization with the model's native token boundaries before constrained decoding. You need it when structured output (JSON, regex) shows formatting errors or awkward token splits at the prefix boundary."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is token healing the same as prefix caching?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Prefix caching reuses computation for repeated prefixes. Token healing modifies the prefix boundary itself to improve tokenization alignment before constraint enforcement. They can be used together."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does token healing work with all constrained decoding frameworks?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Guidance and Outlines support it; other frameworks may not expose the mechanism. Check your library's documentation for `token_healing` or `heal` parameters."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How much latency does token healing add?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "One extra forward pass of one token. For typical interactive latency (100–500ms), this adds 5–50ms; the quality improvement often justifies the cost for strict schema requirements."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use token healing with any model?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, token healing is model-agnostic. It works with any tokenizer and model. The benefit depends on how often the prefix and model tokenization conflict."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:32:50Z"
+  },
+  {
+    "slug": "tokenizer",
+    "title": "Tokenizer",
+    "category": "tokenization",
+    "difficulty_tier": "beginner",
+    "tldr": "Software that converts text into numeric token IDs before model processing, and reconstructs text after inference.",
+    "plain_english": "A tokenizer is a translator between human language and numbers. You feed it raw text; it chops it into subword pieces (like \"play\", \"ing\", \"##er\"), assigns each piece a unique ID, and outputs a list of integers. On the other end, after the model finishes, the tokenizer reverses the process to turn IDs back into readable text.",
+    "how_it_works": "Tokenizers split text using algorithms like BPE (Byte Pair Encoding), WordPiece, or Unigram. Each algorithm learns a vocabulary during training—a ranked list of common subword units. At encode time: text → break into characters or subwords → match each piece to its vocabulary ID → add special tokens (like BOS for start, EOS for end, PAD for padding) → output integer sequence. At decode time: reverse the mapping. Token count directly affects both API cost and how much context the model \"sees.\"",
+    "why_it_matters": "Your tokenizer choice determines how many tokens a given text consumes, affecting your inference cost per request. It also shapes how well the model handles rare words, non-English characters, and code. Different models use different tokenizers—GPT uses tiktoken, Llama uses sentencepiece—so the same prompt costs different amounts on different APIs. Mismatches in tokenizer design cause downstream failures in multilingual and domain-specific tasks.",
+    "example": "An API provider billing by tokens charges $0.01 per 1K tokens. Text \"Hello, world!\" encodes to 4 tokens in one tokenizer but 6 in another. Over 1M requests, that's $200 difference in monthly costs. A chatbot handling Japanese text without Unigram-based tokenization may fragment rare kanji into 5+ tokens per character, ballooning costs and reducing context capacity by 30%.",
+    "pitfalls": [
+      "Assuming all tokenizers consume the same token count per text—they don't. GPT's tiktoken is more efficient on English; multilingual models waste tokens on rare scripts.",
+      "Forgetting special tokens (BOS, EOS, padding) in your count. They add 1–3 tokens per sequence that aren't visible to users.",
+      "Not testing your tokenizer on your actual text domain. Code tokenizers fail on medical terms; domain-specific rare words multiply token cost.",
+      "Mixing tokenizers between training and inference. If you fine-tune with sentencepiece but serve with WordPiece, behavior diverges catastrophically."
+    ],
+    "when_use": "Use when building any LLM pipeline: cost forecasting, context budgeting, fine-tuning dataset prep, or any scenario where token count directly impacts economics or functionality.",
+    "when_avoid": "Avoid custom tokenizer design unless you're training a new foundation model or working in an underserved language with <1% of global training data.",
+    "related_terms": [
+      "token",
+      "bpe",
+      "wordpiece",
+      "sentencepiece",
+      "subword-tokenization",
+      "special-tokens",
+      "vocabulary-size",
+      "context-window"
+    ],
+    "related_tools": [
+      "tiktoken",
+      "tokenizers"
+    ],
+    "faq": [
+      {
+        "q": "What is the difference between BPE and WordPiece tokenization?",
+        "a": "BPE (Byte Pair Encoding) merges the most frequent byte pairs iteratively and handles unseen characters gracefully. WordPiece uses a greedy algorithm to maximize likelihood and marks subword continuations with ##. BPE is simpler; WordPiece typically produces fewer tokens for common English text but may fragment non-Latin scripts worse."
+      },
+      {
+        "q": "Why do the same 100 words cost different amounts on different LLM APIs?",
+        "a": "Each model uses a different tokenizer with a different vocabulary. GPT's tiktoken, Llama's sentencepiece, and Claude's tokenizer chunk text differently. The same sentence may be 50 tokens on GPT-4 and 75 on another model, purely due to tokenizer design, not model capability."
+      },
+      {
+        "q": "Does my fine-tuning tokenizer have to match my inference tokenizer?",
+        "a": "Yes. If you fine-tune with one tokenizer but serve with another, the model receives different token sequences than it learned on, breaking generalization. Always use the same tokenizer for both training and production."
+      },
+      {
+        "q": "How do I count tokens before I send a request?",
+        "a": "Use the model's official tokenizer library: tiktoken for OpenAI, transformers.AutoTokenizer for Hugging Face models, or the tokenizers package. Encode your text and check the length: `len(tokenizer.encode(text))`."
+      },
+      {
+        "q": "Will adding more special tokens slow down my model?",
+        "a": "No, but it increases vocabulary size and memory slightly. More importantly, over-using special tokens (>5–10 per sequence) reduces effective context for real content and can confuse the model if it wasn't trained with them."
+      }
+    ],
+    "meta_title": "Tokenizer — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Software that converts text into numeric token IDs before model processing, and reconstructs text after inference.",
+    "seo_variations": [
+      "LLM tokenizer",
+      "how tokenizers work",
+      "BPE vs WordPiece",
+      "token count calculator"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Tokenizer",
+        "description": "Software that converts text into numeric token IDs before model processing, and reconstructs text after inference.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/tokenizer",
+        "termCode": "tokenizer"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is the difference between BPE and WordPiece tokenization?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "BPE (Byte Pair Encoding) merges the most frequent byte pairs iteratively and handles unseen characters gracefully. WordPiece uses a greedy algorithm to maximize likelihood and marks subword continuations with ##. BPE is simpler; WordPiece typically produces fewer tokens for common English text but may fragment non-Latin scripts worse."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why do the same 100 words cost different amounts on different LLM APIs?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Each model uses a different tokenizer with a different vocabulary. GPT's tiktoken, Llama's sentencepiece, and Claude's tokenizer chunk text differently. The same sentence may be 50 tokens on GPT-4 and 75 on another model, purely due to tokenizer design, not model capability."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does my fine-tuning tokenizer have to match my inference tokenizer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. If you fine-tune with one tokenizer but serve with another, the model receives different token sequences than it learned on, breaking generalization. Always use the same tokenizer for both training and production."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I count tokens before I send a request?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Use the model's official tokenizer library: tiktoken for OpenAI, transformers.AutoTokenizer for Hugging Face models, or the tokenizers package. Encode your text and check the length: `len(tokenizer.encode(text))`."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Will adding more special tokens slow down my model?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No, but it increases vocabulary size and memory slightly. More importantly, over-using special tokens (>5–10 per sequence) reduces effective context for real content and can confuse the model if it wasn't trained with them."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:31:54Z"
+  },
+  {
+    "slug": "tool-use-format",
+    "title": "Tool Use Formatting (In-Context)",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "tldr": "Model-specific syntax for representing tool definitions and calls inside prompts—JSON wrapped in special tokens or XML tags.",
+    "plain_english": "Each LLM family expects tool descriptions and function calls formatted differently: OpenAI uses a dedicated JSON field, Anthropic wraps them in XML blocks, Llama uses special tokens with JSON. It's like each API vendor speaking a different dialect of the same language. Use the wrong format and the model silently ignores your tools or produces malformed output.",
+    "how_it_works": "When you add tool definitions to a prompt, the model's tokenizer and chat template convert them into the model's native format during encoding. OpenAI embeds tool schemas in a tool_calls array within the messages protocol. Anthropic wraps function definitions and responses in <tool_use> and <tool_results> XML blocks. Llama 3.1+ uses <|python_tag|> delimiters followed by JSON-encoded function calls. The chat template (a Jinja2 rule set) handles this conversion automatically if you use official libraries like Transformers or the SDK. Decoding returns results in the same format, which you parse back into function calls.",
+    "why_it_matters": "Tool formatting is opaque to the prompt—you can't \"fix\" it by rewording. Mismatches between your format and the model's expectations cause silent failures: the model ignores tools, returns invalid JSON, or hallucinates function signatures. Portable code breaks when you swap model families. Understanding your model's exact format ensures reliable tool invocation and reproducible multi-step workflows.",
+    "example": "You build a financial agent using Claude 3.5 Sonnet with tools for stock lookup and trade execution. Your prompt defines tools as <tool_use> blocks with input/output JSON. The same code used against Llama 3.1-70B fails because you forgot to wrap function calls in <|python_tag|>. The agent won't execute trades, silently returning text instead of parsed tool calls. Switching back to Claude requires no code change; switching to Llama requires rewriting the entire tool schema.",
+    "pitfalls": [
+      "Assuming a tool format works across model families without testing—most don't.",
+      "Using the correct JSON structure but wrapping it in the wrong tokens or tags—the model won't recognize it as a tool call.",
+      "Relying on manual format conversion instead of the official chat template—you'll miss edge cases like special character escaping.",
+      "Testing only happy paths; function call failures often hide until production because malformed output doesn't raise exceptions."
+    ],
+    "when_use": "Use this when building agents or multi-step workflows where you need the model to invoke functions reliably, especially across different model providers where standardized formatting is unavailable.",
+    "when_avoid": "Avoid this for simple text-only tasks where the model never needs to call external functions, or if you're comfortable with string parsing and regex extraction instead of structured tool use.",
+    "related_terms": [
+      "function-calling",
+      "chat-template",
+      "tool-use",
+      "structured-output",
+      "chat-completions-api",
+      "special-tokens"
+    ],
+    "related_tools": [],
+    "faq": [
+      {
+        "q": "Does tool format change between versions of the same model?",
+        "a": "Rarely, but yes. Claude 3.0 and 3.5 use the same XML format, but older Claude versions did not. Always check the release notes and test before upgrading in production."
+      },
+      {
+        "q": "Can I use the same tool definitions for OpenAI and Anthropic?",
+        "a": "No. The JSON schema inside each tool is portable, but the wrapping syntax is not. You must translate or generate separate tool definitions for each provider."
+      },
+      {
+        "q": "What happens if I send the wrong format to a model?",
+        "a": "The model treats it as text, ignores it, or tries to parse it as part of the prompt. Function calls won't execute. Errors are silent—you'll see text output instead of structured tool calls."
+      },
+      {
+        "q": "Does Transformers chat_template handle all tool formats automatically?",
+        "a": "Yes, if the model has a registered template in Hugging Face Hub. For custom or newer models, you may need to write a Jinja2 template yourself."
+      },
+      {
+        "q": "How do I know what format my open-source model expects?",
+        "a": "Check the model card on Hugging Face, the official documentation, or the chat_template field in config.json. If unsure, test with the official inference library (vLLM, Ollama, or llama.cpp)."
+      }
+    ],
+    "meta_title": "Tool Use Formatting (In-Context) — Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Model-specific syntax for representing tool definitions and calls inside prompts—JSON wrapped in special tokens or XML tags.",
+    "seo_variations": [
+      "tool calling format",
+      "function call formatting",
+      "tool definition syntax"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Tool Use Formatting (In-Context)",
+        "description": "Model-specific syntax for representing tool definitions and calls inside prompts—JSON wrapped in special tokens or XML tags.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/tool-use-format",
+        "termCode": "tool-use-format"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does tool format change between versions of the same model?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Rarely, but yes. Claude 3.0 and 3.5 use the same XML format, but older Claude versions did not. Always check the release notes and test before upgrading in production."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use the same tool definitions for OpenAI and Anthropic?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The JSON schema inside each tool is portable, but the wrapping syntax is not. You must translate or generate separate tool definitions for each provider."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens if I send the wrong format to a model?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The model treats it as text, ignores it, or tries to parse it as part of the prompt. Function calls won't execute. Errors are silent—you'll see text output instead of structured tool calls."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Transformers chat_template handle all tool formats automatically?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, if the model has a registered template in Hugging Face Hub. For custom or newer models, you may need to write a Jinja2 template yourself."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I know what format my open-source model expects?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Check the model card on Hugging Face, the official documentation, or the chat_template field in config.json. If unsure, test with the official inference library (vLLM, Ollama, or llama.cpp)."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:33:28Z"
+  },
+  {
+    "slug": "unigram-lm-tokenizer",
+    "title": "Unigram LM Tokenizer",
+    "category": "tokenization",
+    "difficulty_tier": "advanced",
+    "tldr": "Tokenizer that prunes a large vocabulary by removing tokens with smallest likelihood loss.",
+    "plain_english": "Start with thousands of candidate subword pieces. Fit a statistical model to measure how much each piece contributes to understanding text. Drop the least useful pieces one at a time until you reach your target vocabulary size. The algorithm picks the best segmentation for each word—not just one fixed way like some other tokenizers do.",
+    "how_it_works": "Begin with a seed vocabulary containing all individual characters plus frequent subword sequences. Train a unigram language model (each token's probability independent of context) on your text. Calculate the loss reduction if you remove each token. Drop the token whose removal causes the smallest decrease in model likelihood. Retrain the language model on the remaining vocabulary. Repeat until reaching your target vocabulary size. At inference, tokenize each word by selecting the highest-probability segmentation path through the remaining vocabulary.",
+    "why_it_matters": "Unigram tokenization is the main alternative to BPE and is used by models like XLNet and ALBERT. Understanding both approaches matters if you work across different model families, tune tokenizers for new languages, or need to compare tokenization efficiency. It produces probabilistic segmentations rather than deterministic ones, which affects how vocabulary size, training speed, and downstream performance interact.",
+    "example": "XLNet's tokenization pipeline uses unigram LM tokenization on multilingual text. Rather than merging frequent pairs like BPE, it starts with ~32,000 candidate subword tokens and iteratively removes the least informative ones. For a language like Japanese with dense information per character, this data-driven pruning often captures rare compounds better than fixed merge rules would.",
+    "pitfalls": [
+      "Vocabulary size interacts with loss during training—smaller pruned vocabularies can paradoxically increase model perplexity if pruning removes semantically useful tokens too aggressively.",
+      "The unigram model assumes each token's probability is independent, which ignores real context dependencies and can lead to suboptimal segmentations for rare word boundaries.",
+      "Retraining the language model at each pruning step is computationally expensive, making this slower to implement than BPE's greedy merge approach.",
+      "The algorithm's output is nondeterministic at inference time—multiple valid segmentations exist for the same word, requiring a probability-based decoder that adds latency."
+    ],
+    "when_use": "Use unigram LM tokenization when you need a data-driven, probabilistic vocabulary for multilingual or morphologically complex text, or when you're replicating models like XLNet or ALBERT.",
+    "when_avoid": "Avoid it if you need deterministic tokenization for reproducibility, require fast tokenization at inference time, or are working within ecosystems (like Hugging Face Transformers for English-only models) where BPE is the standard.",
+    "related_terms": [
+      "bpe",
+      "sentencepiece",
+      "subword-tokenization",
+      "tokenizer",
+      "vocab-extension",
+      "token"
+    ],
+    "related_tools": [
+      "sentencepiece"
+    ],
+    "faq": [
+      {
+        "q": "What is the difference between unigram LM tokenization and BPE?",
+        "a": "BPE merges frequent adjacent pairs iteratively, producing one deterministic segmentation per word. Unigram LM starts with a large vocabulary and prunes tokens by likelihood loss, allowing multiple valid segmentations and selecting the highest-probability one at inference."
+      },
+      {
+        "q": "Why does unigram tokenization produce multiple segmentations for the same word?",
+        "a": "Because the unigram language model assigns a probability to every possible way to split a word into tokens from the vocabulary. At inference, it picks the segmentation with the highest joint probability, not a fixed rule."
+      },
+      {
+        "q": "Is unigram LM tokenization faster than BPE?",
+        "a": "No. Unigram requires retraining a language model at each pruning step and computing probabilities at decode time, making it slower than BPE's simple merge rules. However, the resulting vocabulary may be more compact for some languages."
+      },
+      {
+        "q": "Which models use unigram LM tokenization?",
+        "a": "XLNet, ALBERT, and several multilingual models use it. It is implemented in the SentencePiece library, which is widely available but less common in English-focused frameworks than BPE-based tokenizers like GPT and BERT."
+      },
+      {
+        "q": "Can I use unigram LM tokenization for new languages?",
+        "a": "Yes. SentencePiece supports unigram mode and handles any Unicode text. It is particularly effective for agglutinative languages (Turkish, Finnish, Japanese) where morphology is dense and probabilistic merging captures rare compounds well."
+      }
+    ],
+    "meta_title": "Unigram LM Tokenizer — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Tokenizer that prunes a large vocabulary by removing tokens with smallest likelihood loss.",
+    "seo_variations": [
+      "unigram tokenizer"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Unigram LM Tokenizer",
+        "description": "Tokenizer that prunes a large vocabulary by removing tokens with smallest likelihood loss.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/unigram-lm-tokenizer",
+        "termCode": "unigram-lm-tokenizer"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is the difference between unigram LM tokenization and BPE?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "BPE merges frequent adjacent pairs iteratively, producing one deterministic segmentation per word. Unigram LM starts with a large vocabulary and prunes tokens by likelihood loss, allowing multiple valid segmentations and selecting the highest-probability one at inference."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does unigram tokenization produce multiple segmentations for the same word?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Because the unigram language model assigns a probability to every possible way to split a word into tokens from the vocabulary. At inference, it picks the segmentation with the highest joint probability, not a fixed rule."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is unigram LM tokenization faster than BPE?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Unigram requires retraining a language model at each pruning step and computing probabilities at decode time, making it slower than BPE's simple merge rules. However, the resulting vocabulary may be more compact for some languages."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which models use unigram LM tokenization?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "XLNet, ALBERT, and several multilingual models use it. It is implemented in the SentencePiece library, which is widely available but less common in English-focused frameworks than BPE-based tokenizers like GPT and BERT."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use unigram LM tokenization for new languages?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. SentencePiece supports unigram mode and handles any Unicode text. It is particularly effective for agglutinative languages (Turkish, Finnish, Japanese) where morphology is dense and probabilistic merging captures rare compounds well."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:31:57Z"
+  },
+  {
+    "slug": "vocab-extension",
+    "title": "Tokenizer Vocabulary Extension",
+    "category": "tokenization",
+    "difficulty_tier": "advanced",
+    "tldr": "Adding new tokens to a trained tokenizer and resizing embeddings without full retraining.",
+    "plain_english": "When you train a language model, its tokenizer has a fixed vocabulary of tokens. Vocab extension lets you add new tokens—words, symbols, or domain terms—after training by expanding the embedding matrix. Think of it like adding new pages to a phrasebook: the new entries don't have context yet, so you must teach the model what they mean through continued training.",
+    "how_it_works": "You resize the embedding and output matrices to include N new token IDs, initialize their embeddings (usually randomly or copied from similar tokens), then continue training on your target data. The model's hidden layers remain frozen; only the new embeddings and language modeling head are updated. This is cheaper than retraining from scratch because 99% of the model's knowledge stays intact. New tokens converge to meaningful representations within 1–5% of the original pretraining cost, depending on domain similarity and data volume.",
+    "why_it_matters": "Domain-specific terms, underrepresented languages, and special tokens (like reasoning markers) often tokenize into 5–20 subword pieces, wasting context window and harming efficiency. Vocab extension solves this without full retraining, letting teams adapt production models to biotech jargon, low-resource languages, or custom reasoning tokens in weeks instead of months.",
+    "example": "A clinical NLP team at a hospital uses a general-purpose LLaMA model but finds gene names like 'BRCA1' split into 8 tokens. They add 500 curated medical terms to the vocabulary, resize LLaMA's 32k embedding matrix to 32.5k, and fine-tune on 10M clinical notes for two weeks. Inference throughput improves 15% because gene names now occupy one token instead of eight, and domain accuracy gains 4 AUROC points on entity recognition.",
+    "pitfalls": [
+      "Random initialization of new embeddings wastes early training iterations; initializing from semantically similar tokens (e.g., 'BRCA' + '1' → average embedding) converges 2–3× faster.",
+      "Extending vocabulary for high-frequency subwords (e.g., adding 'ing' when 'ing' already exists) provides no benefit and consumes memory.",
+      "Freezing the original embedding matrix during fine-tuning prevents beneficial semantic drift; allow full embedding learning or you cap improvement.",
+      "New tokens added for rare edge cases train on <100 examples and never converge meaningfully; set a minimum frequency threshold (≥1k occurrences in fine-tune data)."
+    ],
+    "when_use": "Use vocab extension when you have a trained model, domain-specific terminology that fragments across tokens, and 1M+ examples of target data to fine-tune with.",
+    "when_avoid": "Avoid when you're starting a new project (build vocab into pretraining instead), when new tokens appear <1k times in your data, or when the base model's vocabulary already covers 95%+ of your target text.",
+    "related_terms": [
+      "tokenizer",
+      "continued-pretraining",
+      "embedding",
+      "special-tokens",
+      "fine-tuning",
+      "bpe"
+    ],
+    "related_tools": [],
+    "faq": [
+      {
+        "q": "What's the difference between vocab extension and retraining a tokenizer from scratch?",
+        "a": "Vocab extension modifies a frozen model's embedding layer and fine-tunes it (1–5% of original cost). Retraining a tokenizer rebuilds the BPE/SentencePiece vocabulary without touching the model. For adapting a trained model to new domains, extension is faster; for languages with fundamentally different morphology, tokenizer retraining is cleaner."
+      },
+      {
+        "q": "How many new tokens should I add?",
+        "a": "Add only tokens that appear ≥1k times in your target dataset and save >2 tokens per occurrence. Start with 100–500 high-value terms; adding thousands dilutes training signal per token."
+      },
+      {
+        "q": "Do I need to fine-tune the entire model or just embeddings?",
+        "a": "You must fine-tune the embedding layer and language modeling head; freezing them prevents new tokens from acquiring meaning. Unfreezing backbone layers (attention, MLP) also helps but costs more compute."
+      },
+      {
+        "q": "Can I use vocab extension for a new language?",
+        "a": "Yes, but only if the base model already understands the script (e.g., Latin characters, CJK). For a radically different script, train a new tokenizer first, then extend."
+      },
+      {
+        "q": "How do I initialize embeddings for new tokens?",
+        "a": "Random normal (0.02 std) works, but averaging embeddings of similar existing tokens converges 2–3× faster. For rare technical terms, seed from morphologically similar tokens."
+      }
+    ],
+    "meta_title": "Tokenizer Vocabulary Extension — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Adding new tokens to a trained tokenizer and resizing embeddings without full retraining.",
+    "seo_variations": [
+      "extend tokenizer",
+      "add tokens",
+      "vocabulary extension",
+      "add new tokens to model",
+      "expand vocabulary after training"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Tokenizer Vocabulary Extension",
+        "description": "Adding new tokens to a trained tokenizer and resizing embeddings without full retraining.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/vocab-extension",
+        "termCode": "vocab-extension"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What's the difference between vocab extension and retraining a tokenizer from scratch?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Vocab extension modifies a frozen model's embedding layer and fine-tunes it (1–5% of original cost). Retraining a tokenizer rebuilds the BPE/SentencePiece vocabulary without touching the model. For adapting a trained model to new domains, extension is faster; for languages with fundamentally different morphology, tokenizer retraining is cleaner."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How many new tokens should I add?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Add only tokens that appear ≥1k times in your target dataset and save >2 tokens per occurrence. Start with 100–500 high-value terms; adding thousands dilutes training signal per token."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need to fine-tune the entire model or just embeddings?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You must fine-tune the embedding layer and language modeling head; freezing them prevents new tokens from acquiring meaning. Unfreezing backbone layers (attention, MLP) also helps but costs more compute."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use vocab extension for a new language?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, but only if the base model already understands the script (e.g., Latin characters, CJK). For a radically different script, train a new tokenizer first, then extend."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I initialize embeddings for new tokens?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Random normal (0.02 std) works, but averaging embeddings of similar existing tokens converges 2–3× faster. For rare technical terms, seed from morphologically similar tokens."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:22:44Z"
+  },
+  {
+    "slug": "vocabulary-size",
+    "title": "Vocabulary Size",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "tldr": "Count of distinct tokens a tokenizer can emit; larger vocabularies reduce tokens-per-text but increase embedding-table memory.",
+    "plain_english": "Think of vocabulary size as the total number of words and subword chunks your tokenizer can recognize. A small vocabulary (30k tokens) forces the model to break text into many tiny pieces; a large one (128k+) recognizes more complete phrases, reducing sequence length. The tradeoff: bigger vocabularies need larger embedding tables that sit in memory.",
+    "how_it_works": "During training and inference, every token in your vocabulary gets an embedding vector (e.g., 4096 dimensions). The embedding table is a matrix of shape [vocab_size × embedding_dim]. Larger vocab directly scales memory: doubling vocab roughly doubles the embedding and output layer size. Llama 3's jump from 32k to 128k tokens lets it represent multilingual text in fewer pieces, reducing sequence length by 20–40% for non-English text, which speeds up attention computation and reduces KV-cache memory.",
+    "why_it_matters": "Smaller sequences mean cheaper inference—fewer attention operations, smaller KV caches, and faster token generation. For multilingual or code-heavy workloads, a larger vocabulary can halve inference cost by encoding text more efficiently. The tradeoff is parameter count: GPT-4o's 200k vocab requires massive embedding tables, practical only at scale.",
+    "example": "Llama 2 used 32k tokens; Llama 3 grew to 128k. On a sequence of Chinese text, Llama 2 might use 150 tokens while Llama 3 uses 80. At 1 million requests/day, that's millions of fewer tokens processed—a measurable reduction in compute bills and latency.",
+    "pitfalls": [
+      "Assuming larger vocab always wins: it increases model size and memory footprint for all downstream applications—embedding caches, quantization headroom, and GPU VRAM all scale with vocab.",
+      "Forgetting that vocab size affects both embedding and LM-head layers: changing vocab requires retraining or distillation, not a simple swap.",
+      "Optimizing vocab size for English then applying the model to multilingual data: Chinese and Arabic text expands to far more tokens in a 30k English-centric vocab."
+    ],
+    "when_use": "Use larger vocabularies when targeting multilingual, code, or symbol-heavy text; smaller vocabularies when memory is tight or you're fine-tuning with limited compute.",
+    "when_avoid": "Avoid expanding vocab if your inference infrastructure has memory constraints or if you're only serving English; avoid shrinking vocab if you need to handle edge-case languages or rare technical terms.",
+    "related_terms": [
+      "tokenizer",
+      "embedding",
+      "bpe",
+      "sentencepiece",
+      "token",
+      "parameters"
+    ],
+    "related_tools": [],
+    "faq": [
+      {
+        "q": "What's the typical vocabulary size for modern LLMs?",
+        "a": "Most range from 30k–260k tokens. BERT: 30k; Llama 2: 32k; Llama 3: 128k; GPT-4o: ~200k. The choice depends on multilingual coverage and parameter budget."
+      },
+      {
+        "q": "Does larger vocabulary always reduce token count?",
+        "a": "Yes, but only meaningfully for languages and domains the vocab was optimized for. A 30k English-centric vocab won't help Chinese text; you need vocab pre-trained on that language."
+      },
+      {
+        "q": "How much does vocab size affect model memory?",
+        "a": "The embedding and LM-head layers scale linearly with vocab. A 128k vocab model needs roughly 4× the embedding table memory of a 32k model, assuming the same embedding dimension."
+      },
+      {
+        "q": "Can I change vocabulary size after training?",
+        "a": "Not easily. You'd need to retrain, distill, or use vocab extension techniques. It's baked into the model architecture."
+      },
+      {
+        "q": "Why did Llama 3 double vocabulary from Llama 2?",
+        "a": "To better handle non-English and code. More tokens per sequence for English, fewer for other languages—an overall win on multilingual inference cost and quality."
+      }
+    ],
+    "meta_title": "Vocabulary Size — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Count of distinct tokens a tokenizer can emit; larger vocabularies reduce tokens-per-text but increase embedding-table memory.",
+    "seo_variations": [
+      "vocab size",
+      "tokenizer vocabulary size",
+      "embedding vocabulary",
+      "vocabulary expansion"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "Vocabulary Size",
+        "description": "Count of distinct tokens a tokenizer can emit; larger vocabularies reduce tokens-per-text but increase embedding-table memory.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/vocabulary-size",
+        "termCode": "vocabulary-size"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What's the typical vocabulary size for modern LLMs?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Most range from 30k–260k tokens. BERT: 30k; Llama 2: 32k; Llama 3: 128k; GPT-4o: ~200k. The choice depends on multilingual coverage and parameter budget."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does larger vocabulary always reduce token count?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, but only meaningfully for languages and domains the vocab was optimized for. A 30k English-centric vocab won't help Chinese text; you need vocab pre-trained on that language."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How much does vocab size affect model memory?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The embedding and LM-head layers scale linearly with vocab. A 128k vocab model needs roughly 4× the embedding table memory of a 32k model, assuming the same embedding dimension."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I change vocabulary size after training?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Not easily. You'd need to retrain, distill, or use vocab extension techniques. It's baked into the model architecture."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why did Llama 3 double vocabulary from Llama 2?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "To better handle non-English and code. More tokens per sequence for English, fewer for other languages—an overall win on multilingual inference cost and quality."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:33:33Z"
+  },
+  {
+    "slug": "wordpiece",
+    "title": "WordPiece",
+    "category": "tokenization",
+    "difficulty_tier": "intermediate",
+    "tldr": "Subword tokenization algorithm that segments words into vocabulary pieces to maximize language-model likelihood, used by BERT.",
+    "plain_english": "WordPiece breaks words into smaller chunks—like splitting 'playing' into 'play' and '##ing'—using a greedy algorithm. It learns which character pairs to merge together based on how often they appear in your training data. Think of it as building a custom vocabulary optimized for a specific language model rather than using fixed word boundaries.",
+    "how_it_works": "WordPiece starts with characters, then iteratively merges pairs that maximize the probability of the training corpus. At inference, it greedily matches the longest possible subword from its vocabulary; if a piece doesn't exist, it falls back to shorter pieces or the unknown token. BERT uses a ## prefix to mark continuation tokens—so 'playing' tokenizes as ['play', '##ing'] rather than treating them as separate words. The vocabulary size is fixed before training and typically ranges from 20K to 30K tokens.",
+    "why_it_matters": "WordPiece remains standard in BERT and its descendants (RoBERTa, DistilBERT, domain-specific BERT variants), which power search and classification pipelines at scale. Understanding its tokenization behavior is critical when fine-tuning BERT-family models or debugging token-length issues in retrieval systems. While BPE dominates LLMs, WordPiece's design still influences how legacy models handle out-of-vocabulary words and subword generalization.",
+    "example": "A search team fine-tuning BERT for medical retrieval discovers their model struggles with rare pharmaceutical terms like 'acetylcholinesterase.' WordPiece splits it into ['acet', '##yl', '##chole', '##in', '##ester', '##ase']. By continuing pretraining on medical text, the model learns richer token embeddings for domain-specific subwords, improving ranking accuracy without retraining from scratch.",
+    "pitfalls": [
+      "WordPiece's greedy tokenization at inference time can produce suboptimal splits for out-of-vocabulary words if the vocabulary was built on unrelated text; retraining the tokenizer on domain text is often necessary.",
+      "The ## prefix convention is BERT-specific; other models using WordPiece may not follow it, causing confusion when comparing tokenization output across libraries.",
+      "Vocabulary size is fixed and determined offline; you cannot add new tokens at inference without retraining, unlike dynamic tokenizers.",
+      "WordPiece assumes your corpus and deployment data have similar token distributions; distribution shift can cause increased unknown tokens and downstream degradation."
+    ],
+    "when_use": "Use WordPiece when deploying or fine-tuning BERT-family models, building retrieval systems on pre-tokenized BERT checkpoints, or working with legacy models that already ship with WordPiece vocabularies.",
+    "when_avoid": "Avoid WordPiece when building new large language models (BPE or Unigram tokenizers are faster and more efficient), when you need to add tokens dynamically after training, or when working in high-morphology languages where character-level or morphological tokenizers perform better.",
+    "related_terms": [
+      "bert",
+      "bpe",
+      "subword-tokenization",
+      "tokenizer",
+      "sentencepiece",
+      "token"
+    ],
+    "related_tools": [
+      "tokenizers",
+      "huggingface-transformers"
+    ],
+    "faq": [
+      {
+        "q": "How is WordPiece different from BPE?",
+        "a": "WordPiece merges character pairs that maximize training-corpus likelihood, while BPE merges pairs that appear most frequently. WordPiece is also greedy at inference (longest matching), whereas BPE applies learned merge rules sequentially. BPE is simpler and dominates modern LLMs; WordPiece is BERT's legacy."
+      },
+      {
+        "q": "Can I change or extend a BERT WordPiece vocabulary after training?",
+        "a": "Changing the vocabulary requires retraining the tokenizer, but you can fine-tune the embeddings for a small set of new tokens without full retraining. Most practitioners add tokens at the start of fine-tuning, not after deployment."
+      },
+      {
+        "q": "What does the ## symbol mean in BERT tokenization?",
+        "a": "The ## prefix marks a continuation token—a subword that follows another token in the same word. So 'playing' becomes ['play', '##ing']. This helps the model distinguish word boundaries from mid-word breaks."
+      },
+      {
+        "q": "Why does my BERT model produce [UNK] tokens frequently after deployment?",
+        "a": "The deployment data likely contains words or subwords absent from the tokenizer's vocabulary, causing fallback to the unknown token. Retraining or continuing pretraining on domain text typically reduces [UNK] frequency."
+      },
+      {
+        "q": "Is WordPiece still used in modern language models?",
+        "a": "No; most modern LLMs (GPT, Llama, Mistral) use BPE or Unigram tokenizers. WordPiece remains standard in BERT-derived models and some domain-specific BERT checkpoints for NLP tasks like classification and search."
+      }
+    ],
+    "meta_title": "WordPiece — Plain-English Definition & Expert Guide | OSS AI Hub",
+    "meta_description": "Subword tokenization algorithm that segments words into vocabulary pieces to maximize language-model likelihood, used by BERT.",
+    "seo_variations": [
+      "WordPiece algorithm",
+      "WordPiece tokenization",
+      "BERT tokenizer",
+      "subword tokenization BERT"
+    ],
+    "schema_jsonld": {
+      "DefinedTerm": {
+        "@context": "https://schema.org",
+        "@type": "DefinedTerm",
+        "name": "WordPiece",
+        "description": "Subword tokenization algorithm that segments words into vocabulary pieces to maximize language-model likelihood, used by BERT.",
+        "inDefinedTermSet": "https://ossaihub.com/Glossary",
+        "url": "https://ossaihub.com/glossary/wordpiece",
+        "termCode": "wordpiece"
+      },
+      "FAQPage": {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How is WordPiece different from BPE?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "WordPiece merges character pairs that maximize training-corpus likelihood, while BPE merges pairs that appear most frequently. WordPiece is also greedy at inference (longest matching), whereas BPE applies learned merge rules sequentially. BPE is simpler and dominates modern LLMs; WordPiece is BERT's legacy."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I change or extend a BERT WordPiece vocabulary after training?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Changing the vocabulary requires retraining the tokenizer, but you can fine-tune the embeddings for a small set of new tokens without full retraining. Most practitioners add tokens at the start of fine-tuning, not after deployment."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What does the ## symbol mean in BERT tokenization?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The ## prefix marks a continuation token—a subword that follows another token in the same word. So 'playing' becomes ['play', '##ing']. This helps the model distinguish word boundaries from mid-word breaks."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does my BERT model produce [UNK] tokens frequently after deployment?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The deployment data likely contains words or subwords absent from the tokenizer's vocabulary, causing fallback to the unknown token. Retraining or continuing pretraining on domain text typically reduces [UNK] frequency."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is WordPiece still used in modern language models?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No; most modern LLMs (GPT, Llama, Mistral) use BPE or Unigram tokenizers. WordPiece remains standard in BERT-derived models and some domain-specific BERT checkpoints for NLP tasks like classification and search."
+            }
+          }
+        ]
+      }
+    },
+    "rewrite_version": "v2",
+    "rewritten_at": "2026-04-24T03:31:52Z"
+  }
+]
