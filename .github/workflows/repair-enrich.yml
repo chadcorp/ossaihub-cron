@@ -1,0 +1,77 @@
+name: Repair enrichment (re-fetch + re-normalize flagged URLs)
+on:
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: 'URLs per call (<=60 to dodge 3-min Deno gateway timeout)'
+        required: false
+        default: '40'
+      max_batches:
+        description: 'Max batches this run (335 URLs / 40 = 9 batches; allow 12 for retries)'
+        required: false
+        default: '12'
+      sleep_seconds:
+        description: 'Sleep between batches (gives 504-timed-out function room to finish server-side)'
+        required: false
+        default: '90'
+      start_index:
+        description: 'Resume offset into urls list (0-based)'
+        required: false
+        default: '0'
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Iterate batches calling enrichBacklog repair mode
+        env:
+          API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}
+          BSIZE:   ${{ inputs.batch_size }}
+          MAXB:    ${{ inputs.max_batches }}
+          NAP:     ${{ inputs.sleep_seconds }}
+          START:   ${{ inputs.start_index }}
+        run: |
+          set -u
+          if [ ! -f "repair-urls.txt" ]; then
+            echo "repair-urls.txt missing in repo root"; exit 1
+          fi
+          mapfile -t ALL_URLS < <(grep -v '^[[:space:]]*$' repair-urls.txt)
+          TOTAL=${#ALL_URLS[@]}
+          echo "Loaded $TOTAL URLs from repair-urls.txt; starting at $START"
+
+          IDX=$START
+          for b in $(seq 1 "$MAXB"); do
+            if [ "$IDX" -ge "$TOTAL" ]; then
+              echo "Done — processed all URLs ($TOTAL)"
+              exit 0
+            fi
+            END=$((IDX + BSIZE))
+            if [ "$END" -gt "$TOTAL" ]; then END=$TOTAL; fi
+            echo "=== batch $b: URLs $IDX..$((END-1)) of $TOTAL ==="
+
+            # Build JSON array of URLs for this batch
+            BATCH_JSON=$(printf '%s\n' "${ALL_URLS[@]:$IDX:$((END-IDX))}" | jq -R . | jq -sc .)
+            BODY=$(jq -nc --argjson urls "$BATCH_JSON" '{repair:true, urls:$urls}')
+
+            HTTP=$(curl -sS -o /tmp/r.json -w "%{http_code}" \
+              -X POST "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/enrichBacklog" \
+              -H "Content-Type: application/json" \
+              -H "API_KEY: $API_KEY" \
+              -d "$BODY" \
+              --max-time 280 || echo "000")
+            echo "HTTP $HTTP"
+            head -c 800 /tmp/r.json; echo ""
+
+            if [ "$HTTP" != "200" ] && [ "$HTTP" != "504" ] && [ "$HTTP" != "000" ]; then
+              echo "Hard error ($HTTP) — aborting at index $IDX"
+              exit 1
+            fi
+
+            IDX=$END
+            if [ "$IDX" -lt "$TOTAL" ]; then
+              echo "Sleeping $NAP s before next batch..."
+              sleep "$NAP"
+            fi
+          done
+          echo "Stopped after $MAXB batches; processed up to index $IDX of $TOTAL"
