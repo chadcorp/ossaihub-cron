@@ -1,0 +1,46 @@
+name: Archive tools (one-off)
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: 'Comma-separated github_urls to archive'
+        required: true
+      reason:
+        description: 'Why (for log)'
+        required: false
+        default: 'unmaintained or duplicate'
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST archived=true to toolsUpsert per URL
+        env:
+          UPSERT_URL: ${{ secrets.BASE44_UPSERT_URL }}
+          API_KEY:    ${{ secrets.TOOLS_UPSERT_API_KEY }}
+          URLS:       ${{ inputs.urls }}
+          REASON:     ${{ inputs.reason }}
+        run: |
+          set -u
+          IFS=',' read -ra ARR <<< "$URLS"
+          for raw in "${ARR[@]}"; do
+            URL=$(echo "$raw" | xargs)
+            [ -z "$URL" ] && continue
+            echo "=== archiving: $URL ($REASON) ==="
+            BODY=$(jq -nc --arg u "$URL" --arg r "$REASON" '{github_url:$u, archived:true, archive_reason:$r}')
+            HTTP=$(curl -sS -o /tmp/r.json -w "%{http_code}" \
+              -X POST "$UPSERT_URL" \
+              -H "Content-Type: application/json" \
+              -H "API_KEY: $API_KEY" \
+              -d "$BODY")
+            echo "HTTP $HTTP"
+            head -c 500 /tmp/r.json; echo ""
+            sleep 2
+          done
+
+          echo "=== verify via public feed ==="
+          curl -sS "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
+            | jq --arg urls "$URLS" '
+                ($urls | split(",") | map(ascii_downcase | gsub("^\s+|\s+$";""))) as $targets
+                | [.[] | select((.github_url // "" | ascii_downcase) as $u | $targets | index($u)) | {name, github_url, archived}]
+              '
