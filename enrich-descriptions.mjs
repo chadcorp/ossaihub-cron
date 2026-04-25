@@ -31,8 +31,8 @@ const TOOLS_LIST_URL =
   'https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson';
 
 const PER_FETCH_DELAY_MS = 1000;        // 1 req/sec to GitHub
-const UPSERT_BATCH = 50;
-const UPSERT_INTER_BATCH_DELAY_MS = 6000;
+const UPSERT_BATCH = 20;
+const UPSERT_INTER_BATCH_DELAY_MS = 30000;
 const MIN_DESCRIPTION_CHARS = 200;       // skip if README is empty/too short to be useful
 const MAX_DESCRIPTION_WORDS = 600;        // ~2500 chars — enough for Google to index, not overwhelming
 
