@@ -24,7 +24,7 @@ if (!GH_READONLY_TOKEN || !BASE44_UPSERT_URL || !BASE44_API_KEY) {
   throw new Error('Missing required env vars (GH_READONLY_TOKEN, BASE44_UPSERT_URL, BASE44_API_KEY).');
 }
 
-const MAX_PER_RUN = Number(ENRICH_MAX_PER_RUN ?? 80);
+const MAX_PER_RUN = Number(ENRICH_MAX_PER_RUN) || 80;
 const DRY_RUN = String(ENRICH_DRY_RUN ?? '').toLowerCase() === 'true';
 
 const TOOLS_LIST_URL =
