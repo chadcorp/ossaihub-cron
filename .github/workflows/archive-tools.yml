@@ -14,7 +14,7 @@ jobs:
   archive:
     runs-on: ubuntu-latest
     steps:
-      - name: POST archived=true to toolsUpsert per URL
+      - name: POST archived=true to toolsUpsert (batched)
         env:
           UPSERT_URL: ${{ secrets.BASE44_UPSERT_URL }}
           API_KEY:    ${{ secrets.TOOLS_UPSERT_API_KEY }}
@@ -22,25 +22,26 @@ jobs:
           REASON:     ${{ inputs.reason }}
         run: |
           set -u
-          IFS=',' read -ra ARR <<< "$URLS"
-          for raw in "${ARR[@]}"; do
-            URL=$(echo "$raw" | xargs)
-            [ -z "$URL" ] && continue
-            echo "=== archiving: $URL ($REASON) ==="
-            BODY=$(jq -nc --arg u "$URL" --arg r "$REASON" '{github_url:$u, archived:true, archive_reason:$r}')
-            HTTP=$(curl -sS -o /tmp/r.json -w "%{http_code}" \
-              -X POST "$UPSERT_URL" \
-              -H "Content-Type: application/json" \
-              -H "API_KEY: $API_KEY" \
-              -d "$BODY")
-            echo "HTTP $HTTP"
-            head -c 500 /tmp/r.json; echo ""
-            sleep 2
-          done
+          BODY=$(echo "$URLS" | jq -Rc --arg r "$REASON" '
+            split(",")
+            | map(gsub("^[[:space:]]+|[[:space:]]+$";""))
+            | map(select(length>0))
+            | {items: map({github_url: ., archived: true, archive_reason: $r})}
+          ')
+          echo "Request body:"
+          echo "$BODY" | jq .
+          HTTP=$(curl -sS -o /tmp/r.json -w "%{http_code}" \
+            -X POST "$UPSERT_URL" \
+            -H "Content-Type: application/json" \
+            -H "API_KEY: $API_KEY" \
+            --data-raw "$BODY")
+          echo "HTTP $HTTP"
+          cat /tmp/r.json; echo ""
 
           echo "=== verify via public feed ==="
+          sleep 4
           curl -sS "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
             | jq --arg urls "$URLS" '
-                ($urls | split(",") | map(ascii_downcase | gsub("^\s+|\s+$";""))) as $targets
+                ($urls | split(",") | map(ascii_downcase | gsub("^[[:space:]]+|[[:space:]]+$";""))) as $targets
                 | [.[] | select((.github_url // "" | ascii_downcase) as $u | $targets | index($u)) | {name, github_url, archived}]
               '
