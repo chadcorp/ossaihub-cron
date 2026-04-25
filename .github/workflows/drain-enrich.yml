@@ -1,0 +1,54 @@
+name: Drain enrich backlog (server-side)
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Per-call limit (cap 200)'
+        required: false
+        default: '200'
+      iterations:
+        description: 'Sequential calls'
+        required: false
+        default: '3'
+      sleep_seconds:
+        description: 'Sleep between iterations'
+        required: false
+        default: '20'
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call enrichBacklog
+        env:
+          API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}
+          LIMIT:   ${{ inputs.limit }}
+          ITERS:   ${{ inputs.iterations }}
+          NAP:     ${{ inputs.sleep_seconds }}
+        run: |
+          set -e
+          for i in $(seq 1 "$ITERS"); do
+            echo "=== iteration $i/$ITERS (limit=$LIMIT) ==="
+            HTTP=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
+              -X POST "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/enrichBacklog" \
+              -H "Content-Type: application/json" \
+              -H "API_KEY: $API_KEY" \
+              -d "{\"limit\":$LIMIT}" \
+              --max-time 600)
+            echo "HTTP $HTTP"
+            cat /tmp/resp.json
+            echo ""
+            REMAINING=$(jq -r '.remainingCandidates // empty' /tmp/resp.json 2>/dev/null || echo "")
+            if [ "$HTTP" != "200" ]; then
+              echo "Non-200 — aborting loop"
+              exit 1
+            fi
+            if [ -n "$REMAINING" ] && [ "$REMAINING" -le 0 ] 2>/dev/null; then
+              echo "Backlog drained."
+              break
+            fi
+            if [ "$i" -lt "$ITERS" ]; then
+              echo "Sleeping $NAP s..."
+              sleep "$NAP"
+            fi
+          done
