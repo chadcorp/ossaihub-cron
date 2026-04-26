@@ -55,6 +55,15 @@ jobs:
               exit 1
             fi
 
+            # Trust the server: if it reports remainingCandidates=0, no further
+            # iterations will help. The client-side jq backlog query can still
+            # show >0 when broken-repo errors leave tools without descriptions,
+            # but those won't resolve by retrying immediately.
+            if [ "$HTTP" = "200" ] && jq -e '.remainingCandidates == 0' /tmp/resp.json >/dev/null 2>&1; then
+              echo "Server reports remainingCandidates=0 — exiting after iteration $i."
+              exit 0
+            fi
+
             echo "Sleeping $NAP s for in-flight function to complete..."
             sleep "$NAP"
 
