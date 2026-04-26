@@ -1,32 +1,69 @@
 name: Enrich OSS AI Hub tool descriptions
 on:
   schedule:
-    - cron: '43 7 * * *'   # 07:43 UTC daily — after refresh-stars (06:17) but well before site traffic peaks
+    - cron: '43 7 * * *'   # 07:43 UTC daily — after refresh-stars (06:17), before site traffic peaks
   workflow_dispatch:
     inputs:
-      dry_run:
-        description: 'Dry run — log planned changes without writing to Base44'
+      limit:
+        description: 'Per-call limit (keep <=130 to dodge edge gateway 3-min timeout)'
         required: false
-        default: 'false'
-        type: choice
-        options: ['false', 'true']
-      max_per_run:
-        description: 'Cap tools enriched this run (default 80, set higher for one-shot backfills)'
+        default: '120'
+      iterations:
+        description: 'Max sequential calls'
         required: false
-        default: '80'
+        default: '6'
+      sleep_seconds:
+        description: 'Sleep between iterations (gives 504-timed-out function room to finish)'
+        required: false
+        default: '60'
 
+# Server-side enrichment via Base44's `enrichBacklog` function.
+# Why: the old client-side path (fetch READMEs from GH, then upsert to Base44)
+# kept dying on Base44's silent-403 upsert rate-limit. enrichBacklog runs the
+# fetch + write inside Base44's runtime — no external upsert, no 403.
 jobs:
   enrich:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: node enrich-descriptions.mjs
+      - name: Call enrichBacklog repeatedly
         env:
-          GH_READONLY_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
-          BASE44_UPSERT_URL:  ${{ secrets.BASE44_UPSERT_URL }}
-          BASE44_API_KEY:     ${{ secrets.TOOLS_UPSERT_API_KEY }}
-          ENRICH_DRY_RUN:     ${{ inputs.dry_run }}
-          ENRICH_MAX_PER_RUN: ${{ inputs.max_per_run }}
+          API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}
+          LIMIT:   ${{ inputs.limit || '120' }}
+          ITERS:   ${{ inputs.iterations || '6' }}
+          NAP:     ${{ inputs.sleep_seconds || '60' }}
+        run: |
+          set -u
+          BACKLOG_BEFORE=$(curl -sS "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
+            | jq '[.[] | select(.archived != true) | select((.status // "approved") == "approved") | select(.github_url != null and .github_url != "") | select((.long_description // "" | gsub("^\\s+|\\s+$"; "") | length) < 200) | (.github_url | ascii_downcase | sub("\\.git$";"") | sub("/$";""))] | unique | length')
+          echo "Backlog before: $BACKLOG_BEFORE"
+          if [ "$BACKLOG_BEFORE" = "0" ]; then echo "Already drained."; exit 0; fi
+
+          for i in $(seq 1 "$ITERS"); do
+            echo "=== iteration $i/$ITERS (limit=$LIMIT) ==="
+            HTTP=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
+              -X POST "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/enrichBacklog" \
+              -H "Content-Type: application/json" \
+              -H "API_KEY: $API_KEY" \
+              -d "{\"limit\":$LIMIT}" \
+              --max-time 300 || echo "000")
+            echo "HTTP $HTTP"
+            head -c 600 /tmp/resp.json 2>/dev/null; echo ""
+
+            # 504/000 means edge timeout — function still finishes server-side. Sleep, then poll.
+            if [ "$HTTP" != "200" ] && [ "$HTTP" != "504" ] && [ "$HTTP" != "000" ]; then
+              echo "Hard error ($HTTP) — aborting"
+              exit 1
+            fi
+
+            echo "Sleeping $NAP s for in-flight function to complete..."
+            sleep "$NAP"
+
+            BACKLOG=$(curl -sS "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
+              | jq '[.[] | select(.archived != true) | select((.status // "approved") == "approved") | select(.github_url != null and .github_url != "") | select((.long_description // "" | gsub("^\\s+|\\s+$"; "") | length) < 200) | (.github_url | ascii_downcase | sub("\\.git$";"") | sub("/$";""))] | unique | length')
+            echo "Remaining backlog: $BACKLOG"
+            if [ "$BACKLOG" = "0" ]; then
+              echo "Backlog drained at iteration $i."
+              exit 0
+            fi
+          done
+          echo "Stopped after $ITERS iterations; backlog still $BACKLOG"
