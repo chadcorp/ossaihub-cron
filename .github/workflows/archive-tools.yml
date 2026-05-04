@@ -43,6 +43,7 @@ jobs:
           curl -sS -H "API_KEY: $API_KEY" \
             "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
             | jq --arg urls "$URLS" '
-                ($urls | split(",") | map(ascii_downcase | gsub("^[[:space:]]+|[[:space:]]+$";""))) as $targets
-                | [.[] | select((.github_url // "" | ascii_downcase) as $u | $targets | index($u)) | {name, github_url, archived}]
+                (if type == "array" then . elif (.data | type) == "array" then .data else [] end) as $tools
+                | ($urls | split(",") | map(ascii_downcase | gsub("^[[:space:]]+|[[:space:]]+$";""))) as $targets
+                | [$tools[] | select((.github_url // "" | ascii_downcase) as $u | $targets | index($u)) | {name, github_url, archived}]
               '

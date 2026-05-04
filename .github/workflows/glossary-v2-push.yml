@@ -64,7 +64,14 @@ jobs:
           for slug in $SAMPLES; do
             body=$(curl -sSf -H "API_KEY: $API_KEY" "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/glossaryApi" | python -c "
           import sys, json
-          data=json.load(sys.stdin); terms=data.get('terms') if isinstance(data, dict) else data
+          data=json.load(sys.stdin)
+          # Tolerate three shapes: bare list, {terms: [...]}, {data: [...]}
+          if isinstance(data, list):
+              terms = data
+          elif isinstance(data, dict):
+              terms = data.get('terms') or data.get('data') or []
+          else:
+              terms = []
           slug='$slug'
           rec=next((t for t in terms if t.get('slug')==slug), None)
           if not rec:

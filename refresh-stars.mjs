@@ -60,12 +60,20 @@ async function listTools() {
     headers: { Accept: 'application/json', API_KEY: BASE44_API_KEY },
   });
   const raw = await r.json();
-  if (!Array.isArray(raw)) {
+  // Tolerate both shapes: bare array (legacy) and {data: [...]} (current
+  // 2026-05-04 wrapper). If Base44 flips back, this keeps working.
+  const items = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw?.data)
+      ? raw.data
+      : null;
+  if (!items) {
     const preview = JSON.stringify(raw).slice(0, 300);
-    throw new Error(`toolsApiJson returned non-array (likely auth/error): ${preview}`);
+    throw new Error(`toolsApiJson returned no array (auth/error): ${preview}`);
   }
+  console.log(`Loaded ${items.length} tools from toolsApiJson`);
   const byUrl = new Map();
-  for (const t of raw) {
+  for (const t of items) {
     if (!t.github_url) continue;
     const k = normalizeUrl(t.github_url);
     if (!byUrl.has(k)) byUrl.set(k, []);

@@ -36,15 +36,27 @@ jobs:
           # toolsApiJson is auth-gated — must send API_KEY header. A bare 403
           # would return non-JSON ("Forbidden") and crash jq with a parse error
           # before this script gets a chance to log a clean message.
-          curl -sS -H "API_KEY: $API_KEY" \
-            "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
-            -o /tmp/feed.json -w "feed HTTP %{http_code}\n"
-          if ! jq -e 'type == "array"' /tmp/feed.json >/dev/null 2>&1; then
-            echo "toolsApiJson returned non-array body (auth/error). First 300 chars:"
-            head -c 300 /tmp/feed.json; echo ""
-            exit 1
-          fi
-          BACKLOG_BEFORE=$(jq '[.[] | select(.archived != true) | select((.status // "approved") == "approved") | select(.github_url != null and .github_url != "") | select((.long_description // "" | gsub("^\\s+|\\s+$"; "") | length) < 200) | (.github_url | ascii_downcase | sub("\\.git$";"") | sub("/$";""))] | unique | length' /tmp/feed.json)
+          # Normalize to a bare array regardless of wrapper: Base44 currently
+          # returns {data: [...]} but used to return [...]; tolerate both.
+          fetch_feed() {
+            curl -sS -H "API_KEY: $API_KEY" \
+              "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
+              -o /tmp/feed.raw.json -w "feed HTTP %{http_code}\n" || return 1
+            jq -c 'if type == "array" then . elif (.data | type) == "array" then .data else null end' \
+              /tmp/feed.raw.json > /tmp/feed.json 2>/dev/null
+            if ! jq -e 'type == "array"' /tmp/feed.json >/dev/null 2>&1; then
+              echo "toolsApiJson returned no usable array. First 300 chars of raw body:"
+              head -c 300 /tmp/feed.raw.json; echo ""
+              return 1
+            fi
+            jq 'length' /tmp/feed.json | sed 's/^/feed length: /'
+            return 0
+          }
+          backlog_count() {
+            jq '[.[] | select(.archived != true) | select((.status // "approved") == "approved") | select(.github_url != null and .github_url != "") | select((.long_description // "" | gsub("^\\s+|\\s+$"; "") | length) < 200) | (.github_url | ascii_downcase | sub("\\.git$";"") | sub("/$";""))] | unique | length' /tmp/feed.json
+          }
+          if ! fetch_feed; then exit 1; fi
+          BACKLOG_BEFORE=$(backlog_count)
           echo "Backlog before: $BACKLOG_BEFORE"
           if [ "$BACKLOG_BEFORE" = "0" ]; then echo "Already drained."; exit 0; fi
 
@@ -77,14 +89,11 @@ jobs:
             echo "Sleeping $NAP s for in-flight function to complete..."
             sleep "$NAP"
 
-            curl -sS -H "API_KEY: $API_KEY" \
-              "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
-              -o /tmp/feed.json
-            if ! jq -e 'type == "array"' /tmp/feed.json >/dev/null 2>&1; then
-              echo "toolsApiJson returned non-array body during iteration $i — skipping backlog recount."
+            if ! fetch_feed; then
+              echo "toolsApiJson refetch failed during iteration $i — skipping backlog recount."
               continue
             fi
-            BACKLOG=$(jq '[.[] | select(.archived != true) | select((.status // "approved") == "approved") | select(.github_url != null and .github_url != "") | select((.long_description // "" | gsub("^\\s+|\\s+$"; "") | length) < 200) | (.github_url | ascii_downcase | sub("\\.git$";"") | sub("/$";""))] | unique | length' /tmp/feed.json)
+            BACKLOG=$(backlog_count)
             echo "Remaining backlog: $BACKLOG"
             if [ "$BACKLOG" = "0" ]; then
               echo "Backlog drained at iteration $i."
