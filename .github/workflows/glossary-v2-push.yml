@@ -55,12 +55,14 @@ jobs:
 
       - name: Smoke-test the deploy
         if: github.event.inputs.dry_run != 'true'
+        env:
+          API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}
         run: |
           # Sleep so Base44 finishes propagating the writes, then spot-check
           sleep 30
           SAMPLES="rag ab-test-llm eval-harness"
           for slug in $SAMPLES; do
-            body=$(curl -sSf "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/glossaryApi" | python -c "
+            body=$(curl -sSf -H "API_KEY: $API_KEY" "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/glossaryApi" | python -c "
           import sys, json
           data=json.load(sys.stdin); terms=data.get('terms') if isinstance(data, dict) else data
           slug='$slug'

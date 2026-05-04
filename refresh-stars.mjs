@@ -57,9 +57,13 @@ const normalizeUrl = (u) =>
 
 async function listTools() {
   const r = await fetchWithRetry(TOOLS_LIST_URL, {
-    headers: { Accept: 'application/json' },
+    headers: { Accept: 'application/json', API_KEY: BASE44_API_KEY },
   });
   const raw = await r.json();
+  if (!Array.isArray(raw)) {
+    const preview = JSON.stringify(raw).slice(0, 300);
+    throw new Error(`toolsApiJson returned non-array (likely auth/error): ${preview}`);
+  }
   const byUrl = new Map();
   for (const t of raw) {
     if (!t.github_url) continue;

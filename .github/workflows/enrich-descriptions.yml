@@ -33,8 +33,18 @@ jobs:
           NAP:     ${{ inputs.sleep_seconds || '60' }}
         run: |
           set -u
-          BACKLOG_BEFORE=$(curl -sS "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
-            | jq '[.[] | select(.archived != true) | select((.status // "approved") == "approved") | select(.github_url != null and .github_url != "") | select((.long_description // "" | gsub("^\\s+|\\s+$"; "") | length) < 200) | (.github_url | ascii_downcase | sub("\\.git$";"") | sub("/$";""))] | unique | length')
+          # toolsApiJson is auth-gated — must send API_KEY header. A bare 403
+          # would return non-JSON ("Forbidden") and crash jq with a parse error
+          # before this script gets a chance to log a clean message.
+          curl -sS -H "API_KEY: $API_KEY" \
+            "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
+            -o /tmp/feed.json -w "feed HTTP %{http_code}\n"
+          if ! jq -e 'type == "array"' /tmp/feed.json >/dev/null 2>&1; then
+            echo "toolsApiJson returned non-array body (auth/error). First 300 chars:"
+            head -c 300 /tmp/feed.json; echo ""
+            exit 1
+          fi
+          BACKLOG_BEFORE=$(jq '[.[] | select(.archived != true) | select((.status // "approved") == "approved") | select(.github_url != null and .github_url != "") | select((.long_description // "" | gsub("^\\s+|\\s+$"; "") | length) < 200) | (.github_url | ascii_downcase | sub("\\.git$";"") | sub("/$";""))] | unique | length' /tmp/feed.json)
           echo "Backlog before: $BACKLOG_BEFORE"
           if [ "$BACKLOG_BEFORE" = "0" ]; then echo "Already drained."; exit 0; fi
 
@@ -67,8 +77,14 @@ jobs:
             echo "Sleeping $NAP s for in-flight function to complete..."
             sleep "$NAP"
 
-            BACKLOG=$(curl -sS "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
-              | jq '[.[] | select(.archived != true) | select((.status // "approved") == "approved") | select(.github_url != null and .github_url != "") | select((.long_description // "" | gsub("^\\s+|\\s+$"; "") | length) < 200) | (.github_url | ascii_downcase | sub("\\.git$";"") | sub("/$";""))] | unique | length')
+            curl -sS -H "API_KEY: $API_KEY" \
+              "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
+              -o /tmp/feed.json
+            if ! jq -e 'type == "array"' /tmp/feed.json >/dev/null 2>&1; then
+              echo "toolsApiJson returned non-array body during iteration $i — skipping backlog recount."
+              continue
+            fi
+            BACKLOG=$(jq '[.[] | select(.archived != true) | select((.status // "approved") == "approved") | select(.github_url != null and .github_url != "") | select((.long_description // "" | gsub("^\\s+|\\s+$"; "") | length) < 200) | (.github_url | ascii_downcase | sub("\\.git$";"") | sub("/$";""))] | unique | length' /tmp/feed.json)
             echo "Remaining backlog: $BACKLOG"
             if [ "$BACKLOG" = "0" ]; then
               echo "Backlog drained at iteration $i."
