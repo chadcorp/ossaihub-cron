@@ -58,28 +58,50 @@ jobs:
         env:
           API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}
         run: |
-          # Sleep so Base44 finishes propagating the writes, then spot-check
+          # Sleep so Base44 finishes propagating the writes, then spot-check.
           sleep 30
-          SAMPLES="rag ab-test-llm eval-harness"
-          for slug in $SAMPLES; do
-            body=$(curl -sSf -H "API_KEY: $API_KEY" "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/glossaryApi" | python -c "
-          import sys, json
-          data=json.load(sys.stdin)
-          # Tolerate three shapes: bare list, {terms: [...]}, {data: [...]}
-          if isinstance(data, list):
-              terms = data
-          elif isinstance(data, dict):
-              terms = data.get('terms') or data.get('data') or []
-          else:
-              terms = []
-          slug='$slug'
-          rec=next((t for t in terms if t.get('slug')==slug), None)
-          if not rec:
-              print('MISSING'); sys.exit(1)
-          print('tldr=', repr(rec.get('tldr'))[:80])
-          print('faq_count=', len(rec.get('faq') or []))
-          print('rewrite_version=', rec.get('rewrite_version'))
-          ")
-            echo "--- $slug ---"
-            echo "$body"
-          done
+          # Walk all pages once into a single terms list, then look up each slug.
+          # Base44 paginated platform-side on 2026-05-04 with 100/page max.
+          python - <<'PY'
+          import json, os, sys, time, urllib.request
+
+          KEY = os.environ['API_KEY']
+          BASE = 'https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/glossaryApi'
+          UA = 'ossaihub-cron-glossary-smoke/1.0'
+
+          def fetch(url):
+              req = urllib.request.Request(url, headers={
+                  'API_KEY': KEY, 'Accept': 'application/json', 'User-Agent': UA,
+              })
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  return json.loads(r.read())
+
+          terms = []
+          page = 1
+          while True:
+              if page > 50:
+                  print(f"page cap exceeded", file=sys.stderr); break
+              resp = fetch(f"{BASE}?page={page}&limit=100")
+              if isinstance(resp, list):
+                  terms.extend(resp); break
+              if not isinstance(resp, dict):
+                  print(f"unexpected response: {type(resp)}", file=sys.stderr); break
+              # Either {terms: [...]} (legacy) or {data: [...], pagination: {...}} (current).
+              chunk = resp.get('data') or resp.get('terms') or []
+              terms.extend(chunk)
+              pagination = resp.get('pagination') or {}
+              if not pagination.get('hasMore'):
+                  break
+              page += 1
+              time.sleep(1.5)
+
+          print(f"loaded {len(terms)} terms total")
+          for slug in ['rag', 'ab-test-llm', 'eval-harness']:
+              rec = next((t for t in terms if t.get('slug') == slug), None)
+              print(f"--- {slug} ---")
+              if not rec:
+                  print("MISSING"); sys.exit(1)
+              print(f"tldr= {repr(rec.get('tldr'))[:80]}")
+              print(f"faq_count= {len(rec.get('faq') or [])}")
+              print(f"rewrite_version= {rec.get('rewrite_version')}")
+          PY

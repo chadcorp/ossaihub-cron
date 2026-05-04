@@ -12,6 +12,19 @@ if (!GH_READONLY_TOKEN || !BASE44_UPSERT_URL || !BASE44_API_KEY) {
 // /data-health goes red instead of reporting a fake-green.
 const MAX_COVERAGE_LOSS = 0.15; // 15%
 
+// Total-feed floor — Base44 paginated toolsApiJson on 2026-05-04 with a hard
+// cap of 100/page. If pagination silently breaks (e.g. server returns hasMore
+// but truncates total), refuse to proceed instead of poisoning the directory
+// with a 50-tool refresh that drops 1900+ repos as 'unverified'.
+const MIN_TOOLS_EXPECTED = 1500;
+
+// Page size and pacing for the paginated GET. Base44 caps limit at 100 even
+// if you request more; 1.5s between pages dodges the Cloudflare rate-limit
+// that 403s rapid-fire calls (observed during the 2026-05-04 incident).
+const TOOLS_PAGE_LIMIT = 100;
+const TOOLS_PAGE_DELAY_MS = 1500;
+const TOOLS_USER_AGENT = 'ossaihub-cron-refresh-stars/1.0';
+
 const parseRepo = (url) => {
   const m = url?.match(/github\.com\/([^\/]+)\/([^\/?#]+)/);
   return m ? { owner: m[1], name: m[2].replace(/\.git$/, '') } : null;
@@ -55,25 +68,63 @@ async function fetchWithRetry(url, opts = {}, attempts = 10) {
 const normalizeUrl = (u) =>
   (u || '').toLowerCase().trim().replace(/\.git$/, '').replace(/\/$/, '');
 
-async function listTools() {
-  const r = await fetchWithRetry(TOOLS_LIST_URL, {
-    headers: { Accept: 'application/json', API_KEY: BASE44_API_KEY },
+async function fetchPage(page) {
+  const url = `${TOOLS_LIST_URL}?page=${page}&limit=${TOOLS_PAGE_LIMIT}`;
+  const r = await fetchWithRetry(url, {
+    headers: {
+      Accept: 'application/json',
+      'User-Agent': TOOLS_USER_AGENT,
+      API_KEY: BASE44_API_KEY,
+    },
   });
   const raw = await r.json();
-  // Tolerate both shapes: bare array (legacy) and {data: [...]} (current
-  // 2026-05-04 wrapper). If Base44 flips back, this keeps working.
-  const items = Array.isArray(raw)
-    ? raw
-    : Array.isArray(raw?.data)
-      ? raw.data
-      : null;
-  if (!items) {
-    const preview = JSON.stringify(raw).slice(0, 300);
-    throw new Error(`toolsApiJson returned no array (auth/error): ${preview}`);
+  // Current shape (2026-05-04+): {data: [...], pagination: {page, limit, total, hasMore}}.
+  // Tolerate the legacy bare-array shape too in case Base44 flips back.
+  if (Array.isArray(raw)) return { items: raw, pagination: null };
+  if (Array.isArray(raw?.data)) return { items: raw.data, pagination: raw.pagination || null };
+  const preview = JSON.stringify(raw).slice(0, 300);
+  throw new Error(`toolsApiJson page ${page} returned no array (auth/error): ${preview}`);
+}
+
+async function listTools() {
+  const all = [];
+  let page = 1;
+  let total = null;
+  // Hard ceiling so a misbehaving hasMore can't loop forever.
+  const MAX_PAGES = 200;
+  while (page <= MAX_PAGES) {
+    const { items, pagination } = await fetchPage(page);
+    all.push(...items);
+    if (pagination) {
+      if (total === null && typeof pagination.total === 'number') total = pagination.total;
+      console.log(
+        `  page ${page}: +${items.length} (running ${all.length}${total !== null ? ` / ${total}` : ''})`
+      );
+      if (!pagination.hasMore) break;
+    } else {
+      // Legacy shape — single response, no pagination.
+      console.log(`  legacy bare-array response: ${items.length} items`);
+      break;
+    }
+    page += 1;
+    await new Promise((res) => setTimeout(res, TOOLS_PAGE_DELAY_MS));
   }
-  console.log(`Loaded ${items.length} tools from toolsApiJson`);
+  if (page > MAX_PAGES) {
+    throw new Error(`toolsApiJson exceeded MAX_PAGES=${MAX_PAGES} — pagination loop is broken`);
+  }
+  if (total !== null && all.length < total) {
+    throw new Error(
+      `toolsApiJson pagination undercount: loaded ${all.length} but total reported ${total}. Refusing to proceed.`
+    );
+  }
+  if (all.length < MIN_TOOLS_EXPECTED) {
+    throw new Error(
+      `toolsApiJson returned only ${all.length} tools (< MIN_TOOLS_EXPECTED=${MIN_TOOLS_EXPECTED}). Aborting before this poisons /data-health.`
+    );
+  }
+  console.log(`Loaded ${all.length} tools across ${page} page(s) from toolsApiJson`);
   const byUrl = new Map();
-  for (const t of items) {
+  for (const t of all) {
     if (!t.github_url) continue;
     const k = normalizeUrl(t.github_url);
     if (!byUrl.has(k)) byUrl.set(k, []);

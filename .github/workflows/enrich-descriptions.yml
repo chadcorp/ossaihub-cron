@@ -21,6 +21,12 @@ on:
 # Why: the old client-side path (fetch READMEs from GH, then upsert to Base44)
 # kept dying on Base44's silent-403 upsert rate-limit. enrichBacklog runs the
 # fetch + write inside Base44's runtime — no external upsert, no 403.
+#
+# 2026-05-04: Base44 paginated toolsApiJson with a hard cap of 100/page, so
+# the previous BACKLOG_BEFORE precount + in-loop BACKLOG poll became unworkable
+# (needed 20+ paged GETs each iteration just to count). Dropped both — instead
+# we trust the server's `remainingCandidates=0` signal as the early-exit, and
+# rely on the iter cap as the hard upper bound.
 jobs:
   enrich:
     runs-on: ubuntu-latest
@@ -33,33 +39,6 @@ jobs:
           NAP:     ${{ inputs.sleep_seconds || '60' }}
         run: |
           set -u
-          # toolsApiJson is auth-gated — must send API_KEY header. A bare 403
-          # would return non-JSON ("Forbidden") and crash jq with a parse error
-          # before this script gets a chance to log a clean message.
-          # Normalize to a bare array regardless of wrapper: Base44 currently
-          # returns {data: [...]} but used to return [...]; tolerate both.
-          fetch_feed() {
-            curl -sS -H "API_KEY: $API_KEY" \
-              "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
-              -o /tmp/feed.raw.json -w "feed HTTP %{http_code}\n" || return 1
-            jq -c 'if type == "array" then . elif (.data | type) == "array" then .data else null end' \
-              /tmp/feed.raw.json > /tmp/feed.json 2>/dev/null
-            if ! jq -e 'type == "array"' /tmp/feed.json >/dev/null 2>&1; then
-              echo "toolsApiJson returned no usable array. First 300 chars of raw body:"
-              head -c 300 /tmp/feed.raw.json; echo ""
-              return 1
-            fi
-            jq 'length' /tmp/feed.json | sed 's/^/feed length: /'
-            return 0
-          }
-          backlog_count() {
-            jq '[.[] | select(.archived != true) | select((.status // "approved") == "approved") | select(.github_url != null and .github_url != "") | select((.long_description // "" | gsub("^\\s+|\\s+$"; "") | length) < 200) | (.github_url | ascii_downcase | sub("\\.git$";"") | sub("/$";""))] | unique | length' /tmp/feed.json
-          }
-          if ! fetch_feed; then exit 1; fi
-          BACKLOG_BEFORE=$(backlog_count)
-          echo "Backlog before: $BACKLOG_BEFORE"
-          if [ "$BACKLOG_BEFORE" = "0" ]; then echo "Already drained."; exit 0; fi
-
           for i in $(seq 1 "$ITERS"); do
             echo "=== iteration $i/$ITERS (limit=$LIMIT) ==="
             HTTP=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
@@ -71,33 +50,24 @@ jobs:
             echo "HTTP $HTTP"
             head -c 600 /tmp/resp.json 2>/dev/null; echo ""
 
-            # 504/000 means edge timeout — function still finishes server-side. Sleep, then poll.
+            # 504/000 means edge timeout — function still finishes server-side.
+            # Sleep, then trust the next iteration's response. Hard 4xx/5xx (not
+            # 504) is a real error — abort.
             if [ "$HTTP" != "200" ] && [ "$HTTP" != "504" ] && [ "$HTTP" != "000" ]; then
               echo "Hard error ($HTTP) — aborting"
               exit 1
             fi
 
-            # Trust the server: if it reports remainingCandidates=0, no further
-            # iterations will help. The client-side jq backlog query can still
-            # show >0 when broken-repo errors leave tools without descriptions,
-            # but those won't resolve by retrying immediately.
+            # Server-reported drain signal — only authoritative way to know
+            # the backlog is empty without paginating the whole feed.
             if [ "$HTTP" = "200" ] && jq -e '.remainingCandidates == 0' /tmp/resp.json >/dev/null 2>&1; then
               echo "Server reports remainingCandidates=0 — exiting after iteration $i."
               exit 0
             fi
 
-            echo "Sleeping $NAP s for in-flight function to complete..."
-            sleep "$NAP"
-
-            if ! fetch_feed; then
-              echo "toolsApiJson refetch failed during iteration $i — skipping backlog recount."
-              continue
-            fi
-            BACKLOG=$(backlog_count)
-            echo "Remaining backlog: $BACKLOG"
-            if [ "$BACKLOG" = "0" ]; then
-              echo "Backlog drained at iteration $i."
-              exit 0
+            if [ "$i" != "$ITERS" ]; then
+              echo "Sleeping $NAP s for in-flight function to complete..."
+              sleep "$NAP"
             fi
           done
-          echo "Stopped after $ITERS iterations; backlog still $BACKLOG"
+          echo "Stopped after $ITERS iterations; remainingCandidates may still be >0 — re-run if needed."

@@ -40,10 +40,27 @@ jobs:
 
           echo "=== verify via public feed ==="
           sleep 4
-          curl -sS -H "API_KEY: $API_KEY" \
-            "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson" \
-            | jq --arg urls "$URLS" '
-                (if type == "array" then . elif (.data | type) == "array" then .data else [] end) as $tools
-                | ($urls | split(",") | map(ascii_downcase | gsub("^[[:space:]]+|[[:space:]]+$";""))) as $targets
-                | [$tools[] | select((.github_url // "" | ascii_downcase) as $u | $targets | index($u)) | {name, github_url, archived}]
-              '
+          # toolsApiJson is paginated (100/page max as of 2026-05-04). Walk pages
+          # with hasMore, concatenating .data until we've seen everything, then
+          # filter to the URLs we just archived.
+          : > /tmp/all_tools.json
+          page=1
+          while : ; do
+            curl -sS -H "API_KEY: $API_KEY" \
+              "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/toolsApiJson?page=${page}&limit=100" \
+              -o /tmp/page.json
+            if ! jq -e '(.data | type) == "array"' /tmp/page.json >/dev/null 2>&1; then
+              echo "page ${page} returned non-paginated body — bailing verify."
+              break
+            fi
+            jq -c '.data[]' /tmp/page.json >> /tmp/all_tools.json
+            has_more=$(jq -r '.pagination.hasMore // false' /tmp/page.json)
+            if [ "$has_more" != "true" ]; then break; fi
+            page=$((page + 1))
+            sleep 1
+            if [ "$page" -gt 100 ]; then echo "page cap"; break; fi
+          done
+          jq -s --arg urls "$URLS" '
+              ($urls | split(",") | map(ascii_downcase | gsub("^[[:space:]]+|[[:space:]]+$";""))) as $targets
+              | [.[] | select((.github_url // "" | ascii_downcase) as $u | $targets | index($u)) | {name, github_url, archived}]
+            ' /tmp/all_tools.json
