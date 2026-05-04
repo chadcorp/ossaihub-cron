@@ -1,0 +1,15 @@
+name: Probe toolsApiJson (diagnostic)
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node probe-tools-api.mjs
+        env:
+          BASE44_API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}
