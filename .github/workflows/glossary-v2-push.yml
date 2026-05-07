@@ -55,53 +55,52 @@ jobs:
 
       - name: Smoke-test the deploy
         if: github.event.inputs.dry_run != 'true'
-        env:
-          API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}
         run: |
-          # Sleep so Base44 finishes propagating the writes, then spot-check.
+          # The internal /functions/glossaryApi endpoint was auth-gated by Base44
+          # at some point in 2026; we now smoke-test against public surfaces only.
+          # Two checks: sitemap contains every slug from rebuilt-v2.json, and a
+          # sampled detail page returns 200 with substantive HTML.
           sleep 30
-          # Walk all pages once into a single terms list, then look up each slug.
-          # Base44 paginated platform-side on 2026-05-04 with 100/page max.
           python - <<'PY'
-          import json, os, sys, time, urllib.request
+          import json, pathlib, random, sys, urllib.request, urllib.error
 
-          KEY = os.environ['API_KEY']
-          BASE = 'https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/glossaryApi'
-          UA = 'ossaihub-cron-glossary-smoke/1.0'
+          UA = 'ossaihub-cron-glossary-smoke/2.0'
+          SITEMAP = 'https://ossaihub.com/functions/generateSitemap'
+          BASE_PAGE = 'https://ossaihub.com/glossary/'
 
-          def fetch(url):
-              req = urllib.request.Request(url, headers={
-                  'API_KEY': KEY, 'Accept': 'application/json', 'User-Agent': UA,
-              })
+          def fetch_text(url):
+              req = urllib.request.Request(url, headers={'User-Agent': UA})
               with urllib.request.urlopen(req, timeout=30) as r:
-                  return json.loads(r.read())
+                  return r.read().decode('utf-8', errors='replace')
 
-          terms = []
-          page = 1
-          while True:
-              if page > 50:
-                  print(f"page cap exceeded", file=sys.stderr); break
-              resp = fetch(f"{BASE}?page={page}&limit=100")
-              if isinstance(resp, list):
-                  terms.extend(resp); break
-              if not isinstance(resp, dict):
-                  print(f"unexpected response: {type(resp)}", file=sys.stderr); break
-              # Either {terms: [...]} (legacy) or {data: [...], pagination: {...}} (current).
-              chunk = resp.get('data') or resp.get('terms') or []
-              terms.extend(chunk)
-              pagination = resp.get('pagination') or {}
-              if not pagination.get('hasMore'):
-                  break
-              page += 1
-              time.sleep(1.5)
+          arr = json.loads(pathlib.Path('glossary-seed/rebuilt-v2.json').read_text(encoding='utf-8'))
+          want = {t['slug'] for t in arr if t.get('slug')}
+          print(f"local rebuilt-v2 has {len(want)} slugs")
 
-          print(f"loaded {len(terms)} terms total")
-          for slug in ['rag', 'ab-test-llm', 'eval-harness']:
-              rec = next((t for t in terms if t.get('slug') == slug), None)
-              print(f"--- {slug} ---")
-              if not rec:
-                  print("MISSING"); sys.exit(1)
-              print(f"tldr= {repr(rec.get('tldr'))[:80]}")
-              print(f"faq_count= {len(rec.get('faq') or [])}")
-              print(f"rewrite_version= {rec.get('rewrite_version')}")
+          sm = fetch_text(SITEMAP)
+          have_in_sitemap = set()
+          for line in sm.splitlines():
+              if '<loc>' in line and '/glossary/' in line:
+                  s = line.split('/glossary/')[-1].split('<')[0]
+                  have_in_sitemap.add(s)
+          print(f"sitemap exposes {len(have_in_sitemap)} glossary slugs")
+
+          missing = want - have_in_sitemap
+          if missing:
+              print(f"MISSING from sitemap ({len(missing)}): {sorted(missing)[:10]}", file=sys.stderr)
+              sys.exit(1)
+
+          # Sample 5 random local slugs and confirm each detail page returns
+          # 200 with substantive content (>10kB rendered HTML).
+          sample = random.sample(sorted(want), 5)
+          for slug in sample:
+              try:
+                  body = fetch_text(BASE_PAGE + slug)
+              except urllib.error.HTTPError as e:
+                  print(f"FAIL {slug}: HTTP {e.code}", file=sys.stderr); sys.exit(1)
+              if len(body) < 10000:
+                  print(f"FAIL {slug}: body only {len(body)}B", file=sys.stderr); sys.exit(1)
+              print(f"OK {slug}: {len(body)//1000}kB")
+
+          print(f"\nSMOKE OK — sitemap covers all {len(want)} slugs, sampled {len(sample)} detail pages all >10kB")
           PY
