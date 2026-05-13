@@ -4,10 +4,14 @@
 // Auto-approved by default: the cron stars-refresh job will archive anything
 // that 404s next day.
 
-const { DISCOVERY_SECRET, DISCOVERY_ENDPOINT } = process.env;
-if (!DISCOVERY_SECRET || !DISCOVERY_ENDPOINT) {
-  throw new Error('Missing DISCOVERY_SECRET or DISCOVERY_ENDPOINT env vars.');
+const { API_KEY, DISCOVERY_ENDPOINT } = process.env;
+if (!API_KEY || !DISCOVERY_ENDPOINT) {
+  throw new Error('Missing API_KEY or DISCOVERY_ENDPOINT env vars.');
 }
+// Browser-ish UA + API_KEY header — same auth pattern as enrichBacklog.
+// Body.secret was retired 2026-05-12 after Base44's 2026-05-04 silent migration
+// broke the per-function secret check.
+const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36';
 
 const CATEGORIES = [
   'llms-foundation',
@@ -45,14 +49,17 @@ const INTER_CATEGORY_MS = 15000; // 15s between categories to preserve GitHub ra
 
 async function runCategory(cat) {
   const body = {
-    secret: DISCOVERY_SECRET,
     category: cat,
     maxPerCategory: MAX_PER_CATEGORY,
     autoApprove: true,
   };
   const r = await fetch(DISCOVERY_ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': UA,
+      'API_KEY': API_KEY,
+    },
     body: JSON.stringify(body),
   });
   const text = await r.text();

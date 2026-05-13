@@ -14,5 +14,5 @@ jobs:
           node-version: '20'
       - run: node generate-weekly-digest.mjs
         env:
-          DIGEST_SECRET:   ${{ secrets.DIGEST_SECRET }}
+          API_KEY:         ${{ secrets.TOOLS_UPSERT_API_KEY }}
           DIGEST_ENDPOINT: ${{ secrets.DIGEST_ENDPOINT }}

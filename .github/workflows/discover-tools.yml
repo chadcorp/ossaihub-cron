@@ -15,5 +15,5 @@ jobs:
           node-version: '20'
       - run: node discover-tools.mjs
         env:
-          DISCOVERY_SECRET:   ${{ secrets.DISCOVERY_SECRET }}
+          API_KEY:            ${{ secrets.TOOLS_UPSERT_API_KEY }}
           DISCOVERY_ENDPOINT: ${{ secrets.DISCOVERY_ENDPOINT }}
