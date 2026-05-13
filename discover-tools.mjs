@@ -97,6 +97,14 @@ async function runCategory(cat) {
   console.log('');
   console.log('Per-category:');
   console.log(JSON.stringify(perCat, null, 2));
+
+  // Fail the job if everything errored, or if errors happened with zero discoveries.
+  // Without this the workflow shows "success" while no tools land — /data-health goes
+  // fake-green because freshness checks don't see the silent zero.
+  if (totals.errors > 0 && totals.discovered === 0) {
+    console.error(`\nFAIL: ${totals.errors} errors and 0 tools discovered. Failing job to surface the silent zero.`);
+    process.exit(1);
+  }
 })().catch((e) => {
   console.error(e);
   process.exit(1);
