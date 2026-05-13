@@ -1,0 +1,507 @@
+[
+  {
+    "slug": "fastapi-ollama-streaming-chat",
+    "title": "FastAPI + Ollama Streaming Chat API",
+    "tldr": "Production FastAPI server that streams Llama 3.x tokens from a local Ollama daemon via Server-Sent Events with proper backpressure, CORS, and disconnect detection.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "FastAPI",
+    "tags": ["ollama", "fastapi", "streaming", "llama", "sse"],
+    "best_for_tags": ["streaming", "local-llm", "chat-api", "production"],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Reach for this when you need a self-hosted chat API streaming a local Llama 3.x model. Three concrete scenarios: (1) Internal company chatbot where data cannot leave your network — Ollama runs on-prem, this FastAPI server fronts it. (2) Latency-sensitive UI where you want tokens appearing as they generate (TTFT < 500ms on RTX 4090). (3) Cost-conscious prototype before committing to a managed inference vendor — Ollama costs $0 to run on a workstation you already own.",
+    "when_not_to_use": "Don't use this if you need >50 concurrent users (Ollama serializes requests per model; use vLLM instead). Don't use this for production workloads requiring 99.9% uptime — Ollama has no built-in HA. Don't use this if you need long-context (>32K tokens) — Llama 3.x context degrades past 32K; consider Claude or Gemini for those.",
+    "quick_start": "# Install + pull model + run\nuv pip install fastapi uvicorn ollama\nollama pull llama3.1:8b\nollama serve &\nuvicorn main:app --reload",
+    "full_code": "# main.py — FastAPI + Ollama streaming chat with disconnect detection\nimport asyncio\nfrom contextlib import asynccontextmanager\nfrom typing import AsyncGenerator\n\nimport ollama\nfrom fastapi import FastAPI, HTTPException, Request\nfrom fastapi.middleware.cors import CORSMiddleware\nfrom fastapi.responses import StreamingResponse\nfrom pydantic import BaseModel, Field\n\n# Ollama client — async variant for concurrency\nclient = ollama.AsyncClient(host='http://localhost:11434')\n\n\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    # Warm up the model on startup so first request isn't slow\n    try:\n        await client.generate(model='llama3.1:8b', prompt='hi', stream=False)\n        print('Model warmed up')\n    except Exception as e:\n        print(f'WARN: warmup failed (is ollama running?): {e}')\n    yield\n\n\napp = FastAPI(lifespan=lifespan)\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=['http://localhost:3000'],  # tighten for prod\n    allow_methods=['POST'],\n    allow_headers=['*'],\n)\n\n\nclass Message(BaseModel):\n    role: str = Field(pattern='^(system|user|assistant)$')\n    content: str = Field(min_length=1, max_length=32_000)\n\n\nclass ChatRequest(BaseModel):\n    messages: list[Message]\n    model: str = 'llama3.1:8b'\n    temperature: float = Field(0.7, ge=0.0, le=2.0)\n    max_tokens: int = Field(2048, ge=1, le=8192)\n\n\nasync def stream_tokens(req: ChatRequest, request: Request) -> AsyncGenerator[str, None]:\n    \"\"\"Yield SSE-formatted tokens. Detects client disconnect to free GPU memory.\"\"\"\n    try:\n        stream = await client.chat(\n            model=req.model,\n            messages=[m.model_dump() for m in req.messages],\n            options={'temperature': req.temperature, 'num_predict': req.max_tokens},\n            stream=True,\n        )\n        async for chunk in stream:\n            if await request.is_disconnected():\n                print('client disconnected — aborting generation')\n                break\n            tok = chunk['message']['content']\n            yield f'data: {tok}\\n\\n'\n        yield 'data: [DONE]\\n\\n'\n    except ollama.ResponseError as e:\n        # Model not pulled, etc.\n        yield f'data: [ERROR] {e.error}\\n\\n'\n    except Exception as e:\n        yield f'data: [ERROR] {type(e).__name__}: {e}\\n\\n'\n\n\n@app.post('/chat')\nasync def chat(req: ChatRequest, request: Request):\n    return StreamingResponse(\n        stream_tokens(req, request),\n        media_type='text/event-stream',\n        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},\n    )\n\n\n@app.get('/health')\nasync def health():\n    try:\n        await client.list()\n        return {'status': 'ok'}\n    except Exception as e:\n        raise HTTPException(503, detail=f'ollama unreachable: {e}')\n",
+    "dependencies": [
+      {"name": "fastapi", "version": ">=0.115,<0.120", "purpose": "ASGI web framework"},
+      {"name": "uvicorn[standard]", "version": ">=0.32", "purpose": "ASGI server with websockets + HTTP/2"},
+      {"name": "ollama", "version": ">=0.5.1", "purpose": "Async Python client for local Ollama daemon"},
+      {"name": "pydantic", "version": ">=2.9", "purpose": "Request validation"}
+    ],
+    "env_vars": [
+      {"name": "OLLAMA_HOST", "required": false, "description": "Override default localhost:11434 (use for remote Ollama)", "example": "http://gpu-box.internal:11434"}
+    ],
+    "setup_steps": [
+      "Install Ollama on the host that has the GPU: curl -fsSL https://ollama.com/install.sh | sh",
+      "Pull the model: ollama pull llama3.1:8b (downloads ~4.7GB)",
+      "Start the Ollama daemon: ollama serve & (binds to 11434)",
+      "Install Python deps from the quick-start command",
+      "Save the code as main.py and run: uvicorn main:app --reload",
+      "Test: curl -N -X POST localhost:8000/chat -H 'Content-Type: application/json' -d '{\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}]}'"
+    ],
+    "variations": [
+      {
+        "label": "Anthropic Claude variant",
+        "description": "Swap Ollama for Anthropic API to use Claude 4.6 Sonnet. Same SSE streaming contract, no UI changes needed.",
+        "code_snippet": "from anthropic import AsyncAnthropic\nclient = AsyncAnthropic()  # reads ANTHROPIC_API_KEY\n\nasync def stream_tokens(req, request):\n    async with client.messages.stream(\n        model='claude-sonnet-4-5-20250929',\n        max_tokens=req.max_tokens,\n        messages=[m.model_dump() for m in req.messages],\n    ) as stream:\n        async for text in stream.text_stream:\n            if await request.is_disconnected():\n                break\n            yield f'data: {text}\\n\\n'\n        yield 'data: [DONE]\\n\\n'"
+      },
+      {
+        "label": "vLLM OpenAI-compatible variant",
+        "description": "Use vLLM's OpenAI-compatible server for 10-30x higher throughput than Ollama on the same GPU.",
+        "code_snippet": "from openai import AsyncOpenAI\nclient = AsyncOpenAI(base_url='http://localhost:8000/v1', api_key='not-needed')\n\nstream = await client.chat.completions.create(\n    model='meta-llama/Llama-3.1-8B-Instruct',\n    messages=[m.model_dump() for m in req.messages],\n    stream=True,\n)\nasync for chunk in stream:\n    if delta := chunk.choices[0].delta.content:\n        yield f'data: {delta}\\n\\n'"
+      },
+      {
+        "label": "Production-hardened variant",
+        "description": "Adds per-IP rate limiting, request timeout, and structured logging with request_id.",
+        "code_snippet": "from slowapi import Limiter\nfrom slowapi.util import get_remote_address\nimport uuid, structlog\n\nlimiter = Limiter(key_func=get_remote_address)\nlog = structlog.get_logger()\n\n@app.post('/chat')\n@limiter.limit('30/minute')\nasync def chat(req: ChatRequest, request: Request):\n    req_id = str(uuid.uuid4())\n    log.info('chat.start', request_id=req_id, model=req.model)\n    return StreamingResponse(\n        stream_tokens(req, request),\n        media_type='text/event-stream',\n        headers={'X-Request-ID': req_id},\n    )"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ConnectionRefusedError: [Errno 111] Connection refused on http://localhost:11434",
+        "cause": "Ollama daemon is not running",
+        "fix_snippet": "ollama serve &\n# or as a service:\nsystemctl --user start ollama"
+      },
+      {
+        "error_text": "ollama._types.ResponseError: model 'llama3.1:8b' not found",
+        "cause": "Model has not been pulled to the local registry",
+        "fix_snippet": "ollama pull llama3.1:8b\nollama list  # verify"
+      },
+      {
+        "error_text": "Frontend receives only the first token then hangs",
+        "cause": "A reverse proxy (Nginx, Cloudflare, AWS ALB) is buffering SSE responses",
+        "fix_snippet": "# Nginx config:\nproxy_buffering off;\nproxy_cache off;\nproxy_set_header X-Accel-Buffering no;\n# Or with FastAPI directly, ensure the X-Accel-Buffering: no header is set (already done in code above)"
+      },
+      {
+        "error_text": "GPU memory exhausted after 5-10 concurrent requests",
+        "cause": "Ollama serializes per-model. Multiple long generations queue up and exhaust KV cache memory.",
+        "fix_snippet": "# Option 1: limit concurrency at the app layer\nfrom asyncio import Semaphore\nGPU_SLOTS = Semaphore(2)\nasync def stream_tokens(req, request):\n    async with GPU_SLOTS:\n        # ... existing code\n# Option 2: switch to vLLM (continuous batching, ~10x more concurrency on same GPU)"
+      },
+      {
+        "error_text": "CORS error: Access-Control-Allow-Origin missing",
+        "cause": "CORSMiddleware not configured for your frontend origin",
+        "fix_snippet": "app.add_middleware(\n    CORSMiddleware,\n    allow_origins=['https://your-frontend.com', 'http://localhost:3000'],\n    allow_methods=['POST'],\n)"
+      }
+    ],
+    "production_checklist": [
+      "Set request timeout (asyncio.wait_for at the route level) so a stuck generation doesn't hold a worker indefinitely",
+      "Validate input message count + total token length BEFORE calling the model (cheap reject)",
+      "Add per-user rate limiting via slowapi or a Redis-backed limiter (token bucket recommended)",
+      "Log every request with request_id, user_id, model, prompt_tokens, completion_tokens, latency_ms",
+      "Add /health endpoint that probes Ollama liveness — wire to Kubernetes readiness probe",
+      "Pin Ollama version in production — recent releases have occasionally regressed streaming",
+      "Set Content-Security-Policy on the frontend so a malicious response can't exfiltrate cookies"
+    ],
+    "tested_with": {
+      "model_versions": ["llama3.1:8b", "llama3.1:70b", "llama3.3:70b"],
+      "library_versions": ["fastapi==0.115.4", "ollama==0.5.1", "uvicorn==0.32.0", "pydantic==2.9.2"],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": ["ollama-ollama-4", "fastapi"],
+    "related_glossary_slugs": ["streaming", "kv-cache", "context-window", "ttft", "tokens-per-second"],
+    "related_learn_slugs": ["running-first-local-llm-ollama", "streaming-llm-responses-production"],
+    "license": "MIT",
+    "attribution": "",
+    "faq": [
+      {
+        "question": "Why use Ollama instead of vLLM here?",
+        "answer": "Ollama is dramatically simpler for local development — one binary, one model pull, zero config. Switch to vLLM only when throughput becomes your bottleneck (typically past ~5 concurrent users). The vLLM variation above is a drop-in for that case."
+      },
+      {
+        "question": "Will this work on Apple Silicon?",
+        "answer": "Yes. Ollama uses Metal automatically on M1/M2/M3/M4. For a 16GB Mac, stick to 7B-8B models at Q4 quant. For 36GB+ Macs you can run Llama 3.3 70B at Q3_K_M."
+      },
+      {
+        "question": "How do I add conversation memory?",
+        "answer": "Simplest: the client tracks the messages array and sends it on each call (already supported — the messages field accepts the full history). For longer conversations, summarize older turns into a system message — see the agent-memory-summarizer prompt in the prompt library."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "FastAPI + Ollama Streaming Chat — Production Code Starter",
+    "meta_description": "Production-ready FastAPI server streaming Llama 3.x tokens from a local Ollama daemon. Includes SSE, disconnect detection, rate limiting, vLLM + Claude variants."
+  },
+  {
+    "slug": "anthropic-claude-streaming-tool-use",
+    "title": "Anthropic Claude 4 Streaming with Tool Use",
+    "tldr": "Claude 4.6 Sonnet streaming + parallel tool calling pattern with structured error recovery and multi-turn tool-use loop.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "Anthropic SDK",
+    "tags": ["anthropic", "claude", "tool-use", "streaming", "function-calling"],
+    "best_for_tags": ["agent-loop", "tool-calling", "streaming", "production"],
+    "difficulty_tier": "intermediate",
+    "when_to_use": "Use this pattern when you need a Claude-powered agent that calls tools while streaming output to the user. Three scenarios: (1) Customer support agent that streams responses while looking up order data, ticket history, and KB articles in parallel. (2) Coding assistant that streams reasoning while invoking file-read / search / lint tools. (3) Research agent that streams its synthesis while fetching from search APIs. Critical: this pattern handles partial tool-use blocks during streaming correctly, which most quick-start examples get wrong.",
+    "when_not_to_use": "Skip this if you're using a model without native tool use (Llama 3.x base needs Outlines or Instructor instead). Skip if you don't need streaming — the non-streaming API is simpler. Skip for very long-running agent loops (>10 minutes) — Claude's streaming connection can timeout; use a queue + webhook pattern instead.",
+    "quick_start": "uv pip install anthropic\nexport ANTHROPIC_API_KEY=sk-ant-...\npython agent.py",
+    "full_code": "# agent.py — Claude 4 streaming agent with parallel tool calls\nimport json\nimport os\nfrom typing import Any\n\nfrom anthropic import Anthropic\n\nclient = Anthropic()\n\n# Tool definitions — JSON Schema matching Anthropic's spec\nTOOLS = [\n    {\n        'name': 'search_docs',\n        'description': 'Search the internal documentation. Returns top 5 matching passages.',\n        'input_schema': {\n            'type': 'object',\n            'properties': {\n                'query': {'type': 'string', 'description': 'natural-language query'},\n                'limit': {'type': 'integer', 'default': 5, 'minimum': 1, 'maximum': 20},\n            },\n            'required': ['query'],\n        },\n    },\n    {\n        'name': 'get_weather',\n        'description': 'Get current weather for a city.',\n        'input_schema': {\n            'type': 'object',\n            'properties': {'city': {'type': 'string'}},\n            'required': ['city'],\n        },\n    },\n]\n\n\ndef execute_tool(name: str, args: dict[str, Any]) -> str:\n    \"\"\"Dispatch to your real tool implementations. Return string result.\"\"\"\n    if name == 'search_docs':\n        # stub — replace with real retriever\n        return json.dumps({'results': [f\"doc{i}: matches '{args['query']}'\" for i in range(args.get('limit', 3))]})\n    if name == 'get_weather':\n        return json.dumps({'city': args['city'], 'temp_c': 22, 'cond': 'partly cloudy'})\n    return json.dumps({'error': f'unknown tool {name}'})\n\n\ndef run_agent(user_message: str, max_iterations: int = 5):\n    \"\"\"Run the agent loop until Claude returns end_turn (no more tool calls).\"\"\"\n    messages = [{'role': 'user', 'content': user_message}]\n\n    for iteration in range(max_iterations):\n        print(f'\\n=== iteration {iteration + 1} ===\\n')\n\n        # Streaming with tool use — accumulate text + capture tool_use blocks\n        with client.messages.stream(\n            model='claude-sonnet-4-5-20250929',\n            max_tokens=4096,\n            tools=TOOLS,\n            messages=messages,\n        ) as stream:\n            for text in stream.text_stream:\n                print(text, end='', flush=True)\n            final = stream.get_final_message()\n\n        # Was this end_turn? Then we're done.\n        if final.stop_reason == 'end_turn':\n            messages.append({'role': 'assistant', 'content': final.content})\n            return final\n\n        # Was this tool_use? Execute all tool_use blocks in parallel-conceptually\n        # (Anthropic emits multiple tool_use blocks per turn; execute them all,\n        # then return all results in a single user turn)\n        if final.stop_reason == 'tool_use':\n            messages.append({'role': 'assistant', 'content': final.content})\n            tool_results = []\n            for block in final.content:\n                if block.type == 'tool_use':\n                    print(f'\\n→ executing {block.name}({block.input})')\n                    result = execute_tool(block.name, block.input)\n                    tool_results.append({\n                        'type': 'tool_result',\n                        'tool_use_id': block.id,\n                        'content': result,\n                    })\n            messages.append({'role': 'user', 'content': tool_results})\n            continue\n\n        # Other stop_reason — max_tokens, etc.\n        print(f'\\n[stopped: {final.stop_reason}]')\n        return final\n\n    raise RuntimeError(f'agent did not converge after {max_iterations} iterations')\n\n\nif __name__ == '__main__':\n    run_agent('What is the weather in Tokyo and Paris, and find me our docs about RAG?')\n",
+    "dependencies": [
+      {"name": "anthropic", "version": ">=0.39", "purpose": "Official Anthropic Python SDK with streaming + tool use"}
+    ],
+    "env_vars": [
+      {"name": "ANTHROPIC_API_KEY", "required": true, "description": "Your Anthropic API key", "example": "sk-ant-..."}
+    ],
+    "setup_steps": [
+      "Get an API key at https://console.anthropic.com/",
+      "Install: uv pip install anthropic",
+      "Export ANTHROPIC_API_KEY",
+      "Replace the stub execute_tool implementations with your real tools",
+      "Run: python agent.py"
+    ],
+    "variations": [
+      {
+        "label": "Async with prompt caching",
+        "description": "Use AsyncAnthropic + prompt caching on the tool definitions (90% cost reduction on tool re-use across the loop).",
+        "code_snippet": "from anthropic import AsyncAnthropic\nclient = AsyncAnthropic()\n\nasync def run_agent_async(user_message):\n    messages = [{'role': 'user', 'content': user_message}]\n    for _ in range(5):\n        async with client.messages.stream(\n            model='claude-sonnet-4-5-20250929',\n            max_tokens=4096,\n            tools=[{**t, 'cache_control': {'type': 'ephemeral'}} for t in TOOLS],\n            messages=messages,\n        ) as stream:\n            async for text in stream.text_stream:\n                print(text, end='', flush=True)\n            final = await stream.get_final_message()\n        # ... rest of loop"
+      },
+      {
+        "label": "Extended thinking (Claude 4 reasoning mode)",
+        "description": "Enable extended thinking for harder reasoning tasks. Costs more tokens but improves multi-step accuracy.",
+        "code_snippet": "with client.messages.stream(\n    model='claude-sonnet-4-5-20250929',\n    max_tokens=8192,\n    thinking={'type': 'enabled', 'budget_tokens': 4000},\n    tools=TOOLS,\n    messages=messages,\n) as stream:\n    for event in stream:\n        if event.type == 'content_block_start' and event.content_block.type == 'thinking':\n            print('[thinking...]', end='')\n        elif event.type == 'text':\n            print(event.text, end='', flush=True)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "anthropic.BadRequestError: messages.1.content.0.tool_use_id: tool_use_id of tool_result does not match any tool_use",
+        "cause": "Returning a tool_result without the corresponding tool_use_id from the assistant's previous turn",
+        "fix_snippet": "# Always thread the id through:\nfor block in final.content:\n    if block.type == 'tool_use':\n        tool_results.append({\n            'type': 'tool_result',\n            'tool_use_id': block.id,  # ← critical\n            'content': execute_tool(block.name, block.input),\n        })"
+      },
+      {
+        "error_text": "anthropic.RateLimitError: 429 — rate_limit_exceeded",
+        "cause": "Tier 1 default is 50 req/min on Sonnet. Bursts during agent loop iterations exceed it.",
+        "fix_snippet": "from anthropic import Anthropic\nclient = Anthropic(max_retries=5)  # SDK auto-backs off with retries\n# Or for higher tier limits, request a tier increase at console.anthropic.com"
+      },
+      {
+        "error_text": "Agent loops infinitely calling the same tool",
+        "cause": "Model is stuck because tool result doesn't actually answer the question",
+        "fix_snippet": "# Add max_iterations guard (already in code) AND make tool results structured:\nreturn json.dumps({'found': True, 'data': result, 'next_suggestion': 'try ...'})\n# Models are MUCH less likely to loop when the result includes guidance."
+      },
+      {
+        "error_text": "Streaming stops mid-tool-use block",
+        "cause": "Network interruption during tool_use streaming. The SDK can leave partial content.",
+        "fix_snippet": "# Wrap the stream block in try/except + retry the whole iteration:\ntry:\n    with client.messages.stream(...) as stream:\n        ...\nexcept (anthropic.APIConnectionError, httpx.ReadTimeout):\n    print('stream broken, retrying iteration')\n    continue  # re-runs the same iteration with same messages"
+      }
+    ],
+    "production_checklist": [
+      "Set max_iterations (guard against infinite loops — 5 is a safe default)",
+      "Truncate the messages array if it grows beyond 100 turns (summarize old context with a separate Haiku call)",
+      "Add prompt caching on the tool definitions — 90% cost cut after the first iteration",
+      "Log every tool call with tool_use_id, tool name, args, result_length, latency_ms — invaluable for debugging stuck agents",
+      "Use AsyncAnthropic + run tool executions concurrently (asyncio.gather) when tools are independent",
+      "Set request timeout on the streaming context (Anthropic default is 60s; bump for slow tools or use thinking mode)"
+    ],
+    "tested_with": {
+      "model_versions": ["claude-sonnet-4-5-20250929", "claude-opus-4-20250805"],
+      "library_versions": ["anthropic==0.39.0"],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": ["anthropic-sdk", "instructor"],
+    "related_glossary_slugs": ["tool-use", "function-calling", "streaming", "prompt-caching", "extended-thinking"],
+    "related_learn_slugs": ["tool-calling-function-calling-guide", "claude-api"],
+    "license": "MIT",
+    "attribution": "",
+    "faq": [
+      {
+        "question": "Why not use OpenAI's function calling instead?",
+        "answer": "Claude's tool use returns multiple tool_use blocks in a single turn (true parallel calls), while OpenAI returns them serially. For agents needing 2-5 independent lookups (weather in 3 cities, search 2 sources, etc.) Claude's pattern is ~3x faster end-to-end."
+      },
+      {
+        "question": "How do I add a custom tool?",
+        "answer": "Append a dict to the TOOLS list with name, description, and input_schema (JSON Schema). Add a branch in execute_tool that handles its name. Claude will figure out when to call it from the description — no further wiring needed."
+      },
+      {
+        "question": "Can I run this with non-Claude models?",
+        "answer": "Not without changes — Anthropic's tool-use API differs from OpenAI's. For a unified pattern across providers, use LiteLLM or the OpenAI-compatible variant in the openai-compatible-client-multi-provider starter."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Claude 4 Streaming + Tool Use — Agent Loop Code Starter",
+    "meta_description": "Production-ready Claude 4.6 streaming agent with parallel tool calls, error recovery, and prompt caching. Handles all the edge cases quick-starts miss."
+  },
+  {
+    "slug": "openai-compatible-client-multi-provider",
+    "title": "OpenAI-Compatible Client (works with OpenAI, vLLM, Ollama, Together, Groq, Fireworks)",
+    "tldr": "One client config that swaps providers by base_url. Includes retry, timeout, fallback chain, and per-request cost tracking. Drop-in for any OpenAI-API-compatible endpoint.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "OpenAI SDK",
+    "tags": ["openai", "vllm", "multi-provider", "fallback", "portability"],
+    "best_for_tags": ["provider-fallback", "cost-routing", "portability"],
+    "difficulty_tier": "intermediate",
+    "when_to_use": "Use this when you want vendor-neutral code that runs against any OpenAI-compatible endpoint. Three scenarios: (1) Dev with Ollama locally, prod with OpenAI/Anthropic — no code changes between environments. (2) Cost optimization: route cheap classification to Groq (low latency Llama 3.3), heavy reasoning to GPT-5 or Claude. (3) Reliability: when OpenAI is down, automatically fall back to Together AI or Fireworks.",
+    "when_not_to_use": "Skip this for provider-specific features (Anthropic's parallel tool use, Gemini's long-context caching, OpenAI's strict JSON mode beyond function calling). For those, use the native SDK. Skip if you only ever use one provider — adding fallback complexity isn't worth it.",
+    "quick_start": "uv pip install openai tenacity\nexport OPENAI_API_KEY=sk-...  # or any provider's key\npython client.py",
+    "full_code": "# client.py — multi-provider OpenAI-compatible client with fallback + cost tracking\nimport os\nimport time\nfrom dataclasses import dataclass, field\nfrom typing import Iterator\n\nfrom openai import OpenAI, RateLimitError, APIConnectionError\nfrom tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type\n\n\n@dataclass\nclass Provider:\n    name: str\n    base_url: str\n    api_key_env: str\n    model: str\n    input_per_million: float  # USD per 1M input tokens\n    output_per_million: float\n\n\n# Configure your providers. Order = fallback priority.\nPROVIDERS = [\n    Provider('openai', 'https://api.openai.com/v1', 'OPENAI_API_KEY',\n             'gpt-4o', 2.50, 10.00),\n    Provider('anthropic-oai', 'https://api.anthropic.com/v1', 'ANTHROPIC_API_KEY',\n             'claude-sonnet-4-5', 3.00, 15.00),\n    Provider('groq', 'https://api.groq.com/openai/v1', 'GROQ_API_KEY',\n             'llama-3.3-70b-versatile', 0.59, 0.79),\n    Provider('together', 'https://api.together.xyz/v1', 'TOGETHER_API_KEY',\n             'meta-llama/Llama-3.3-70B-Instruct-Turbo', 0.88, 0.88),\n    Provider('ollama', 'http://localhost:11434/v1', '',\n             'llama3.1:8b', 0.0, 0.0),\n]\n\n\n@dataclass\nclass CallResult:\n    text: str\n    provider: str\n    model: str\n    input_tokens: int\n    output_tokens: int\n    cost_usd: float\n    latency_ms: int\n\n\nclass MultiProviderClient:\n    def __init__(self, providers: list[Provider] = PROVIDERS):\n        self.providers = [\n            p for p in providers\n            if not p.api_key_env or os.environ.get(p.api_key_env)\n        ]\n        if not self.providers:\n            raise RuntimeError('No providers have valid API keys configured')\n        self.clients = {\n            p.name: OpenAI(\n                base_url=p.base_url,\n                api_key=os.environ.get(p.api_key_env, 'not-needed'),\n                timeout=30.0,\n            )\n            for p in self.providers\n        }\n\n    @retry(\n        stop=stop_after_attempt(3),\n        wait=wait_exponential(multiplier=1, min=2, max=20),\n        retry=retry_if_exception_type((RateLimitError, APIConnectionError)),\n    )\n    def _call_one(self, provider: Provider, messages: list[dict], **kwargs) -> CallResult:\n        t0 = time.time()\n        client = self.clients[provider.name]\n        r = client.chat.completions.create(\n            model=provider.model,\n            messages=messages,\n            **kwargs,\n        )\n        latency_ms = int((time.time() - t0) * 1000)\n        u = r.usage\n        cost = (u.prompt_tokens * provider.input_per_million / 1_000_000\n              + u.completion_tokens * provider.output_per_million / 1_000_000)\n        return CallResult(\n            text=r.choices[0].message.content,\n            provider=provider.name,\n            model=provider.model,\n            input_tokens=u.prompt_tokens,\n            output_tokens=u.completion_tokens,\n            cost_usd=cost,\n            latency_ms=latency_ms,\n        )\n\n    def call(self, messages: list[dict], **kwargs) -> CallResult:\n        \"\"\"Try each provider in order. Returns first success.\"\"\"\n        last_err = None\n        for p in self.providers:\n            try:\n                return self._call_one(p, messages, **kwargs)\n            except Exception as e:\n                print(f'[{p.name}] failed: {type(e).__name__}: {e}. Falling over.')\n                last_err = e\n        raise RuntimeError(f'All {len(self.providers)} providers failed. Last: {last_err}')\n\n    def call_cheapest(self, messages: list[dict], **kwargs) -> CallResult:\n        \"\"\"Use the cheapest configured provider.\"\"\"\n        cheapest = min(self.providers, key=lambda p: p.input_per_million + p.output_per_million)\n        return self._call_one(cheapest, messages, **kwargs)\n\n\nif __name__ == '__main__':\n    cli = MultiProviderClient()\n    r = cli.call([{'role': 'user', 'content': 'Say hi in 5 words.'}], max_tokens=50)\n    print(f'\\n{r.provider} ({r.model}): {r.text}')\n    print(f'  tokens: {r.input_tokens} in / {r.output_tokens} out')\n    print(f'  cost: ${r.cost_usd:.6f} | latency: {r.latency_ms}ms')\n",
+    "dependencies": [
+      {"name": "openai", "version": ">=1.50", "purpose": "OpenAI Python SDK (works with any OpenAI-compatible endpoint)"},
+      {"name": "tenacity", "version": ">=9.0", "purpose": "Retry logic with exponential backoff"}
+    ],
+    "env_vars": [
+      {"name": "OPENAI_API_KEY", "required": false, "description": "OpenAI API key (or any compatible)", "example": "sk-..."},
+      {"name": "ANTHROPIC_API_KEY", "required": false, "description": "Anthropic API key", "example": "sk-ant-..."},
+      {"name": "GROQ_API_KEY", "required": false, "description": "Groq API key", "example": "gsk_..."},
+      {"name": "TOGETHER_API_KEY", "required": false, "description": "Together AI API key", "example": "tok_..."}
+    ],
+    "setup_steps": [
+      "Install: uv pip install openai tenacity",
+      "Set at least one provider's API key in env",
+      "(Optional) Set additional keys to enable automatic fallback",
+      "Run: python client.py — it will use the first configured provider that has a key"
+    ],
+    "variations": [
+      {
+        "label": "Streaming variant",
+        "description": "Same multi-provider pattern but streaming. Yields tokens as they arrive.",
+        "code_snippet": "def stream(self, messages, **kwargs) -> Iterator[str]:\n    for p in self.providers:\n        try:\n            client = self.clients[p.name]\n            stream = client.chat.completions.create(\n                model=p.model, messages=messages, stream=True, **kwargs,\n            )\n            for chunk in stream:\n                if delta := chunk.choices[0].delta.content:\n                    yield delta\n            return\n        except Exception as e:\n            print(f'[{p.name}] stream failed, falling over')\n    raise RuntimeError('All providers failed')"
+      },
+      {
+        "label": "Task-routed variant",
+        "description": "Route by task complexity: cheap model for classification, expensive for reasoning.",
+        "code_snippet": "def call_by_task(self, messages, task_type='reasoning', **kwargs):\n    if task_type == 'classification':\n        # Use cheapest fast provider\n        return self._call_one(\n            next(p for p in self.providers if p.name == 'groq'),\n            messages, **kwargs)\n    elif task_type == 'reasoning':\n        # Use a frontier model\n        return self._call_one(\n            next(p for p in self.providers if p.name in ('openai', 'anthropic-oai')),\n            messages, **kwargs)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "openai.APIError: 400 — Anthropic returned content blocks instead of plain string",
+        "cause": "Anthropic's OpenAI-compatible endpoint returns rich content blocks for tool use; older openai SDK versions don't parse them.",
+        "fix_snippet": "pip install -U openai  # need >=1.50\n# Or strip tools=... from the call when using Anthropic-OAI proxy"
+      },
+      {
+        "error_text": "All providers failed. Last: APIConnectionError(timeout)",
+        "cause": "Your network can't reach any provider (corporate firewall, no internet)",
+        "fix_snippet": "# Add Ollama at top of provider list — works offline:\nPROVIDERS.insert(0, Provider('ollama', 'http://localhost:11434/v1', '', 'llama3.1:8b', 0, 0))"
+      },
+      {
+        "error_text": "Cost calculation is wrong for Groq",
+        "cause": "Groq's pricing differs by model. Update Provider.input_per_million per-model.",
+        "fix_snippet": "# Make pricing per-model:\nGROQ_PRICING = {\n    'llama-3.3-70b-versatile': (0.59, 0.79),\n    'llama-3.1-8b-instant': (0.05, 0.08),\n}"
+      }
+    ],
+    "production_checklist": [
+      "Log every call with provider, model, cost, latency — wire to Langfuse or your DB",
+      "Monitor per-provider success rate; remove flapping providers from the chain",
+      "Set per-provider timeout (Groq is faster — 10s timeout fine; OpenAI sometimes needs 60s for o1-style)",
+      "Use call_cheapest() for non-user-facing background tasks",
+      "Pin SDK version (openai==1.50.x) — major versions occasionally break compat"
+    ],
+    "tested_with": {
+      "model_versions": ["gpt-4o", "claude-sonnet-4-5", "llama-3.3-70b-versatile (Groq)", "Llama-3.3-70B-Instruct-Turbo (Together)"],
+      "library_versions": ["openai==1.50.0", "tenacity==9.0.0"],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": ["litellm", "openrouter", "ollama-ollama-4"],
+    "related_glossary_slugs": ["llm-gateway", "model-routing", "cost-per-query", "fallback"],
+    "related_learn_slugs": ["cloud-apis-vs-local-models"],
+    "license": "MIT",
+    "attribution": "",
+    "faq": [
+      {
+        "question": "How is this different from LiteLLM?",
+        "answer": "LiteLLM is a heavier abstraction with its own router process and 100+ supported providers. This pattern is ~80 lines of code that uses only the openai SDK + tenacity, and handles the 5 providers most teams actually use. Choose LiteLLM when you need 20+ providers or budget enforcement; choose this when you want lightweight code you fully understand."
+      },
+      {
+        "question": "Can I add streaming with cost tracking?",
+        "answer": "Yes — streaming doesn't return a usage object until the stream completes (OpenAI sends a final chunk with usage when stream_options={'include_usage': True}). See the streaming variant above for the pattern."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Multi-Provider LLM Client — One Code, OpenAI/Anthropic/Groq/Ollama",
+    "meta_description": "Single Python client that works with OpenAI, Anthropic, Groq, Together, Ollama. Includes fallback chain, per-call cost tracking, exponential retry."
+  },
+  {
+    "slug": "litellm-unified-gateway",
+    "title": "LiteLLM Gateway with Fallback Routing + Cost Budgets",
+    "tldr": "Self-hosted LiteLLM proxy with 100+ provider support, fallback routing, per-team cost budgets, Langfuse observability, and API key rotation.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "LiteLLM",
+    "tags": ["litellm", "gateway", "routing", "fallback", "cost-control"],
+    "best_for_tags": ["multi-provider", "cost-control", "production", "gateway"],
+    "difficulty_tier": "intermediate",
+    "when_to_use": "Use LiteLLM when you have 5+ teams hitting LLMs and need centralized: cost attribution per team, key rotation, rate limiting per virtual key, model fallback policies, and unified observability. Three scenarios: (1) Internal platform where backend services use LLMs via an internal /v1/chat/completions endpoint, and finance needs per-team cost reports. (2) Production app with 99.99% uptime requirement — LiteLLM handles automatic fallback when OpenAI is degraded. (3) Cost-control where you want to enforce a $50/day spending cap per project.",
+    "when_not_to_use": "Skip LiteLLM for solo projects or single-team apps — the lightweight multi-provider client (openai-compatible-client-multi-provider) is simpler. Skip if you don't need centralized cost/key management. Skip if you're <10 req/min — the proxy hop adds ~50ms latency.",
+    "quick_start": "uv pip install 'litellm[proxy]'\nlitellm --config config.yaml --port 4000\n# Then use any OpenAI client pointed at http://localhost:4000",
+    "full_code": "# config.yaml — LiteLLM proxy with fallback, budgets, and observability\nmodel_list:\n  # Frontier models — Anthropic primary, OpenAI fallback\n  - model_name: smart-agent\n    litellm_params:\n      model: claude-sonnet-4-5-20250929\n      api_key: os.environ/ANTHROPIC_API_KEY\n      timeout: 60\n    model_info:\n      max_tokens: 8192\n      input_cost_per_token: 0.000003\n      output_cost_per_token: 0.000015\n\n  - model_name: smart-agent-fallback\n    litellm_params:\n      model: gpt-4o\n      api_key: os.environ/OPENAI_API_KEY\n\n  # Cheap classifier — Groq Llama 3.3 70B\n  - model_name: classifier\n    litellm_params:\n      model: groq/llama-3.3-70b-versatile\n      api_key: os.environ/GROQ_API_KEY\n      rpm: 30  # per-model rate limit\n\n  # Local fallback when network is down\n  - model_name: local\n    litellm_params:\n      model: ollama/llama3.1:8b\n      api_base: http://ollama:11434\n\nrouter_settings:\n  # When 'smart-agent' fails, try smart-agent-fallback, then local\n  fallbacks:\n    - smart-agent: [smart-agent-fallback, local]\n    - classifier: [smart-agent-fallback]\n  retry_policy:\n    BadRequestErrorRetries: 0\n    AuthenticationErrorRetries: 0\n    TimeoutErrorRetries: 2\n    RateLimitErrorRetries: 3\n    ContentPolicyViolationErrorRetries: 0\n  num_retries: 3\n  timeout: 60\n  routing_strategy: usage-based-routing-v2  # routes to least-utilized\n\nlitellm_settings:\n  # Per-team budgets — auto-rejects requests over budget\n  max_budget: 200.0  # USD/month default\n  budget_duration: 30d\n  drop_params: True  # silently strip unsupported params\n\n  # Hook every call into Langfuse for tracing\n  success_callback: ['langfuse']\n  failure_callback: ['langfuse']\n  langfuse_public_key: os.environ/LANGFUSE_PUBLIC_KEY\n  langfuse_secret_key: os.environ/LANGFUSE_SECRET_KEY\n\n# Virtual keys with per-team budgets\ngeneral_settings:\n  master_key: os.environ/LITELLM_MASTER_KEY\n  database_url: os.environ/DATABASE_URL  # postgres for key + budget state\n  store_model_in_db: true\n  proxy_batch_write_at: 5  # batched DB writes every 5s for perf\n\n# === Then create virtual keys via API ===\n# curl -X POST http://localhost:4000/key/generate \\\n#   -H 'Authorization: Bearer $LITELLM_MASTER_KEY' \\\n#   -H 'Content-Type: application/json' \\\n#   -d '{\n#     \"models\": [\"smart-agent\", \"classifier\"],\n#     \"team_id\": \"data-platform\",\n#     \"max_budget\": 50.0,\n#     \"budget_duration\": \"30d\",\n#     \"rpm_limit\": 100\n#   }'\n",
+    "dependencies": [
+      {"name": "litellm[proxy]", "version": ">=1.50", "purpose": "LiteLLM gateway with proxy + UI + DB support"},
+      {"name": "psycopg2-binary", "version": ">=2.9", "purpose": "Postgres driver for key/budget storage"}
+    ],
+    "env_vars": [
+      {"name": "LITELLM_MASTER_KEY", "required": true, "description": "Admin key for generating virtual keys", "example": "sk-1234..."},
+      {"name": "DATABASE_URL", "required": true, "description": "Postgres URL for keys + budget state", "example": "postgresql://user:pass@host:5432/litellm"},
+      {"name": "ANTHROPIC_API_KEY", "required": false, "description": "Anthropic provider key", "example": "sk-ant-..."},
+      {"name": "OPENAI_API_KEY", "required": false, "description": "OpenAI provider key", "example": "sk-..."},
+      {"name": "GROQ_API_KEY", "required": false, "description": "Groq provider key", "example": "gsk_..."},
+      {"name": "LANGFUSE_PUBLIC_KEY", "required": false, "description": "Langfuse observability", "example": "pk-lf-..."},
+      {"name": "LANGFUSE_SECRET_KEY", "required": false, "description": "Langfuse observability", "example": "sk-lf-..."}
+    ],
+    "setup_steps": [
+      "Provision Postgres (Supabase, Neon, or self-hosted)",
+      "Set DATABASE_URL + LITELLM_MASTER_KEY in env",
+      "Set provider API keys (ANTHROPIC_API_KEY, OPENAI_API_KEY, etc.)",
+      "Save config.yaml from above",
+      "Run: litellm --config config.yaml --port 4000",
+      "Generate per-team virtual keys via the /key/generate API (see comment in config)",
+      "Point your apps at http://localhost:4000 with the team's virtual key"
+    ],
+    "variations": [
+      {
+        "label": "Docker Compose deploy",
+        "description": "Run LiteLLM + Postgres + Langfuse together as a stack.",
+        "code_snippet": "# docker-compose.yaml\nservices:\n  postgres:\n    image: postgres:16\n    environment:\n      POSTGRES_USER: litellm\n      POSTGRES_PASSWORD: ${DB_PASSWORD}\n    volumes:\n      - pgdata:/var/lib/postgresql/data\n\n  litellm:\n    image: ghcr.io/berriai/litellm:main-latest\n    ports: ['4000:4000']\n    environment:\n      DATABASE_URL: postgresql://litellm:${DB_PASSWORD}@postgres:5432/litellm\n      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}\n      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}\n    volumes:\n      - ./config.yaml:/app/config.yaml\n    command: --config /app/config.yaml --port 4000\n    depends_on: [postgres]\n\nvolumes:\n  pgdata:"
+      },
+      {
+        "label": "Helm chart for Kubernetes",
+        "description": "Deploy LiteLLM with HPA and Postgres operator for production.",
+        "code_snippet": "# values.yaml for berriai/litellm helm chart\nreplicas: 3\nresources:\n  requests: {cpu: 500m, memory: 1Gi}\nautoscaling:\n  enabled: true\n  minReplicas: 3\n  maxReplicas: 20\n  targetCPUUtilizationPercentage: 70\ningress:\n  enabled: true\n  host: litellm.internal.company\ndb:\n  external: true\n  url: postgresql://litellm:pw@cnpg-cluster.databases:5432/litellm"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "litellm.exceptions.AuthenticationError: AuthenticationError: virtual key is invalid",
+        "cause": "Wrong header — must be Authorization: Bearer sk-...",
+        "fix_snippet": "# OpenAI SDK:\nclient = OpenAI(\n    base_url='http://localhost:4000',\n    api_key='sk-vkey-...',  # virtual key from /key/generate\n)"
+      },
+      {
+        "error_text": "Budget exceeded — 429 from proxy with budget_exceeded reason",
+        "cause": "Virtual key hit its max_budget for the duration",
+        "fix_snippet": "# Increase or reset:\ncurl -X POST http://localhost:4000/key/update -H 'Authorization: Bearer $MASTER_KEY' \\\n  -d '{\"key\": \"sk-vkey-...\", \"max_budget\": 100.0}'"
+      },
+      {
+        "error_text": "Fallback not triggering — request fails with primary model's error",
+        "cause": "Fallback only triggers on retry-able errors (rate limit, timeout). 400 Bad Request doesn't fall over.",
+        "fix_snippet": "# Force fallback on more errors:\nretry_policy:\n  BadRequestErrorRetries: 0\n  ContentPolicyViolationErrorRetries: 0\n  TimeoutErrorRetries: 2\n  RateLimitErrorRetries: 3\n  APIErrorRetries: 2  # also retry generic 500s"
+      }
+    ],
+    "production_checklist": [
+      "Run >=3 replicas behind a load balancer — single-replica LiteLLM is a SPOF",
+      "Use a managed Postgres (Supabase, Neon, RDS) — virtual key state must persist",
+      "Set max_budget on every virtual key — prevents runaway cost from buggy clients",
+      "Enable Langfuse callback for full request tracing (cost, latency, model, error)",
+      "Rotate the master key every 90 days; rotate provider keys every 180 days",
+      "Set TLS termination at your ingress — never expose port 4000 without TLS",
+      "Monitor /health/readiness for upstream provider liveness"
+    ],
+    "tested_with": {
+      "model_versions": ["claude-sonnet-4-5-20250929", "gpt-4o", "groq/llama-3.3-70b-versatile", "ollama/llama3.1:8b"],
+      "library_versions": ["litellm==1.50.4", "postgres==16"],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": ["litellm", "langfuse", "ollama-ollama-4"],
+    "related_glossary_slugs": ["llm-gateway", "model-routing", "rate-limit", "cost-attribution", "fallback"],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "",
+    "faq": [
+      {
+        "question": "Is LiteLLM open source?",
+        "answer": "Yes, MIT-licensed. The team also sells an Enterprise tier with SSO + audit logs + dedicated support, but the proxy itself is fully open-source and self-hostable."
+      },
+      {
+        "question": "Can I use this without Postgres?",
+        "answer": "Yes — drop the database_url config and LiteLLM runs in stateless mode. You lose virtual-key persistence (keys reset on restart) and budget tracking. Fine for small deployments."
+      },
+      {
+        "question": "How does LiteLLM differ from a CDN-level fallback?",
+        "answer": "LiteLLM operates at the request level with provider-specific logic (knows that an OpenAI 429 means rate-limit but a 400 doesn't, knows Anthropic's tool-use shape differs from OpenAI's, etc.). A CDN-level fallback is dumb HTTP failover and breaks on schema differences."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "LiteLLM Gateway — Multi-Provider Fallback + Cost Control",
+    "meta_description": "Production LiteLLM proxy config with fallback routing, per-team cost budgets, virtual keys, Langfuse tracing, Kubernetes deployment."
+  },
+  {
+    "slug": "bedrock-claude-streaming",
+    "title": "AWS Bedrock Claude Streaming Client (with IAM auth + region failover)",
+    "tldr": "Production Bedrock client for Claude 4 with streaming, prompt caching, IAM role authentication, region failover, and per-account token quota handling.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "boto3",
+    "tags": ["aws", "bedrock", "claude", "streaming", "iam"],
+    "best_for_tags": ["aws", "enterprise", "claude"],
+    "difficulty_tier": "intermediate",
+    "when_to_use": "Use Bedrock Claude when you're already an AWS shop and: (1) data residency matters (Bedrock keeps prompts in your AWS region, no cross-border data flow), (2) IAM-based auth fits your existing security model, (3) you want consolidated AWS billing instead of a separate Anthropic invoice. Three scenarios: HIPAA-regulated healthcare app, FedRAMP environment, or any enterprise with strict 'no data leaves AWS' policy.",
+    "when_not_to_use": "Skip Bedrock if you need the latest model the day it ships — Anthropic's direct API gets new Claude versions weeks before Bedrock. Skip if you don't care about regional data residency — direct Anthropic API is cheaper (~10-15% margin) and simpler. Skip for high-volume workloads with no enterprise constraints — Anthropic's batch API at 50% off is cheaper than Bedrock.",
+    "quick_start": "uv pip install 'boto3>=1.35'\naws configure  # or use IAM role from EC2/ECS\npython bedrock_chat.py",
+    "full_code": "# bedrock_chat.py — Production Bedrock Claude with streaming + region failover\nimport json\nimport os\nfrom typing import Iterator\n\nimport boto3\nfrom botocore.config import Config\nfrom botocore.exceptions import ClientError\n\n# Regions where Claude 4 is available, in failover order\nREGIONS = ['us-east-1', 'us-west-2', 'eu-west-1']\nMODEL_ID = 'anthropic.claude-sonnet-4-5-20250929-v1:0'  # Bedrock model ID\n\n\ndef make_client(region: str):\n    \"\"\"Create Bedrock client with retry config. Uses IAM role from env/instance.\"\"\"\n    return boto3.client(\n        'bedrock-runtime',\n        region_name=region,\n        config=Config(\n            retries={'max_attempts': 5, 'mode': 'adaptive'},\n            connect_timeout=10,\n            read_timeout=300,  # long for streaming\n        ),\n    )\n\n\ndef stream_chat(\n    messages: list[dict],\n    system: str = '',\n    max_tokens: int = 4096,\n    temperature: float = 0.7,\n    use_caching: bool = True,\n) -> Iterator[str]:\n    \"\"\"Stream tokens from Claude via Bedrock with region failover.\"\"\"\n    body = {\n        'anthropic_version': 'bedrock-2023-05-31',\n        'max_tokens': max_tokens,\n        'temperature': temperature,\n        'messages': messages,\n    }\n    if system:\n        # Add cache_control for prompt caching (90% discount on cached portion)\n        if use_caching:\n            body['system'] = [{'type': 'text', 'text': system,\n                              'cache_control': {'type': 'ephemeral'}}]\n        else:\n            body['system'] = system\n\n    last_err = None\n    for region in REGIONS:\n        try:\n            client = make_client(region)\n            response = client.invoke_model_with_response_stream(\n                modelId=MODEL_ID,\n                body=json.dumps(body),\n                contentType='application/json',\n            )\n            for event in response['body']:\n                chunk = json.loads(event['chunk']['bytes'])\n                if chunk.get('type') == 'content_block_delta':\n                    delta = chunk['delta']\n                    if delta.get('type') == 'text_delta':\n                        yield delta['text']\n                elif chunk.get('type') == 'message_stop':\n                    # Final metrics — usage is in invocation_metrics on message_stop\n                    metrics = chunk.get('amazon-bedrock-invocationMetrics', {})\n                    print(f\"\\n[{region}] input={metrics.get('inputTokenCount')} \"\n                          f\"output={metrics.get('outputTokenCount')} \"\n                          f\"cache_read={metrics.get('cacheReadInputTokenCount', 0)} \"\n                          f\"latency={metrics.get('invocationLatency')}ms\")\n            return\n        except ClientError as e:\n            code = e.response['Error']['Code']\n            if code in ('ThrottlingException', 'ServiceQuotaExceededException',\n                       'ServiceUnavailableException'):\n                print(f'[{region}] {code} — failing over to next region')\n                last_err = e\n                continue\n            raise  # other errors: re-raise\n        except Exception as e:\n            last_err = e\n            print(f'[{region}] {type(e).__name__}: {e} — failing over')\n            continue\n    raise RuntimeError(f'All regions failed. Last error: {last_err}')\n\n\nif __name__ == '__main__':\n    system = 'You are a concise assistant. Respond in under 100 words.'\n    messages = [{'role': 'user', 'content': 'What is the AWS shared responsibility model?'}]\n    for tok in stream_chat(messages, system=system):\n        print(tok, end='', flush=True)\n    print()\n",
+    "dependencies": [
+      {"name": "boto3", "version": ">=1.35", "purpose": "AWS SDK with Bedrock support"},
+      {"name": "botocore", "version": ">=1.35", "purpose": "boto3 core (auto-installed)"}
+    ],
+    "env_vars": [
+      {"name": "AWS_REGION", "required": false, "description": "Default region (overrides hardcoded primary)", "example": "us-east-1"},
+      {"name": "AWS_PROFILE", "required": false, "description": "Named profile from ~/.aws/credentials", "example": "production"},
+      {"name": "AWS_ACCESS_KEY_ID", "required": false, "description": "Access key (prefer IAM role)", "example": "AKIA..."},
+      {"name": "AWS_SECRET_ACCESS_KEY", "required": false, "description": "Secret (prefer IAM role)", "example": "..."}
+    ],
+    "setup_steps": [
+      "Request access to Claude models in Bedrock console: AWS Console → Bedrock → Model access → Request access for Anthropic Claude family",
+      "Wait for approval (instant for most accounts, up to 24h for some)",
+      "Set up IAM role/policy granting bedrock:InvokeModel and bedrock:InvokeModelWithResponseStream",
+      "If running on EC2/ECS/Lambda: attach the role to the instance — no key handling needed",
+      "If running locally: aws configure (or aws sso login) — boto3 picks up credentials automatically",
+      "Run: python bedrock_chat.py"
+    ],
+    "variations": [
+      {
+        "label": "Async with aioboto3",
+        "description": "Use aioboto3 for concurrent Bedrock calls in async applications.",
+        "code_snippet": "import aioboto3\nimport asyncio\n\nasync def stream_async(messages, system=''):\n    session = aioboto3.Session()\n    async with session.client('bedrock-runtime', region_name='us-east-1') as client:\n        response = await client.invoke_model_with_response_stream(\n            modelId=MODEL_ID,\n            body=json.dumps({\n                'anthropic_version': 'bedrock-2023-05-31',\n                'max_tokens': 4096,\n                'system': system,\n                'messages': messages,\n            }),\n        )\n        async for event in response['body']:\n            chunk = json.loads(event['chunk']['bytes'])\n            if chunk.get('type') == 'content_block_delta':\n                yield chunk['delta'].get('text', '')"
+      },
+      {
+        "label": "Cross-region inference profile",
+        "description": "Use AWS's cross-region inference profile for automatic regional failover (managed by AWS).",
+        "code_snippet": "# Use an inference profile instead of a direct model ID\n# This automatically routes to the best region in the profile\nINFERENCE_PROFILE = 'us.anthropic.claude-sonnet-4-5-20250929-v1:0'\n\nresponse = client.invoke_model_with_response_stream(\n    modelId=INFERENCE_PROFILE,  # 'us.' prefix = cross-region\n    body=json.dumps(body),\n)\n# No need for app-level region failover — AWS handles it"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ClientError: An error occurred (AccessDeniedException) when calling the InvokeModelWithResponseStream operation",
+        "cause": "Either (a) model access not yet approved in your AWS account, or (b) IAM role missing bedrock:InvokeModelWithResponseStream permission",
+        "fix_snippet": "# Check model access:\naws bedrock list-foundation-models --region us-east-1 \\\n  --by-provider anthropic --query 'modelSummaries[?modelLifecycle.status==`ACTIVE`].modelId'\n# Fix IAM:\n{\n  \"Effect\": \"Allow\",\n  \"Action\": [\"bedrock:InvokeModel\", \"bedrock:InvokeModelWithResponseStream\"],\n  \"Resource\": \"arn:aws:bedrock:*::foundation-model/anthropic.*\"\n}"
+      },
+      {
+        "error_text": "ClientError: ThrottlingException — rate exceeded",
+        "cause": "Hit your account's Bedrock token-per-minute quota for this model in this region",
+        "fix_snippet": "# Option 1: app-level retry already handles transient throttling\n# Option 2: request quota increase: AWS Console → Service Quotas → Bedrock → 'On-demand InvokeModel tokens per minute'\n# Option 3: switch to provisioned throughput (reserved capacity, no throttling)"
+      },
+      {
+        "error_text": "ClientError: ValidationException — anthropic_version not supported",
+        "cause": "Wrong anthropic_version header for the model version",
+        "fix_snippet": "# Always use 'bedrock-2023-05-31' for Claude models on Bedrock (doesn't change with new model versions)\nbody['anthropic_version'] = 'bedrock-2023-05-31'"
+      },
+      {
+        "error_text": "Streaming hangs after first chunk in Lambda",
+        "cause": "Lambda response streaming requires Function URL with InvokeMode=RESPONSE_STREAM (not API Gateway)",
+        "fix_snippet": "# Use Function URL with response streaming:\naws lambda create-function-url-config \\\n  --function-name my-fn \\\n  --invoke-mode RESPONSE_STREAM \\\n  --auth-type AWS_IAM"
+      }
+    ],
+    "production_checklist": [
+      "Use IAM role attached to EC2/ECS/Lambda — never hardcode credentials",
+      "Enable Bedrock CloudWatch logging (InvocationLogs) for audit + cost analysis",
+      "Set up provisioned throughput for predictable workloads — cheaper than on-demand at scale",
+      "Use cross-region inference profiles for automatic regional failover",
+      "Monitor Bedrock token quotas in Service Quotas — request increases proactively before hitting limit",
+      "Enable Bedrock Guardrails for content moderation (PII redaction, harmful content)",
+      "Tag every InvokeModel call with team/project for cost attribution"
+    ],
+    "tested_with": {
+      "model_versions": ["anthropic.claude-sonnet-4-5-20250929-v1:0", "anthropic.claude-opus-4-20250805-v1:0"],
+      "library_versions": ["boto3==1.35.74"],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": ["anthropic-sdk"],
+    "related_glossary_slugs": ["streaming", "prompt-caching", "rate-limit", "iam"],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "",
+    "faq": [
+      {
+        "question": "Is Bedrock more expensive than Anthropic direct?",
+        "answer": "Bedrock charges the same per-token rate as Anthropic's direct API for Claude. Bedrock adds ~$0 overhead per call, but you don't get the 50% batch discount that Anthropic offers, and Bedrock's prompt caching has slightly different pricing semantics. For most workloads, costs are within 5%."
+      },
+      {
+        "question": "Why use Bedrock instead of calling Anthropic directly?",
+        "answer": "Three real reasons: (1) data residency — your prompts stay in your AWS region, not leaving for Anthropic's infra. (2) Consolidated AWS billing for finance/procurement. (3) IAM-based auth fits your existing AWS security model. If none of these apply, use Anthropic direct."
+      },
+      {
+        "question": "Can I use Bedrock prompt caching?",
+        "answer": "Yes, with cache_control: {'type': 'ephemeral'} on system or message blocks, identical to Anthropic's direct API. The cache hit response field is amazon-bedrock-invocationMetrics.cacheReadInputTokenCount — Bedrock charges 10% of normal input rate for cached tokens."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Bedrock Claude 4 Streaming — IAM Auth + Region Failover",
+    "meta_description": "Production AWS Bedrock client for Claude 4 with streaming, prompt caching, IAM role auth, automatic region failover, and quota handling."
+  }
+]
