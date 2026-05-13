@@ -1,0 +1,159 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OSS AI Hub Prompt v2",
+  "description": "Canonical schema for one prompt. Used by prompt-library-v2-push workflow to validate before pushing to Base44.",
+  "type": "object",
+  "required": [
+    "slug",
+    "title",
+    "tldr",
+    "category",
+    "tags",
+    "best_for_tags",
+    "use_cases",
+    "full_prompt",
+    "model_compatibility",
+    "tested_with",
+    "license"
+  ],
+  "properties": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9-]+$", "maxLength": 80 },
+    "title": { "type": "string", "minLength": 3, "maxLength": 120 },
+    "tldr": { "type": "string", "minLength": 20, "maxLength": 220 },
+    "category": {
+      "type": "string",
+      "enum": [
+        "writing-editing",
+        "code-generation",
+        "data-extraction",
+        "research",
+        "agents",
+        "rag",
+        "reasoning",
+        "multimodal",
+        "translation",
+        "analysis",
+        "creative",
+        "persona",
+        "structured-output",
+        "safety",
+        "education",
+        "productivity",
+        "customer-support",
+        "business"
+      ]
+    },
+    "tags": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 10 },
+    "best_for_tags": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 6 },
+    "difficulty_tier": { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
+    "featured": { "type": "boolean" },
+    "use_cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["scenario", "example"],
+        "properties": {
+          "scenario": { "type": "string" },
+          "example": { "type": "string" }
+        }
+      },
+      "minItems": 1
+    },
+    "when_not_to_use": { "type": "string", "minLength": 40 },
+    "full_prompt": { "type": "string", "minLength": 50 },
+    "input_variables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "description"],
+        "properties": {
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "description": { "type": "string" },
+          "required": { "type": "boolean" },
+          "example": { "type": "string" }
+        }
+      }
+    },
+    "expected_output": {
+      "type": "object",
+      "properties": {
+        "format": { "type": "string", "enum": ["text", "markdown", "json", "code", "structured", "list", "table"] },
+        "schema": { "type": "string" },
+        "sample": { "type": "string" }
+      }
+    },
+    "few_shot_examples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["input", "output"],
+        "properties": {
+          "input": { "type": "string" },
+          "output": { "type": "string" }
+        }
+      }
+    },
+    "model_compatibility": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["model", "compatibility"],
+        "properties": {
+          "model": { "type": "string" },
+          "compatibility": { "type": "string", "enum": ["excellent", "good", "fair", "poor"] },
+          "notes": { "type": "string" }
+        }
+      },
+      "minItems": 1
+    },
+    "variations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "description", "prompt_snippet"],
+        "properties": {
+          "label": { "type": "string", "examples": ["Concise", "Chain-of-Thought", "JSON-only", "System-prompt", "Function-calling"] },
+          "description": { "type": "string" },
+          "prompt_snippet": { "type": "string" }
+        }
+      }
+    },
+    "failure_modes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["symptom", "fix"],
+        "properties": {
+          "symptom": { "type": "string" },
+          "fix": { "type": "string" }
+        }
+      }
+    },
+    "tested_with": {
+      "type": "object",
+      "properties": {
+        "models": { "type": "array", "items": { "type": "string" } },
+        "last_verified_date": { "type": "string", "format": "date" }
+      }
+    },
+    "related_prompt_slugs": { "type": "array", "items": { "type": "string" } },
+    "related_tool_slugs": { "type": "array", "items": { "type": "string" } },
+    "related_glossary_slugs": { "type": "array", "items": { "type": "string" } },
+    "license": { "type": "string" },
+    "attribution": { "type": "string" },
+    "faq": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["question", "answer"],
+        "properties": {
+          "question": { "type": "string" },
+          "answer": { "type": "string" }
+        }
+      }
+    },
+    "meta_title": { "type": "string", "maxLength": 70 },
+    "meta_description": { "type": "string", "maxLength": 160 }
+  }
+}

@@ -1,0 +1,995 @@
+# OSS AI Hub Prompt Library — v2 Manifest
+#
+# Add new entries here, run "Prompt Library v2 — Generate" workflow, then
+# "Prompt Library v2 — Push" syncs to Base44 by slug.
+
+library: prompt
+
+defaults:
+  license: CC-BY-4.0
+  tested_with:
+    last_verified_date: "2026-05-13"
+
+entries:
+
+  # ════════════════════════════════════
+  # code-generation (15)
+  # ════════════════════════════════════
+  - slug: senior-code-reviewer
+    title: "Senior Code Reviewer (security + perf + style)"
+    category: code-generation
+    brief: "Acts as a staff-level engineer reviewing a pull request. Flags security issues, performance regressions, race conditions, and style violations with line references."
+    tags: [code-review, security, performance]
+    best_for_tags: [pr-review, security-audit]
+    featured: true
+
+  - slug: refactor-to-pattern
+    title: "Refactor to Design Pattern"
+    category: code-generation
+    brief: "Refactor legacy code to a named design pattern (Strategy, Adapter, Observer, etc.) while preserving behavior. Outputs diff + reasoning."
+    tags: [refactor, patterns]
+    best_for_tags: [refactoring, design-patterns]
+
+  - slug: pytest-generator-from-source
+    title: "Pytest Generator from Source Code"
+    category: code-generation
+    brief: "Reads a Python module, generates pytest cases covering happy path + edge cases + error cases. Uses parametrize for thoroughness."
+    tags: [pytest, test-gen]
+    best_for_tags: [test-coverage, pytest]
+
+  - slug: jest-generator-typescript
+    title: "Jest/Vitest Generator for TypeScript"
+    category: code-generation
+    brief: "Generate Jest or Vitest tests for a TypeScript module, including mock setup and async cases."
+    tags: [jest, vitest, typescript]
+    best_for_tags: [typescript-testing]
+
+  - slug: sql-query-from-natural-language
+    title: "Natural Language → SQL Query"
+    category: code-generation
+    brief: "Given a database schema and a natural-language question, produce a correct, indexed-friendly SQL query with EXPLAIN-able performance."
+    tags: [sql, text-to-sql]
+    best_for_tags: [sql-generation, analytics]
+
+  - slug: regex-builder-from-examples
+    title: "Regex Builder from Examples"
+    category: code-generation
+    brief: "Given positive and negative match examples, produce a tested regex with explanation of each group. Outputs in PCRE + JavaScript flavors."
+    tags: [regex]
+    best_for_tags: [regex, pattern-matching]
+
+  - slug: api-client-from-openapi
+    title: "API Client from OpenAPI Spec"
+    category: code-generation
+    brief: "Read an OpenAPI 3 spec, generate a typed Python/TypeScript client with error handling, retries, and pagination helpers."
+    tags: [openapi, sdk-gen]
+    best_for_tags: [api-client, codegen]
+
+  - slug: migrate-python-2-to-3
+    title: "Migrate Legacy Code (Py2→Py3, JS→TS, etc.)"
+    category: code-generation
+    brief: "Migrate code across language versions or paradigms. Outputs migrated code + caveats + test plan."
+    tags: [migration, modernization]
+    best_for_tags: [migration]
+
+  - slug: dockerfile-from-project
+    title: "Generate Dockerfile from Project Structure"
+    category: code-generation
+    brief: "Inspect a project (package.json, pyproject.toml, etc.) and produce a multi-stage, layered Dockerfile optimized for cache hits."
+    tags: [docker, dockerfile]
+    best_for_tags: [containerization]
+
+  - slug: terraform-from-architecture
+    title: "Terraform from Architecture Description"
+    category: code-generation
+    brief: "Given a plain-English architecture (e.g. 'VPC with public+private subnets, NAT, EKS cluster'), output complete Terraform HCL."
+    tags: [terraform, iac]
+    best_for_tags: [iac, terraform]
+
+  - slug: code-explainer-line-by-line
+    title: "Code Explainer (line-by-line)"
+    category: code-generation
+    brief: "Explain a code snippet line by line with context about what each line does and why. Adjusts depth to specified skill level."
+    tags: [explainer, learning]
+    best_for_tags: [learning, education]
+
+  - slug: type-annotator-python
+    title: "Add Python Type Annotations"
+    category: code-generation
+    brief: "Add precise type annotations to an untyped Python module, including TypedDicts, Protocol types, and generics where appropriate."
+    tags: [typing, python]
+    best_for_tags: [python-typing]
+
+  - slug: convert-bash-to-python
+    title: "Convert Bash Script to Python"
+    category: code-generation
+    brief: "Rewrite a bash script as a robust Python equivalent using pathlib, subprocess.run, logging, and argparse. Outputs more maintainable code."
+    tags: [bash, python, conversion]
+    best_for_tags: [conversion, python]
+
+  - slug: bug-from-stack-trace
+    title: "Diagnose Bug from Stack Trace"
+    category: code-generation
+    brief: "Given a stack trace + relevant source code, identify the root cause and propose a fix with a regression test."
+    tags: [debugging, stack-trace]
+    best_for_tags: [debugging]
+
+  - slug: docstrings-google-style
+    title: "Generate Google-Style Docstrings"
+    category: code-generation
+    brief: "Add Google-style docstrings to every function/class/method in a Python module. Includes type info, raises, and example."
+    tags: [docstrings, documentation]
+    best_for_tags: [documentation]
+
+  # ════════════════════════════════════
+  # writing-editing (12)
+  # ════════════════════════════════════
+  - slug: technical-blog-from-outline
+    title: "Technical Blog Post from Outline"
+    category: writing-editing
+    brief: "Expand a bulleted outline into a 1,500-word technical blog post with examples, code snippets, and a strong hook + conclusion."
+    tags: [blog, technical-writing]
+    best_for_tags: [content-creation, blog]
+
+  - slug: readme-from-codebase
+    title: "Generate README from Code"
+    category: writing-editing
+    brief: "Read a project's main module + entry points, produce a complete README.md with install, quickstart, API reference, and contributing sections."
+    tags: [readme, documentation]
+    best_for_tags: [docs, github]
+    featured: true
+
+  - slug: api-docs-from-routes
+    title: "API Docs from FastAPI/Express Routes"
+    category: writing-editing
+    brief: "Extract routes from a web framework codebase and produce reference docs with request/response examples and auth notes."
+    tags: [api-docs]
+    best_for_tags: [api-documentation]
+
+  - slug: changelog-from-git-log
+    title: "Generate Changelog from Git Log"
+    category: writing-editing
+    brief: "Parse git log between two tags, classify commits (feat/fix/breaking), produce a user-facing changelog with grouped sections."
+    tags: [changelog, release-notes]
+    best_for_tags: [releases]
+
+  - slug: marketing-copy-feature-launch
+    title: "Marketing Copy for Feature Launch"
+    category: writing-editing
+    brief: "Generate launch copy for a new product feature: 1-sentence hook, 3-bullet value props, 1 paragraph technical detail, social-post variants."
+    tags: [marketing, launch]
+    best_for_tags: [marketing, launches]
+
+  - slug: blog-style-mimic-analyzer
+    title: "Creative Writing Style Mimic & Analyzer"
+    category: writing-editing
+    brief: "Analyze a writing sample's tone/structure/vocab, then generate new text matching that style. Includes similarity score."
+    tags: [style-transfer, writing]
+    best_for_tags: [style-mimic, writing]
+
+  - slug: tone-shift-formal-casual
+    title: "Tone-Shift (formal ↔ casual ↔ technical)"
+    category: writing-editing
+    brief: "Rewrite a piece of text in a different tone register: formal/casual/technical/empathetic/aggressive. Preserves meaning."
+    tags: [tone, editing]
+    best_for_tags: [tone-adjustment]
+
+  - slug: grammar-clarity-editor
+    title: "Grammar + Clarity Editor"
+    category: writing-editing
+    brief: "Edit a draft for grammar, clarity, and concision. Outputs revised text + inline diff of changes + brief explanation of edits."
+    tags: [editing, grammar]
+    best_for_tags: [editing, grammar]
+
+  - slug: outline-from-research-corpus
+    title: "Build Outline from Research Corpus"
+    category: writing-editing
+    brief: "Given a folder of research notes/papers/links, produce a structured outline grouping similar ideas with citations to source files."
+    tags: [outline, research]
+    best_for_tags: [research, outlining]
+
+  - slug: cover-letter-job-tailored
+    title: "Tailored Cover Letter from Job Description"
+    category: writing-editing
+    brief: "Given a job description + candidate resume, produce a tailored cover letter highlighting relevant experience and matching the company's tone."
+    tags: [cover-letter, job-search]
+    best_for_tags: [job-search]
+
+  - slug: rewrite-for-skim-readers
+    title: "Rewrite for Skim Readers (TL;DR + bullets + bold key terms)"
+    category: writing-editing
+    brief: "Restructure long-form content into a skim-readable version with TL;DR at top, scannable bullets, and key terms bolded."
+    tags: [skim-readable, restructure]
+    best_for_tags: [content-restructure]
+
+  - slug: persuasive-essay-claim-warrant
+    title: "Persuasive Essay (claim-evidence-warrant)"
+    category: writing-editing
+    brief: "Write a persuasive essay using the Toulmin model: explicit claim, supporting evidence, warrant connecting them, counter-argument + rebuttal."
+    tags: [persuasive, essay]
+    best_for_tags: [persuasive-writing]
+
+  # ════════════════════════════════════
+  # data-extraction (10)
+  # ════════════════════════════════════
+  - slug: entity-extraction-structured
+    title: "Structured Entity Extraction (JSON)"
+    category: data-extraction
+    brief: "Extract named entities (people, companies, dates, amounts) from unstructured text into a typed JSON schema with confidence scores."
+    tags: [ner, extraction]
+    best_for_tags: [ner, json-output]
+
+  - slug: invoice-line-items
+    title: "Extract Invoice Line Items"
+    category: data-extraction
+    brief: "Parse an invoice (text or OCR output) into structured JSON: vendor, total, line items with description/qty/unit/total, payment terms."
+    tags: [invoice, ocr]
+    best_for_tags: [invoice-parsing, document-ai]
+
+  - slug: resume-parser-structured
+    title: "Resume Parser → Structured Schema"
+    category: data-extraction
+    brief: "Parse a resume PDF/text into typed JSON: name, contact, experience (with normalized dates), skills, education, certifications."
+    tags: [resume, hr]
+    best_for_tags: [resume-parsing, hr]
+
+  - slug: pdf-table-to-json
+    title: "PDF Table → JSON"
+    category: data-extraction
+    brief: "Convert tables extracted from PDFs (often messy) into clean structured JSON with column inference and unit normalization."
+    tags: [pdf, tables]
+    best_for_tags: [pdf-tables, data-cleaning]
+
+  - slug: email-thread-summarize-actions
+    title: "Email Thread → Summary + Action Items"
+    category: data-extraction
+    brief: "Read an email thread, produce summary + extracted action items with assignee, deadline, and dependency tracking."
+    tags: [email, summarization]
+    best_for_tags: [email, actions]
+
+  - slug: meeting-notes-to-tasks
+    title: "Meeting Notes → Task List"
+    category: data-extraction
+    brief: "Convert raw meeting transcript into a structured task list: tasks, owners, due dates, blockers, and next-meeting agenda items."
+    tags: [meetings, tasks]
+    best_for_tags: [productivity, meetings]
+
+  - slug: address-normalization
+    title: "Address Normalization + Geocoding Hint"
+    category: data-extraction
+    brief: "Normalize messy address strings into structured fields (street, city, state, postal, country) with confidence + geocoding suggestion."
+    tags: [address, normalization]
+    best_for_tags: [data-cleaning]
+
+  - slug: contract-clause-extractor
+    title: "Contract Clause Extractor"
+    category: data-extraction
+    brief: "Identify and extract specific clauses (indemnity, termination, NDA, IP assignment) from a contract with span citations + risk flags."
+    tags: [legal, contract]
+    best_for_tags: [legal, contract-review]
+
+  - slug: medical-summary-soap
+    title: "Medical Note → SOAP Format"
+    category: data-extraction
+    brief: "Restructure a medical note into SOAP format (Subjective, Objective, Assessment, Plan) with proper terminology preservation."
+    tags: [medical, soap]
+    best_for_tags: [healthcare]
+
+  - slug: web-page-key-info
+    title: "Web Page → Key Info Extractor"
+    category: data-extraction
+    brief: "Given scraped HTML, extract main content (title, author, body, date, key entities) — works on news, blogs, product pages."
+    tags: [web-scraping, extraction]
+    best_for_tags: [web-extraction]
+
+  # ════════════════════════════════════
+  # research (8)
+  # ════════════════════════════════════
+  - slug: literature-review-synthesizer
+    title: "Literature Review Synthesizer"
+    category: research
+    brief: "Given 5-20 paper abstracts on a topic, produce a structured literature review: themes, agreements, disagreements, gaps."
+    tags: [research, literature-review]
+    best_for_tags: [academic-research]
+
+  - slug: competitive-analysis-builder
+    title: "Competitive Analysis Builder"
+    category: research
+    brief: "Given a product description + 3-5 competitors, produce a feature-comparison matrix, positioning analysis, and differentiation recommendations."
+    tags: [competitive, market]
+    best_for_tags: [market-research]
+
+  - slug: paper-summarizer-deep
+    title: "Deep Paper Summarizer (TLDR + methods + results + critique)"
+    category: research
+    brief: "Summarize a research paper into TL;DR, methods, key results, limitations, and your critical assessment."
+    tags: [paper, summary]
+    best_for_tags: [paper-reading]
+
+  - slug: web-search-research-agent
+    title: "Web Search Research Agent Prompt"
+    category: research
+    brief: "Multi-step research prompt: plan sub-questions, simulate searches, synthesize findings with citations. Pairs with Tavily/Brave."
+    tags: [research-agent, multi-step]
+    best_for_tags: [research-agent]
+    featured: true
+
+  - slug: hypothesis-generator
+    title: "Hypothesis Generator from Data"
+    category: research
+    brief: "Given a dataset description + observed patterns, generate testable hypotheses ranked by novelty and plausibility."
+    tags: [hypothesis, science]
+    best_for_tags: [hypothesis-gen]
+
+  - slug: source-credibility-grader
+    title: "Source Credibility Grader"
+    category: research
+    brief: "Evaluate a source's credibility: domain authority, author credentials, citation density, factual accuracy. Outputs 0-10 score + reasoning."
+    tags: [credibility, fact-check]
+    best_for_tags: [fact-checking]
+
+  - slug: contradiction-finder-papers
+    title: "Find Contradictions Across Sources"
+    category: research
+    brief: "Compare claims across 3+ documents on the same topic. Flag direct contradictions with source quotes and possible resolutions."
+    tags: [contradictions, multi-source]
+    best_for_tags: [research, fact-check]
+
+  - slug: domain-glossary-builder
+    title: "Domain Glossary Builder from Corpus"
+    category: research
+    brief: "Build a glossary of domain-specific terms from a corpus of documents, with definitions, frequency, and first-use examples."
+    tags: [glossary, domain]
+    best_for_tags: [domain-research]
+
+  # ════════════════════════════════════
+  # agents (10)
+  # ════════════════════════════════════
+  - slug: zero-shot-task-decomposer
+    title: "Zero-Shot Task Decomposer for Complex Workflows"
+    category: agents
+    brief: "Decompose a complex multi-step task into atomic sub-tasks with dependencies, time estimates, and success criteria per step."
+    tags: [decomposition, planning]
+    best_for_tags: [task-planning]
+
+  - slug: react-agent-prompt-template
+    title: "ReAct Agent Prompt Template"
+    category: agents
+    brief: "Battle-tested ReAct (Thought / Action / Observation) prompt template for any tool-using agent. Includes max-iteration guard."
+    tags: [react, agent-template]
+    best_for_tags: [react-pattern]
+
+  - slug: agent-critic-judge
+    title: "Agent Output Critic / Judge"
+    category: agents
+    brief: "Prompt that judges another agent's output for completeness, correctness, and alignment with the original task. Used in self-correction loops."
+    tags: [judge, critic]
+    best_for_tags: [self-correction]
+
+  - slug: agent-router-classifier
+    title: "Agent Router Classifier"
+    category: agents
+    brief: "Classify an incoming user request into one of N specialized agent types (researcher, coder, writer, math-solver). Cheap classifier prompt."
+    tags: [routing, classifier]
+    best_for_tags: [agent-routing]
+
+  - slug: self-reflect-and-improve
+    title: "Self-Reflection + Improvement Loop"
+    category: agents
+    brief: "Prompt that has the model critique its own previous output, identify weaknesses, and produce an improved version. Single-shot Reflexion pattern."
+    tags: [reflexion, self-improve]
+    best_for_tags: [reflexion]
+
+  - slug: agent-tool-error-recovery
+    title: "Agent Tool-Error Recovery Prompt"
+    category: agents
+    brief: "When a tool call fails, this prompt extracts the failure mode and guides the agent to a recovery (retry with different params, try alternate tool, etc.)."
+    tags: [error-recovery, tool-use]
+    best_for_tags: [tool-resilience]
+
+  - slug: agent-memory-summarizer
+    title: "Long-Running Agent Memory Summarizer"
+    category: agents
+    brief: "Compress a long agent conversation history into a structured memory summary preserving entities, decisions, and pending tasks."
+    tags: [memory, summarize]
+    best_for_tags: [agent-memory]
+
+  - slug: agent-goal-clarifier
+    title: "Goal Clarifier (asks before acting)"
+    category: agents
+    brief: "Prompt that has the agent identify ambiguities in the user's goal and ask clarifying questions before taking action."
+    tags: [clarification, planning]
+    best_for_tags: [clarification]
+
+  - slug: multi-agent-debate
+    title: "Multi-Agent Debate Resolver"
+    category: agents
+    brief: "Prompt template for two specialized agents to debate a proposal; a third arbitrator agent synthesizes the resolution."
+    tags: [debate, multi-agent]
+    best_for_tags: [debate, multi-agent]
+
+  - slug: agent-skill-library-call
+    title: "Agent Skill-Library Call Prompt"
+    category: agents
+    brief: "Prompt template that asks the agent to choose from a library of named skills (with descriptions) rather than free-form tool calls."
+    tags: [skill-library]
+    best_for_tags: [skill-library]
+
+  # ════════════════════════════════════
+  # rag (8)
+  # ════════════════════════════════════
+  - slug: rag-answer-with-citations
+    title: "RAG Answer with Inline Citations"
+    category: rag
+    brief: "Generate a grounded answer where every claim is annotated with [chunk-id] citations pointing to retrieved source chunks."
+    tags: [rag, citations]
+    best_for_tags: [grounded-rag, citations]
+    featured: true
+
+  - slug: rag-grading-relevance
+    title: "RAG Document Relevance Grader"
+    category: rag
+    brief: "Grade each retrieved chunk for relevance to the query (high/medium/low/irrelevant) with reasoning. Used in CRAG pipelines."
+    tags: [rag, grading]
+    best_for_tags: [crag, grading]
+
+  - slug: rag-multi-hop-decompose
+    title: "RAG Multi-Hop Query Decomposer"
+    category: rag
+    brief: "Break a multi-hop question into a sequence of single-hop retrieval queries with explicit dependencies."
+    tags: [multi-hop, rag]
+    best_for_tags: [multi-hop-rag]
+
+  - slug: rag-query-rewriter
+    title: "RAG Query Rewriter (3 variations)"
+    category: rag
+    brief: "Generate 3 reformulations of the user's question to improve recall: keyword version, semantic version, hypothetical-answer version."
+    tags: [query-rewrite, rag]
+    best_for_tags: [query-rewriting]
+
+  - slug: rag-hyde-hypothetical-answer
+    title: "HyDE: Hypothetical Answer Embedding"
+    category: rag
+    brief: "Generate a confident hypothetical answer to the user's question (without retrieval), then embed it for retrieval. Improves recall on abstract queries."
+    tags: [hyde]
+    best_for_tags: [hyde-rag]
+
+  - slug: rag-faithfulness-check
+    title: "RAG Faithfulness Self-Check"
+    category: rag
+    brief: "After producing a RAG answer, this prompt checks each sentence against the retrieved context and flags hallucinations."
+    tags: [faithfulness, hallucination]
+    best_for_tags: [faithfulness-check]
+
+  - slug: rag-no-answer-detector
+    title: "'I Don't Know' Detector for RAG"
+    category: rag
+    brief: "Determine whether retrieved context is sufficient to answer; if not, return a structured 'cannot answer + suggest follow-up' response."
+    tags: [refusal, rag]
+    best_for_tags: [grounded-refusal]
+
+  - slug: rag-corrective-rewrite
+    title: "CRAG Query Rewriter (for web fallback)"
+    category: rag
+    brief: "When retrieved docs are graded as poor, rewrite the query into a web-search-optimized form. Used in CRAG."
+    tags: [crag, web-fallback]
+    best_for_tags: [crag-rewrite]
+
+  # ════════════════════════════════════
+  # reasoning (8)
+  # ════════════════════════════════════
+  - slug: chain-of-thought-explicit
+    title: "Chain-of-Thought (explicit reasoning)"
+    category: reasoning
+    brief: "Standard CoT prompt template: 'think step by step' with structured reasoning blocks and a final answer block."
+    tags: [cot, reasoning]
+    best_for_tags: [cot]
+
+  - slug: tree-of-thought-search
+    title: "Tree-of-Thoughts Search"
+    category: reasoning
+    brief: "Generate N candidate reasoning paths, score each, expand the top K, repeat. Stronger than CoT for puzzles + planning."
+    tags: [tot, tree-search]
+    best_for_tags: [tot]
+
+  - slug: plan-and-solve
+    title: "Plan-and-Solve Prompt"
+    category: reasoning
+    brief: "Two-stage: first generate a plan (numbered steps), then execute each step. Stronger on multi-step math + planning than vanilla CoT."
+    tags: [plan-solve]
+    best_for_tags: [planning]
+
+  - slug: self-verification-arithmetic
+    title: "Self-Verification for Arithmetic"
+    category: reasoning
+    brief: "After answering, the model recomputes the result by an alternate method and checks consistency. Catches 30%+ of arithmetic errors."
+    tags: [self-verify, math]
+    best_for_tags: [arithmetic, verification]
+
+  - slug: socratic-questioning
+    title: "Socratic Questioning Prompt"
+    category: reasoning
+    brief: "Probe a claim by generating a sequence of probing questions that test assumptions, definitions, and edge cases."
+    tags: [socratic]
+    best_for_tags: [analysis, learning]
+
+  - slug: deliberate-reasoning-with-doubt
+    title: "Deliberate Reasoning with Doubt"
+    category: reasoning
+    brief: "After each reasoning step, the model explicitly considers 'what if this step is wrong?' and either continues or backtracks."
+    tags: [deliberation]
+    best_for_tags: [careful-reasoning]
+
+  - slug: contrastive-reasoning-pros-cons
+    title: "Contrastive Reasoning (pros vs cons)"
+    category: reasoning
+    brief: "Force the model to enumerate both sides of an argument before reaching a conclusion. Reduces overconfidence."
+    tags: [contrastive]
+    best_for_tags: [decision-support]
+
+  - slug: budget-forcing-reasoning
+    title: "Budget-Forcing Reasoning (with thinking tokens)"
+    category: reasoning
+    brief: "Force a minimum number of reasoning tokens before answering. Used in o1-style inference scaling. Includes Claude extended-thinking variant."
+    tags: [budget-forcing, thinking]
+    best_for_tags: [test-time-compute]
+
+  # ════════════════════════════════════
+  # structured-output (6)
+  # ════════════════════════════════════
+  - slug: json-mode-strict-output
+    title: "Strict JSON Output Enforcer"
+    category: structured-output
+    brief: "Aggressive prompt that forces JSON-only output: no preamble, no markdown fences, no trailing text. For programmatic consumption."
+    tags: [json, structured]
+    best_for_tags: [strict-json]
+
+  - slug: function-calling-tool-schema
+    title: "Function-Calling Tool Schema Template"
+    category: structured-output
+    brief: "Template for crafting OpenAI/Anthropic-compatible function schemas with clear descriptions, required fields, and enum constraints."
+    tags: [function-calling, schemas]
+    best_for_tags: [tool-schemas]
+
+  - slug: markdown-report-template
+    title: "Structured Markdown Report"
+    category: structured-output
+    brief: "Produce a markdown report with predefined sections (TL;DR, Background, Methods, Results, Recommendations). Anchor-linkable."
+    tags: [markdown, report]
+    best_for_tags: [reports]
+
+  - slug: csv-output-clean
+    title: "Clean CSV Output"
+    category: structured-output
+    brief: "Generate CSV output with proper escaping for commas/quotes/newlines, consistent column headers, and no preamble text."
+    tags: [csv, structured]
+    best_for_tags: [csv-export]
+
+  - slug: yaml-config-from-description
+    title: "YAML Config from Description"
+    category: structured-output
+    brief: "Generate a YAML config from a natural-language description with proper indentation, comments, and validated schema."
+    tags: [yaml, config]
+    best_for_tags: [yaml-gen]
+
+  - slug: structured-classification-multi-label
+    title: "Multi-Label Classification (with confidence)"
+    category: structured-output
+    brief: "Classify input into multiple labels from a fixed taxonomy with confidence scores per label. JSON output enforced."
+    tags: [classification, multi-label]
+    best_for_tags: [classification]
+
+  # ════════════════════════════════════
+  # translation (6)
+  # ════════════════════════════════════
+  - slug: cultural-context-translation
+    title: "Translation with Cultural Context Preservation"
+    category: translation
+    brief: "Translate text preserving cultural references, idioms, and tone. Includes translator's notes for untranslatable phrases."
+    tags: [translation, cultural]
+    best_for_tags: [cultural-translation]
+
+  - slug: technical-translation-glossary
+    title: "Technical Translation with Term Glossary"
+    category: translation
+    brief: "Translate technical content using a provided term glossary to enforce consistent terminology. Flags out-of-glossary terms."
+    tags: [technical, glossary]
+    best_for_tags: [technical-translation]
+
+  - slug: localization-string-translator
+    title: "Software Localization String Translator"
+    category: translation
+    brief: "Translate i18n strings preserving placeholders ({name}, %s, etc.) and pluralization rules per target locale (ICU MessageFormat)."
+    tags: [i18n, localization]
+    best_for_tags: [i18n, localization]
+
+  - slug: legal-translation-rigorous
+    title: "Legal Translation (rigorous, conservative)"
+    category: translation
+    brief: "Translate legal text conservatively, flagging any ambiguity rather than guessing. Preserves formal register and citations."
+    tags: [legal, translation]
+    best_for_tags: [legal]
+
+  - slug: medical-translation-clinical
+    title: "Medical/Clinical Translation"
+    category: translation
+    brief: "Translate medical text preserving clinical terminology (ICD codes, drug names with active ingredient) and standard abbreviations."
+    tags: [medical, translation]
+    best_for_tags: [medical]
+
+  - slug: subtitle-translation-timed
+    title: "Subtitle Translation (with timing constraints)"
+    category: translation
+    brief: "Translate SRT/VTT subtitles preserving timing, fitting target text to subtitle-read-rate (~20 chars/sec), and natural line breaks."
+    tags: [subtitles, srt]
+    best_for_tags: [subtitle-translation]
+
+  # ════════════════════════════════════
+  # multimodal (6)
+  # ════════════════════════════════════
+  - slug: image-detailed-description
+    title: "Detailed Image Description (alt-text quality)"
+    category: multimodal
+    brief: "Produce alt-text-quality image descriptions covering subject, action, setting, mood, and notable details. WCAG-compliant length."
+    tags: [vision, alt-text]
+    best_for_tags: [accessibility, alt-text]
+
+  - slug: ocr-correction-prompt
+    title: "OCR Correction Prompt"
+    category: multimodal
+    brief: "Given OCR'd text with likely errors, infer corrections using context clues (common misreads: 0/O, 1/l, etc.)."
+    tags: [ocr, correction]
+    best_for_tags: [ocr-postprocess]
+
+  - slug: chart-data-extraction
+    title: "Chart Data Extractor (image → CSV)"
+    category: multimodal
+    brief: "Extract data from chart images (bar, line, pie) into structured CSV with values, labels, and uncertainty notes."
+    tags: [chart, extraction]
+    best_for_tags: [chart-extraction]
+
+  - slug: document-layout-parser
+    title: "Document Layout Parser"
+    category: multimodal
+    brief: "Parse a document image (invoice, form, report) identifying reading order, sections, tables, and key fields."
+    tags: [layout, document-ai]
+    best_for_tags: [document-parsing]
+
+  - slug: ui-screenshot-to-spec
+    title: "UI Screenshot → Component Spec"
+    category: multimodal
+    brief: "Given a UI screenshot, produce a structured component spec: layout, components used, design tokens, interaction states."
+    tags: [ui, design]
+    best_for_tags: [ui-analysis]
+
+  - slug: video-summarizer-keyframe
+    title: "Video Summarizer from Keyframes"
+    category: multimodal
+    brief: "Given a series of keyframes + timestamps + (optional) transcript, produce a chaptered summary of the video."
+    tags: [video, summarization]
+    best_for_tags: [video-summary]
+
+  # ════════════════════════════════════
+  # analysis (8)
+  # ════════════════════════════════════
+  - slug: sentiment-with-aspects
+    title: "Aspect-Based Sentiment Analysis"
+    category: analysis
+    brief: "Identify entities/aspects in text and classify sentiment per aspect (e.g. 'price: negative, service: positive'). JSON output."
+    tags: [sentiment, absa]
+    best_for_tags: [sentiment, reviews]
+
+  - slug: intent-classifier-with-fallback
+    title: "Intent Classifier with Fallback Routing"
+    category: analysis
+    brief: "Classify user message into intent buckets with confidence; route low-confidence to a 'clarify' fallback intent."
+    tags: [intent, routing]
+    best_for_tags: [chatbot, routing]
+
+  - slug: anomaly-explainer-time-series
+    title: "Time-Series Anomaly Explainer"
+    category: analysis
+    brief: "Given a time-series + flagged anomaly, propose plausible explanations grounded in seasonality, events, or upstream changes."
+    tags: [anomaly, time-series]
+    best_for_tags: [observability]
+
+  - slug: log-pattern-extraction
+    title: "Log Pattern Extraction + Clustering"
+    category: analysis
+    brief: "Cluster raw log lines into structured templates (e.g. 'user X logged in from IP Y' → '<user> logged in from <ip>') with frequency counts."
+    tags: [logs, clustering]
+    best_for_tags: [log-analysis]
+
+  - slug: review-pattern-finder
+    title: "Customer Review Pattern Finder"
+    category: analysis
+    brief: "Group N customer reviews into themes (positive/negative), produce ranked theme list with representative quotes and counts."
+    tags: [reviews, themes]
+    best_for_tags: [voice-of-customer]
+
+  - slug: error-trace-classifier
+    title: "Error Trace Classifier (groups similar errors)"
+    category: analysis
+    brief: "Group raw exception stack traces by root cause, producing canonical error patterns + count per pattern."
+    tags: [errors, classification]
+    best_for_tags: [error-grouping]
+
+  - slug: a-b-test-result-interpreter
+    title: "A/B Test Result Interpreter"
+    category: analysis
+    brief: "Given A/B test data (conversion rate, sample size, confidence interval), produce plain-English interpretation + recommendation."
+    tags: [a-b-test, statistics]
+    best_for_tags: [statistics, experimentation]
+
+  - slug: support-ticket-triage
+    title: "Support Ticket Triage"
+    category: analysis
+    brief: "Classify incoming support tickets by category, urgency, sentiment, and route to the right team. Includes auto-suggested response."
+    tags: [support, triage]
+    best_for_tags: [support, triage]
+
+  # ════════════════════════════════════
+  # creative (6)
+  # ════════════════════════════════════
+  - slug: story-with-character-arc
+    title: "Short Story with Character Arc"
+    category: creative
+    brief: "Generate a short story (800-1,500 words) with explicit 3-act structure, character growth, and a satisfying ending."
+    tags: [fiction, story]
+    best_for_tags: [fiction]
+
+  - slug: dialogue-natural-back-and-forth
+    title: "Natural Dialogue Between Characters"
+    category: creative
+    brief: "Write naturalistic dialogue between N characters with distinct voices, subtext, and forward narrative momentum."
+    tags: [dialogue, fiction]
+    best_for_tags: [dialogue]
+
+  - slug: worldbuilding-coherent
+    title: "Worldbuilding: Coherent Setting Generator"
+    category: creative
+    brief: "Build a coherent fictional setting from one seed (e.g. 'post-water-scarcity Mediterranean') with geography, factions, economy, conflicts."
+    tags: [worldbuilding, fiction]
+    best_for_tags: [worldbuilding]
+
+  - slug: poem-with-form-constraint
+    title: "Poem with Form Constraint (sonnet, haiku, villanelle)"
+    category: creative
+    brief: "Generate a poem strictly adhering to a chosen form's meter, rhyme scheme, and structural constraints."
+    tags: [poetry]
+    best_for_tags: [poetry]
+
+  - slug: brainstorm-divergent
+    title: "Divergent Brainstorm (50+ ideas, no judgment)"
+    category: creative
+    brief: "Produce a high-quantity divergent brainstorm of 50+ ideas around a seed, deliberately including outlandish ones. No filtering."
+    tags: [brainstorm]
+    best_for_tags: [brainstorming]
+
+  - slug: ad-headline-variations
+    title: "Ad Headline Variations (10 styles)"
+    category: creative
+    brief: "Generate 10 ad headlines in distinct styles (curiosity, urgency, social proof, contrarian, etc.) for the same offer."
+    tags: [ads, copy]
+    best_for_tags: [ads, marketing]
+
+  # ════════════════════════════════════
+  # persona (5)
+  # ════════════════════════════════════
+  - slug: persona-staff-engineer-mentor
+    title: "Persona: Staff Engineer Mentor"
+    category: persona
+    brief: "Persona prompt for a 15-year-experience staff engineer who teaches by Socratic questioning and code-review style feedback."
+    tags: [mentor, engineering]
+    best_for_tags: [engineering-mentor]
+
+  - slug: persona-product-manager-interviewer
+    title: "Persona: PM Interviewer (case study practice)"
+    category: persona
+    brief: "Persona that conducts realistic PM case-study interviews: estimation, prioritization, metrics design. Gives structured feedback after."
+    tags: [pm, interview]
+    best_for_tags: [pm-interview]
+
+  - slug: persona-startup-advisor
+    title: "Persona: Startup Advisor"
+    category: persona
+    brief: "Persona of an experienced startup advisor giving direct, tradeoff-focused feedback on strategy, hiring, fundraising."
+    tags: [startup, advisor]
+    best_for_tags: [startup-advice]
+
+  - slug: persona-debate-opponent
+    title: "Persona: Steelmanning Debate Opponent"
+    category: persona
+    brief: "Persona that argues the strongest possible case AGAINST your position. Useful for stress-testing ideas before publishing."
+    tags: [debate, steelman]
+    best_for_tags: [steelmanning]
+
+  - slug: persona-language-tutor
+    title: "Persona: Language Tutor"
+    category: persona
+    brief: "Persona that converses in a target language at your level, corrects mistakes inline, and gradually introduces new vocab."
+    tags: [language-learning]
+    best_for_tags: [language-tutor]
+
+  # ════════════════════════════════════
+  # safety (5)
+  # ════════════════════════════════════
+  - slug: prompt-injection-detector
+    title: "Prompt Injection Detector"
+    category: safety
+    brief: "Classify whether a user input contains a prompt-injection attempt (instruction override, role manipulation, etc.) with reasoning."
+    tags: [prompt-injection, security]
+    best_for_tags: [security]
+
+  - slug: pii-redactor
+    title: "PII Redactor"
+    category: safety
+    brief: "Detect and redact PII (names, addresses, phone, email, SSN, credit cards) in text while preserving structure with [REDACTED] tags."
+    tags: [pii, redaction]
+    best_for_tags: [privacy, pii]
+
+  - slug: jailbreak-resistance-wrapper
+    title: "Jailbreak-Resistant System Prompt Wrapper"
+    category: safety
+    brief: "Hardened system-prompt wrapper that resists common jailbreak patterns (DAN, role-play overrides, multi-turn manipulation)."
+    tags: [jailbreak-defense, security]
+    best_for_tags: [security]
+
+  - slug: content-moderation-multi-category
+    title: "Multi-Category Content Moderation"
+    category: safety
+    brief: "Classify text across categories (harassment, hate, self-harm, sexual, violence) with severity scores. Mirror OpenAI's moderation taxonomy."
+    tags: [moderation]
+    best_for_tags: [moderation]
+
+  - slug: copyright-detector
+    title: "Copyright/Plagiarism Risk Detector"
+    category: safety
+    brief: "Identify text that closely matches likely copyrighted sources (song lyrics, book passages, news articles). Outputs risk score + flags."
+    tags: [copyright, plagiarism]
+    best_for_tags: [copyright]
+
+  # ════════════════════════════════════
+  # education (5)
+  # ════════════════════════════════════
+  - slug: explain-at-skill-level
+    title: "Explain at Skill Level (5/15/25/35/PhD)"
+    category: education
+    brief: "Explain a concept at the requested skill level (age 5 / high school / undergrad / new grad / PhD). Adjusts vocabulary, depth, analogies."
+    tags: [explainer, education]
+    best_for_tags: [education]
+
+  - slug: quiz-generator-bloom
+    title: "Bloom's Taxonomy Quiz Generator"
+    category: education
+    brief: "Generate quiz questions across all 6 Bloom's levels (remember → create) from study material. Includes answer key + rubric."
+    tags: [quiz, education]
+    best_for_tags: [quiz-gen]
+
+  - slug: flashcard-spaced-repetition
+    title: "Spaced-Repetition Flashcard Generator"
+    category: education
+    brief: "Generate Anki-compatible flashcards from notes with cloze deletions, ranked by difficulty + spacing recommendations."
+    tags: [flashcards, anki]
+    best_for_tags: [flashcards]
+
+  - slug: misconception-detector
+    title: "Misconception Detector"
+    category: education
+    brief: "Identify common misconceptions about a topic, with explanations of why they're wrong and corrected understanding."
+    tags: [misconceptions]
+    best_for_tags: [education]
+
+  - slug: study-guide-builder
+    title: "Study Guide Builder from Lecture Notes"
+    category: education
+    brief: "Convert raw lecture notes/transcript into a structured study guide with key concepts, examples, practice questions, summary."
+    tags: [study-guide]
+    best_for_tags: [study-prep]
+
+  # ════════════════════════════════════
+  # productivity (5)
+  # ════════════════════════════════════
+  - slug: email-thread-respond
+    title: "Email Reply Generator (with tone match)"
+    category: productivity
+    brief: "Draft an email reply matching the original's tone (formal/casual), addressing all questions raised, with clear next steps."
+    tags: [email]
+    best_for_tags: [email-productivity]
+
+  - slug: weekly-review-coach
+    title: "Weekly Review Coach"
+    category: productivity
+    brief: "Lead a weekly review: list of wins, blockers, lessons learned, next-week priorities. GTD + OKR-friendly format."
+    tags: [productivity, review]
+    best_for_tags: [productivity]
+
+  - slug: priority-matrix-eisenhower
+    title: "Eisenhower Priority Matrix Sorter"
+    category: productivity
+    brief: "Sort a task list into the 4-quadrant Eisenhower matrix (urgent×important) with reasoning per task."
+    tags: [prioritization]
+    best_for_tags: [prioritization]
+
+  - slug: standup-update-formatter
+    title: "Daily Standup Update Formatter"
+    category: productivity
+    brief: "Format raw notes into a clean standup update: Yesterday / Today / Blockers — under 3 minutes to read."
+    tags: [standup]
+    best_for_tags: [standup]
+
+  - slug: oneonone-agenda-builder
+    title: "1-on-1 Agenda Builder"
+    category: productivity
+    brief: "Build a 1-on-1 meeting agenda from recent context: status updates, growth topics, blockers, action items from last meeting."
+    tags: [meetings, one-on-one]
+    best_for_tags: [meetings]
+
+  # ════════════════════════════════════
+  # customer-support (4)
+  # ════════════════════════════════════
+  - slug: support-response-empathetic
+    title: "Empathetic Support Response Drafter"
+    category: customer-support
+    brief: "Draft a customer support response that acknowledges the issue, empathizes, provides a concrete fix, and offers a follow-up channel."
+    tags: [support, empathy]
+    best_for_tags: [customer-support]
+
+  - slug: refund-policy-decision
+    title: "Refund Policy Decision Assistant"
+    category: customer-support
+    brief: "Given customer context + policy text, decide refund-eligible with explicit reasoning + escalation criteria."
+    tags: [refunds, policy]
+    best_for_tags: [policy-decision]
+
+  - slug: escalation-classifier
+    title: "Support Ticket Escalation Classifier"
+    category: customer-support
+    brief: "Decide whether a ticket should escalate to a human (sentiment, complexity, value-at-risk, regulatory). Outputs decision + rationale."
+    tags: [escalation, classification]
+    best_for_tags: [escalation]
+
+  - slug: faq-from-tickets
+    title: "FAQ Builder from Support Tickets"
+    category: customer-support
+    brief: "Cluster recent tickets into FAQ topics, draft Q&A pairs covering the top 10 issues with frequency counts."
+    tags: [faq, support-data]
+    best_for_tags: [faq-builder]
+
+  # ════════════════════════════════════
+  # business (5)
+  # ════════════════════════════════════
+  - slug: strategic-tradeoff-analyzer
+    title: "Strategic Tradeoff Analyzer"
+    category: business
+    brief: "Given 2-3 strategic options, produce explicit tradeoff matrix: cost, time, risk, optionality, opportunity cost. Recommend with reasoning."
+    tags: [strategy, tradeoffs]
+    best_for_tags: [strategy]
+
+  - slug: meeting-decision-recorder
+    title: "Meeting Decision Recorder"
+    category: business
+    brief: "From meeting notes, extract DECISIONS made (with rationale, owner, reversal cost), separate from action items and discussions."
+    tags: [decisions, meetings]
+    best_for_tags: [decision-tracking]
+
+  - slug: vendor-comparison-builder
+    title: "Vendor Comparison Builder"
+    category: business
+    brief: "Compare N vendors across price, features, security, integration, support, lock-in. Outputs matrix + recommendation."
+    tags: [vendor, procurement]
+    best_for_tags: [procurement]
+
+  - slug: investor-update-monthly
+    title: "Monthly Investor Update Drafter"
+    category: business
+    brief: "Draft a monthly investor update: KPIs (current + delta), wins, challenges, asks. ~400 words, scannable, honest."
+    tags: [investor, update]
+    best_for_tags: [investor-update]
+
+  - slug: rfp-response-builder
+    title: "RFP Response Builder"
+    category: business
+    brief: "Generate a structured RFP response from a question list + company capability deck, matching each requirement to a capability with citations."
+    tags: [rfp, sales]
+    best_for_tags: [sales, rfp]

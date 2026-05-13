@@ -1,0 +1,94 @@
+name: Code Starter v2 — Push to Base44
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (no writes)"
+        required: false
+        default: "false"
+      only_slugs:
+        description: "Comma-separated slug subset (empty = all)"
+        required: false
+        default: ""
+  push:
+    branches: [main]
+    paths:
+      - "code-starter-seed/rebuilt-v2.json"
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install jsonschema
+
+      - name: Validate payload
+        run: |
+          python - <<'PY'
+          import json, pathlib, sys
+          from jsonschema import validate, ValidationError
+          p = pathlib.Path("code-starter-seed/rebuilt-v2.json")
+          if not p.exists():
+              print("ERROR: code-starter-seed/rebuilt-v2.json missing. Run the Generate workflow first.", file=sys.stderr)
+              sys.exit(1)
+          schema = json.loads(pathlib.Path("code-starter-seed/_schema.json").read_text())
+          arr = json.loads(p.read_text(encoding="utf-8"))
+          bad = []
+          for r in arr:
+              try:
+                  validate(instance=r, schema=schema)
+              except ValidationError as e:
+                  bad.append((r.get("slug","?"), e.message[:120]))
+          if bad:
+              print(f"VALIDATION FAIL: {len(bad)} records. First 5:", bad[:5], file=sys.stderr)
+              sys.exit(1)
+          print(f"OK: {len(arr)} v2 code starters, schema clean")
+          PY
+
+      - name: Push to Base44
+        env:
+          API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          python code-starter-seed/v2-scripts/push_v2.py \
+            --file code-starter-seed/rebuilt-v2.json \
+            --only "${{ github.event.inputs.only_slugs }}"
+
+      - name: Smoke-test the deploy
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          sleep 30
+          python - <<'PY'
+          import json, pathlib, random, sys, urllib.request, urllib.error
+          UA = 'ossaihub-cron-code-smoke/1.0'
+          SITEMAP = 'https://ossaihub.com/functions/generateSitemap'
+          BASE = 'https://ossaihub.com/code/'
+          def fetch(url):
+              req = urllib.request.Request(url, headers={'User-Agent': UA})
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  return r.read().decode('utf-8', errors='replace')
+          arr = json.loads(pathlib.Path('code-starter-seed/rebuilt-v2.json').read_text(encoding='utf-8'))
+          want = {t['slug'] for t in arr if t.get('slug')}
+          sm = fetch(SITEMAP)
+          have = set()
+          for line in sm.splitlines():
+              if '<loc>' in line and '/code/' in line:
+                  have.add(line.split('/code/')[-1].split('<')[0])
+          missing = want - have
+          if missing:
+              print(f"MISSING from sitemap ({len(missing)}): {sorted(missing)[:10]}", file=sys.stderr); sys.exit(1)
+          for slug in random.sample(sorted(want), min(5, len(want))):
+              body = fetch(BASE + slug)
+              if len(body) < 8000:
+                  print(f"FAIL {slug}: {len(body)}B", file=sys.stderr); sys.exit(1)
+              print(f"OK {slug}: {len(body)//1000}kB")
+          print(f"\nSMOKE OK: {len(want)} slugs in sitemap, sampled detail pages all >8kB")
+          PY

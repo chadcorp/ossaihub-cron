@@ -1,0 +1,1337 @@
+# OSS AI Hub Code Library — v2 Manifest
+#
+# Each entry is a SEED that the generator (tools/generate_v2.py) turns into a
+# full v2 record via Anthropic API. Add new entries here, run the
+# "Code Starter v2 — Generate" workflow, then "Code Starter v2 — Push" syncs to
+# Base44 by slug (upsert — existing slugs are updated, new ones inserted).
+#
+# Field guide:
+#   slug          required, kebab-case, unique
+#   title         required
+#   category      one of the 20 enums in _schema.json
+#   language      python | typescript | javascript | bash | dockerfile | yaml | rust | go
+#   framework     primary framework, helps the generator know the stack
+#   brief         1-2 sentences describing what this starter does — the LLM uses this to
+#                 produce full v2 content (TL;DR, when-to-use, full code, variations,
+#                 common errors, production checklist, etc.)
+#   tags          suggested tags (generator may add more)
+#   best_for_tags 3-6 specific use cases this is "best for"
+#   featured      mark true to surface in homepage Featured row
+
+library: code
+
+defaults:
+  license: MIT
+  tested_with:
+    last_verified_date: "2026-05-13"
+
+entries:
+
+  # ════════════════════════════════════
+  # llm-clients (15)
+  # ════════════════════════════════════
+  - slug: fastapi-ollama-streaming-chat
+    title: "FastAPI + Ollama Streaming Chat API"
+    category: llm-clients
+    language: python
+    framework: FastAPI
+    brief: "Production-ready FastAPI server that streams Llama 3.x tokens from a local Ollama daemon via Server-Sent Events. Includes request validation, error handling, and CORS."
+    tags: [ollama, fastapi, streaming, llama]
+    best_for_tags: [streaming, local-llm, chat-api, production]
+    featured: true
+
+  - slug: anthropic-claude-streaming-tool-use
+    title: "Anthropic Claude 4 Streaming with Tool Use"
+    category: llm-clients
+    language: python
+    framework: Anthropic SDK
+    brief: "Claude 4.6 streaming + function calling pattern. Implements multi-turn tool use loop with parallel tool calls and structured error recovery."
+    tags: [anthropic, claude, tool-use, streaming]
+    best_for_tags: [agent-loop, tool-calling, streaming, production]
+
+  - slug: openai-compatible-client-multi-provider
+    title: "OpenAI-Compatible Client (works with OpenAI, vLLM, Ollama, Together, Groq)"
+    category: llm-clients
+    language: python
+    framework: OpenAI SDK
+    brief: "Single client that swaps providers by base_url. Includes retry, timeout, fallback chain, and cost tracking. Drop-in for OpenAI/vLLM/Ollama/Together/Groq/Fireworks."
+    tags: [openai, vllm, multi-provider, fallback]
+    best_for_tags: [provider-fallback, cost-routing, portability]
+
+  - slug: litellm-unified-gateway
+    title: "LiteLLM Gateway with Fallback Routing"
+    category: llm-clients
+    language: python
+    framework: LiteLLM
+    brief: "Unified gateway for 100+ LLM providers with fallback, retry, cost budgets, and Langfuse observability. Production config with API key rotation."
+    tags: [litellm, gateway, routing, fallback]
+    best_for_tags: [multi-provider, cost-control, production]
+
+  - slug: bedrock-claude-streaming
+    title: "AWS Bedrock Claude Streaming Client"
+    category: llm-clients
+    language: python
+    framework: boto3
+    brief: "AWS Bedrock client for Claude 4 with streaming, prompt caching, and IAM role auth. Handles Bedrock-specific token quotas and region failover."
+    tags: [aws, bedrock, claude, streaming]
+    best_for_tags: [aws, enterprise, claude]
+
+  - slug: ollama-async-batch-client
+    title: "Async Ollama Batch Client (concurrency-safe)"
+    category: llm-clients
+    language: python
+    framework: aiohttp
+    brief: "Asyncio Ollama client that batches concurrent requests with semaphore-bounded concurrency. Handles streaming and non-streaming modes, retries 5xx with backoff."
+    tags: [ollama, async, batching, aiohttp]
+    best_for_tags: [batch-inference, concurrency, local-llm]
+
+  - slug: vercel-ai-sdk-streaming-typescript
+    title: "Vercel AI SDK Streaming (TypeScript, Next.js 14)"
+    category: llm-clients
+    language: typescript
+    framework: Vercel AI SDK
+    brief: "Next.js 14 App Router route that streams from Anthropic/OpenAI/Ollama via Vercel AI SDK. Includes useChat hook, function calling, and edge runtime config."
+    tags: [vercel-ai-sdk, nextjs, typescript, streaming]
+    best_for_tags: [nextjs, edge-runtime, streaming]
+    featured: true
+
+  - slug: openrouter-multi-model-router
+    title: "OpenRouter Multi-Model Router with Cost Optimization"
+    category: llm-clients
+    language: python
+    framework: OpenRouter
+    brief: "OpenRouter client that routes by task complexity — cheap model for classification, expensive for reasoning. Auto-tracks per-request cost."
+    tags: [openrouter, routing, cost]
+    best_for_tags: [cost-optimization, model-routing]
+
+  - slug: groq-low-latency-chat
+    title: "Groq Low-Latency Chat (sub-200ms TTFT)"
+    category: llm-clients
+    language: python
+    framework: Groq SDK
+    brief: "Groq LPU client tuned for the lowest TTFT. Streams Llama 3.3 70B at 500+ tok/s. Includes timeout + fallback to OpenAI."
+    tags: [groq, low-latency, llama]
+    best_for_tags: [low-latency, real-time]
+
+  - slug: together-ai-batched-inference
+    title: "Together AI Batched Inference"
+    category: llm-clients
+    language: python
+    framework: Together SDK
+    brief: "Together AI batch API client for cost-optimized bulk inference (50% discount). Handles 50K-job batches with status polling and result paging."
+    tags: [together-ai, batch, bulk]
+    best_for_tags: [batch-inference, cost-optimization]
+
+  - slug: claude-prompt-caching-pattern
+    title: "Claude Prompt Caching Pattern (90% cost reduction)"
+    category: llm-clients
+    language: python
+    framework: Anthropic SDK
+    brief: "Anthropic prompt caching with ephemeral cache_control for large system prompts + multi-turn agents. Includes cache-hit metrics."
+    tags: [anthropic, prompt-caching, cost]
+    best_for_tags: [cost-optimization, long-context, agents]
+
+  - slug: fireworks-serverless-llama
+    title: "Fireworks AI Serverless Llama 3.3 Client"
+    category: llm-clients
+    language: python
+    framework: Fireworks SDK
+    brief: "Fireworks AI client for Llama 3.3 70B serverless endpoint with JSON mode + function calling. Includes auto-scaling tips."
+    tags: [fireworks, llama, serverless]
+    best_for_tags: [serverless, llama, json-mode]
+
+  - slug: bedrock-cohere-rerank-rag
+    title: "Bedrock + Cohere Rerank for RAG"
+    category: llm-clients
+    language: python
+    framework: boto3
+    brief: "Bedrock Cohere Rerank 3 client for re-ranking top-k retrieved documents before sending to the LLM. Boosts RAG quality by 15-30%."
+    tags: [bedrock, cohere, rerank, rag]
+    best_for_tags: [rag-quality, reranking]
+
+  - slug: nim-inference-microservice
+    title: "NVIDIA NIM Inference Microservice"
+    category: llm-clients
+    language: python
+    framework: NIM
+    brief: "Call NVIDIA NIM-hosted models via OpenAI-compatible API. Includes Triton fallback for on-prem and NIM API endpoint discovery."
+    tags: [nim, nvidia, triton]
+    best_for_tags: [enterprise, on-prem, nvidia]
+
+  - slug: replicate-image-generation-client
+    title: "Replicate Image Generation Client"
+    category: llm-clients
+    language: python
+    framework: Replicate SDK
+    brief: "Replicate client for SDXL / Flux image generation with prediction polling, image upload, and webhook callback handling."
+    tags: [replicate, image-gen, sdxl, flux]
+    best_for_tags: [image-generation, replicate]
+
+  # ════════════════════════════════════
+  # llm-inference (15)
+  # ════════════════════════════════════
+  - slug: vllm-batched-inference-metrics
+    title: "vLLM Batched Inference Server with Prometheus Metrics"
+    category: llm-inference
+    language: python
+    framework: vLLM
+    brief: "Production vLLM server with continuous batching, PagedAttention, Prometheus metrics export, and graceful shutdown. Tuned for Llama 3.1 70B on 4×A100."
+    tags: [vllm, batching, metrics, llama]
+    best_for_tags: [high-throughput, gpu-serving, production]
+
+  - slug: sglang-radix-attention-server
+    title: "SGLang Server with Radix Attention (2-5x cache hit)"
+    category: llm-inference
+    language: python
+    framework: SGLang
+    brief: "SGLang inference server exploiting RadixAttention for shared-prefix caching. Best for agentic workloads with repeated system prompts."
+    tags: [sglang, radix-attention, agents]
+    best_for_tags: [agent-serving, shared-prefix, throughput]
+
+  - slug: llamacpp-server-quantized
+    title: "llama.cpp Server with Q4 Quantization"
+    category: llm-inference
+    language: bash
+    framework: llama.cpp
+    brief: "llama.cpp server launching Llama 3.1 8B Q4_K_M on CPU/Metal/CUDA. Includes context-length tuning and OpenAI-compatible /v1/chat/completions endpoint."
+    tags: [llama-cpp, quantization, gguf]
+    best_for_tags: [local-llm, cpu-inference, low-vram]
+
+  - slug: tensorrt-llm-optimized-deploy
+    title: "TensorRT-LLM Optimized Deployment"
+    category: llm-inference
+    language: python
+    framework: TensorRT-LLM
+    brief: "Build and serve a TensorRT-LLM engine for Mistral 7B with INT8 weight-only quantization. Includes engine-build Dockerfile and benchmark script."
+    tags: [tensorrt, nvidia, mistral, quantization]
+    best_for_tags: [nvidia-h100, peak-throughput, enterprise]
+
+  - slug: ollama-modelfile-custom
+    title: "Custom Ollama Modelfile (system prompt + LoRA adapter)"
+    category: llm-inference
+    language: bash
+    framework: Ollama
+    brief: "Modelfile that bakes a system prompt + LoRA adapter into a custom Ollama model. Includes layer-skip optimization and KV-cache size tuning."
+    tags: [ollama, modelfile, lora]
+    best_for_tags: [local-llm, custom-model, lora]
+
+  - slug: vllm-speculative-decoding
+    title: "vLLM Speculative Decoding (2-3x speedup)"
+    category: llm-inference
+    language: python
+    framework: vLLM
+    brief: "vLLM with speculative decoding using a small draft model. Doubles tokens/sec for Llama 3.1 70B + Llama 3.1 8B as draft."
+    tags: [vllm, speculative-decoding, throughput]
+    best_for_tags: [throughput, speculative]
+
+  - slug: triton-inference-server-llm
+    title: "NVIDIA Triton Inference Server for LLMs"
+    category: llm-inference
+    language: python
+    framework: Triton
+    brief: "Triton Inference Server config for serving LLMs with dynamic batching, ensemble pipelines, and model versioning. Includes TensorRT-LLM backend."
+    tags: [triton, nvidia, ensemble]
+    best_for_tags: [enterprise, model-versioning]
+
+  - slug: text-generation-inference-tgi
+    title: "Hugging Face TGI Production Deploy"
+    category: llm-inference
+    language: dockerfile
+    framework: TGI
+    brief: "Text Generation Inference Docker setup for Llama 3.3 70B with continuous batching, FP8 quantization on H100, and Prometheus exporter."
+    tags: [tgi, huggingface, h100]
+    best_for_tags: [enterprise, huggingface, h100]
+
+  - slug: vllm-disaggregated-prefill-decode
+    title: "vLLM Disaggregated Prefill+Decode"
+    category: llm-inference
+    language: python
+    framework: vLLM
+    brief: "Disaggregated serving: prefill workers and decode workers as separate pods. Maximizes throughput for long-context workloads (32K+ tokens)."
+    tags: [vllm, disaggregated, long-context]
+    best_for_tags: [long-context, throughput, scaling]
+
+  - slug: mlx-apple-silicon-server
+    title: "MLX Server on Apple Silicon (M3/M4)"
+    category: llm-inference
+    language: python
+    framework: MLX
+    brief: "MLX-LM server for Llama 3.1 8B on Apple M3 Max with unified memory. Includes streaming endpoint and quantization helper."
+    tags: [mlx, apple-silicon, m-series]
+    best_for_tags: [apple-silicon, local-llm, m3-m4]
+
+  - slug: llamafile-portable-binary
+    title: "llamafile Single-Binary Distribution"
+    category: llm-inference
+    language: bash
+    framework: llamafile
+    brief: "Bundle a GGUF model + llama.cpp + web server into a single portable executable that runs on Linux/macOS/Windows without install."
+    tags: [llamafile, portable, distribution]
+    best_for_tags: [portable, distribution, demo]
+
+  - slug: bentoml-llm-bento
+    title: "BentoML LLM Service with Adaptive Batching"
+    category: llm-inference
+    language: python
+    framework: BentoML
+    brief: "BentoML service wrapping vLLM with adaptive batching, async endpoints, and one-click cloud deploy. Includes bento push to BentoCloud."
+    tags: [bentoml, deployment, vllm]
+    best_for_tags: [deployment, cloud, vllm]
+
+  - slug: lmstudio-headless-server
+    title: "LM Studio Headless Server CLI"
+    category: llm-inference
+    language: bash
+    framework: LM Studio
+    brief: "Run LM Studio's local OpenAI-compatible server headlessly via CLI. Useful for VS Code + Continue.dev configs."
+    tags: [lm-studio, local-llm]
+    best_for_tags: [local-dev, gui-free]
+
+  - slug: ray-serve-llm-multi-replica
+    title: "Ray Serve Multi-Replica LLM Deployment"
+    category: llm-inference
+    language: python
+    framework: Ray Serve
+    brief: "Ray Serve deployment with N replicas, dynamic scaling, request batching, and Ray cluster autoscaler config. Production pattern for multi-tenant serving."
+    tags: [ray, ray-serve, scaling]
+    best_for_tags: [multi-tenant, autoscale, production]
+
+  - slug: huggingface-text-embeddings-inference
+    title: "Hugging Face TEI for High-Throughput Embeddings"
+    category: llm-inference
+    language: dockerfile
+    framework: TEI
+    brief: "Text Embeddings Inference Docker deploy for BGE-M3 / E5-Large with FlashAttention + dynamic batching. 10x throughput vs sentence-transformers."
+    tags: [tei, embeddings, bge]
+    best_for_tags: [embeddings, throughput]
+
+  # ════════════════════════════════════
+  # rag-patterns (18)
+  # ════════════════════════════════════
+  - slug: rag-langchain-qdrant-basic
+    title: "Basic RAG with LangChain + Qdrant"
+    category: rag-patterns
+    language: python
+    framework: LangChain
+    brief: "End-to-end RAG: document loader → semantic chunker → BGE-M3 embeddings → Qdrant → LangChain retriever → Claude 4. Foundational pattern."
+    tags: [rag, langchain, qdrant, bge]
+    best_for_tags: [rag-basics, document-qa]
+    featured: true
+
+  - slug: hybrid-rag-bm25-vector
+    title: "Hybrid RAG: BM25 + Dense Vector + RRF"
+    category: rag-patterns
+    language: python
+    framework: LlamaIndex
+    brief: "Hybrid retrieval combining BM25 (sparse keyword) + dense vector search, fused via Reciprocal Rank Fusion. Boosts recall 20-40% over pure vector."
+    tags: [hybrid-search, bm25, rrf]
+    best_for_tags: [recall, hybrid, production-rag]
+
+  - slug: agentic-rag-langgraph
+    title: "Agentic RAG with LangGraph (query plan + iterative retrieval)"
+    category: rag-patterns
+    language: python
+    framework: LangGraph
+    brief: "Agent that decomposes complex questions, retrieves per sub-question, evaluates grounding, and re-queries when context is insufficient."
+    tags: [agentic-rag, langgraph, planner]
+    best_for_tags: [complex-questions, multi-hop, agent]
+
+  - slug: graphrag-microsoft-pattern
+    title: "GraphRAG (Microsoft pattern) — entity graph + community summaries"
+    category: rag-patterns
+    language: python
+    framework: GraphRAG
+    brief: "Build a knowledge graph over documents, cluster entities into communities, summarize each community, then answer queries by traversing the graph."
+    tags: [graphrag, knowledge-graph, microsoft]
+    best_for_tags: [global-questions, knowledge-graph, multi-doc]
+
+  - slug: self-rag-pattern
+    title: "Self-RAG: Model Decides When to Retrieve"
+    category: rag-patterns
+    language: python
+    framework: LangChain
+    brief: "Self-RAG implementation: model emits retrieval tokens to decide if/when to fetch context, then grades retrieved chunks for relevance."
+    tags: [self-rag, adaptive-retrieval]
+    best_for_tags: [adaptive-rag, grounding]
+
+  - slug: corrective-rag-crag
+    title: "Corrective RAG (CRAG) with Web Fallback"
+    category: rag-patterns
+    language: python
+    framework: LangGraph
+    brief: "CRAG pipeline: grade retrieved docs; if grade is poor, rewrite query and search the web; combine before answering."
+    tags: [crag, web-search, fallback]
+    best_for_tags: [grounding, web-fallback]
+
+  - slug: parent-child-chunking-rag
+    title: "Parent-Child Chunking RAG"
+    category: rag-patterns
+    language: python
+    framework: LlamaIndex
+    brief: "Embed small child chunks for precise retrieval; return their larger parent chunks to the LLM for context. Best precision-recall balance."
+    tags: [chunking, parent-child]
+    best_for_tags: [precision, context-window-efficiency]
+
+  - slug: contextual-retrieval-anthropic
+    title: "Anthropic Contextual Retrieval (49% retrieval failure reduction)"
+    category: rag-patterns
+    language: python
+    framework: Anthropic SDK
+    brief: "Prepend each chunk with a 50-100 token Claude-generated context summary before embedding. Anthropic's reproducible technique."
+    tags: [contextual-retrieval, anthropic, embeddings]
+    best_for_tags: [retrieval-quality, anthropic]
+
+  - slug: late-chunking-jina
+    title: "Late Chunking with Jina embeddings"
+    category: rag-patterns
+    language: python
+    framework: jina-embeddings-v3
+    brief: "Embed the whole document then chunk the token-level outputs. Preserves cross-sentence context for retrieval. Works with long-context embedders."
+    tags: [late-chunking, jina, long-context]
+    best_for_tags: [long-document, retrieval-quality]
+
+  - slug: hypothetical-document-embeddings-hyde
+    title: "HyDE: Hypothetical Document Embeddings"
+    category: rag-patterns
+    language: python
+    framework: LangChain
+    brief: "Generate a hypothetical answer with the LLM, embed THAT, then retrieve real docs near it. Higher recall on abstract queries."
+    tags: [hyde, query-expansion]
+    best_for_tags: [abstract-queries, recall]
+
+  - slug: multi-query-retrieval-rrf
+    title: "Multi-Query Retrieval with RRF Fusion"
+    category: rag-patterns
+    language: python
+    framework: LangChain
+    brief: "Generate 3-5 query variations with the LLM, retrieve for each, fuse results via RRF. Reduces single-phrasing dependency."
+    tags: [multi-query, rrf]
+    best_for_tags: [query-robustness, recall]
+
+  - slug: colbert-late-interaction-rag
+    title: "ColBERT Late-Interaction RAG"
+    category: rag-patterns
+    language: python
+    framework: RAGatouille
+    brief: "ColBERTv2 token-level late-interaction retrieval via RAGatouille. Higher accuracy than single-vector dense retrieval at 10x storage cost."
+    tags: [colbert, late-interaction]
+    best_for_tags: [retrieval-accuracy, dense-passage]
+
+  - slug: rag-with-citations-grounding
+    title: "RAG with Inline Citations (verifiable grounding)"
+    category: rag-patterns
+    language: python
+    framework: LlamaIndex
+    brief: "Every sentence in the answer cites its source chunk by ID. Includes citation-faithfulness eval and UI rendering helpers."
+    tags: [citations, grounding, llamaindex]
+    best_for_tags: [trust, citations, enterprise]
+
+  - slug: long-context-rag-claude-200k
+    title: "Long-Context RAG with Claude 200K"
+    category: rag-patterns
+    language: python
+    framework: Anthropic SDK
+    brief: "Skip chunking entirely — stuff 150K tokens of retrieved context into Claude 4. Includes context-budget manager and cost calculator."
+    tags: [long-context, claude, no-chunking]
+    best_for_tags: [long-context, simple-rag]
+
+  - slug: rag-evaluation-ragas
+    title: "RAG Evaluation with Ragas (faithfulness + relevance + context-precision)"
+    category: rag-patterns
+    language: python
+    framework: Ragas
+    brief: "Eval pipeline computing faithfulness, answer relevance, context precision, and context recall for any RAG system. CI-friendly."
+    tags: [ragas, evaluation, rag-quality]
+    best_for_tags: [rag-eval, ci, faithfulness]
+
+  - slug: semantic-chunker-tiktoken
+    title: "Semantic Chunker with tiktoken Boundary Detection"
+    category: rag-patterns
+    language: python
+    framework: tiktoken
+    brief: "Chunk text on semantic boundaries (sentence + cosine-similarity break detection) using tiktoken for accurate token counts."
+    tags: [chunking, semantic, tiktoken]
+    best_for_tags: [chunking-quality, retrieval-prep]
+
+  - slug: multimodal-rag-clip-images
+    title: "Multimodal RAG: CLIP + Text + Image Retrieval"
+    category: rag-patterns
+    language: python
+    framework: CLIP
+    brief: "RAG over a mixed corpus of text and images using CLIP/SigLIP joint embeddings. Returns most-relevant docs regardless of modality."
+    tags: [multimodal, clip, images]
+    best_for_tags: [multimodal, image-search]
+
+  - slug: rag-cache-semantic-similarity
+    title: "Semantic Cache for RAG (40% cost reduction)"
+    category: rag-patterns
+    language: python
+    framework: GPTCache
+    brief: "Cache LLM answers by query-embedding similarity. Returns cached answer when a new query is within 0.92 cosine of a prior query."
+    tags: [semantic-cache, cost-optimization]
+    best_for_tags: [cost-reduction, latency]
+
+  # ════════════════════════════════════
+  # vector-databases (12)
+  # ════════════════════════════════════
+  - slug: qdrant-hybrid-search-setup
+    title: "Qdrant Hybrid Search (dense + sparse + payload filter)"
+    category: vector-databases
+    language: python
+    framework: Qdrant
+    brief: "Qdrant collection setup with dense BGE-M3 + sparse SPLADE vectors + payload filters. Includes upsert script, query examples, and grpc client tuning."
+    tags: [qdrant, hybrid-search, splade]
+    best_for_tags: [production-vector-db, hybrid]
+
+  - slug: chroma-quickstart-persistent
+    title: "Chroma Quickstart with Persistent Storage"
+    category: vector-databases
+    language: python
+    framework: Chroma
+    brief: "Chroma persistent client setup with collection lifecycle, embedding function injection, metadata filtering, and incremental upsert."
+    tags: [chroma, persistent, quickstart]
+    best_for_tags: [local-dev, prototyping]
+
+  - slug: milvus-million-vector-cluster
+    title: "Milvus Cluster for 100M+ Vectors"
+    category: vector-databases
+    language: yaml
+    framework: Milvus
+    brief: "Milvus distributed cluster (operator + helm chart) tuned for 100M+ vectors. Includes index choice (IVF_PQ vs HNSW), shard config, and S3-backed storage."
+    tags: [milvus, kubernetes, scale]
+    best_for_tags: [enterprise-scale, distributed]
+
+  - slug: pgvector-postgres-setup
+    title: "pgvector + Postgres for SQL-Friendly RAG"
+    category: vector-databases
+    language: python
+    framework: pgvector
+    brief: "pgvector setup with HNSW index, hybrid SQL filters + vector search, partial indexes, and connection pooling via asyncpg."
+    tags: [pgvector, postgres, sql]
+    best_for_tags: [sql-native, existing-postgres]
+
+  - slug: weaviate-hybrid-bm25-cosine
+    title: "Weaviate Hybrid BM25 + Cosine"
+    category: vector-databases
+    language: python
+    framework: Weaviate
+    brief: "Weaviate v4 client with hybrid BM25 + cosine search, alpha tuning, multi-tenancy collections, and reranker module."
+    tags: [weaviate, hybrid-search]
+    best_for_tags: [hybrid-search, multi-tenant]
+
+  - slug: lancedb-serverless-vector
+    title: "LanceDB Serverless Vector Store"
+    category: vector-databases
+    language: python
+    framework: LanceDB
+    brief: "LanceDB embedded vector store with S3 backing. Zero-server pattern for ML pipelines. Includes version-controlled tables."
+    tags: [lancedb, serverless, lance]
+    best_for_tags: [serverless, embedded, ml-pipeline]
+
+  - slug: pinecone-managed-vector-prod
+    title: "Pinecone Managed Vector (Production Pattern)"
+    category: vector-databases
+    language: python
+    framework: Pinecone
+    brief: "Pinecone serverless setup with namespace per tenant, metadata filtering, sparse-dense hybrid, and cost-budget alerts."
+    tags: [pinecone, serverless, multi-tenant]
+    best_for_tags: [managed, multi-tenant, production]
+
+  - slug: redis-vector-search
+    title: "Redis Vector Search (RediSearch HNSW)"
+    category: vector-databases
+    language: python
+    framework: Redis
+    brief: "Redis Stack vector search with HNSW index, hybrid filter, and TTL eviction. Best when you already run Redis for caching."
+    tags: [redis, redisearch, hnsw]
+    best_for_tags: [redis-native, low-latency]
+
+  - slug: turbopuffer-cold-storage
+    title: "TurboPuffer Cold-Storage Vector (200x cheaper)"
+    category: vector-databases
+    language: python
+    framework: TurboPuffer
+    brief: "TurboPuffer pattern for storing 1B+ vectors on S3 at $0.10/M with sub-second queries. Best for archive-grade RAG."
+    tags: [turbopuffer, s3, cold-storage]
+    best_for_tags: [archive-rag, cost]
+
+  - slug: vespa-ml-ranking-search
+    title: "Vespa for ML Ranking + Vector Search"
+    category: vector-databases
+    language: python
+    framework: Vespa
+    brief: "Vespa application package combining BM25 + vector + ML-ranked retrieval. ColBERT-late-interaction config included."
+    tags: [vespa, colbert, ranking]
+    best_for_tags: [ml-ranking, enterprise]
+
+  - slug: faiss-index-builder
+    title: "FAISS Index Builder (IVF-PQ, HNSW, Flat)"
+    category: vector-databases
+    language: python
+    framework: FAISS
+    brief: "Build FAISS indexes for different recall/latency/memory tradeoffs. Includes benchmark script comparing IVF-PQ vs HNSW vs Flat at 10M scale."
+    tags: [faiss, indexing]
+    best_for_tags: [self-hosted, library]
+
+  - slug: vector-migration-tool
+    title: "Vector DB Migration Tool (Qdrant ↔ Pinecone ↔ Weaviate)"
+    category: vector-databases
+    language: python
+    framework: custom
+    brief: "Migrate collections between Qdrant, Pinecone, Weaviate, Milvus with metadata preserved. Includes progress bar and resumability."
+    tags: [migration, multi-vendor]
+    best_for_tags: [migration, switching-vendors]
+
+  # ════════════════════════════════════
+  # agent-frameworks (15)
+  # ════════════════════════════════════
+  - slug: langgraph-supervisor-worker
+    title: "LangGraph Supervisor-Worker Multi-Agent"
+    category: agent-frameworks
+    language: python
+    framework: LangGraph
+    brief: "Supervisor agent routes user requests to specialized worker agents (researcher, coder, writer). Includes state schema, conditional edges, and error recovery."
+    tags: [langgraph, supervisor, multi-agent]
+    best_for_tags: [multi-agent, orchestration, langgraph]
+    featured: true
+
+  - slug: crewai-research-team
+    title: "CrewAI Research Team (5-agent crew)"
+    category: agent-frameworks
+    language: python
+    framework: CrewAI
+    brief: "5-agent CrewAI crew: researcher → analyst → fact-checker → writer → editor. Task delegation + hierarchical process pattern."
+    tags: [crewai, multi-agent, research]
+    best_for_tags: [research-agent, multi-agent]
+
+  - slug: autogen-conversable-agents
+    title: "AutoGen Conversable Agents with Code Execution"
+    category: agent-frameworks
+    language: python
+    framework: AutoGen
+    brief: "Microsoft AutoGen conversable agents with Python code-execution sandbox, user-proxy approval gates, and group-chat orchestration."
+    tags: [autogen, code-exec, microsoft]
+    best_for_tags: [code-execution, autonomous]
+
+  - slug: openai-swarm-handoff
+    title: "OpenAI Swarm Agent Handoff Pattern"
+    category: agent-frameworks
+    language: python
+    framework: Swarm
+    brief: "OpenAI Swarm pattern: minimal agent abstraction with function-based handoff between agents. Stateless, easy to reason about."
+    tags: [swarm, openai, handoff]
+    best_for_tags: [simple-agents, handoff]
+
+  - slug: smolagents-code-first
+    title: "smolagents Code-First Agent"
+    category: agent-frameworks
+    language: python
+    framework: smolagents
+    brief: "Hugging Face smolagents agent that writes Python to call tools instead of JSON function calls. 30% fewer tool calls for complex tasks."
+    tags: [smolagents, code-first, huggingface]
+    best_for_tags: [code-agent, hugging-face]
+
+  - slug: dspy-self-improving-pipeline
+    title: "DSPy Self-Improving Prompt Pipeline"
+    category: agent-frameworks
+    language: python
+    framework: DSPy
+    brief: "DSPy module with bootstrap-fewshot optimizer that auto-generates few-shot examples from labeled data. Self-improves over training set."
+    tags: [dspy, optimization, prompts]
+    best_for_tags: [auto-optimization, dspy]
+
+  - slug: pydantic-ai-validated-agent
+    title: "Pydantic AI Type-Safe Agent"
+    category: agent-frameworks
+    language: python
+    framework: Pydantic AI
+    brief: "Pydantic AI agent with full type safety: typed tools, validated structured output, dependency injection, and async-by-default."
+    tags: [pydantic-ai, type-safe, structured]
+    best_for_tags: [type-safety, structured-output]
+
+  - slug: react-agent-from-scratch
+    title: "ReAct Agent from Scratch (no framework)"
+    category: agent-frameworks
+    language: python
+    framework: vanilla
+    brief: "Pure-Python ReAct (Reason+Act) loop with custom tool registry, max-iteration guard, and observation truncation. Educational + lightweight."
+    tags: [react, vanilla, educational]
+    best_for_tags: [learning, lightweight]
+
+  - slug: langgraph-self-correcting-coder
+    title: "LangGraph Self-Correcting Code Agent"
+    category: agent-frameworks
+    language: python
+    framework: LangGraph
+    brief: "Code agent that generates → runs in sandbox → reads stderr → fixes errors → re-runs. Stops on success or after N retries."
+    tags: [langgraph, code-agent, self-correct]
+    best_for_tags: [code-agent, self-healing]
+
+  - slug: metagpt-software-company
+    title: "MetaGPT Software Company Pattern"
+    category: agent-frameworks
+    language: python
+    framework: MetaGPT
+    brief: "MetaGPT pattern that turns 'one line of requirement' into PRD → tech design → code → tests via a 5-role agent team."
+    tags: [metagpt, software-company]
+    best_for_tags: [code-gen, planning]
+
+  - slug: babyagi-task-list
+    title: "BabyAGI-Style Task List Agent"
+    category: agent-frameworks
+    language: python
+    framework: vanilla
+    brief: "Lightweight task-list agent that creates tasks, executes them with tool use, and prioritizes remaining tasks. ~150 lines of Python."
+    tags: [babyagi, task-list, autonomous]
+    best_for_tags: [autonomous, learning]
+
+  - slug: claude-code-sdk-agent
+    title: "Claude Agent SDK (Computer Use + File Tools)"
+    category: agent-frameworks
+    language: python
+    framework: Claude Agent SDK
+    brief: "Build a custom agent using the Anthropic Claude Agent SDK with file-system tools, web browsing, and computer-use modality."
+    tags: [claude, agent-sdk, anthropic]
+    best_for_tags: [claude-agent, computer-use]
+
+  - slug: agentic-workflow-prefect
+    title: "Agentic Workflow with Prefect 3"
+    category: agent-frameworks
+    language: python
+    framework: Prefect
+    brief: "Prefect 3 flows orchestrating LLM agents as tasks. Includes retries, timeouts, caching, and dashboard observability for agentic pipelines."
+    tags: [prefect, workflow]
+    best_for_tags: [workflow-orchestration, observability]
+
+  - slug: agno-fast-agent
+    title: "Agno High-Performance Agent (10x faster than LangChain)"
+    category: agent-frameworks
+    language: python
+    framework: Agno
+    brief: "Agno agent pattern with built-in memory, tool use, and structured output. Built for low-latency agent serving."
+    tags: [agno, performance]
+    best_for_tags: [low-latency, agno]
+
+  - slug: a2a-agent-protocol
+    title: "Agent-to-Agent (A2A) Protocol Implementation"
+    category: agent-frameworks
+    language: python
+    framework: A2A
+    brief: "Implement an A2A-compatible agent endpoint that exposes capabilities via a standard JSON manifest. Enables cross-vendor agent communication."
+    tags: [a2a, protocol, interop]
+    best_for_tags: [interop, protocol]
+
+  # ════════════════════════════════════
+  # mcp-servers (10)
+  # ════════════════════════════════════
+  - slug: mcp-sql-readonly-server
+    title: "MCP SQL Server (Read-Only Database Access)"
+    category: mcp-servers
+    language: python
+    framework: MCP Python SDK
+    brief: "MCP server exposing SELECT-only access to a Postgres database. Includes schema introspection tool, row-limit guard, and read-only role enforcement."
+    tags: [mcp, sql, postgres]
+    best_for_tags: [mcp, database, read-only]
+
+  - slug: mcp-filesystem-server
+    title: "MCP Filesystem Server (Sandboxed)"
+    category: mcp-servers
+    language: typescript
+    framework: MCP TS SDK
+    brief: "TypeScript MCP server with read/write file ops constrained to a single directory tree. Includes path-traversal defense and size limits."
+    tags: [mcp, filesystem, typescript]
+    best_for_tags: [mcp, file-access, sandboxed]
+
+  - slug: mcp-github-server
+    title: "MCP GitHub Server (Issues, PRs, Code Search)"
+    category: mcp-servers
+    language: python
+    framework: MCP Python SDK
+    brief: "MCP server wrapping the GitHub API: list/create issues, comment on PRs, search code. Includes per-repo scope and PAT rotation."
+    tags: [mcp, github]
+    best_for_tags: [mcp, github, code-agent]
+
+  - slug: mcp-web-search-server
+    title: "MCP Web Search Server (Tavily + Brave fallback)"
+    category: mcp-servers
+    language: typescript
+    framework: MCP TS SDK
+    brief: "MCP server exposing web search via Tavily with Brave fallback. Includes domain allow-list, content extraction, and result caching."
+    tags: [mcp, search, tavily]
+    best_for_tags: [mcp, web-search]
+
+  - slug: mcp-slack-server
+    title: "MCP Slack Server (Read + Post)"
+    category: mcp-servers
+    language: python
+    framework: MCP Python SDK
+    brief: "MCP server for Slack: list channels, read history, post messages, manage threads. Includes OAuth flow and rate-limit handling."
+    tags: [mcp, slack]
+    best_for_tags: [mcp, slack, integration]
+
+  - slug: mcp-notion-server
+    title: "MCP Notion Server"
+    category: mcp-servers
+    language: typescript
+    framework: MCP TS SDK
+    brief: "MCP server for Notion API: search pages, read blocks, create pages, update properties. Handles Notion's paginated children API."
+    tags: [mcp, notion]
+    best_for_tags: [mcp, notion]
+
+  - slug: mcp-gmail-server
+    title: "MCP Gmail Server (with PII redaction)"
+    category: mcp-servers
+    language: python
+    framework: MCP Python SDK
+    brief: "MCP server for Gmail with OAuth2, label management, send/draft, and built-in PII redaction on outgoing messages."
+    tags: [mcp, gmail]
+    best_for_tags: [mcp, email]
+
+  - slug: mcp-custom-stdio-skeleton
+    title: "Custom MCP Server Skeleton (stdio transport)"
+    category: mcp-servers
+    language: python
+    framework: MCP Python SDK
+    brief: "Bare MCP server skeleton with tool registration, resource handlers, and stdio transport. Starting point for any custom MCP integration."
+    tags: [mcp, skeleton, stdio]
+    best_for_tags: [mcp, custom, skeleton]
+
+  - slug: mcp-streamable-http-server
+    title: "MCP Streamable HTTP Server (remote MCP)"
+    category: mcp-servers
+    language: typescript
+    framework: MCP TS SDK
+    brief: "MCP server using Streamable HTTP transport for remote/cloud-hosted MCP. Includes auth middleware and Cloudflare Worker deploy template."
+    tags: [mcp, http, remote]
+    best_for_tags: [mcp, remote, cloudflare]
+
+  - slug: mcp-test-harness
+    title: "MCP Server Test Harness"
+    category: mcp-servers
+    language: python
+    framework: pytest
+    brief: "Pytest harness that boots an MCP server in-process, mocks the model loop, and asserts tool-call outputs. Useful for MCP CI."
+    tags: [mcp, testing, pytest]
+    best_for_tags: [mcp, testing, ci]
+
+  # ════════════════════════════════════
+  # fine-tuning (10)
+  # ════════════════════════════════════
+  - slug: unsloth-llama-lora-finetune
+    title: "Unsloth Llama 3.1 8B LoRA Fine-Tune (2x faster)"
+    category: fine-tuning
+    language: python
+    framework: Unsloth
+    brief: "Unsloth LoRA fine-tune of Llama 3.1 8B on a custom dataset. 2x faster than vanilla HF, runs on a single 24GB consumer GPU."
+    tags: [unsloth, lora, llama]
+    best_for_tags: [lora, consumer-gpu, llama]
+
+  - slug: axolotl-qlora-mixtral
+    title: "Axolotl QLoRA Fine-Tune (Mixtral 8x7B on 2×A100)"
+    category: fine-tuning
+    language: yaml
+    framework: Axolotl
+    brief: "Axolotl YAML config for QLoRA fine-tune of Mixtral 8x7B on 2×A100. Includes DeepSpeed Zero-3 config and eval callbacks."
+    tags: [axolotl, qlora, mixtral]
+    best_for_tags: [qlora, mixtral, distributed]
+
+  - slug: dpo-direct-preference-optimization
+    title: "DPO Fine-Tune with TRL"
+    category: fine-tuning
+    language: python
+    framework: TRL
+    brief: "Direct Preference Optimization on a chosen/rejected dataset using TRL DPOTrainer. Includes Beta tuning and eval pipeline."
+    tags: [dpo, trl, alignment]
+    best_for_tags: [alignment, dpo, preference-data]
+
+  - slug: orpo-monolithic-preference
+    title: "ORPO Fine-Tune (single-stage alignment)"
+    category: fine-tuning
+    language: python
+    framework: TRL
+    brief: "ORPO trains SFT + preference alignment in one stage. 40% less compute than DPO + SFT, comparable quality on Llama 3 70B."
+    tags: [orpo, single-stage, trl]
+    best_for_tags: [efficient-alignment, orpo]
+
+  - slug: llama-factory-multi-task
+    title: "LLaMA-Factory Multi-Task Fine-Tune"
+    category: fine-tuning
+    language: yaml
+    framework: LLaMA-Factory
+    brief: "LLaMA-Factory web UI + CLI config for multi-task fine-tuning across instruction, math, and code datasets. Production-grade with checkpointing."
+    tags: [llama-factory, multi-task]
+    best_for_tags: [multi-task, full-pipeline]
+
+  - slug: huggingface-trl-sft
+    title: "Hugging Face TRL SFTTrainer"
+    category: fine-tuning
+    language: python
+    framework: TRL
+    brief: "Vanilla SFT with TRL SFTTrainer: pack sequences, set chat template, FlashAttention 2, gradient checkpointing. Single-file recipe."
+    tags: [trl, sft, huggingface]
+    best_for_tags: [sft, baseline]
+
+  - slug: continued-pretraining-domain
+    title: "Continued Pretraining for Domain Adaptation"
+    category: fine-tuning
+    language: python
+    framework: TRL
+    brief: "Continued pretraining of Llama 3.1 8B on domain corpus (e.g. medical, legal) before instruction-tuning. Avoids catastrophic forgetting."
+    tags: [cpt, domain-adaptation]
+    best_for_tags: [domain-llm, cpt]
+
+  - slug: synthetic-data-generation-magpie
+    title: "Synthetic Instruction Data with Magpie"
+    category: fine-tuning
+    language: python
+    framework: Magpie
+    brief: "Generate high-quality instruction-tuning data via Magpie: prompt a base model with its own BOS, collect diverse instructions, filter."
+    tags: [synthetic-data, magpie]
+    best_for_tags: [synthetic-data, sft-data]
+
+  - slug: kto-binary-feedback
+    title: "KTO Fine-Tune (binary thumbs-up/down feedback)"
+    category: fine-tuning
+    language: python
+    framework: TRL
+    brief: "KTO alignment using binary labels (good/bad) instead of paired preferences. Easier data collection than DPO."
+    tags: [kto, binary-feedback]
+    best_for_tags: [kto, binary-data]
+
+  - slug: galore-full-finetune-low-vram
+    title: "GaLore Full Fine-Tune on 24GB GPU"
+    category: fine-tuning
+    language: python
+    framework: GaLore
+    brief: "GaLore gradient-projection trick: full-parameter fine-tune of 7B models on consumer 24GB GPUs. Better quality than LoRA."
+    tags: [galore, full-finetune]
+    best_for_tags: [full-finetune, consumer-gpu]
+
+  # ════════════════════════════════════
+  # evaluation (10)
+  # ════════════════════════════════════
+  - slug: deepeval-llm-test-suite
+    title: "DeepEval LLM Test Suite (pytest-style)"
+    category: evaluation
+    language: python
+    framework: DeepEval
+    brief: "DeepEval test suite with metrics for faithfulness, answer relevance, bias, and toxicity. CI-integrated, pytest-compatible."
+    tags: [deepeval, pytest, ci]
+    best_for_tags: [llm-testing, ci]
+
+  - slug: promptfoo-prompt-regression
+    title: "Promptfoo Prompt Regression Testing"
+    category: evaluation
+    language: yaml
+    framework: Promptfoo
+    brief: "Promptfoo config for A/B testing prompts across 5 models with 100 test cases. Compares cost, latency, and accuracy in one report."
+    tags: [promptfoo, regression, a-b-test]
+    best_for_tags: [prompt-testing, regression]
+
+  - slug: ragas-rag-eval
+    title: "Ragas RAG Evaluation (4 metrics, fully automated)"
+    category: evaluation
+    language: python
+    framework: Ragas
+    brief: "Ragas pipeline: faithfulness + answer relevance + context precision + context recall — all LLM-judged. Outputs CSV for dashboards."
+    tags: [ragas, rag-eval]
+    best_for_tags: [rag-eval]
+
+  - slug: lm-eval-harness-benchmarks
+    title: "lm-evaluation-harness on Custom Tasks"
+    category: evaluation
+    language: python
+    framework: lm-evaluation-harness
+    brief: "Run MMLU + HumanEval + custom YAML tasks on any HF model. Includes JSON results parser and comparison plot script."
+    tags: [lm-eval-harness, mmlu, benchmarks]
+    best_for_tags: [academic-benchmarks, model-comparison]
+
+  - slug: golden-dataset-ab-harness
+    title: "Golden Dataset A/B Harness for Prompt Changes"
+    category: evaluation
+    language: python
+    framework: pytest
+    brief: "Pytest harness that runs each prompt variant against a golden dataset, computes deltas, fails CI on regression beyond threshold."
+    tags: [golden-dataset, regression, pytest]
+    best_for_tags: [ci, golden-dataset]
+
+  - slug: llm-as-judge-pairwise
+    title: "LLM-as-Judge Pairwise Eval"
+    category: evaluation
+    language: python
+    framework: vanilla
+    brief: "Pairwise comparison eval where a stronger judge model picks the better of two responses. Includes Bradley-Terry ELO computation."
+    tags: [llm-judge, pairwise, elo]
+    best_for_tags: [llm-judge, ranking]
+
+  - slug: arena-hard-elo
+    title: "Arena-Hard ELO Benchmark Runner"
+    category: evaluation
+    language: python
+    framework: Arena-Hard
+    brief: "Run Arena-Hard-Auto eval against your model, get an ELO rating comparable to LMSys Arena. Useful for model selection."
+    tags: [arena-hard, elo]
+    best_for_tags: [elo, model-selection]
+
+  - slug: humaneval-code-bench
+    title: "HumanEval Code Benchmark Runner"
+    category: evaluation
+    language: python
+    framework: bigcode-evaluation-harness
+    brief: "Run HumanEval / HumanEval+ / MBPP on any code LLM. Includes Docker sandbox for safe code execution and pass@k computation."
+    tags: [humaneval, code-eval]
+    best_for_tags: [code-eval, benchmark]
+
+  - slug: swebench-agent-runner
+    title: "SWE-bench Agent Runner"
+    category: evaluation
+    language: python
+    framework: SWE-bench
+    brief: "Run a coding agent against SWE-bench Verified (500 real GitHub issues). Includes Docker sandbox, log capture, and pass@1 scoring."
+    tags: [swe-bench, code-agent]
+    best_for_tags: [code-agent-eval]
+
+  - slug: ifeval-instruction-following
+    title: "IFEval Instruction-Following Benchmark"
+    category: evaluation
+    language: python
+    framework: IFEval
+    brief: "IFEval suite (verifiable instruction-following): checks 25 instruction types like 'use exactly 3 bullet points'. Programmatic, no LLM judge needed."
+    tags: [ifeval, instruction-following]
+    best_for_tags: [instruction-following]
+
+  # ════════════════════════════════════
+  # observability (8)
+  # ════════════════════════════════════
+  - slug: langfuse-self-hosted-tracing
+    title: "Langfuse Self-Hosted LLM Tracing"
+    category: observability
+    language: python
+    framework: Langfuse
+    brief: "Self-hosted Langfuse docker-compose with Postgres + Clickhouse. Includes Python SDK trace setup and React dashboard URL."
+    tags: [langfuse, tracing, self-hosted]
+    best_for_tags: [self-hosted-obs, tracing]
+
+  - slug: phoenix-arize-otel-tracing
+    title: "Phoenix (Arize) LLM Tracing with OTel"
+    category: observability
+    language: python
+    framework: Phoenix
+    brief: "Arize Phoenix self-hosted with OpenTelemetry collector + LLM-specific OTel semantic conventions. Auto-instruments OpenAI/Anthropic/LangChain."
+    tags: [phoenix, otel, arize]
+    best_for_tags: [otel, tracing]
+
+  - slug: helicone-proxy-observability
+    title: "Helicone Proxy for LLM Observability"
+    category: observability
+    language: bash
+    framework: Helicone
+    brief: "Drop-in OpenAI-API proxy via Helicone — one-line change captures cost, latency, prompt+response for every call. Self-host option included."
+    tags: [helicone, proxy]
+    best_for_tags: [observability, proxy]
+
+  - slug: opentelemetry-llm-genai
+    title: "OpenTelemetry GenAI Semantic Conventions"
+    category: observability
+    language: python
+    framework: OpenTelemetry
+    brief: "OTel GenAI semantic conventions implementation. Emit standardized spans (gen_ai.system, gen_ai.request.model) ingestible by any OTel backend."
+    tags: [opentelemetry, otel, genai]
+    best_for_tags: [otel, vendor-neutral]
+
+  - slug: langsmith-evaluation-tracing
+    title: "LangSmith Eval + Tracing Setup"
+    category: observability
+    language: python
+    framework: LangSmith
+    brief: "LangSmith trace decorator + eval datasets + production traffic sampling. Includes RAG evaluator pre-baked."
+    tags: [langsmith]
+    best_for_tags: [langchain-stack, tracing]
+
+  - slug: weights-biases-llm-tracking
+    title: "W&B LLM Run Tracking"
+    category: observability
+    language: python
+    framework: Weights & Biases
+    brief: "Track fine-tuning runs + inference experiments in W&B with custom panels for token throughput, GPU memory, loss curves."
+    tags: [wandb, training-tracking]
+    best_for_tags: [training, wandb]
+
+  - slug: prometheus-vllm-metrics
+    title: "Prometheus + Grafana for vLLM Production"
+    category: observability
+    language: yaml
+    framework: Prometheus
+    brief: "Prometheus scrape + Grafana dashboard JSON for vLLM's /metrics endpoint. Tracks tokens/sec, GPU memory, queue depth, P99 latency."
+    tags: [prometheus, grafana, vllm]
+    best_for_tags: [vllm-prod, monitoring]
+
+  - slug: structured-logging-request-id
+    title: "Structured Logging with Request ID Tracing"
+    category: observability
+    language: python
+    framework: structlog
+    brief: "Structlog setup with auto-propagated request_id + user_id context. Pipes to JSON for ingestion by Loki/Splunk/Datadog."
+    tags: [structlog, json-logging]
+    best_for_tags: [logging, request-tracing]
+
+  # ════════════════════════════════════
+  # function-calling (8)
+  # ════════════════════════════════════
+  - slug: instructor-structured-output
+    title: "Instructor for Validated Structured Output"
+    category: function-calling
+    language: python
+    framework: Instructor
+    brief: "Instructor wraps OpenAI/Anthropic clients to return Pydantic-validated responses with auto-retry on validation failures."
+    tags: [instructor, pydantic, structured]
+    best_for_tags: [structured-output, validation]
+
+  - slug: outlines-grammar-constrained
+    title: "Outlines Grammar-Constrained Generation"
+    category: function-calling
+    language: python
+    framework: Outlines
+    brief: "Outlines forces token-by-token JSON / regex / CFG-grammar constrained output on any HF model. 100% schema compliance."
+    tags: [outlines, constrained-decoding]
+    best_for_tags: [strict-schema, constrained-gen]
+
+  - slug: bAML-typed-prompts
+    title: "BAML Typed Prompts (DSL for structured prompts)"
+    category: function-calling
+    language: python
+    framework: BAML
+    brief: "BAML DSL for declarative, type-safe prompt definitions with auto-generated Python/TypeScript clients. Includes test cases."
+    tags: [baml, typed-prompts]
+    best_for_tags: [type-safe, baml]
+
+  - slug: openai-strict-json-mode
+    title: "OpenAI Strict JSON Mode (response_format)"
+    category: function-calling
+    language: python
+    framework: OpenAI SDK
+    brief: "OpenAI strict json_schema mode with token-level enforcement. Zero malformed JSON guaranteed."
+    tags: [openai, json-mode, strict]
+    best_for_tags: [strict-json]
+
+  - slug: anthropic-tool-use-parallel
+    title: "Anthropic Parallel Tool Calling"
+    category: function-calling
+    language: python
+    framework: Anthropic SDK
+    brief: "Claude 4 parallel tool use: model emits N tool_use blocks per turn, you execute them concurrently, return all results in one user turn."
+    tags: [anthropic, parallel-tools]
+    best_for_tags: [parallel-tools, claude]
+
+  - slug: pydantic-function-schema
+    title: "Pydantic-to-Function-Schema Generator"
+    category: function-calling
+    language: python
+    framework: Pydantic
+    brief: "Generate OpenAI/Anthropic function-call schemas directly from Pydantic models. Includes recursive schema flattening and type-mapping."
+    tags: [pydantic, schema]
+    best_for_tags: [tool-schemas, pydantic]
+
+  - slug: tool-router-llm-decides
+    title: "LLM-Routed Tool Selection"
+    category: function-calling
+    language: python
+    framework: vanilla
+    brief: "Two-step pattern: small/cheap LLM classifies the right tool subset (5 of 50), then capable model uses only those tools. Reduces hallucinated tool calls."
+    tags: [routing, tool-selection]
+    best_for_tags: [many-tools, cost-routing]
+
+  - slug: guardrails-output-validator
+    title: "Guardrails-AI Structured Output Validator"
+    category: function-calling
+    language: python
+    framework: Guardrails-AI
+    brief: "Guardrails RAIL spec for output validation with auto-reasking on failure. Includes PII detection and toxic-output blocking."
+    tags: [guardrails, validation]
+    best_for_tags: [output-validation, safety]
+
+  # ════════════════════════════════════
+  # production (10)
+  # ════════════════════════════════════
+  - slug: rate-limit-tokenbucket-redis
+    title: "Token-Bucket Rate Limiter (Redis-backed)"
+    category: production
+    language: python
+    framework: Redis
+    brief: "Production token-bucket rate limiter for LLM APIs with Redis backing. Per-user, per-tenant, per-IP buckets. Includes 429 + Retry-After."
+    tags: [rate-limiting, redis]
+    best_for_tags: [rate-limiting, multi-tenant]
+
+  - slug: retry-with-exponential-backoff
+    title: "Retry with Exponential Backoff + Jitter (Tenacity)"
+    category: production
+    language: python
+    framework: Tenacity
+    brief: "Tenacity decorator chain handling 429 + 5xx with jittered exponential backoff. Includes circuit-breaker fallback and per-provider rules."
+    tags: [retry, tenacity, backoff]
+    best_for_tags: [reliability, retry]
+
+  - slug: streaming-sse-fastapi
+    title: "Server-Sent Events Streaming with FastAPI"
+    category: production
+    language: python
+    framework: FastAPI
+    brief: "FastAPI SSE endpoint streaming LLM tokens with proper Content-Type, heartbeat, and client-disconnect detection."
+    tags: [fastapi, sse, streaming]
+    best_for_tags: [streaming, fastapi]
+
+  - slug: celery-llm-task-queue
+    title: "Celery Task Queue for LLM Workloads"
+    category: production
+    language: python
+    framework: Celery
+    brief: "Celery + Redis broker setup for async LLM tasks with priority queues, retries, dead-letter queue, and Flower monitoring."
+    tags: [celery, task-queue]
+    best_for_tags: [async-batch, task-queue]
+
+  - slug: queue-with-arq-async
+    title: "ARQ Async Task Queue (Redis-native)"
+    category: production
+    language: python
+    framework: ARQ
+    brief: "ARQ-based async task queue for LLM jobs. Built on asyncio + Redis Streams. Lighter than Celery, simpler, async-native."
+    tags: [arq, async, redis]
+    best_for_tags: [async-native, simple-queue]
+
+  - slug: openai-cost-calculator-middleware
+    title: "Cost-Tracking Middleware (per-user attribution)"
+    category: production
+    language: python
+    framework: FastAPI
+    brief: "FastAPI middleware that logs every LLM call with model, tokens, computed cost, and user_id. Outputs to Postgres or Clickhouse."
+    tags: [cost, attribution]
+    best_for_tags: [cost-tracking, multi-tenant]
+
+  - slug: graceful-shutdown-llm-server
+    title: "Graceful Shutdown for In-Flight LLM Requests"
+    category: production
+    language: python
+    framework: FastAPI
+    brief: "FastAPI lifecycle handler that drains in-flight streaming responses before shutting down. Critical for blue-green deploys with LLMs."
+    tags: [graceful-shutdown, deploy]
+    best_for_tags: [zero-downtime, deploy]
+
+  - slug: secret-management-doppler
+    title: "Secret Management with Doppler"
+    category: production
+    language: bash
+    framework: Doppler
+    brief: "Doppler config for managing API keys across dev/staging/prod with audit log and rotation. Drop-in for any LLM stack."
+    tags: [secrets, doppler]
+    best_for_tags: [secrets, security]
+
+  - slug: redis-llm-response-cache
+    title: "Redis Response Cache (exact + semantic)"
+    category: production
+    language: python
+    framework: Redis
+    brief: "Two-tier cache: exact prompt-match in Redis (instant), semantic-similarity fallback in vector index. 30-60% cost reduction on real workloads."
+    tags: [cache, redis, semantic]
+    best_for_tags: [cost-cache, latency]
+
+  - slug: healthcheck-readiness-llm
+    title: "Healthcheck + Readiness for LLM Pods"
+    category: production
+    language: python
+    framework: FastAPI
+    brief: "Health + readiness endpoints that probe model load, GPU memory, and downstream dependency latency. Kubernetes-ready."
+    tags: [healthcheck, k8s]
+    best_for_tags: [k8s, healthcheck]
+
+  # ════════════════════════════════════
+  # deployment (10)
+  # ════════════════════════════════════
+  - slug: modal-gpu-llm-deploy
+    title: "Modal Serverless GPU LLM Deploy"
+    category: deployment
+    language: python
+    framework: Modal
+    brief: "Deploy Llama 3.3 70B as a serverless GPU endpoint on Modal with cold-start optimization (model layer caching) and per-request billing."
+    tags: [modal, serverless-gpu]
+    best_for_tags: [serverless, gpu, modal]
+
+  - slug: kubernetes-vllm-helm
+    title: "Kubernetes Helm Chart for vLLM"
+    category: deployment
+    language: yaml
+    framework: Helm
+    brief: "Helm chart deploying vLLM with GPU node affinity, HPA on tokens-per-sec, PDB, persistent model cache PVC, and Prometheus ServiceMonitor."
+    tags: [k8s, helm, vllm]
+    best_for_tags: [k8s, helm, gpu-pod]
+
+  - slug: docker-multi-stage-llm-image
+    title: "Docker Multi-Stage LLM Image (slim, secure)"
+    category: deployment
+    language: dockerfile
+    framework: Docker
+    brief: "Multi-stage Dockerfile separating builder (PyTorch + CUDA) from runtime (slim Python + .whl artifacts). 60% smaller final image."
+    tags: [docker, multi-stage]
+    best_for_tags: [docker, image-size]
+
+  - slug: bento-cloud-deploy
+    title: "BentoCloud One-Click LLM Deploy"
+    category: deployment
+    language: python
+    framework: BentoML
+    brief: "Package a vLLM model as a Bento and deploy to BentoCloud with autoscaling. Includes CI/CD integration template."
+    tags: [bentoml, bentocloud]
+    best_for_tags: [bentocloud, managed]
+
+  - slug: runpod-serverless-vllm
+    title: "RunPod Serverless vLLM Endpoint"
+    category: deployment
+    language: dockerfile
+    framework: RunPod
+    brief: "RunPod serverless container running vLLM. Scale-to-zero, ~30s cold start, pay-per-second GPU. Cheaper than always-on for sporadic traffic."
+    tags: [runpod, serverless-gpu]
+    best_for_tags: [scale-to-zero, sporadic-traffic]
+
+  - slug: cloudflare-workers-ai-edge
+    title: "Cloudflare Workers AI Edge Deploy"
+    category: deployment
+    language: typescript
+    framework: Cloudflare Workers
+    brief: "Cloudflare Workers AI deploy of Llama 3.1 8B at the edge. Global latency <100ms. Includes free-tier limits and paid-tier billing config."
+    tags: [cloudflare, edge]
+    best_for_tags: [edge, global-latency]
+
+  - slug: aws-bedrock-iac-cdk
+    title: "AWS Bedrock IaC with CDK"
+    category: deployment
+    language: typescript
+    framework: AWS CDK
+    brief: "AWS CDK stack for Bedrock: model access provisioning, KMS-encrypted prompt cache, CloudWatch alarms, and Lambda invoke wrapper."
+    tags: [bedrock, cdk, iac]
+    best_for_tags: [aws-iac, bedrock]
+
+  - slug: gcp-vertex-ai-deploy
+    title: "GCP Vertex AI Endpoint Deploy"
+    category: deployment
+    language: python
+    framework: Vertex AI
+    brief: "Deploy a custom container model to Vertex AI Endpoint with autoscaling, A/B traffic splitting, and online prediction logging."
+    tags: [gcp, vertex-ai]
+    best_for_tags: [gcp, vertex]
+
+  - slug: azure-ai-foundry-deploy
+    title: "Azure AI Foundry Deploy"
+    category: deployment
+    language: yaml
+    framework: Azure AI Foundry
+    brief: "Azure AI Foundry deployment of a fine-tuned model with managed online endpoint, Application Insights, and content-filter config."
+    tags: [azure, foundry]
+    best_for_tags: [azure, enterprise]
+
+  - slug: fly-io-gpu-llm
+    title: "Fly.io GPU LLM Deploy"
+    category: deployment
+    language: yaml
+    framework: Fly.io
+    brief: "Fly.io fly.toml for deploying an Ollama-based LLM to a GPU machine. Includes volume mount for model cache and global app distribution."
+    tags: [fly-io, gpu]
+    best_for_tags: [fly-io, simple-gpu]

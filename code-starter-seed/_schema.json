@@ -1,0 +1,142 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OSS AI Hub Code Starter v2",
+  "description": "Canonical schema for one code starter. Used by code-starter-v2-push workflow to validate before pushing to Base44.",
+  "type": "object",
+  "required": [
+    "slug",
+    "title",
+    "tldr",
+    "category",
+    "language",
+    "framework",
+    "tags",
+    "best_for_tags",
+    "when_to_use",
+    "full_code",
+    "dependencies",
+    "tested_with",
+    "license"
+  ],
+  "properties": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9-]+$", "maxLength": 80 },
+    "title": { "type": "string", "minLength": 3, "maxLength": 120 },
+    "tldr": { "type": "string", "minLength": 20, "maxLength": 220 },
+    "category": {
+      "type": "string",
+      "enum": [
+        "llm-inference",
+        "llm-clients",
+        "agent-frameworks",
+        "rag-patterns",
+        "vector-databases",
+        "embeddings",
+        "fine-tuning",
+        "evaluation",
+        "observability",
+        "mcp-servers",
+        "function-calling",
+        "memory-systems",
+        "multimodal",
+        "production",
+        "deployment",
+        "frontend",
+        "testing",
+        "safety-guardrails",
+        "code-agents",
+        "data-pipelines"
+      ]
+    },
+    "language": {
+      "type": "string",
+      "enum": ["python", "typescript", "javascript", "bash", "dockerfile", "yaml", "rust", "go"]
+    },
+    "framework": { "type": "string", "maxLength": 60 },
+    "tags": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 10 },
+    "best_for_tags": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 6 },
+    "difficulty_tier": { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
+    "featured": { "type": "boolean" },
+    "when_to_use": { "type": "string", "minLength": 80 },
+    "when_not_to_use": { "type": "string", "minLength": 40 },
+    "quick_start": { "type": "string", "minLength": 10 },
+    "full_code": { "type": "string", "minLength": 30 },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "version", "purpose"],
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" },
+          "purpose": { "type": "string" }
+        }
+      }
+    },
+    "env_vars": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "required", "description"],
+        "properties": {
+          "name": { "type": "string" },
+          "required": { "type": "boolean" },
+          "description": { "type": "string" },
+          "example": { "type": "string" }
+        }
+      }
+    },
+    "setup_steps": { "type": "array", "items": { "type": "string" } },
+    "variations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "description", "code_snippet"],
+        "properties": {
+          "label": { "type": "string" },
+          "description": { "type": "string" },
+          "code_snippet": { "type": "string" }
+        }
+      }
+    },
+    "common_errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["error_text", "cause", "fix_snippet"],
+        "properties": {
+          "error_text": { "type": "string" },
+          "cause": { "type": "string" },
+          "fix_snippet": { "type": "string" }
+        }
+      }
+    },
+    "production_checklist": { "type": "array", "items": { "type": "string" } },
+    "tested_with": {
+      "type": "object",
+      "properties": {
+        "model_versions": { "type": "array", "items": { "type": "string" } },
+        "library_versions": { "type": "array", "items": { "type": "string" } },
+        "last_verified_date": { "type": "string", "format": "date" }
+      }
+    },
+    "related_tool_slugs": { "type": "array", "items": { "type": "string" } },
+    "related_glossary_slugs": { "type": "array", "items": { "type": "string" } },
+    "related_learn_slugs": { "type": "array", "items": { "type": "string" } },
+    "license": { "type": "string" },
+    "attribution": { "type": "string" },
+    "faq": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["question", "answer"],
+        "properties": {
+          "question": { "type": "string" },
+          "answer": { "type": "string" }
+        }
+      }
+    },
+    "github_url": { "type": "string", "format": "uri" },
+    "meta_title": { "type": "string", "maxLength": 70 },
+    "meta_description": { "type": "string", "maxLength": 160 }
+  }
+}
