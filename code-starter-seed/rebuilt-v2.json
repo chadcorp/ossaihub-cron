@@ -110,7 +110,7 @@
     ],
     "github_url": "",
     "meta_title": "FastAPI + Ollama Streaming Chat — Production Code Starter",
-    "meta_description": "Production-ready FastAPI server streaming Llama 3.x tokens from a local Ollama daemon. Includes SSE, disconnect detection, rate limiting, vLLM + Claude variants."
+    "meta_description": "Production FastAPI server streaming Llama 3.x via Ollama. SSE, disconnect detection, rate limiting, vLLM + Claude variants included."
   },
   {
     "slug": "anthropic-claude-streaming-tool-use",
