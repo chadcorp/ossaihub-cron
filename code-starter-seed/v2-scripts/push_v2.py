@@ -67,27 +67,55 @@ def post_with_retry(url, api_key, body_bytes, attempts=10):
 
 
 def sanitize_for_upsert(rec):
-    """Return only v2 fields the upsertCodeStarter function accepts. Drop internal/meta keys."""
+    """Map v2 record to the BaseCode entity field shape.
+
+    Critical mapping (entity has BOTH legacy v1 fields and new v2 fields):
+      - rec.dependencies (v2: array of {name,version,purpose})
+        -> entity.dependencies_v2 = unchanged
+        -> entity.dependencies (legacy v1, array of strings) = [d.name for d in v2]
+      - rec.full_code  -> entity.code (legacy field is 'code')
+                          + keep full_code mirrored for templates that read it
+      - All other v2 fields pass through as-is (tldr, when_to_use, etc.).
+      - Force status=approved and archived=false so records are publicly visible.
+    """
+    # Pass-through fields (exist on the entity with matching names)
     allowed = {
-        # identity / index
         "slug", "title", "tldr", "category", "language", "framework", "tags",
         "best_for_tags", "difficulty_tier", "featured",
-        # depth
-        "when_to_use", "when_not_to_use", "quick_start", "full_code",
-        "dependencies", "env_vars", "setup_steps", "variations",
+        "when_to_use", "when_not_to_use", "quick_start",
+        "env_vars", "setup_steps", "variations",
         "common_errors", "production_checklist", "tested_with",
-        # cross-links
         "related_tool_slugs", "related_glossary_slugs", "related_learn_slugs",
-        # provenance
         "license", "attribution", "github_url",
-        # SEO
         "meta_title", "meta_description", "faq",
-        # back-compat aliases
         "description",
     }
     out = {k: v for k, v in rec.items() if k in allowed}
-    if "tldr" in out and "description" not in out:
+
+    # Map full_code -> legacy 'code' field + keep full_code
+    if rec.get("full_code"):
+        out["code"] = rec["full_code"]
+        out["full_code"] = rec["full_code"]
+
+    # Map v2 dependencies (objects) -> dependencies_v2; legacy dependencies (strings)
+    deps_v2 = rec.get("dependencies") or []
+    if deps_v2 and isinstance(deps_v2, list) and isinstance(deps_v2[0], dict):
+        out["dependencies_v2"] = deps_v2
+        out["dependencies"] = [d.get("name") for d in deps_v2 if d.get("name")]
+    elif deps_v2:
+        # Already strings
+        out["dependencies"] = deps_v2
+
+    # tldr mirrors into description for legacy templates
+    if out.get("tldr") and not out.get("description"):
         out["description"] = out["tldr"]
+
+    # Default these so records are publicly visible
+    out.setdefault("status", "approved")
+    out.setdefault("archived", False)
+    out.setdefault("submitter_email", "seed@ossaihub.com")
+    out.setdefault("submitter_name", "OSS Hub")
+
     return out
 
 
