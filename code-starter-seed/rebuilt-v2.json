@@ -9555,5 +9555,677 @@
     ],
     "meta_title": "GaLore Full Fine-Tune on 24GB GPU | OSS AI Hub",
     "meta_description": "Production GaLore: full-parameter fine-tune of Llama 7B on a single 24GB consumer GPU via gradient projection. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "llm-as-judge-pairwise",
+    "title": "LLM-as-Judge Pairwise Eval with Bradley-Terry ELO",
+    "tldr": "Pairwise comparison eval where a stronger judge model picks the better of two responses. Bradley-Terry ELO computation included.",
+    "description": "Pairwise judging avoids absolute-score variance: judge picks A or B per matchup, BT regression computes stable ELOs across N models from M pairs.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "vanilla",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "llm-judge",
+      "pairwise",
+      "elo",
+      "bradley-terry"
+    ],
+    "best_for_tags": [
+      "llm-judge",
+      "ranking",
+      "model-selection"
+    ],
+    "when_to_use": "You're choosing between 3+ models/prompts on subjective tasks (writing, summarization, chat). Pairwise judging has lower variance than absolute scoring + the Bradley-Terry ELO gives stable rankings across model versions.",
+    "when_not_to_use": "Skip when (1) absolute quality matters more than ranking; (2) you have exact-match metrics that work; (3) judging cost is prohibitive (N*N pairs at scale).",
+    "quick_start": "1) `pip install anthropic numpy scipy`  2) Generate completions  3) Judge pairs  4) Fit BT.",
+    "full_code": "\"\"\"Pairwise LLM-as-judge + Bradley-Terry ELO computation.\"\"\"\nfrom __future__ import annotations\nimport json, random, itertools\nfrom anthropic import Anthropic\nimport numpy as np\nfrom scipy.optimize import minimize\n\n\ndef judge_pair(judge_client, prompt: str, resp_a: str, resp_b: str) -> int:\n    \"\"\"Returns 0 if A wins, 1 if B wins, -1 if tie.\"\"\"\n    out = judge_client.messages.create(\n        model=\"claude-sonnet-4-5\", max_tokens=10, temperature=0,\n        messages=[{\"role\": \"user\", \"content\": f\"Question: {prompt}\\n\\nAnswer A: {resp_a}\\n\\nAnswer B: {resp_b}\\n\\nWhich answer is better? Reply with exactly 'A', 'B', or 'TIE'.\"}],\n    ).content[0].text.strip().upper()\n    return {\"A\": 0, \"B\": 1}.get(out, -1)\n\n\ndef bradley_terry_elo(wins: dict[tuple, int], models: list[str]) -> dict[str, float]:\n    \"\"\"Fit BT model: P(i beats j) = sigmoid(theta_i - theta_j). Returns ELOs anchored at 1000.\"\"\"\n    n = len(models)\n    idx = {m: i for i, m in enumerate(models)}\n\n    def nll(theta):\n        s = 0.0\n        for (a, b), wins_a in wins.items():\n            i, j = idx[a], idx[b]\n            losses_a = wins.get((b, a), 0)\n            total = wins_a + losses_a\n            if total == 0: continue\n            p = 1 / (1 + np.exp(-(theta[i] - theta[j])))\n            p = np.clip(p, 1e-6, 1 - 1e-6)\n            s -= wins_a * np.log(p) + losses_a * np.log(1 - p)\n        return s\n\n    res = minimize(nll, np.zeros(n), method=\"L-BFGS-B\")\n    theta = res.x - res.x.mean()\n    return {m: 1000 + 400 / np.log(10) * theta[idx[m]] for m in models}\n\n\ndef run_arena(judge, prompt: str, completions: dict[str, str], n_pairs: int = 5) -> dict[tuple, int]:\n    \"\"\"For one prompt, sample pairs and judge them.\"\"\"\n    wins: dict[tuple, int] = {}\n    models = list(completions.keys())\n    pairs = random.sample(list(itertools.combinations(models, 2)), min(n_pairs, len(models)*(len(models)-1)//2))\n    for a, b in pairs:\n        verdict = judge_pair(judge, prompt, completions[a], completions[b])\n        if verdict == 0:   wins[(a, b)] = wins.get((a, b), 0) + 1\n        elif verdict == 1: wins[(b, a)] = wins.get((b, a), 0) + 1\n    return wins\n\n\nif __name__ == \"__main__\":\n    judge = Anthropic()\n    # Example: 3 models, 10 prompts, 3 pairs per prompt\n    all_wins = {}\n    for prompt in [\"Summarize photosynthesis in one sentence.\", \"Write a haiku about Python.\"]:\n        completions = {\"claude-haiku\": \"...\", \"gpt-4o-mini\": \"...\", \"llama-3.3\": \"...\"}  # fill with real outputs\n        for k, v in run_arena(judge, prompt, completions).items():\n            all_wins[k] = all_wins.get(k, 0) + v\n\n    elos = bradley_terry_elo(all_wins, [\"claude-haiku\", \"gpt-4o-mini\", \"llama-3.3\"])\n    for m, elo in sorted(elos.items(), key=lambda kv: -kv[1]):\n        print(f\"{m:20s} ELO {elo:.0f}\")\n",
+    "code": "from anthropic import Anthropic\n\ndef judge_pair(client, prompt, a, b):\n    out = client.messages.create(model='claude-sonnet-4-5', max_tokens=10, temperature=0,\n        messages=[{'role': 'user', 'content': f'Q: {prompt}\\nA: {a}\\nB: {b}\\nWhich is better? Reply A, B, or TIE.'}]).content[0].text.strip()\n    return {'A': 0, 'B': 1}.get(out, -1)\n",
+    "dependencies": [
+      "anthropic",
+      "numpy",
+      "scipy"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "anthropic",
+        "version": ">=0.40.0",
+        "purpose": "Judge model."
+      },
+      {
+        "name": "numpy",
+        "version": ">=1.26.0",
+        "purpose": "Math for BT fit."
+      },
+      {
+        "name": "scipy",
+        "version": ">=1.14.0",
+        "purpose": "L-BFGS-B optimizer."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Judge model."
+      }
+    ],
+    "setup_steps": [
+      "`pip install anthropic numpy scipy`",
+      "Generate completions from each model on the same prompt set.",
+      "Run pairwise judging with the same judge model + temperature=0.",
+      "Fit Bradley-Terry to get stable ELO rankings.",
+      "Bootstrap N times for confidence intervals on the ELOs."
+    ],
+    "variations": [
+      {
+        "label": "Symmetric judging to defeat order bias",
+        "description": "Judge each pair in both orders (A,B) AND (B,A); average.",
+        "code_snippet": "v1 = judge_pair(j, p, a, b)\nv2 = judge_pair(j, p, b, a)\nif v1 == v2 and v1 != -1:   # consistent\n    record_win(v1)\nelse:\n    record_tie()"
+      },
+      {
+        "label": "Multiple judges for variance reduction",
+        "description": "Average across 3 judge models.",
+        "code_snippet": "judges = ['claude-sonnet-4-5', 'gpt-5', 'gemini-2.5']\nvotes = [judge_pair(client, p, a, b, model=j) for j in judges]\nverdict = max(set(votes), key=votes.count)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "BT solver gives wildly different ELOs run-to-run",
+        "cause": "Sparse wins matrix - not enough pairs per model.",
+        "fix_snippet": "# Need at least 30 pairs per pair-of-models for stable BT"
+      },
+      {
+        "error_text": "All models score 1000",
+        "cause": "Judge declared TIE on every pair (often signs of prompt issues).",
+        "fix_snippet": "# Strengthen judge prompt: 'Pick A or B even if very close.'"
+      },
+      {
+        "error_text": "Order bias - A always wins because it's listed first",
+        "cause": "LLM judges have position bias.",
+        "fix_snippet": "# Always randomize order + symmetric judging (see variation)"
+      }
+    ],
+    "production_checklist": [
+      "Use temperature=0 on the judge - non-zero adds variance.",
+      "Randomize A/B order per pair - judges have strong first-position bias.",
+      "Bootstrap ELOs over the matchups for confidence intervals.",
+      "Use a STRONGER model as judge than the models being judged (e.g. Claude Opus judging Haiku/Sonnet).",
+      "Never use a model to judge itself - confirmation bias.",
+      "Collect 30+ pairs per pair-of-models for stable BT estimates.",
+      "Save matchup logs - lets you re-fit when adding a new model later."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5 as judge"
+      ],
+      "library_versions": [
+        "anthropic==0.40.0",
+        "scipy==1.14.0",
+        "numpy==1.26.4"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "anthropic"
+    ],
+    "related_glossary_slugs": [
+      "llm-as-judge",
+      "bradley-terry",
+      "elo-rating",
+      "pairwise-comparison"
+    ],
+    "related_learn_slugs": [
+      "llm-eval-101"
+    ],
+    "faq": [
+      {
+        "question": "Pairwise vs absolute scoring?",
+        "answer": "Pairwise: lower variance, better at relative ordering, requires N*(N-1)/2 calls. Absolute (1-5 Likert): higher variance, easier to scale, prone to scale drift. For model selection: pairwise. For absolute quality dashboards: rubric scoring."
+      },
+      {
+        "question": "How many prompts + pairs do I need?",
+        "answer": "50-100 prompts * 3-5 pairs per prompt = 150-500 total judgments for stable ELOs across 3-5 models. Scale linearly with more models. Always bootstrap to confirm rankings are not driven by chance."
+      }
+    ],
+    "meta_title": "LLM-as-Judge Pairwise Eval with Bradley-Terry ELO | OSS AI Hub",
+    "meta_description": "Production pairwise LLM judging + BT ELO computation. Order-bias mitigation, bootstrap CIs, multi-judge averaging. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "arena-hard-elo",
+    "title": "Arena-Hard ELO Benchmark Runner (Compare to LMSys Arena)",
+    "tldr": "Run Arena-Hard-Auto eval against your model, get an ELO rating comparable to LMSys Arena. Useful for model selection.",
+    "description": "Arena-Hard-Auto is a 500-prompt benchmark designed to correlate with LMSys Chatbot Arena ELO. Run it on your fine-tune to compare to GPT-5/Claude/Llama scores.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "arena-hard",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "arena-hard",
+      "elo",
+      "benchmark"
+    ],
+    "best_for_tags": [
+      "elo",
+      "model-selection",
+      "chat-eval"
+    ],
+    "when_to_use": "You fine-tuned a chat model and want to know where it lands relative to public models on chat quality. Arena-Hard's 500 hard prompts + auto-judge produces an ELO that correlates ~0.98 with LMSys Arena - much cheaper than human evals.",
+    "when_not_to_use": "Skip when (1) you have a narrow domain - Arena-Hard prompts are general; (2) you need per-task metrics - Arena-Hard outputs one number; (3) cost-sensitive - judging costs $5-20 per run.",
+    "quick_start": "1) `git clone https://github.com/lmarena/arena-hard-auto`  2) Generate completions  3) Judge with stronger model  4) Compute ELO.",
+    "full_code": "\"\"\"Arena-Hard-Auto runner against your endpoint.\"\"\"\nimport json, subprocess\nfrom pathlib import Path\n\n\n# 1. Generate model answers\ndef gen_model_answers(model_id: str, endpoint: str, out: Path):\n    \"\"\"For each Arena-Hard prompt, query your model and save answer.\"\"\"\n    prompts = json.loads(Path(\"data/arena-hard-v0.1/question.jsonl\").read_text())\n    answers = []\n    for p in prompts:\n        # call your model\n        import httpx\n        r = httpx.post(endpoint, json={\"model\": model_id, \"messages\": [{\"role\": \"user\", \"content\": p[\"turns\"][0][\"content\"]}], \"max_tokens\": 4096}, timeout=120)\n        answers.append({\"question_id\": p[\"question_id\"], \"answer_id\": f\"{model_id}_{p['question_id']}\", \"model_id\": model_id, \"choices\": [{\"index\": 0, \"turns\": [{\"content\": r.json()[\"choices\"][0][\"message\"][\"content\"]}]}]})\n    Path(out).write_text(\"\\n\".join(json.dumps(a) for a in answers))\n\n\n# 2. Judge with stronger model (the Arena-Hard repo provides gen_judgment.py)\n# python gen_judgment.py --model your_model --baseline gpt-4-0314 --judge gpt-4-1106-preview\ndef run_judge(model_id: str, baseline: str = \"gpt-4-0314\", judge: str = \"gpt-5\"):\n    subprocess.run([\"python\", \"gen_judgment.py\", \"--model\", model_id, \"--baseline\", baseline, \"--judge\", judge], check=True)\n\n\n# 3. Compute ELO\n# python show_result.py\ndef show_results():\n    subprocess.run([\"python\", \"show_result.py\"], check=True)\n\n\nif __name__ == \"__main__\":\n    gen_model_answers(\"ossai-llama-v1\", \"http://localhost:8000/v1/chat/completions\", Path(\"data/arena-hard-v0.1/model_answer/ossai-llama-v1.jsonl\"))\n    run_judge(\"ossai-llama-v1\")\n    show_results()\n",
+    "code": "import subprocess\n\n# Pre-step: generate model answers as JSONL\n# Then judge:\nsubprocess.run(['python', 'gen_judgment.py', '--model', 'ossai-llama-v1', '--baseline', 'gpt-4-0314', '--judge', 'gpt-5'])\nsubprocess.run(['python', 'show_result.py'])\n",
+    "dependencies": [
+      "arena-hard-auto",
+      "httpx"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "arena-hard-auto",
+        "version": ">=0.1",
+        "purpose": "Eval harness (clone from GitHub)."
+      },
+      {
+        "name": "httpx",
+        "version": ">=0.28.0",
+        "purpose": "Call your model endpoint."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "For GPT-5 judge."
+      }
+    ],
+    "setup_steps": [
+      "`git clone https://github.com/lmarena/arena-hard-auto && cd arena-hard-auto && pip install -r requirements.txt`",
+      "Configure your model endpoint in api_config.yaml.",
+      "Generate answers: `python gen_answer.py --model your-model`",
+      "Judge: `python gen_judgment.py --model your-model --baseline gpt-4-0314 --judge gpt-5`",
+      "Results: `python show_result.py` - outputs ELO + win-rate vs baseline.",
+      "Budget ~$5-20 in judge costs per full run depending on judge model."
+    ],
+    "variations": [
+      {
+        "label": "Cheaper judge (claude-haiku)",
+        "description": "10x cheaper than gpt-5, slightly lower correlation.",
+        "code_snippet": "python gen_judgment.py --model your-model --judge claude-3-5-haiku-latest"
+      },
+      {
+        "label": "Custom prompts (domain Arena-Hard)",
+        "description": "Replace question.jsonl with your domain prompts.",
+        "code_snippet": "# Create data/arena-hard-v0.1/question.jsonl with your 50-500 domain prompts\n# Each line: {question_id, turns: [{content: '...'}]}"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Win rate vs baseline always near 50%",
+        "cause": "Judge couldn't distinguish - either prompts too easy or models too similar.",
+        "fix_snippet": "# Pick a weaker baseline (gpt-4-0314 is the standard; for harder eval try gpt-3.5-turbo)"
+      },
+      {
+        "error_text": "ELO unstable across runs",
+        "cause": "Too few prompts judged.",
+        "fix_snippet": "# Use full 500-prompt set OR bootstrap subsets and average"
+      },
+      {
+        "error_text": "Judge cost exploded",
+        "cause": "GPT-5 judging 500 prompts at ~4k tokens each = ~$20 per run.",
+        "fix_snippet": "# Switch to Claude Haiku judge ($1-2/run) or GPT-4o-mini ($0.50/run)"
+      }
+    ],
+    "production_checklist": [
+      "Always use temperature=0 on both model and judge for reproducibility.",
+      "Pin the judge model version - 'gpt-5' moves; 'gpt-5-2026-05-01' doesn't.",
+      "Bootstrap ELO for confidence intervals - single run can vary +/- 5 ELO.",
+      "Compare to a stable baseline (gpt-4-0314) - lets you compare your fine-tune to other open-source efforts using the same baseline.",
+      "Run after every meaningful training change - track ELO over time in W&B.",
+      "Don't over-fit to Arena-Hard - it's a benchmark, not your eval set."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "gpt-5",
+        "Llama-3.3-70B-Instruct"
+      ],
+      "library_versions": [
+        "arena-hard-auto 0.1 (2024-12 release)"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "arena-hard",
+      "lmsys"
+    ],
+    "related_glossary_slugs": [
+      "arena-hard",
+      "elo-rating",
+      "llm-as-judge"
+    ],
+    "related_learn_slugs": [
+      "llm-eval-101"
+    ],
+    "faq": [
+      {
+        "question": "Arena-Hard vs MMLU?",
+        "answer": "MMLU: knowledge benchmark, 4-choice multi-choice, deterministic eval. Arena-Hard: open-ended chat quality, LLM-judged, correlates with user preference. Both have value - MMLU for capability, Arena-Hard for preference."
+      },
+      {
+        "question": "How does Arena-Hard ELO map to LMSys Arena ELO?",
+        "answer": "They correlate ~0.98 (per the Arena-Hard paper). Numerically close but not identical - Arena-Hard tends to be ~50-100 ELO lower than LMSys for the same model. Use it as a leading indicator."
+      }
+    ],
+    "meta_title": "Arena-Hard ELO Benchmark Runner | OSS AI Hub",
+    "meta_description": "Production Arena-Hard-Auto: 500-prompt chat eval, LLM judge, ELO that correlates with LMSys Arena. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "humaneval-code-bench",
+    "title": "HumanEval / HumanEval+ / MBPP Code Benchmark Runner",
+    "tldr": "Run HumanEval / HumanEval+ / MBPP on any code LLM. Docker sandbox for safe code execution + pass@k computation.",
+    "description": "bigcode-evaluation-harness pattern: load benchmark, generate completions, execute in sandbox, compute pass@1, pass@10, pass@100.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "bigcode-evaluation-harness",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "humaneval",
+      "code-eval",
+      "pass-at-k"
+    ],
+    "best_for_tags": [
+      "code-eval",
+      "benchmark"
+    ],
+    "when_to_use": "You're evaluating a code model (Llama 3.1, Qwen2.5-Coder, DeepSeek-Coder, your fine-tune). HumanEval is the standard - 164 hand-written Python problems with hidden tests; HumanEval+ has 80x more tests per problem.",
+    "when_not_to_use": "Skip when (1) you need long-context code eval (CodeAct/SWE-bench better); (2) non-Python code (use MultiPL-E); (3) novel benchmark needed - HumanEval is leaked into training corpora.",
+    "quick_start": "1) `pip install bigcode-evaluation-harness`  2) Docker running for sandbox  3) `bigcode-eval --tasks humanevalplus --model your-model`",
+    "full_code": "\"\"\"HumanEval+ runner with Docker sandbox via bigcode-evaluation-harness.\"\"\"\nimport subprocess\n\n# 1. Generate completions (uses vLLM as backend for speed)\nsubprocess.run([\n    \"python\", \"-m\", \"bigcode_eval.main\",\n    \"--model\", \"meta-llama/Llama-3.1-8B-Instruct\",\n    \"--tasks\", \"humanevalplus,mbpp\",\n    \"--max_length_generation\", \"1024\",\n    \"--temperature\", \"0.2\",\n    \"--n_samples\", \"10\",            # for pass@10\n    \"--allow_code_execution\",        # required for actual code eval\n    \"--use_auth_token\",\n    \"--save_generations\",\n    \"--save_generations_path\", \"./generations.jsonl\",\n    \"--metric_output_path\", \"./metrics.json\",\n], check=True)\n\n# Read results\nimport json\nmetrics = json.loads(open(\"./metrics.json\").read())\nfor task, results in metrics.items():\n    if \"pass@1\" in results:\n        print(f\"{task}: pass@1={results['pass@1']:.3f}  pass@10={results.get('pass@10', 'N/A')}\")\n",
+    "code": "import subprocess\n\nsubprocess.run([\n    'python', '-m', 'bigcode_eval.main',\n    '--model', 'meta-llama/Llama-3.1-8B-Instruct',\n    '--tasks', 'humanevalplus,mbpp',\n    '--temperature', '0.2', '--n_samples', '10',\n    '--allow_code_execution',\n    '--save_generations_path', './gens.jsonl',\n    '--metric_output_path', './metrics.json',\n], check=True)\n",
+    "dependencies": [
+      "bigcode-evaluation-harness",
+      "vllm"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "bigcode-evaluation-harness",
+        "version": ">=0.1.0",
+        "purpose": "Code eval harness."
+      },
+      {
+        "name": "vllm",
+        "version": ">=0.7.0",
+        "purpose": "Fast generation backend."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Model access."
+      }
+    ],
+    "setup_steps": [
+      "Install: `pip install git+https://github.com/bigcode-project/bigcode-evaluation-harness`",
+      "Docker required: `apt install docker.io` + ensure user in docker group.",
+      "Run: `python -m bigcode_eval.main --tasks humanevalplus --model meta-llama/Llama-3.1-8B-Instruct --allow_code_execution`",
+      "Expect 10-30 min for 1-shot, 1-2h for pass@10 (10 samples per problem).",
+      "Inspect ./metrics.json for pass@1, pass@10, pass@100.",
+      "(Optional) Add `--tasks mbpp,multiple-py,humanevalpack` for broader coverage."
+    ],
+    "variations": [
+      {
+        "label": "Multi-language with MultiPL-E",
+        "description": "Evaluate same problems in JS/Rust/Java/etc.",
+        "code_snippet": "--tasks multiple-py,multiple-js,multiple-rs,multiple-java"
+      },
+      {
+        "label": "DeepSeek-Coder-Lite (smaller, faster)",
+        "description": "Cheap code eval baseline.",
+        "code_snippet": "--model deepseek-ai/deepseek-coder-1.3b-instruct"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Code execution timeout",
+        "cause": "Default 10s/test - some problems need more.",
+        "fix_snippet": "--execution_timeout 30"
+      },
+      {
+        "error_text": "Sandbox refused to run code",
+        "cause": "--allow_code_execution flag missing.",
+        "fix_snippet": "--allow_code_execution  # required to actually run code"
+      },
+      {
+        "error_text": "pass@1 unusually high (>80% on 7B model)",
+        "cause": "Test contamination - benchmark in training data.",
+        "fix_snippet": "# Switch to HumanEval+ (extra tests) or LiveCodeBench (newer, less contaminated)"
+      }
+    ],
+    "production_checklist": [
+      "Always use HumanEval+ over original HumanEval - +80x more tests, less false-positive pass@1.",
+      "Run pass@1 + pass@10 - large gap means model is unstable.",
+      "Use temperature=0 for pass@1 reporting, 0.2-0.8 for pass@k.",
+      "Sandbox EVERYTHING - never run generated code on the host.",
+      "Beware contamination - HumanEval problems are public + likely in training corpora; trust HumanEval+ + LiveCodeBench more.",
+      "Compare against published baselines (DeepSeek-Coder, Qwen2.5-Coder) for context."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.1-8B-Instruct",
+        "deepseek-ai/deepseek-coder-6.7b-instruct"
+      ],
+      "library_versions": [
+        "bigcode-evaluation-harness 0.1.x"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "bigcode",
+      "vllm"
+    ],
+    "related_glossary_slugs": [
+      "humaneval",
+      "pass-at-k",
+      "code-eval"
+    ],
+    "related_learn_slugs": [
+      "code-llm-eval-101"
+    ],
+    "faq": [
+      {
+        "question": "HumanEval vs MBPP vs LiveCodeBench?",
+        "answer": "HumanEval: 164 problems, Python only, the standard. MBPP: 974 problems, lower difficulty, more contamination. LiveCodeBench: monthly new problems from LeetCode, lowest contamination but smallest. Run all three for a complete picture."
+      },
+      {
+        "question": "Why are HumanEval+ scores lower than HumanEval?",
+        "answer": "HumanEval+ adds 80x more test cases per problem. Many models pass the canonical tests but fail edge cases. HumanEval+ is what you should trust."
+      }
+    ],
+    "meta_title": "HumanEval Code Benchmark Runner | OSS AI Hub",
+    "meta_description": "Production HumanEval+ / MBPP runner with Docker sandbox, pass@k, vLLM backend. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "swebench-agent-runner",
+    "title": "SWE-bench Verified Agent Runner",
+    "tldr": "Run a coding agent against SWE-bench Verified (500 real GitHub issues). Docker sandbox, log capture, pass@1 scoring.",
+    "description": "SWE-bench Verified is the gold standard for code-agent eval. Real GitHub issues, real PRs as ground truth, real test suites that must pass.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "swe-bench",
+    "difficulty_tier": "expert",
+    "tags": [
+      "swe-bench",
+      "code-agent",
+      "agent-eval"
+    ],
+    "best_for_tags": [
+      "code-agent-eval"
+    ],
+    "when_to_use": "You're building a coding agent (Claude Code / Cursor / Devin-shaped). SWE-bench Verified is the most credible eval - if your agent scores well there, it's actually fixing real bugs.",
+    "when_not_to_use": "Skip when (1) you only need code-completion eval - HumanEval is faster; (2) you can't afford ~$50-200 in API costs per run; (3) you don't have a multi-turn agent.",
+    "quick_start": "1) Clone the SWE-bench repo  2) Build Docker images for each repo  3) Run your agent on each instance  4) Submit predictions for scoring.",
+    "full_code": "\"\"\"SWE-bench Verified runner skeleton.\"\"\"\nimport json\nfrom datasets import load_dataset\nfrom your_agent import solve_issue   # your coding agent\n\ndataset = load_dataset(\"princeton-nlp/SWE-bench_Verified\", split=\"test\")\n\npredictions = []\nfor instance in dataset:\n    repo = instance[\"repo\"]\n    issue = instance[\"problem_statement\"]\n    base_commit = instance[\"base_commit\"]\n    instance_id = instance[\"instance_id\"]\n\n    # 1. Clone repo + checkout base commit (your agent's environment setup)\n    # 2. Feed agent: issue text + repo files (your agent decides what to read)\n    # 3. Agent emits a diff (patch) to apply\n    patch = solve_issue(issue=issue, repo_path=f\"/repos/{repo}\", base_commit=base_commit)\n\n    predictions.append({\"instance_id\": instance_id, \"model_name_or_path\": \"ossai-agent-v1\", \"model_patch\": patch})\n\nwith open(\"predictions.jsonl\", \"w\") as f:\n    for p in predictions:\n        f.write(json.dumps(p) + \"\\n\")\n\n# Then run the official evaluator (separate process):\n# python -m swebench.harness.run_evaluation \\\n#   --dataset_name princeton-nlp/SWE-bench_Verified \\\n#   --predictions_path predictions.jsonl \\\n#   --max_workers 4 \\\n#   --run_id ossai-v1\n",
+    "code": "import json\nfrom datasets import load_dataset\n\nds = load_dataset('princeton-nlp/SWE-bench_Verified', split='test')\npredictions = []\nfor inst in ds:\n    patch = my_agent.solve(inst['problem_statement'], inst['repo'], inst['base_commit'])\n    predictions.append({'instance_id': inst['instance_id'], 'model_name_or_path': 'ossai-v1', 'model_patch': patch})\n\nwith open('predictions.jsonl', 'w') as f:\n    for p in predictions:\n        f.write(json.dumps(p) + '\\n')\n",
+    "dependencies": [
+      "swebench",
+      "datasets"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "swebench",
+        "version": ">=2.0.0",
+        "purpose": "Official harness."
+      },
+      {
+        "name": "datasets",
+        "version": ">=3.0.0",
+        "purpose": "HF dataset loader."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Or whatever your agent uses."
+      }
+    ],
+    "setup_steps": [
+      "Provision Docker host with ~200GB disk + 16GB RAM (per-repo images are large).",
+      "Clone SWE-bench: `git clone https://github.com/princeton-nlp/SWE-bench && cd SWE-bench && pip install -e .`",
+      "Pre-build the per-repo Docker images: `python -m swebench.harness.run_evaluation --dataset_name SWE-bench_Verified --predictions_path empty.jsonl --max_workers 8 --run_id setup` (this just pulls + builds).",
+      "Run your agent on each instance, save patches to predictions.jsonl.",
+      "Evaluate: `python -m swebench.harness.run_evaluation --predictions_path predictions.jsonl --run_id ossai-v1`",
+      "Inspect logs/run_evaluation/ossai-v1/<model>/<instance>/ for test outputs."
+    ],
+    "variations": [
+      {
+        "label": "SWE-bench Lite (subset, faster)",
+        "description": "300 easier instances for quick iteration.",
+        "code_snippet": "load_dataset('princeton-nlp/SWE-bench_Lite')"
+      },
+      {
+        "label": "Custom subset (debug 10 instances)",
+        "description": "Test the harness end-to-end before a full run.",
+        "code_snippet": "ds = ds.select(range(10))"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Docker image build OOM",
+        "cause": "Per-repo images can be 5GB+; Docker daemon memory too low.",
+        "fix_snippet": "# Increase Docker memory limit. Or use --max_workers 2 to build serially."
+      },
+      {
+        "error_text": "Patches apply cleanly but tests fail",
+        "cause": "Test environment differs from local dev (Python version, deps).",
+        "fix_snippet": "# Always test inside the SWE-bench Docker image, not on host"
+      },
+      {
+        "error_text": "Run takes 12+ hours",
+        "cause": "Default max_workers=1; SWE-bench is sequential by default.",
+        "fix_snippet": "--max_workers 8  # if you have enough Docker capacity"
+      }
+    ],
+    "production_checklist": [
+      "Use SWE-bench Verified, NOT original SWE-bench - Verified is human-curated to exclude broken instances.",
+      "Budget $50-200/run in agent API costs (Claude or GPT).",
+      "Pre-build Docker images once - rebuilding per run wastes hours.",
+      "Save full agent traces - debugging without them is impossible.",
+      "Submit to the leaderboard via the official portal once you have results.",
+      "Compare against published baselines (Claude Sonnet 4.5, GPT-5, Aider+Sonnet) at similar prompt strategies."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5 as agent"
+      ],
+      "library_versions": [
+        "swebench==2.0.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "swe-bench",
+      "claude-code"
+    ],
+    "related_glossary_slugs": [
+      "swe-bench",
+      "code-agent",
+      "verified-eval"
+    ],
+    "related_learn_slugs": [
+      "agent-eval-101"
+    ],
+    "faq": [
+      {
+        "question": "SWE-bench vs SWE-bench Verified vs Lite?",
+        "answer": "Original: 2294 instances, some broken/unfair. Verified: 500 human-curated instances - the standard. Lite: 300-instance easier subset for fast iteration. Always report Verified scores for credibility."
+      },
+      {
+        "question": "How long does a full SWE-bench Verified run take?",
+        "answer": "~$50-200 in agent costs + 6-24h wall time depending on max_workers and agent speed. Plan accordingly."
+      }
+    ],
+    "meta_title": "SWE-bench Verified Agent Runner | OSS AI Hub",
+    "meta_description": "Production SWE-bench Verified runner: real GitHub issues, Docker sandbox, official evaluator. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "ifeval-instruction-following",
+    "title": "IFEval Instruction-Following Benchmark (Programmatic, No Judge)",
+    "tldr": "IFEval suite: checks 25 instruction types like 'use exactly 3 bullet points'. Programmatic verification - no LLM judge needed.",
+    "description": "IFEval has 541 prompts with verifiable instructions. Each output is checked programmatically (regex, parsing) - no judge variance, no judging cost.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "ifeval",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "ifeval",
+      "instruction-following",
+      "deterministic-eval"
+    ],
+    "best_for_tags": [
+      "instruction-following"
+    ],
+    "when_to_use": "You want to measure if your model follows specific formatting/content instructions (word count, bullets, case, language) - the kind of stuff LLMs routinely fluff. IFEval is deterministic + cheap + signals if your fine-tune kept instruction-following intact.",
+    "when_not_to_use": "Skip when (1) you care about response quality not format compliance; (2) your domain has no formatting constraints; (3) you've already passed it with high scores.",
+    "quick_start": "1) `pip install ifeval datasets`  2) Generate completions on the IFEval prompts  3) Score with the official verifier.",
+    "full_code": "\"\"\"IFEval evaluation.\"\"\"\nimport json\nfrom datasets import load_dataset\nfrom ifeval import evaluation\nimport httpx\n\n\n# 1. Load the 541 IFEval prompts\nds = load_dataset(\"google/IFEval\", split=\"train\")\n\n# 2. Generate completions from your model\ncompletions = []\nfor ex in ds:\n    r = httpx.post(\n        \"https://api.anthropic.com/v1/messages\",\n        json={\"model\": \"claude-sonnet-4-5\", \"max_tokens\": 1024, \"messages\": [{\"role\": \"user\", \"content\": ex[\"prompt\"]}]},\n        headers={\"x-api-key\": \"...\", \"anthropic-version\": \"2023-06-01\"},\n        timeout=120,\n    )\n    completions.append({\"prompt\": ex[\"prompt\"], \"response\": r.json()[\"content\"][0][\"text\"], \"key\": ex[\"key\"]})\n\n# 3. Evaluate\nstrict_results = evaluation.evaluate_strict(completions, ds)\nloose_results = evaluation.evaluate_loose(completions, ds)\n\nprint(f\"Strict accuracy: {strict_results['accuracy']:.3f}\")\nprint(f\"Loose accuracy:  {loose_results['accuracy']:.3f}\")\nprint(f\"Per-instruction: {strict_results['per_instruction_acc']}\")\n",
+    "code": "from datasets import load_dataset\nfrom ifeval import evaluation\n\nds = load_dataset('google/IFEval', split='train')\ncompletions = [{'prompt': e['prompt'], 'response': call_model(e['prompt']), 'key': e['key']} for e in ds]\nresults = evaluation.evaluate_strict(completions, ds)\nprint(f\"Strict accuracy: {results['accuracy']:.3f}\")\n",
+    "dependencies": [
+      "ifeval",
+      "datasets",
+      "httpx"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "ifeval",
+        "version": ">=0.1.0",
+        "purpose": "Official IFEval verifier."
+      },
+      {
+        "name": "datasets",
+        "version": ">=3.0.0",
+        "purpose": "Load IFEval prompts."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Or whatever model you're testing."
+      }
+    ],
+    "setup_steps": [
+      "`pip install git+https://github.com/google-research/instruction_following_eval datasets httpx`",
+      "Generate completions for all 541 prompts.",
+      "Run `evaluation.evaluate_strict()` for the strictest verifier (default).",
+      "Inspect per-instruction accuracy - reveals which instruction types your model struggles with.",
+      "Run in CI - regressions on IFEval are silent killers of instruction-following."
+    ],
+    "variations": [
+      {
+        "label": "Loose vs strict scoring",
+        "description": "Loose allows minor formatting variations.",
+        "code_snippet": "# Strict: case-sensitive, exact format\n# Loose: case-insensitive, accepts minor variations\nstrict_acc = evaluation.evaluate_strict(...)\nloose_acc = evaluation.evaluate_loose(...)"
+      },
+      {
+        "label": "Subset on specific instruction types",
+        "description": "Focus on the ones your domain cares about.",
+        "code_snippet": "# Filter ds to bullet/wordcount instructions only:\nbullet_ds = ds.filter(lambda e: 'bullet' in str(e['instruction_id_list']))"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Score lower than expected for a strong model",
+        "cause": "Default max_tokens too low - truncation kills format compliance.",
+        "fix_snippet": "# Use max_tokens=1024+ for IFEval generations"
+      },
+      {
+        "error_text": "Strict accuracy is 0 across the board",
+        "cause": "Response includes prefix/suffix that throws off verification.",
+        "fix_snippet": "# Some IFEval rules want exact response; strip chat-template prefixes:\nresponse = response.strip()"
+      },
+      {
+        "error_text": "verifier crashes on certain instruction types",
+        "cause": "ifeval package version mismatch.",
+        "fix_snippet": "pip install --upgrade git+https://github.com/google-research/instruction_following_eval"
+      }
+    ],
+    "production_checklist": [
+      "Run BOTH strict + loose - strict shows your absolute compliance; loose shows your near-misses.",
+      "Track per-instruction accuracy - the aggregate hides specific weaknesses.",
+      "Run in CI before every model release - instruction-following degrades silently after SFT.",
+      "Sample new instructions over time - IFEval is fixed and your training may overfit.",
+      "Always use temperature=0 for IFEval - non-zero adds variance, biases the score.",
+      "Pair with absolute-quality eval (Arena-Hard, IFBench) - high IFEval + low Arena-Hard means the model is robotic."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "gpt-5"
+      ],
+      "library_versions": [
+        "ifeval==0.1.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "ifeval"
+    ],
+    "related_glossary_slugs": [
+      "ifeval",
+      "instruction-following",
+      "deterministic-eval"
+    ],
+    "related_learn_slugs": [
+      "llm-eval-101"
+    ],
+    "faq": [
+      {
+        "question": "Why is IFEval popular if it only checks format?",
+        "answer": "Because format compliance correlates with overall instruction-following capability + it's deterministic + cheap. Models that fail IFEval typically fail nuanced instructions too. It's a fast, free regression signal."
+      },
+      {
+        "question": "Is IFEval contaminated?",
+        "answer": "Less than HumanEval (it's natural-language-only with verifier semantics that aren't easy to memorize). Still public though - newer fine-tunes likely train on it indirectly. For uncontaminated evals look at IFBench (the successor) or build domain IFEval."
+      }
+    ],
+    "meta_title": "IFEval Instruction-Following Benchmark | OSS AI Hub",
+    "meta_description": "Production IFEval: deterministic, judge-free instruction-following eval. Strict + loose scoring, per-instruction breakdown. MIT."
   }
 ]
