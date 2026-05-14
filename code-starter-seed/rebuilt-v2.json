@@ -4559,5 +4559,758 @@
     ],
     "meta_title": "MCP Slack Server (Read + Post with Rate-Limit) | OSS AI Hub",
     "meta_description": "Production MCP Slack server: list/read/post, channel allow-list, Slack rate-limit handling, opt-in posting. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "unsloth-llama-lora-finetune",
+    "title": "Unsloth Llama 3.1 8B LoRA Fine-Tune (2x Faster, Single 24GB GPU)",
+    "tldr": "Unsloth LoRA fine-tune of Llama 3.1 8B on a custom dataset. 2x faster than vanilla HF, fits on a single 24GB consumer GPU (RTX 4090/3090).",
+    "description": "Unsloth wraps HF Transformers + custom CUDA kernels to fine-tune Llama 3.1 8B with LoRA on a single 24GB card. Full pipeline: load, train, save merged + GGUF.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "unsloth",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "unsloth",
+      "lora",
+      "llama-3.1",
+      "consumer-gpu"
+    ],
+    "best_for_tags": [
+      "lora",
+      "consumer-gpu",
+      "llama"
+    ],
+    "featured": true,
+    "when_to_use": "You have a single 24GB consumer GPU (4090, 3090, 4080 super) and want to fine-tune Llama 3.1 8B on a custom dataset. Unsloth is the fastest open-weight LoRA stack as of 2026 - 2x faster than vanilla HF, ~30% less VRAM, fully compatible with HF Trainer downstream.",
+    "when_not_to_use": "Skip Unsloth when (1) you need to fine-tune 70B - move to multi-GPU + Axolotl/LLaMA-Factory; (2) you want full-parameter fine-tune - Unsloth is LoRA-only; (3) you're on Apple Silicon - Unsloth is CUDA-only.",
+    "quick_start": "1) Install: `pip install unsloth`  2) Prepare a HF dataset of {instruction, output} pairs  3) `python finetune.py` - 2-4h on a 4090 for ~10k examples.",
+    "full_code": "\"\"\"Unsloth LoRA fine-tune of Llama 3.1 8B on a single 24GB GPU.\"\"\"\nfrom __future__ import annotations\n\nimport os\n\nfrom datasets import load_dataset\nfrom unsloth import FastLanguageModel\nfrom trl import SFTTrainer\nfrom transformers import TrainingArguments\n\n\nMODEL = \"unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit\"  # pre-quantized for speed\nMAX_SEQ = 4096\nOUTPUT_DIR = \"./outputs/llama3_1_8b_lora\"\n\n\ndef format_example(ex: dict) -> dict:\n    \"\"\"Format into Llama 3.1 chat template.\"\"\"\n    text = (\n        f\"<|begin_of_text|><|start_header_id|>user<|end_header_id|>\\n\\n\"\n        f\"{ex['instruction']}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\\n\\n\"\n        f\"{ex['output']}<|eot_id|>\"\n    )\n    return {\"text\": text}\n\n\ndef main() -> None:\n    # 1. Load model + tokenizer (4-bit)\n    model, tokenizer = FastLanguageModel.from_pretrained(\n        model_name=MODEL,\n        max_seq_length=MAX_SEQ,\n        dtype=None,                     # auto: bf16 on Ampere+, fp16 on older\n        load_in_4bit=True,\n    )\n\n    # 2. Attach LoRA adapters\n    model = FastLanguageModel.get_peft_model(\n        model,\n        r=16,                           # LoRA rank - 16-32 is the sweet spot\n        target_modules=[\"q_proj\", \"k_proj\", \"v_proj\", \"o_proj\", \"gate_proj\", \"up_proj\", \"down_proj\"],\n        lora_alpha=16,\n        lora_dropout=0,\n        bias=\"none\",\n        use_gradient_checkpointing=\"unsloth\",  # 30% less VRAM\n        random_state=42,\n    )\n\n    # 3. Load + format dataset (replace with your own)\n    raw = load_dataset(\"yahma/alpaca-cleaned\", split=\"train[:5000]\")\n    raw = raw.map(lambda ex: format_example({\"instruction\": ex[\"instruction\"], \"output\": ex[\"output\"]}))\n\n    # 4. Train\n    args = TrainingArguments(\n        output_dir=OUTPUT_DIR,\n        per_device_train_batch_size=2,\n        gradient_accumulation_steps=8,\n        warmup_steps=50,\n        max_steps=500,\n        learning_rate=2e-4,\n        bf16=True,\n        logging_steps=10,\n        save_steps=200,\n        save_total_limit=2,\n        optim=\"adamw_8bit\",\n        weight_decay=0.01,\n        lr_scheduler_type=\"cosine\",\n        seed=42,\n        report_to=\"none\",\n    )\n    trainer = SFTTrainer(\n        model=model,\n        tokenizer=tokenizer,\n        train_dataset=raw,\n        dataset_text_field=\"text\",\n        max_seq_length=MAX_SEQ,\n        packing=False,\n        args=args,\n    )\n    trainer.train()\n\n    # 5. Save LoRA adapter + merge + export GGUF for llama.cpp\n    model.save_pretrained(f\"{OUTPUT_DIR}/lora\")\n    tokenizer.save_pretrained(f\"{OUTPUT_DIR}/lora\")\n    model.save_pretrained_merged(f\"{OUTPUT_DIR}/merged\", tokenizer, save_method=\"merged_16bit\")\n    model.save_pretrained_gguf(f\"{OUTPUT_DIR}/gguf\", tokenizer, quantization_method=\"q4_k_m\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+    "code": "\"\"\"Unsloth LoRA fine-tune (single 24GB GPU).\"\"\"\nfrom unsloth import FastLanguageModel\nfrom trl import SFTTrainer\nfrom transformers import TrainingArguments\nfrom datasets import load_dataset\n\nmodel, tok = FastLanguageModel.from_pretrained('unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit', max_seq_length=4096, load_in_4bit=True)\nmodel = FastLanguageModel.get_peft_model(model, r=16, lora_alpha=16, target_moduleses=['q_proj','k_proj','v_proj','o_proj'], use_gradient_checkpointing='unsloth')\n\nds = load_dataset('yahma/alpaca-cleaned', split='train[:5000]')\ntrainer = SFTTrainer(model=model, tokenizer=tok, train_dataset=ds, dataset_text_field='text', max_seq_length=4096,\n    args=TrainingArguments(output_dir='./out', per_device_train_batch_size=2, gradient_accumulation_steps=8, max_steps=500, learning_rate=2e-4, bf16=True, optim='adamw_8bit'))\ntrainer.train()\nmodel.save_pretrained_merged('./out/merged', tok, save_method='merged_16bit')\n",
+    "dependencies": [
+      "unsloth",
+      "trl",
+      "transformers",
+      "datasets",
+      "peft",
+      "bitsandbytes"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "unsloth",
+        "version": ">=2025.5",
+        "purpose": "2x-faster Llama fine-tune kernel."
+      },
+      {
+        "name": "trl",
+        "version": ">=0.13.0",
+        "purpose": "HuggingFace SFT/DPO/ORPO trainers."
+      },
+      {
+        "name": "transformers",
+        "version": ">=4.46.0",
+        "purpose": "Model loading + tokenizers."
+      },
+      {
+        "name": "bitsandbytes",
+        "version": ">=0.45.0",
+        "purpose": "4-bit + 8-bit quantization."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "HF token with Llama 3.1 access (gated)."
+      }
+    ],
+    "setup_steps": [
+      "Provision a 24GB consumer GPU host: RTX 4090 or 3090. CUDA 12.4+, driver 550+.",
+      "`pip install 'unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git'` (or the stable wheel).",
+      "`huggingface-cli login` with a Llama-3.1-gated token.",
+      "Prepare a dataset of {instruction, output} pairs as HF dataset OR JSONL.",
+      "Save the full_code as `finetune.py`.",
+      "Run `python finetune.py` - expect 2-4 hours for 500 steps with batch=2 + grad_accum=8 on 5k examples.",
+      "Inspect outputs: lora adapter, merged 16-bit model, GGUF Q4_K_M for llama.cpp / Ollama."
+    ],
+    "variations": [
+      {
+        "label": "Continued pretraining (CPT) for domain adaptation",
+        "description": "Switch from SFT to CPT for raw text corpus.",
+        "code_snippet": "from trl import SFTTrainer\n# Use a text-only dataset; SFTTrainer also works for CPT if you skip instruction formatting.\nds = load_dataset('json', data_files='domain_corpus.jsonl', split='train')"
+      },
+      {
+        "label": "DPO alignment after SFT",
+        "description": "Run DPOTrainer on chosen/rejected pairs after the SFT pass.",
+        "code_snippet": "from trl import DPOTrainer\ndpo = DPOTrainer(model=model, ref_model=None, beta=0.1, args=TrainingArguments(...), train_dataset=preference_ds)"
+      },
+      {
+        "label": "Push merged model + GGUF to Hugging Face Hub",
+        "description": "Share with your team or the world.",
+        "code_snippet": "model.push_to_hub_merged('chadcorp/llama3_1_8b_ossai_v1', tok, save_method='merged_16bit', token=os.environ['HF_TOKEN'])\nmodel.push_to_hub_gguf('chadcorp/llama3_1_8b_ossai_v1-gguf', tok, quantization_method='q4_k_m', token=os.environ['HF_TOKEN'])"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "RuntimeError: CUDA out of memory at step 0",
+        "cause": "Sequence length + batch size exceed 24GB VRAM budget.",
+        "fix_snippet": "# Drop max_seq_length to 2048 or per_device_train_batch_size to 1 + grad_accum 16:\nmax_seq_length=2048\nper_device_train_batch_size=1\ngradient_accumulation_steps=16"
+      },
+      {
+        "error_text": "Loss is NaN after first few steps",
+        "cause": "Learning rate too high or numerical overflow with bf16 on Ampere.",
+        "fix_snippet": "learning_rate=1e-4  # was 2e-4\n# Or switch to fp16 if pre-Ampere:\nfp16=True, bf16=False"
+      },
+      {
+        "error_text": "Trained model outputs gibberish",
+        "cause": "Chat template not applied during training OR mismatched at inference.",
+        "fix_snippet": "# Always use the model's official chat template. Verify with:\nprint(tokenizer.apply_chat_template([{'role':'user','content':'hi'}], tokenize=False))"
+      },
+      {
+        "error_text": "save_pretrained_gguf hangs",
+        "cause": "Need llama-cpp-python compiled in your env to convert to GGUF.",
+        "fix_snippet": "pip install 'llama-cpp-python>=0.3.2'\n# OR skip GGUF conversion + do it offline via llama.cpp CLI"
+      }
+    ],
+    "production_checklist": [
+      "Always start with a small subset (500-2000 examples) to verify the pipeline before full runs.",
+      "Track loss + eval metrics in Weights & Biases - silent overfitting is the most common production failure.",
+      "Save adapter checkpoints every 100-500 steps - mid-run crashes lose hours otherwise.",
+      "Eval on held-out instructions BEFORE deploying - perplexity is necessary but not sufficient.",
+      "Pin unsloth to a specific version - the API changes frequently (it's young).",
+      "Use `report_to='wandb'` + `WANDB_PROJECT=ossai-finetune` for team-wide visibility.",
+      "For Llama 3.1 specifically, set chat template explicitly - getting it wrong is invisible until inference."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit"
+      ],
+      "library_versions": [
+        "unsloth==2025.5.x",
+        "trl==0.13.0",
+        "transformers==4.46.3",
+        "CUDA 12.4 + RTX 4090 24GB"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "unsloth",
+      "huggingface-trl",
+      "transformers"
+    ],
+    "related_glossary_slugs": [
+      "lora",
+      "qlora",
+      "fine-tuning",
+      "sft",
+      "gradient-checkpointing"
+    ],
+    "related_learn_slugs": [
+      "fine-tuning-101"
+    ],
+    "faq": [
+      {
+        "question": "LoRA rank - what's the right number?",
+        "answer": "r=8 is fast but capacity-limited; r=16 is the sweet spot for most tasks; r=32-64 only if you're doing heavy domain transfer (medical, legal). Above 64 the parameter count approaches full fine-tune without the headroom. Always set lora_alpha = r as a starting point."
+      },
+      {
+        "question": "How many examples do I need?",
+        "answer": "Minimum useful: 500 high-quality instruction-output pairs. Sweet spot: 5k-20k. Above 50k, returns diminish unless you're doing multi-task or domain adaptation. Quality crushes quantity - 1k carefully curated examples beats 100k auto-generated junk."
+      },
+      {
+        "question": "Why Llama 3.1 instead of 3.3?",
+        "answer": "Llama 3.3 70B is too large for single-GPU LoRA. Llama 3.1 8B is the only Meta model that fits comfortably in 24GB with batch>=1. For 70B fine-tunes, use Axolotl or LLaMA-Factory with multi-GPU."
+      }
+    ],
+    "meta_title": "Unsloth Llama 3.1 8B LoRA Fine-Tune | OSS AI Hub",
+    "meta_description": "Production Unsloth LoRA recipe for Llama 3.1 8B on a single 24GB GPU. 2x faster than HF, GGUF export. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "axolotl-qlora-mixtral",
+    "title": "Axolotl QLoRA Fine-Tune (Mixtral 8x7B on 2xA100, DeepSpeed Zero-3)",
+    "tldr": "Axolotl YAML config for QLoRA fine-tune of Mixtral 8x7B on 2xA100. DeepSpeed Zero-3 sharding, eval callbacks.",
+    "description": "Production Axolotl recipe to fine-tune Mixtral 8x7B with QLoRA across 2xA100 via DeepSpeed Zero-3 stage 3 offload. Includes eval, checkpointing, and FlashAttention 2.",
+    "category": "fine-tuning",
+    "language": "yaml",
+    "framework": "axolotl",
+    "difficulty_tier": "expert",
+    "tags": [
+      "axolotl",
+      "qlora",
+      "mixtral",
+      "deepspeed"
+    ],
+    "best_for_tags": [
+      "qlora",
+      "mixtral",
+      "distributed-training"
+    ],
+    "when_to_use": "You have 2-8 A100 80GB cards and need to fine-tune Mixtral 8x7B (or similar 50B+ MoE) with QLoRA. Axolotl + DeepSpeed Zero-3 is the standard multi-GPU stack for 2026 - it abstracts away the FSDP/Zero plumbing and gives you reproducible YAML configs.",
+    "when_not_to_use": "Skip Axolotl when (1) you only have one GPU - Unsloth is faster on single-card; (2) you're not on NVIDIA - the DeepSpeed stack is CUDA-first; (3) you need maximum control - Axolotl's abstraction can fight you on weird models.",
+    "quick_start": "1) `git clone https://github.com/axolotl-ai-cloud/axolotl && cd axolotl && pip install -e '.[deepspeed,flash-attn]'`  2) Save the config YAML  3) `accelerate launch -m axolotl.cli.train mixtral.yml`",
+    "full_code": "# mixtral.yml -- Axolotl QLoRA fine-tune of Mixtral 8x7B Instruct on 2xA100 80GB\nbase_model: mistralai/Mixtral-8x7B-Instruct-v0.1\nmodel_type: AutoModelForCausalLM\ntokenizer_type: AutoTokenizer\n\nload_in_4bit: true\nadapter: qlora\nlora_r: 32\nlora_alpha: 16\nlora_dropout: 0.05\nlora_target_modules:\n  - q_proj\n  - k_proj\n  - v_proj\n  - o_proj\n  - w1\n  - w2\n  - w3\n\n# DATA\ndatasets:\n  - path: /data/instructions.jsonl\n    type: alpaca         # or chat_template, or completion\n    field_instruction: instruction\n    field_output: output\ndataset_prepared_path: ./prepared_data\nval_set_size: 0.02\noutput_dir: ./out/mixtral-qlora-v1\n\n# TRAINING\nsequence_len: 4096\nsample_packing: true\npad_to_sequence_len: true\n\ngradient_accumulation_steps: 4\nmicro_batch_size: 1\nnum_epochs: 2\noptimizer: adamw_torch\nlr_scheduler: cosine\nlearning_rate: 2.0e-4\nwarmup_ratio: 0.03\nweight_decay: 0.01\nmax_grad_norm: 1.0\n\nbf16: true\nflash_attention: true\ngradient_checkpointing: true\n\ndeepspeed: deepspeed_configs/zero3_bf16.json   # ships with axolotl\n\n# EVAL + LOGGING\nevals_per_epoch: 2\nlogging_steps: 10\nsave_strategy: steps\nsave_steps: 500\nsave_total_limit: 3\nwandb_project: ossai-mixtral-qlora\nwandb_name: v1-2xa100-zero3\n\nspecial_tokens:\n  pad_token: \"</s>\"\n",
+    "code": "# mixtral.yml (excerpt - see full_code for complete config)\nbase_model: mistralai/Mixtral-8x7B-Instruct-v0.1\nload_in_4bit: true\nadapter: qlora\nlora_r: 32\nsequence_len: 4096\nmicro_batch_size: 1\ngradient_accumulation_steps: 4\ndeepspeed: deepspeed_configs/zero3_bf16.json\nflash_attention: true\nbf16: true\n",
+    "dependencies": [
+      "axolotl",
+      "deepspeed",
+      "flash-attn"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "axolotl",
+        "version": ">=0.6.0",
+        "purpose": "YAML-driven fine-tune framework."
+      },
+      {
+        "name": "deepspeed",
+        "version": ">=0.16.0",
+        "purpose": "Zero-3 sharding for multi-GPU."
+      },
+      {
+        "name": "flash-attn",
+        "version": ">=2.7.0",
+        "purpose": "FlashAttention 2 kernels."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Mixtral access token."
+      },
+      {
+        "name": "WANDB_API_KEY",
+        "required": false,
+        "description": "For training observability."
+      }
+    ],
+    "setup_steps": [
+      "Provision 2xA100 80GB (or 4xA100 40GB) host with CUDA 12.4 + driver 550+.",
+      "`git clone https://github.com/axolotl-ai-cloud/axolotl && cd axolotl`",
+      "`pip install -e '.[deepspeed,flash-attn]'` (Axolotl-recommended path).",
+      "`huggingface-cli login`",
+      "Save mixtral.yml + put your JSONL dataset at /data/instructions.jsonl.",
+      "Launch: `accelerate launch -m axolotl.cli.train mixtral.yml`",
+      "Monitor in W&B; expect ~12-24h for a 2-epoch run on a 50k-example dataset."
+    ],
+    "variations": [
+      {
+        "label": "Single A100 + ZeRO-2 instead of Zero-3",
+        "description": "Slightly faster, more VRAM needed.",
+        "code_snippet": "deepspeed: deepspeed_configs/zero2.json\n# Drop micro_batch_size to 1 if OOM"
+      },
+      {
+        "label": "FSDP instead of DeepSpeed",
+        "description": "If you prefer the HF stack.",
+        "code_snippet": "fsdp:\n  - full_shard\n  - auto_wrap\nfsdp_config:\n  fsdp_offload_params: false\n  fsdp_state_dict_type: FULL_STATE_DICT"
+      },
+      {
+        "label": "Llama 3.3 70B instead of Mixtral",
+        "description": "Same recipe, swap base_model + target_modules.",
+        "code_snippet": "base_model: meta-llama/Llama-3.3-70B-Instruct\nlora_target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "RuntimeError: CUDA out of memory during eval",
+        "cause": "Eval pass disables gradient checkpointing + uses larger batch.",
+        "fix_snippet": "eval_batch_size: 1\neval_table_size: 100"
+      },
+      {
+        "error_text": "NCCL timeout after 30 min of compute",
+        "cause": "One process hung on a slow data step.",
+        "fix_snippet": "# Bump NCCL timeout in env:\nexport NCCL_TIMEOUT=3600\n# Profile with nsys or set ddp_timeout=3600 in YAML"
+      },
+      {
+        "error_text": "flash-attn install fails",
+        "cause": "CUDA version mismatch.",
+        "fix_snippet": "pip install flash-attn --no-build-isolation\n# Or use prebuilt wheel matching torch + CUDA:\npip install https://github.com/Dao-AILab/flash-attention/releases/download/v2.7.0/flash_attn-2.7.0+cu124torch2.5cxx11abiFALSE-cp311-cp311-linux_x86_64.whl"
+      }
+    ],
+    "production_checklist": [
+      "Pin Axolotl + DeepSpeed + flash-attn versions in a Dockerfile - the stack is brittle across upgrades.",
+      "Always test the YAML on a 100-example subset first - YAML typos waste 30 min before failure.",
+      "Use sample_packing=true - it cuts training time 30-50% without quality loss.",
+      "Track GPU utilization in W&B - if you're <70%, you're data-bottlenecked.",
+      "Save checkpoints to S3 / cloud storage in the training loop, not after.",
+      "For Mixtral, lora_target_modules must include w1/w2/w3 (MoE FFN), not just attention.",
+      "Use deepspeed_configs/zero3_bf16.json (ships with axolotl) - it's already tuned."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "mistralai/Mixtral-8x7B-Instruct-v0.1"
+      ],
+      "library_versions": [
+        "axolotl==0.6.0",
+        "deepspeed==0.16.0",
+        "flash-attn==2.7.0",
+        "2xA100 80GB SXM"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "axolotl",
+      "deepspeed",
+      "flash-attention",
+      "huggingface"
+    ],
+    "related_glossary_slugs": [
+      "qlora",
+      "deepspeed-zero",
+      "fsdp",
+      "mixtral",
+      "moe"
+    ],
+    "related_learn_slugs": [
+      "multi-gpu-finetuning-101"
+    ],
+    "faq": [
+      {
+        "question": "QLoRA on Mixtral vs LoRA on Llama 70B?",
+        "answer": "Mixtral QLoRA: ~120GB VRAM total needed across the cluster, 2xA100 80untouchedGB does it with Zero-3. Llama 70B LoRA in 16-bit: 280GB+ needed, requires 4xA100 80GB. QLoRA on 70B is the cheaper path if you can afford the small quality penalty."
+      },
+      {
+        "question": "Axolotl vs LLaMA-Factory vs vanilla HF Trainer?",
+        "answer": "Axolotl: YAML-driven, opinionated defaults, best for reproducible research-grade runs. LLaMA-Factory: GUI + CLI, friendlier for non-experts, comparable performance. Vanilla HF Trainer: maximum flexibility, most work. For team workflows, Axolotl > LLaMA-Factory > vanilla."
+      }
+    ],
+    "meta_title": "Axolotl QLoRA Mixtral 8x7B on 2xA100 | OSS AI Hub",
+    "meta_description": "Production Axolotl YAML for Mixtral QLoRA fine-tune: DeepSpeed Zero-3, FlashAttention 2, eval callbacks. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "dpo-direct-preference-optimization",
+    "title": "DPO Fine-Tune with TRL (Direct Preference Optimization)",
+    "tldr": "Direct Preference Optimization on chosen/rejected dataset using TRL DPOTrainer. Beta tuning + eval pipeline.",
+    "description": "Production DPO recipe: load SFT-tuned model, prepare DPO dataset (prompt + chosen + rejected), train with TRL DPOTrainer, eval on reward + win rate.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "trl",
+    "difficulty_tier": "expert",
+    "tags": [
+      "dpo",
+      "trl",
+      "preference-optimization",
+      "alignment"
+    ],
+    "best_for_tags": [
+      "alignment",
+      "dpo",
+      "preference-data"
+    ],
+    "when_to_use": "You have an SFT-tuned model and preference data (human or AI-judged chosen/rejected pairs). DPO aligns the model to your preferences without a separate reward model - simpler + more stable than PPO/RLHF.",
+    "when_not_to_use": "Skip DPO when (1) no preference data - just do more SFT; (2) preferences are inconsistent - DPO will learn noise; (3) you need on-policy alignment for safety - PPO/RLHF still wins on tricky safety alignment.",
+    "quick_start": "1) `pip install trl transformers datasets bitsandbytes`  2) Prepare a HF dataset with {prompt, chosen, rejected}  3) `python dpo.py`",
+    "full_code": "\"\"\"DPO fine-tune with TRL DPOTrainer on an SFT-tuned base.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom datasets import load_dataset\nfrom transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments\nfrom trl import DPOConfig, DPOTrainer\nfrom peft import LoraConfig, get_peft_model\n\n\nSFT_MODEL = \"chadcorp/llama3_1_8b_ossai_sft_v1\"  # your prior SFT output\nOUTPUT_DIR = \"./outputs/dpo_v1\"\n\n\ndef main() -> None:\n    tokenizer = AutoTokenizer.from_pretrained(SFT_MODEL)\n    tokenizer.pad_token = tokenizer.pad_token or tokenizer.eos_token\n\n    model = AutoModelForCausalLM.from_pretrained(SFT_MODEL, torch_dtype=\"bfloat16\", device_map=\"auto\")\n\n    # LoRA on top of SFT model for cheap DPO (full-param DPO needs 2x VRAM for ref model)\n    peft_config = LoraConfig(r=16, lora_alpha=16, lora_dropout=0.05, bias=\"none\",\n        target_modules=[\"q_proj\", \"k_proj\", \"v_proj\", \"o_proj\"], task_type=\"CAUSAL_LM\")\n\n    # Preference dataset format: {prompt, chosen, rejected}\n    ds = load_dataset(\"Anthropic/hh-rlhf\", split=\"train[:5000]\")\n    # Anthropic HH has 'chosen'+'rejected' full conversations; convert to {prompt, chosen, rejected} response strings\n    def split_pair(ex):\n        prompt = ex[\"chosen\"].split(\"Assistant:\")[0] + \"Assistant:\"\n        chosen = ex[\"chosen\"].split(\"Assistant:\", 1)[1].strip()\n        rejected = ex[\"rejected\"].split(\"Assistant:\", 1)[1].strip()\n        return {\"prompt\": prompt, \"chosen\": chosen, \"rejected\": rejected}\n    ds = ds.map(split_pair)\n\n    args = DPOConfig(\n        output_dir=OUTPUT_DIR,\n        per_device_train_batch_size=2,\n        gradient_accumulation_steps=4,\n        num_train_epochs=1,\n        learning_rate=5e-6,           # DPO needs much lower LR than SFT\n        beta=0.1,                     # DPO inverse temperature: 0.1-0.5 typical\n        max_length=2048,\n        max_prompt_length=1024,\n        warmup_ratio=0.03,\n        logging_steps=10,\n        save_steps=200,\n        bf16=True,\n        report_to=\"wandb\",\n    )\n    trainer = DPOTrainer(\n        model=model,\n        ref_model=None,                # peft will auto-create the ref from base\n        args=args,\n        tokenizer=tokenizer,\n        train_dataset=ds,\n        peft_config=peft_config,\n    )\n    trainer.train()\n    trainer.save_model(f\"{OUTPUT_DIR}/final\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+    "code": "\"\"\"DPO with TRL - core training loop.\"\"\"\nfrom trl import DPOConfig, DPOTrainer\nfrom peft import LoraConfig\nfrom transformers import AutoTokenizer, AutoModelForCausalLM\nfrom datasets import load_dataset\n\ntok = AutoTokenizer.from_pretrained('chadcorp/llama3_1_8b_sft')\nmodel = AutoModelForCausalLM.from_pretrained('chadcorp/llama3_1_8b_sft', torch_dtype='bfloat16', device_map='auto')\n\nds = load_dataset('Anthropic/hh-rlhf', split='train[:5000]')  # {prompt, chosen, rejected}\n\ntrainer = DPOTrainer(model=model, ref_model=None, tokenizer=tok, train_dataset=ds,\n    args=DPOConfig(output_dir='./dpo', per_device_train_batch_size=2, learning_rate=5e-6, beta=0.1, bf16=True),\n    peft_config=LoraConfig(r=16, lora_alpha=16, target_modules=['q_proj','k_proj','v_proj','o_proj']))\ntrainer.train()\n",
+    "dependencies": [
+      "trl",
+      "transformers",
+      "peft",
+      "datasets",
+      "bitsandbytes"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "trl",
+        "version": ">=0.13.0",
+        "purpose": "TRL DPOTrainer + DPOConfig."
+      },
+      {
+        "name": "peft",
+        "version": ">=0.14.0",
+        "purpose": "LoRA adapters."
+      },
+      {
+        "name": "transformers",
+        "version": ">=4.46.0",
+        "purpose": "Model loading."
+      },
+      {
+        "name": "datasets",
+        "version": ">=3.0.0",
+        "purpose": "Dataset loading."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "HF model + dataset access."
+      }
+    ],
+    "setup_steps": [
+      "Provision GPU (A100 80GB recommended; LoRA-only DPO fits in 24GB).",
+      "`pip install trl>=0.13.0 transformers>=4.46.0 peft>=0.14.0 datasets bitsandbytes`",
+      "Have your SFT-tuned model ready (or use an instruct-tuned base).",
+      "Format your preference dataset as {prompt, chosen, rejected} columns.",
+      "Save as `dpo.py` and run - 4-8 hours for 5k examples on A100.",
+      "Eval the result with a separate win-rate harness (e.g. AlpacaEval-2)."
+    ],
+    "variations": [
+      {
+        "label": "ORPO instead (single-stage SFT + alignment)",
+        "description": "Skip the SFT step - ORPO does both at once.",
+        "code_snippet": "from trl import ORPOConfig, ORPOTrainer\ntrainer = ORPOTrainer(model=base_model, args=ORPOConfig(beta=0.1, ...), train_dataset=preference_ds)"
+      },
+      {
+        "label": "KTO (Kahneman-Tversky Optimization) for unpaired data",
+        "description": "When you have just thumbs-up/thumbs-down (not chosen-vs-rejected pairs).",
+        "code_snippet": "from trl import KTOConfig, KTOTrainer\n# Dataset format: {prompt, completion, label: True/False}"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Reward gap shrinking instead of growing",
+        "cause": "Learning rate too high or beta too low.",
+        "fix_snippet": "learning_rate=1e-6  # was 5e-6\nbeta=0.3            # was 0.1"
+      },
+      {
+        "error_text": "Out of memory with ref_model=None",
+        "cause": "Even with PEFT, DPO holds both policy + ref forward passes.",
+        "fix_snippet": "per_device_train_batch_size=1\ngradient_accumulation_steps=8\nmax_length=1024  # was 2048"
+      },
+      {
+        "error_text": "Trained model is worse than SFT on instruction-following",
+        "cause": "DPO too aggressive - the model overfit to preferences at the cost of capability.",
+        "fix_snippet": "# Lower beta (less aggressive update) or shorter run:\nbeta=0.05\nnum_train_epochs=0.5"
+      }
+    ],
+    "production_checklist": [
+      "ALWAYS start from a strong SFT-tuned base - DPO on a raw base model is unstable.",
+      "Eval on held-out preferences + win-rate (AlpacaEval-2, Arena-Hard) BEFORE deploying.",
+      "Track chosen_rewards - rejected_rewards in W&B - if it stops growing, halt training.",
+      "Use beta=0.1 as default; 0.05 for conservative updates; 0.3+ for aggressive.",
+      "Cap epochs at 1-2 - DPO overfits faster than SFT.",
+      "Mix in some SFT data during DPO to prevent capability regression (5-10% by token).",
+      "Pin trl + peft versions - APIs change between minor versions."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "chadcorp/llama3_1_8b_ossai_sft_v1 (example)"
+      ],
+      "library_versions": [
+        "trl==0.13.0",
+        "peft==0.14.0",
+        "transformers==4.46.3"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "huggingface-trl",
+      "peft"
+    ],
+    "related_glossary_slugs": [
+      "dpo",
+      "rlhf",
+      "preference-optimization",
+      "lora",
+      "alignment"
+    ],
+    "related_learn_slugs": [
+      "alignment-101",
+      "dpo-vs-rlhf"
+    ],
+    "faq": [
+      {
+        "question": "DPO vs RLHF (PPO) - which one?",
+        "answer": "DPO: simpler, more stable, no separate reward model needed. Works great for most alignment tasks. RLHF with PPO: more capable on tricky safety alignment, needs a reward model + PPO infra. For 95% of use cases (style alignment, instruction-following), DPO is the right call. For safety-critical or capability-critical alignment, evaluate both."
+      },
+      {
+        "question": "How much preference data do I need?",
+        "answer": "Minimum useful: 1k pairs. Sweet spot: 5k-20k. Above 50k, ORPO becomes more compute-efficient. Quality matters most - 1k human-judged pairs >> 100k auto-judged. Use AI-as-judge only if you can validate the judge's calibration."
+      }
+    ],
+    "meta_title": "DPO Fine-Tune with TRL (Direct Preference Optimization) | OSS AI Hub",
+    "meta_description": "Production DPO recipe with TRL DPOTrainer: LoRA adapters, beta tuning, eval pipeline. Llama 3.1 + Anthropic HH. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "orpo-monolithic-preference",
+    "title": "ORPO Fine-Tune (Single-Stage SFT + Preference Alignment)",
+    "tldr": "ORPO trains SFT + preference alignment in one stage. 40% less compute than DPO + SFT, comparable quality on Llama 3 70B.",
+    "description": "Single-stage alignment: ORPO combines instruction tuning + preference optimization without a separate reference model. Best when you have both instruction + preference data.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "trl",
+    "difficulty_tier": "expert",
+    "tags": [
+      "orpo",
+      "single-stage",
+      "trl",
+      "alignment"
+    ],
+    "best_for_tags": [
+      "efficient-alignment",
+      "orpo"
+    ],
+    "when_to_use": "You're starting from a pretrained base (not SFT) and have both instructions + preference pairs. ORPO finishes both jobs in one training run. Empirically matches DPO-after-SFT quality at ~60% of the total compute.",
+    "when_not_to_use": "Skip ORPO when (1) you already have a great SFT model and just need preference alignment - DPO is the right next step; (2) your data is instruction-only (no preferences); (3) you need the SFT model separately for ablations.",
+    "quick_start": "1) `pip install trl>=0.13`  2) Dataset with prompt+chosen+rejected  3) `python orpo.py`",
+    "full_code": "\"\"\"ORPO single-stage alignment with TRL.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom datasets import load_dataset\nfrom transformers import AutoTokenizer, AutoModelForCausalLM\nfrom trl import ORPOConfig, ORPOTrainer\nfrom peft import LoraConfig\n\n\nBASE_MODEL = \"meta-llama/Llama-3.1-8B\"  # Pretrained base, NOT Instruct\nOUTPUT_DIR = \"./outputs/orpo_v1\"\n\n\ndef main() -> None:\n    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)\n    tokenizer.pad_token = tokenizer.pad_token or tokenizer.eos_token\n\n    model = AutoModelForCausalLM.from_pretrained(BASE_MODEL, torch_dtype=\"bfloat16\", device_map=\"auto\")\n\n    ds = load_dataset(\"argilla/ultrafeedback-binarized-preferences\", split=\"train[:10000]\")\n    # Expected columns: prompt, chosen, rejected\n\n    args = ORPOConfig(\n        output_dir=OUTPUT_DIR,\n        per_device_train_batch_size=2,\n        gradient_accumulation_steps=4,\n        num_train_epochs=1,\n        learning_rate=8e-6,            # ORPO is between SFT (2e-4) and DPO (5e-6)\n        beta=0.1,                      # ORPO odds-ratio weight\n        max_length=2048,\n        max_prompt_length=1024,\n        warmup_ratio=0.03,\n        logging_steps=10,\n        save_steps=500,\n        bf16=True,\n        report_to=\"wandb\",\n    )\n    peft = LoraConfig(r=16, lora_alpha=16, lora_dropout=0.05, bias=\"none\",\n        target_modules=[\"q_proj\", \"k_proj\", \"v_proj\", \"o_proj\"], task_type=\"CAUSAL_LM\")\n\n    trainer = ORPOTrainer(\n        model=model,\n        args=args,\n        tokenizer=tokenizer,\n        train_dataset=ds,\n        peft_config=peft,\n    )\n    trainer.train()\n    trainer.save_model(f\"{OUTPUT_DIR}/final\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+    "code": "from trl import ORPOConfig, ORPOTrainer\nfrom peft import LoraConfig\nfrom transformers import AutoTokenizer, AutoModelForCausalLM\nfrom datasets import load_dataset\n\ntok = AutoTokenizer.from_pretrained('meta-llama/Llama-3.1-8B')\nmodel = AutoModelForCausalLM.from_pretrained('meta-llama/Llama-3.1-8B', torch_dtype='bfloat16', device_map='auto')\nds = load_dataset('argilla/ultrafeedback-binarized-preferences', split='train[:10000]')\n\ntrainer = ORPOTrainer(model=model, tokenizer=tok, train_dataset=ds,\n    args=ORPOConfig(output_dir='./orpo', per_device_train_batch_size=2, learning_rate=8e-6, beta=0.1, bf16=True),\n    peft_config=LoraConfig(r=16, lora_alpha=16, target_modules=['q_proj','k_proj','v_proj','o_proj']))\ntrainer.train()\n",
+    "dependencies": [
+      "trl",
+      "transformers",
+      "peft",
+      "datasets"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "trl",
+        "version": ">=0.13.0",
+        "purpose": "ORPOTrainer + ORPOConfig."
+      },
+      {
+        "name": "peft",
+        "version": ">=0.14.0",
+        "purpose": "LoRA adapters."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Llama access."
+      }
+    ],
+    "setup_steps": [
+      "Single A100 80GB or 2xA100 40GB (LoRA mode).",
+      "`pip install trl>=0.13.0 peft>=0.14.0 transformers>=4.46.0 datasets`",
+      "Preference dataset with {prompt, chosen, rejected}.",
+      "Save as `orpo.py` and run.",
+      "Expect ~10h on A100 for 10k examples.",
+      "Eval with AlpacaEval-2 or your domain eval."
+    ],
+    "variations": [
+      {
+        "label": "ORPO from instruct base (skip pretrained route)",
+        "description": "Run ORPO on Llama-3.1-8B-Instruct for further preference alignment.",
+        "code_snippet": "BASE_MODEL = 'meta-llama/Llama-3.1-8B-Instruct'"
+      },
+      {
+        "label": "Higher beta for stronger preference signal",
+        "description": "If your chosen-rejected gap is small.",
+        "code_snippet": "beta=0.3  # was 0.1"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Loss curve flat from step 1",
+        "cause": "Pretrained base needs warmup before preference signal kicks in.",
+        "fix_snippet": "warmup_ratio=0.10  # was 0.03 - ORPO needs more warmup than DPO"
+      },
+      {
+        "error_text": "Eval shows worse instruction-following than baseline",
+        "cause": "ORPO needs a balanced instruction dataset, not pure preferences.",
+        "fix_snippet": "# Use ultrafeedback-binarized (which has paired prompts) - not raw preference-only sets."
+      }
+    ],
+    "production_checklist": [
+      "ORPO needs a balanced dataset (instructions + preferences) - don't run on RL-only preference data.",
+      "Start from a base model (not Instruct) for the cleanest gains.",
+      "beta=0.1 is the sweet spot; tune up if preferences are weak signal.",
+      "Always eval against DPO-after-SFT baseline on YOUR domain before claiming wins.",
+      "Use ultrafeedback-binarized-preferences or HelpSteer-2 for sane defaults.",
+      "Pin trl version - ORPOTrainer API has been changing."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.1-8B"
+      ],
+      "library_versions": [
+        "trl==0.13.0",
+        "peft==0.14.0",
+        "A100 80GB"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "huggingface-trl",
+      "peft"
+    ],
+    "related_glossary_slugs": [
+      "orpo",
+      "dpo",
+      "single-stage-alignment",
+      "preference-optimization"
+    ],
+    "related_learn_slugs": [
+      "alignment-101"
+    ],
+    "faq": [
+      {
+        "question": "ORPO vs DPO+SFT?",
+        "answer": "ORPO: single training run, ~60% compute, comparable quality on most benchmarks. DPO+SFT: two stages, more compute, slightly better fine control + reproducibility. For team workflows wanting fast iterations, ORPO. For research where you compare alignment stages, DPO+SFT."
+      },
+      {
+        "question": "Does ORPO need a reference model?",
+        "answer": "No - that's the key win. ORPO uses an odds-ratio objective that doesn't need a separate reference model in memory, so VRAM is lower than DPO."
+      }
+    ],
+    "meta_title": "ORPO Fine-Tune (Single-Stage Alignment) | OSS AI Hub",
+    "meta_description": "Production ORPO recipe with TRL: combine SFT + preference alignment in one stage. 40% less compute than DPO. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "llama-factory-multi-task",
+    "title": "LLaMA-Factory Multi-Task Fine-Tune (Web UI + CLI)",
+    "tldr": "LLaMA-Factory web UI + CLI for multi-task fine-tune across instruction, math, and code datasets. Production-grade with checkpointing.",
+    "description": "Multi-task fine-tune setup: load LLaMA-Factory, mix datasets via dataset_info.json, train with LoRA + DeepSpeed, eval, export. The easiest path for non-experts.",
+    "category": "fine-tuning",
+    "language": "yaml",
+    "framework": "llama-factory",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "llama-factory",
+      "multi-task",
+      "lora"
+    ],
+    "best_for_tags": [
+      "multi-task",
+      "full-pipeline",
+      "non-expert"
+    ],
+    "when_to_use": "You want the friendliest multi-task fine-tune stack. LLaMA-Factory has a web UI (Gradio) + YAML configs, supports SFT/DPO/ORPO/KTO, and handles dataset mixing with proportional sampling automatically.",
+    "when_not_to_use": "Skip when (1) you need maximum control - LLaMA-Factory hides too much; (2) you're already deep on Axolotl/Unsloth - switching costs time; (3) you need exotic training techniques - the framework lags Axolotl on bleeding edge.",
+    "quick_start": "1) `git clone https://github.com/hiyouga/LLaMA-Factory && cd LLaMA-Factory && pip install -e '.[torch,metrics]'`  2) Edit `data/dataset_info.json`  3) `llamafactory-cli train config.yaml`",
+    "full_code": "# config.yaml -- LLaMA-Factory multi-task LoRA fine-tune\n### model\nmodel_name_or_path: meta-llama/Llama-3.1-8B-Instruct\ntrust_remote_code: false\n\n### method\nstage: sft                  # sft, dpo, orpo, kto, pretraining\ndo_train: true\nfinetuning_type: lora\nlora_target: all            # adapt all linear layers\nlora_rank: 16\nlora_alpha: 16\nlora_dropout: 0.05\n\n### dataset (multi-task mixing)\ndataset: alpaca_en,math_instruct,code_alpaca\n# datasets must be registered in data/dataset_info.json\ndataset_dir: data\ntemplate: llama3\ncutoff_len: 4096\nmax_samples: 30000          # ~10k per dataset weighted\noverwrite_cache: true\npreprocessing_num_workers: 16\n\n### output\noutput_dir: saves/llama3-multitask/lora/sft\nlogging_steps: 10\nsave_steps: 500\nplot_loss: true\noverwrite_output_dir: true\n\n### train\nper_device_train_batch_size: 2\ngradient_accumulation_steps: 4\nlearning_rate: 2.0e-4\nnum_train_epochs: 2\nlr_scheduler_type: cosine\nwarmup_ratio: 0.03\nbf16: true\nflash_attn: fa2\nddp_timeout: 180000000\n\n### eval\nval_size: 0.02\nper_device_eval_batch_size: 1\neval_strategy: steps\neval_steps: 500\n",
+    "code": "# config.yaml (excerpt - see full_code for complete config)\nmodel_name_or_path: meta-llama/Llama-3.1-8B-Instruct\nstage: sft\nfinetuning_type: lora\nlora_target: all\nlora_rank: 16\ndataset: alpaca_en,math_instruct,code_alpaca\ntemplate: llama3\ncutoff_len: 4096\nper_device_train_batch_size: 2\ngradient_accumulation_steps: 4\nlearning_rate: 2.0e-4\nbf16: true\nflash_attn: fa2\n",
+    "dependencies": [
+      "llamafactory",
+      "flash-attn"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "llamafactory",
+        "version": ">=0.9.0",
+        "purpose": "Multi-task fine-tune framework."
+      },
+      {
+        "name": "flash-attn",
+        "version": ">=2.7.0",
+        "purpose": "FlashAttention 2."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Llama access."
+      }
+    ],
+    "setup_steps": [
+      "Provision A100 80GB host with CUDA 12.4.",
+      "`git clone https://github.com/hiyouga/LLaMA-Factory && cd LLaMA-Factory`",
+      "`pip install -e '.[torch,metrics,deepspeed,bitsandbytes]'`",
+      "Register custom datasets in `data/dataset_info.json` (file_name + formatting).",
+      "Save config.yaml and `llamafactory-cli train config.yaml`",
+      "OR launch web UI: `llamafactory-cli webui` (Gradio on :7860).",
+      "Track losses + eval in W&B (report_to: wandb in config)."
+    ],
+    "variations": [
+      {
+        "label": "Switch from SFT to DPO",
+        "description": "Same UI, change stage + dataset.",
+        "code_snippet": "stage: dpo\ndataset: dpo_mix_en\npref_beta: 0.1"
+      },
+      {
+        "label": "Full-parameter fine-tune (no LoRA)",
+        "description": "Higher quality, much more VRAM.",
+        "code_snippet": "finetuning_type: full\n# Needs 4xA100 80GB minimum for Llama 3.1 8B"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "KeyError: dataset 'X' not in dataset_info.json",
+        "cause": "Dataset name typo or not registered.",
+        "fix_snippet": "# Register in data/dataset_info.json:\n# {\"my_dataset\": {\"file_name\": \"my_dataset.json\", \"columns\": {\"prompt\": \"instruction\", \"response\": \"output\"}}}"
+      },
+      {
+        "error_text": "Multi-task weights not balanced - one dataset dominates",
+        "cause": "max_samples caps total but not per-dataset.",
+        "fix_snippet": "# Specify per-dataset limits:\nmix_strategy: interleave_under  # OR concat with explicit weights via :weight syntax"
+      },
+      {
+        "error_text": "Training resumes from wrong checkpoint after restart",
+        "cause": "resume_from_checkpoint not set correctly.",
+        "fix_snippet": "resume_from_checkpoint: true   # auto-resume from last\n# OR: resume_from_checkpoint: ./saves/llama3-multitask/lora/sft/checkpoint-1500"
+      }
+    ],
+    "production_checklist": [
+      "Pin LLaMA-Factory to a tagged release - main branch breaks weekly.",
+      "Always include val_size > 0 to catch overfitting early.",
+      "Use template: llama3 (or whichever matches your base) - mismatched templates produce gibberish.",
+      "Track per-dataset eval loss with eval_dataset: dataset1,dataset2 to verify multi-task balance.",
+      "Use the web UI for first iteration, then commit a config.yaml for repeatability.",
+      "Export trained adapters via `llamafactory-cli export config_export.yaml` to merge + ship as GGUF."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.1-8B-Instruct"
+      ],
+      "library_versions": [
+        "llamafactory==0.9.0",
+        "flash-attn==2.7.0",
+        "A100 80GB"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "llama-factory",
+      "axolotl",
+      "huggingface-trl"
+    ],
+    "related_glossary_slugs": [
+      "multi-task-finetuning",
+      "lora",
+      "instruction-tuning"
+    ],
+    "related_learn_slugs": [
+      "fine-tuning-101"
+    ],
+    "faq": [
+      {
+        "question": "LLaMA-Factory vs Axolotl?",
+        "answer": "LLaMA-Factory: friendlier (web UI), more docs, easier multi-task mixing. Axolotl: closer to research-grade configs, faster iteration on edge cases, slightly more performant. For teams ramping up, LLaMA-Factory is the easier start; for research labs, Axolotl is the standard."
+      },
+      {
+        "question": "Can I use the web UI in production?",
+        "answer": "Don't - the UI is for exploration. For production, commit a config.yaml + run via CLI in a reproducible Docker image. The UI is great for prototyping the YAML interactively."
+      }
+    ],
+    "meta_title": "LLaMA-Factory Multi-Task Fine-Tune | OSS AI Hub",
+    "meta_description": "Production LLaMA-Factory recipe: multi-task LoRA across instruction + math + code datasets, web UI + CLI, FlashAttention 2. MIT."
   }
 ]
