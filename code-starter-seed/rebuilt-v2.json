@@ -7456,5 +7456,726 @@
     ],
     "meta_title": "Pydantic-to-Function-Schema Generator | OSS AI Hub",
     "meta_description": "One Pydantic model -> OpenAI + Anthropic + Gemini tool schemas. Strict mode, $defs flattening, registry pattern. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "rate-limit-tokenbucket-redis",
+    "title": "Token-Bucket Rate Limiter for LLM APIs (Redis-Backed)",
+    "tldr": "Production token-bucket rate limiter for LLM APIs with Redis backing. Per-user, per-tenant, per-IP buckets. 429 + Retry-After.",
+    "description": "Atomic Lua-based token bucket: distributed, fair, microsecond precision. Returns 429 with Retry-After when bucket is exhausted; supports per-user OR per-tier limits.",
+    "category": "production",
+    "language": "python",
+    "framework": "redis",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "rate-limiting",
+      "redis",
+      "fastapi"
+    ],
+    "best_for_tags": [
+      "rate-limiting",
+      "multi-tenant",
+      "production"
+    ],
+    "featured": true,
+    "when_to_use": "You serve an LLM API to many users and need fair, distributed rate limiting. Token bucket smooths bursts (vs leaky bucket) and scales horizontally via Redis. Best fit for chat apps, internal LLM gateways, and multi-tenant SaaS.",
+    "when_not_to_use": "Skip when (1) single-node app - use slowapi/in-memory; (2) you need global rate limits in milliseconds - Redis adds 1-3ms; (3) you're already on Cloudflare/AWS WAF rate limits - just use those.",
+    "quick_start": "1) `pip install redis fastapi`  2) Run Redis  3) Drop the dependency on your endpoint.",
+    "full_code": "\"\"\"Redis-backed token-bucket rate limiter for FastAPI.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport time\nfrom fastapi import FastAPI, Request, HTTPException, Depends\nfrom redis.asyncio import Redis\n\n\n# Atomic refill+consume in Lua so the whole operation is one round-trip.\nLUA = \"\"\"\nlocal key = KEYS[1]\nlocal capacity = tonumber(ARGV[1])\nlocal refill_per_s = tonumber(ARGV[2])\nlocal cost = tonumber(ARGV[3])\nlocal now = tonumber(ARGV[4])\n\nlocal data = redis.call('HMGET', key, 'tokens', 'ts')\nlocal tokens = tonumber(data[1]) or capacity\nlocal ts = tonumber(data[2]) or now\n\nlocal delta = math.max(0, now - ts)\ntokens = math.min(capacity, tokens + delta * refill_per_s)\n\nlocal allowed = tokens >= cost\nif allowed then tokens = tokens - cost end\n\nredis.call('HMSET', key, 'tokens', tokens, 'ts', now)\nredis.call('EXPIRE', key, 3600)\n\nlocal retry_after = 0\nif not allowed then\n    retry_after = math.ceil((cost - tokens) / refill_per_s)\nend\nreturn {tonumber(tostring(allowed and 1 or 0)), tokens, retry_after}\n\"\"\"\n\n\nclass TokenBucket:\n    def __init__(self, redis: Redis, capacity: int = 60, refill_per_s: float = 1.0):\n        self.redis = redis\n        self.capacity = capacity\n        self.refill_per_s = refill_per_s\n        self._sha: str | None = None\n\n    async def _load(self) -> None:\n        if not self._sha:\n            self._sha = await self.redis.script_load(LUA)\n\n    async def consume(self, key: str, cost: int = 1) -> tuple[bool, int, int]:\n        await self._load()\n        result = await self.redis.evalsha(self._sha, 1, key, self.capacity, self.refill_per_s, cost, int(time.time()))\n        allowed = bool(result[0])\n        remaining = int(result[1])\n        retry_after = int(result[2])\n        return allowed, remaining, retry_after\n\n\n# --- FastAPI integration ---\napp = FastAPI()\nredis = Redis.from_url(os.environ.get(\"REDIS_URL\", \"redis://localhost:6379\"), decode_responses=True)\nbucket = TokenBucket(redis, capacity=60, refill_per_s=1.0)\n\n\nasync def rate_limit(request: Request) -> None:\n    user_id = request.headers.get(\"X-User-ID\") or request.client.host\n    allowed, remaining, retry_after = await bucket.consume(f\"rl:user:{user_id}\", cost=1)\n    request.state.rl_remaining = remaining\n    if not allowed:\n        raise HTTPException(status_code=429, headers={\"Retry-After\": str(retry_after), \"X-RateLimit-Remaining\": \"0\"})\n\n\n@app.post(\"/chat\", dependencies=[Depends(rate_limit)])\nasync def chat(payload: dict, request: Request):\n    return {\"reply\": \"ok\", \"remaining\": request.state.rl_remaining}\n",
+    "code": "import os, time, asyncio\nfrom fastapi import FastAPI, Request, HTTPException, Depends\nfrom redis.asyncio import Redis\n\nLUA = \"\"\"\nlocal key, capacity, refill, cost, now = KEYS[1], tonumber(ARGV[1]), tonumber(ARGV[2]), tonumber(ARGV[3]), tonumber(ARGV[4])\nlocal data = redis.call('HMGET', key, 'tokens', 'ts')\nlocal tokens = math.min(capacity, (tonumber(data[1]) or capacity) + math.max(0, now - (tonumber(data[2]) or now)) * refill)\nlocal ok = tokens >= cost\nif ok then tokens = tokens - cost end\nredis.call('HMSET', key, 'tokens', tokens, 'ts', now); redis.call('EXPIRE', key, 3600)\nreturn {ok and 1 or 0, tokens, ok and 0 or math.ceil((cost - tokens) / refill)}\n\"\"\"\n\nredis = Redis.from_url(os.environ.get('REDIS_URL', 'redis://localhost:6379'), decode_responses=True)\napp = FastAPI()\n\n@app.post('/chat')\nasync def chat(req: Request):\n    user = req.headers.get('X-User-ID') or req.client.host\n    res = await redis.eval(LUA, 1, f'rl:{user}', 60, 1.0, 1, int(time.time()))\n    if not res[0]: raise HTTPException(429, headers={'Retry-After': str(res[2])})\n    return {'ok': True}\n",
+    "dependencies": [
+      "redis",
+      "fastapi"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "redis",
+        "version": ">=5.0.0",
+        "purpose": "Async Redis client for Lua script execution."
+      },
+      {
+        "name": "fastapi",
+        "version": ">=0.115.0",
+        "purpose": "Dependency-injection web framework."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "REDIS_URL",
+        "required": false,
+        "description": "Redis DSN (default redis://localhost:6379)."
+      }
+    ],
+    "setup_steps": [
+      "Run Redis: `docker run -p 6379:6379 redis:7-alpine`",
+      "`pip install redis>=5.0.0 fastapi>=0.115.0 uvicorn`",
+      "Save the full_code as `main.py`.",
+      "`uvicorn main:app --reload` and hit POST /chat with X-User-ID header.",
+      "Watch limits trigger: 60+ rapid requests/min return 429 with Retry-After.",
+      "Tune capacity + refill_per_s per tier (free: 10/min, pro: 100/min, etc.)."
+    ],
+    "variations": [
+      {
+        "label": "Per-tier limits via lookup",
+        "description": "Read tier from your DB/JWT and apply different buckets.",
+        "code_snippet": "TIERS = {'free': (10, 1/6), 'pro': (100, 1.0), 'enterprise': (1000, 10.0)}\nasync def rate_limit_tiered(request: Request, user_id: str, tier: str = 'free'):\n    cap, rate = TIERS[tier]\n    bucket = TokenBucket(redis, capacity=cap, refill_per_s=rate)\n    return await bucket.consume(f'rl:{tier}:{user_id}')"
+      },
+      {
+        "label": "Cost-weighted (charge more for larger requests)",
+        "description": "Premium models cost N tokens from the bucket.",
+        "code_snippet": "MODEL_COSTS = {'claude-sonnet-4-5': 5, 'claude-haiku-4-5': 1, 'gpt-5': 10}\nallowed, _, _ = await bucket.consume(f'rl:{user}', cost=MODEL_COSTS.get(payload['model'], 1))"
+      },
+      {
+        "label": "Composite limits (per-user AND per-tenant)",
+        "description": "Block on first exhausted bucket.",
+        "code_snippet": "for key, b in [(f'user:{u}', user_bucket), (f'tenant:{t}', tenant_bucket)]:\n    allowed, _, ra = await b.consume(key)\n    if not allowed:\n        raise HTTPException(429, headers={'Retry-After': str(ra)})"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ResponseError: WRONGTYPE Operation against a key holding the wrong kind of value",
+        "cause": "Existing key from a different rate limiter still in Redis.",
+        "fix_snippet": "# One-time cleanup of legacy keys, then use a fresh prefix:\nredis-cli --scan --pattern 'oldlimiter:*' | xargs redis-cli del"
+      },
+      {
+        "error_text": "Rate limit not enforced - all requests pass",
+        "cause": "Forgot to add `dependencies=[Depends(rate_limit)]` to the route.",
+        "fix_snippet": "@app.post('/chat', dependencies=[Depends(rate_limit)])  # critical\nasync def chat(...): ..."
+      },
+      {
+        "error_text": "Bucket drifts under high QPS",
+        "cause": "Non-Lua implementation has race conditions.",
+        "fix_snippet": "# ALWAYS use Lua script (EVAL/EVALSHA) - separate Redis commands race.\nawait redis.eval(LUA, 1, key, capacity, refill, cost, now)"
+      }
+    ],
+    "production_checklist": [
+      "Use Lua EVALSHA (script cached on Redis) - separate commands race under load.",
+      "Set bucket TTL (3600s) so abandoned users don't accumulate keys forever.",
+      "Return 429 with Retry-After + X-RateLimit-Remaining headers - clients use them.",
+      "Limit by user_id NOT IP for authed traffic - IP-limited shared-office traffic punishes innocent users.",
+      "Combine per-user + per-tenant + per-IP for layered defense.",
+      "Use cost-weighted buckets for expensive models - prevents Claude Opus abuse on a Haiku-pricing tier.",
+      "Run Redis with `maxmemory-policy=allkeys-lru` so the limiter never gets evicted under memory pressure."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "N/A - infra"
+      ],
+      "library_versions": [
+        "redis==5.2.0",
+        "fastapi==0.115.6"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "redis",
+      "fastapi",
+      "slowapi"
+    ],
+    "related_glossary_slugs": [
+      "rate-limiting",
+      "token-bucket",
+      "lua-scripting",
+      "redis"
+    ],
+    "related_learn_slugs": [
+      "production-llm-101"
+    ],
+    "faq": [
+      {
+        "question": "Token bucket vs leaky bucket vs fixed window?",
+        "answer": "Token bucket: smooths bursts + handles cost-weighted requests cleanly. Leaky bucket: enforces steady rate, kills bursty traffic. Fixed window: cheap but has the boundary-doubling problem. For LLM APIs where users send a burst then idle, token bucket is the right shape."
+      },
+      {
+        "question": "Why Lua instead of Redis transactions?",
+        "answer": "EVAL is atomic + one round-trip. Pipelining HGET+compute+HSET is two round-trips and races under high concurrency. The 30-line Lua script is the difference between a working rate limiter and a leaky one."
+      }
+    ],
+    "meta_title": "Token-Bucket Rate Limiter (Redis-Backed) | OSS AI Hub",
+    "meta_description": "Production atomic Lua rate limiter for LLM APIs: per-user + per-tenant buckets, 429 + Retry-After, cost-weighted. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "retry-with-exponential-backoff",
+    "title": "Retry with Exponential Backoff + Jitter (Tenacity)",
+    "tldr": "Tenacity decorator chain handling 429 + 5xx with jittered exponential backoff. Circuit-breaker fallback + per-provider rules.",
+    "description": "Reusable retry decorator: tenacity primitives + provider-specific 429/Retry-After handling + a simple circuit breaker that opens on persistent failures.",
+    "category": "production",
+    "language": "python",
+    "framework": "tenacity",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "retry",
+      "tenacity",
+      "backoff",
+      "reliability"
+    ],
+    "best_for_tags": [
+      "reliability",
+      "retry"
+    ],
+    "featured": true,
+    "when_to_use": "Every LLM client should have this - providers occasionally 5xx, hit rate limits, or have transient network errors. Tenacity is the standard Python retry library; this recipe adds the LLM-specific Retry-After handling that most examples miss.",
+    "when_not_to_use": "Skip when (1) your provider SDK already handles retries (Anthropic SDK does some); (2) you're writing a thin proxy that should just propagate errors; (3) requests are non-idempotent and retrying them is unsafe.",
+    "quick_start": "1) `pip install tenacity httpx`  2) Wrap your LLM call with @retry_llm  3) Watch retries happen automatically on 429/5xx.",
+    "full_code": "\"\"\"Tenacity retry chain for LLM calls with 429/Retry-After + circuit breaker.\"\"\"\nfrom __future__ import annotations\n\nimport asyncio\nimport time\nfrom typing import Any, Callable\n\nimport httpx\nfrom tenacity import (\n    AsyncRetrying, retry, retry_if_exception_type, retry_if_exception,\n    stop_after_attempt, wait_exponential_jitter, wait_fixed, before_sleep_log,\n)\nimport logging\n\nlog = logging.getLogger(__name__)\n\n\nclass RateLimited(Exception):\n    def __init__(self, retry_after_s: float = 1.0):\n        self.retry_after_s = retry_after_s\n        super().__init__(f\"rate limited, retry in {retry_after_s}s\")\n\n\ndef _wait_strategy(retry_state) -> float:\n    \"\"\"If the exception is RateLimited(retry_after_s), wait that. Otherwise exponential jitter.\"\"\"\n    exc = retry_state.outcome.exception() if retry_state.outcome else None\n    if isinstance(exc, RateLimited):\n        return exc.retry_after_s + 0.5\n    return wait_exponential_jitter(initial=1, max=30)(retry_state)\n\n\ndef _should_retry(exc: BaseException) -> bool:\n    if isinstance(exc, RateLimited):\n        return True\n    if isinstance(exc, httpx.HTTPStatusError):\n        return exc.response.status_code in (429, 500, 502, 503, 504)\n    return isinstance(exc, (httpx.TimeoutException, httpx.NetworkError))\n\n\nretry_llm = retry(\n    retry=retry_if_exception(_should_retry),\n    wait=_wait_strategy,\n    stop=stop_after_attempt(5),\n    before_sleep=before_sleep_log(log, logging.WARNING),\n    reraise=True,\n)\n\n\n# --- Circuit breaker (open after N consecutive failures, cool down M seconds) ---\nclass CircuitBreaker:\n    def __init__(self, failure_threshold: int = 5, cooldown_s: int = 30):\n        self.threshold = failure_threshold\n        self.cooldown_s = cooldown_s\n        self.fails = 0\n        self.opened_at: float | None = None\n\n    def check(self) -> None:\n        if self.opened_at and time.time() - self.opened_at < self.cooldown_s:\n            raise RuntimeError(f\"circuit open, cool down {self.cooldown_s - (time.time() - self.opened_at):.0f}s\")\n        if self.opened_at:\n            self.opened_at = None\n            self.fails = 0\n\n    def record_success(self) -> None:\n        self.fails = 0\n\n    def record_failure(self) -> None:\n        self.fails += 1\n        if self.fails >= self.threshold:\n            self.opened_at = time.time()\n\n\n_breaker = CircuitBreaker()\n\n\n@retry_llm\nasync def call_claude(prompt: str) -> str:\n    _breaker.check()\n    try:\n        async with httpx.AsyncClient(timeout=30) as c:\n            r = await c.post(\n                \"https://api.anthropic.com/v1/messages\",\n                json={\"model\": \"claude-sonnet-4-5\", \"max_tokens\": 500, \"messages\": [{\"role\": \"user\", \"content\": prompt}]},\n                headers={\"x-api-key\": \"sk-ant-...\", \"anthropic-version\": \"2023-06-01\", \"content-type\": \"application/json\"},\n            )\n            if r.status_code == 429:\n                retry_after = float(r.headers.get(\"retry-after\", \"1\"))\n                raise RateLimited(retry_after_s=retry_after)\n            r.raise_for_status()\n            _breaker.record_success()\n            return r.json()[\"content\"][0][\"text\"]\n    except Exception:\n        _breaker.record_failure()\n        raise\n\n\nif __name__ == \"__main__\":\n    print(asyncio.run(call_claude(\"Hello.\")))\n",
+    "code": "import httpx\nfrom tenacity import retry, retry_if_exception, wait_exponential_jitter, stop_after_attempt\n\n\nclass RateLimited(Exception):\n    def __init__(self, ra=1.0): self.retry_after_s = ra; super().__init__(f'retry {ra}s')\n\n\ndef should_retry(e):\n    if isinstance(e, RateLimited): return True\n    if isinstance(e, httpx.HTTPStatusError): return e.response.status_code in (429, 500, 502, 503, 504)\n    return isinstance(e, (httpx.TimeoutException, httpx.NetworkError))\n\n\n@retry(retry=retry_if_exception(should_retry), wait=wait_exponential_jitter(initial=1, max=30), stop=stop_after_attempt(5), reraise=True)\nasync def call_api(): pass\n",
+    "dependencies": [
+      "tenacity",
+      "httpx"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "tenacity",
+        "version": ">=9.0.0",
+        "purpose": "Battle-tested retry decorators."
+      },
+      {
+        "name": "httpx",
+        "version": ">=0.28.0",
+        "purpose": "Async HTTP client."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Or any provider key."
+      }
+    ],
+    "setup_steps": [
+      "`pip install tenacity>=9.0.0 httpx>=0.28.0`",
+      "Save the @retry_llm decorator + CircuitBreaker class in `retry.py`.",
+      "Decorate your LLM call functions with @retry_llm.",
+      "Call _breaker.check() at the top of each function and record_success/failure around the call.",
+      "Configure log level to WARNING to see retry-attempt logs.",
+      "Test the failure path: force a 503 from your provider and watch the retries happen."
+    ],
+    "variations": [
+      {
+        "label": "Per-provider retry rules",
+        "description": "OpenAI vs Anthropic vs Bedrock have different sane defaults.",
+        "code_snippet": "RETRY_BY_PROVIDER = {\n  'anthropic': dict(stop=stop_after_attempt(5), wait=wait_exponential_jitter(initial=1, max=30)),\n  'openai': dict(stop=stop_after_attempt(3), wait=wait_exponential_jitter(initial=0.5, max=10)),\n  'bedrock': dict(stop=stop_after_attempt(6), wait=wait_exponential_jitter(initial=2, max=60)),\n}"
+      },
+      {
+        "label": "Fallback chain on circuit-open",
+        "description": "Switch to a backup provider when primary is down.",
+        "code_snippet": "async def call_with_fallback(prompt):\n    try:\n        return await call_claude(prompt)\n    except RuntimeError as e:\n        if 'circuit open' in str(e):\n            return await call_openai_backup(prompt)\n        raise"
+      },
+      {
+        "label": "Idempotency key for retried writes",
+        "description": "Avoid duplicate side effects on retried calls.",
+        "code_snippet": "import uuid\nasync def call_with_idempotency(prompt, idempotency_key=None):\n    key = idempotency_key or str(uuid.uuid4())\n    headers={'Idempotency-Key': key}"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Retries happen but spam logs",
+        "cause": "before_sleep_log too verbose for production.",
+        "fix_snippet": "# Adjust log level + add structured fields:\nimport structlog\nlog = structlog.get_logger()\ndef log_retry(state):\n    log.warning('llm.retry', attempt=state.attempt_number, wait=state.next_action.sleep)\nretry_llm = retry(..., before_sleep=log_retry)"
+      },
+      {
+        "error_text": "Retry-After header ignored, exponential backoff used instead",
+        "cause": "RateLimited exception not raised, just letting tenacity see HTTPStatusError.",
+        "fix_snippet": "# Check status BEFORE raise_for_status() so you can read headers:\nif r.status_code == 429:\n    retry_after = float(r.headers.get('retry-after', '1'))\n    raise RateLimited(retry_after_s=retry_after)\nr.raise_for_status()"
+      },
+      {
+        "error_text": "Circuit breaker stuck open after provider recovers",
+        "cause": "fails counter never resets without a successful call.",
+        "fix_snippet": "# Cooldown auto-resets in the check() method. If you skipped that, add:\nasync def heartbeat():\n    while True:\n        await asyncio.sleep(10)\n        if _breaker.opened_at and time.time() - _breaker.opened_at > _breaker.cooldown_s:\n            _breaker.opened_at = None; _breaker.fails = 0"
+      }
+    ],
+    "production_checklist": [
+      "Always honor Retry-After header for 429 - exponential backoff alone wastes the suggested wait time.",
+      "Cap stop_after_attempt at 5-7 - more retries on a real outage just delay the error to the user.",
+      "Log retry attempts to your observability stack with reason + wait time.",
+      "Use wait_exponential_jitter (NOT plain wait_exponential) - jitter prevents thundering herd.",
+      "Pair with a circuit breaker - retries on a fully-down provider are wasted compute.",
+      "Don't retry non-idempotent writes without an Idempotency-Key header.",
+      "Test the retry path in CI - it's the code most likely to break silently."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "gpt-5"
+      ],
+      "library_versions": [
+        "tenacity==9.0.0",
+        "httpx==0.28.1"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "tenacity",
+      "httpx"
+    ],
+    "related_glossary_slugs": [
+      "exponential-backoff",
+      "jitter",
+      "circuit-breaker",
+      "rate-limit"
+    ],
+    "related_learn_slugs": [
+      "production-llm-101"
+    ],
+    "faq": [
+      {
+        "question": "Tenacity vs backoff library vs hand-rolled?",
+        "answer": "Tenacity: more features (retry conditions, before_sleep hooks, async support), slightly heavier API. backoff: simpler decorator but doesn't surface Retry-After cleanly. Hand-rolled: avoid - you'll forget jitter."
+      },
+      {
+        "question": "When should retries open the circuit?",
+        "answer": "5 consecutive failures in 60 seconds is a sane default. The actual right number depends on your traffic - on 10 QPS, that's 0.5s of full outage to trigger. Set thresholds via load testing, not vibes."
+      }
+    ],
+    "meta_title": "Retry with Exponential Backoff + Jitter (Tenacity) | OSS AI Hub",
+    "meta_description": "Production retry chain for LLM APIs: tenacity decorators + 429 Retry-After + circuit breaker + jitter. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "streaming-sse-fastapi",
+    "title": "Server-Sent Events Streaming with FastAPI (Production)",
+    "tldr": "FastAPI SSE endpoint streaming LLM tokens with proper Content-Type, heartbeat, and client-disconnect detection.",
+    "description": "Production SSE: token streaming + 15s heartbeat to defeat proxies + client-disconnect handling + structured error events. Drop-in for any async LLM stream.",
+    "category": "production",
+    "language": "python",
+    "framework": "fastapi",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "fastapi",
+      "sse",
+      "streaming"
+    ],
+    "best_for_tags": [
+      "streaming",
+      "fastapi",
+      "chat-api"
+    ],
+    "featured": true,
+    "when_to_use": "You're shipping a chat or completion API and want browser-native streaming. SSE is simpler than websockets, works through CDNs (with the right headers), and the EventSource API is built into every browser.",
+    "when_not_to_use": "Skip SSE when (1) you need bidirectional comms - use websockets; (2) you're streaming binary - use websockets or chunked HTTP; (3) you're behind a proxy you can't configure (Cloudflare free tier buffers SSE).",
+    "quick_start": "1) `pip install fastapi uvicorn`  2) Save the endpoint  3) Connect from JS: `new EventSource('/chat?q=...')`.",
+    "full_code": "\"\"\"FastAPI SSE endpoint for streaming LLM tokens.\"\"\"\nfrom __future__ import annotations\n\nimport asyncio\nimport json\nfrom typing import AsyncIterator\n\nfrom fastapi import FastAPI, Request\nfrom fastapi.responses import StreamingResponse\nfrom anthropic import AsyncAnthropic\n\n\napp = FastAPI()\nclaude = AsyncAnthropic()\n\n\nHEARTBEAT_INTERVAL_S = 15  # CDNs/proxies kill idle connections at ~30-60s\n\n\nasync def _heartbeat() -> AsyncIterator[bytes]:\n    \"\"\"Emit a comment every N seconds to keep the connection alive.\"\"\"\n    while True:\n        await asyncio.sleep(HEARTBEAT_INTERVAL_S)\n        yield b\": heartbeat\\n\\n\"\n\n\nasync def _llm_stream(prompt: str) -> AsyncIterator[bytes]:\n    \"\"\"Stream tokens from Claude as SSE events.\"\"\"\n    try:\n        async with claude.messages.stream(\n            model=\"claude-sonnet-4-5\",\n            max_tokens=2000,\n            messages=[{\"role\": \"user\", \"content\": prompt}],\n        ) as stream:\n            async for text in stream.text_stream:\n                # SSE event format: data: <payload>\\n\\n\n                payload = json.dumps({\"type\": \"delta\", \"text\": text})\n                yield f\"data: {payload}\\n\\n\".encode(\"utf-8\")\n\n            # Final usage event\n            final = await stream.get_final_message()\n            usage = {\"input_tokens\": final.usage.input_tokens, \"output_tokens\": final.usage.output_tokens}\n            yield f\"event: usage\\ndata: {json.dumps(usage)}\\n\\n\".encode(\"utf-8\")\n            yield b\"event: done\\ndata: [DONE]\\n\\n\"\n    except Exception as e:\n        yield f\"event: error\\ndata: {json.dumps({'error': str(e)})}\\n\\n\".encode(\"utf-8\")\n\n\nasync def _merged_stream(prompt: str, request: Request) -> AsyncIterator[bytes]:\n    \"\"\"Interleave LLM output + heartbeats; abort if client disconnects.\"\"\"\n    llm = _llm_stream(prompt)\n    hb = _heartbeat()\n\n    llm_task = asyncio.create_task(_anext(llm))\n    hb_task = asyncio.create_task(_anext(hb))\n\n    while True:\n        if await request.is_disconnected():\n            llm_task.cancel(); hb_task.cancel()\n            return\n\n        done, pending = await asyncio.wait({llm_task, hb_task}, return_when=asyncio.FIRST_COMPLETED, timeout=1.0)\n        if not done:\n            continue\n        for t in done:\n            try:\n                chunk = t.result()\n                yield chunk\n            except StopAsyncIteration:\n                # LLM finished\n                for p in pending:\n                    p.cancel()\n                return\n            if t is llm_task:\n                llm_task = asyncio.create_task(_anext(llm))\n            else:\n                hb_task = asyncio.create_task(_anext(hb))\n\n\nasync def _anext(it):\n    return await it.__anext__()\n\n\n@app.get(\"/chat\")\nasync def chat(q: str, request: Request):\n    return StreamingResponse(\n        _merged_stream(q, request),\n        media_type=\"text/event-stream\",\n        headers={\n            \"Cache-Control\": \"no-cache, no-transform\",\n            \"Connection\": \"keep-alive\",\n            \"X-Accel-Buffering\": \"no\",  # disable nginx buffering\n        },\n    )\n",
+    "code": "import asyncio, json\nfrom fastapi import FastAPI, Request\nfrom fastapi.responses import StreamingResponse\nfrom anthropic import AsyncAnthropic\n\napp = FastAPI(); claude = AsyncAnthropic()\n\nasync def stream(prompt, request):\n    async with claude.messages.stream(model='claude-sonnet-4-5', max_tokens=2000,\n        messages=[{'role': 'user', 'content': prompt}]) as s:\n        async for text in s.text_stream:\n            if await request.is_disconnected(): return\n            yield f\"data: {json.dumps({'text': text})}\\n\\n\".encode()\n    yield b\"event: done\\ndata: [DONE]\\n\\n\"\n\n@app.get('/chat')\nasync def chat(q: str, request: Request):\n    return StreamingResponse(stream(q, request), media_type='text/event-stream',\n        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})\n",
+    "dependencies": [
+      "fastapi",
+      "uvicorn",
+      "anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "fastapi",
+        "version": ">=0.115.0",
+        "purpose": "Web framework."
+      },
+      {
+        "name": "uvicorn[standard]",
+        "version": ">=0.32.0",
+        "purpose": "ASGI server with HTTP/2."
+      },
+      {
+        "name": "anthropic",
+        "version": ">=0.40.0",
+        "purpose": "Example provider."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Claude key."
+      }
+    ],
+    "setup_steps": [
+      "`pip install fastapi>=0.115.0 'uvicorn[standard]>=0.32.0' anthropic`",
+      "Save the full_code as `sse.py`.",
+      "Run `uvicorn sse:app --reload`.",
+      "Test from a browser: open the dev console + run `new EventSource('http://localhost:8000/chat?q=hi').onmessage = e => console.log(e.data)`.",
+      "Or curl: `curl -N http://localhost:8000/chat?q=hi`",
+      "For production behind nginx: add `proxy_buffering off; proxy_cache off;` to the location block."
+    ],
+    "variations": [
+      {
+        "label": "POST body instead of GET query",
+        "description": "Needed for large prompts.",
+        "code_snippet": "@app.post('/chat')\nasync def chat(payload: dict, request: Request):\n    return StreamingResponse(stream(payload['q'], request), media_type='text/event-stream')"
+      },
+      {
+        "label": "Multi-event types (tool calls, citations)",
+        "description": "Emit different event: types for different content kinds.",
+        "code_snippet": "yield f'event: tool_call\\ndata: {json.dumps(tc)}\\n\\n'.encode()\nyield f'event: citation\\ndata: {json.dumps(c)}\\n\\n'.encode()"
+      },
+      {
+        "label": "Cloudflare-compatible (set X-Cf-No-Buffering)",
+        "description": "Cloudflare requires explicit headers to skip its SSE buffer.",
+        "code_snippet": "headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no', 'CF-Cache-Status': 'BYPASS'}"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Browser shows nothing for ~60s then gets full response",
+        "cause": "Proxy is buffering SSE (nginx, Cloudflare).",
+        "fix_snippet": "# Headers: X-Accel-Buffering: no (nginx) AND proxy_buffering off in nginx config.\n# Cloudflare: needs paid tier OR move to Workers."
+      },
+      {
+        "error_text": "Connection drops at 30s",
+        "cause": "No heartbeat - intermediate proxy/load balancer killed the idle connection.",
+        "fix_snippet": "# Send heartbeats every 15s:\nyield b': heartbeat\\n\\n'  # SSE comment - ignored by client but keeps conn alive"
+      },
+      {
+        "error_text": "EventSource not receiving 'event: done' as a custom event",
+        "cause": "Client side missed the addEventListener for that event type.",
+        "fix_snippet": "// Browser:\nconst es = new EventSource('/chat?q=hi');\nes.addEventListener('done', () => es.close());\nes.onmessage = e => console.log(JSON.parse(e.data));"
+      }
+    ],
+    "production_checklist": [
+      "Always set X-Accel-Buffering: no header for nginx; configure proxy_buffering off in nginx.conf.",
+      "Send heartbeats every 15s - intermediate proxies kill idle connections.",
+      "Detect client disconnect via request.is_disconnected() - don't keep generating tokens for an abandoned client.",
+      "Use Cache-Control: no-cache, no-transform - some CDNs transform content otherwise.",
+      "Emit a final 'event: done' event - clients use it to close cleanly.",
+      "Wrap LLM stream in try/except + emit 'event: error' for client UX.",
+      "Test through your actual proxy chain in staging - SSE bugs only surface end-to-end."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "fastapi==0.115.6",
+        "uvicorn==0.32.1",
+        "anthropic==0.40.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "fastapi",
+      "anthropic"
+    ],
+    "related_glossary_slugs": [
+      "sse",
+      "streaming",
+      "event-source",
+      "ttft"
+    ],
+    "related_learn_slugs": [
+      "streaming-101"
+    ],
+    "faq": [
+      {
+        "question": "SSE vs websockets for LLM streaming?",
+        "answer": "SSE: simpler, works through HTTP infra, automatic reconnect in EventSource, one-way only. WebSocket: bidirectional, lower overhead per message at scale, but more proxy issues. For chat: SSE is the default unless you need user-to-server streaming mid-response."
+      },
+      {
+        "question": "Why not just chunked transfer encoding?",
+        "answer": "SSE IS chunked HTTP with a defined message format (data:/event:/id:) and the EventSource API. Raw chunked transfer works but you'd rebuild the parsing on the client + lose automatic reconnect."
+      }
+    ],
+    "meta_title": "Server-Sent Events Streaming with FastAPI | OSS AI Hub",
+    "meta_description": "Production FastAPI SSE: token streaming, heartbeats, disconnect detection, nginx-ready headers. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "redis-llm-response-cache",
+    "title": "Redis LLM Response Cache (Exact + Semantic Two-Tier)",
+    "tldr": "Two-tier cache: exact prompt-match in Redis (instant) + semantic-similarity fallback in vector index. 30-60% cost reduction on real workloads.",
+    "description": "Production LLM cache: hash-based exact match for repeated prompts + embedding-based semantic match for near-duplicates. Wrapper around any LLM client.",
+    "category": "production",
+    "language": "python",
+    "framework": "redis",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "cache",
+      "redis",
+      "semantic-cache"
+    ],
+    "best_for_tags": [
+      "cost-cache",
+      "latency",
+      "production"
+    ],
+    "featured": true,
+    "when_to_use": "Your traffic has repeat questions (FAQs, support, search). Even with prompt diversity, the top 20% of queries account for ~60% of volume. Exact + semantic cache cuts that to near-zero cost with sub-10ms latency.",
+    "when_not_to_use": "Skip when (1) every request is unique (deeply personalized agents); (2) freshness is paramount (live data lookups); (3) responses are non-deterministic by design.",
+    "quick_start": "1) `pip install redis fastembed`  2) Run Redis  3) Wrap your LLM call with the @cached decorator.",
+    "full_code": "\"\"\"Two-tier cache: exact (Redis) + semantic (Redis with vector search).\"\"\"\nfrom __future__ import annotations\n\nimport hashlib\nimport json\nimport os\nimport time\nfrom typing import Callable, Any\n\nimport numpy as np\nimport redis.asyncio as aioredis\nfrom fastembed import TextEmbedding\n\n\nEMBED_MODEL = \"BAAI/bge-small-en-v1.5\"   # 384-dim, fast\nTTL_S = 60 * 60 * 24                      # 24h\nSEMANTIC_THRESHOLD = 0.93                 # cosine similarity bar\n\n\nclass TwoTierCache:\n    def __init__(self, redis_url: str = \"redis://localhost:6379\"):\n        self.r = aioredis.from_url(redis_url, decode_responses=False)\n        self.embedder = TextEmbedding(EMBED_MODEL)\n\n    def _key_exact(self, prompt: str, system: str = \"\", model: str = \"\") -> str:\n        h = hashlib.sha256(f\"{system}|{model}|{prompt}\".encode()).hexdigest()\n        return f\"llmcache:exact:{h}\"\n\n    def _key_index(self, model: str) -> str:\n        return f\"llmcache:semantic:{model}\"\n\n    async def get(self, prompt: str, system: str = \"\", model: str = \"\") -> str | None:\n        # Tier 1: exact\n        raw = await self.r.get(self._key_exact(prompt, system, model))\n        if raw:\n            return raw.decode(\"utf-8\")\n\n        # Tier 2: semantic\n        q_vec = np.asarray(list(self.embedder.embed([prompt]))[0], dtype=np.float32)\n        # Scan recent semantic entries (last 1000)\n        entries = await self.r.zrevrange(self._key_index(model), 0, 1000, withscores=False)\n        best: tuple[float, bytes] | None = None\n        for member in entries:\n            data = await self.r.hgetall(b\"llmcache:sem:\" + member)\n            if not data:\n                continue\n            stored_vec = np.frombuffer(data[b\"vec\"], dtype=np.float32)\n            sim = float(np.dot(q_vec, stored_vec) / (np.linalg.norm(q_vec) * np.linalg.norm(stored_vec)))\n            if sim >= SEMANTIC_THRESHOLD and (best is None or sim > best[0]):\n                best = (sim, data[b\"answer\"])\n        return best[1].decode(\"utf-8\") if best else None\n\n    async def put(self, prompt: str, answer: str, system: str = \"\", model: str = \"\") -> None:\n        # Exact tier\n        await self.r.setex(self._key_exact(prompt, system, model), TTL_S, answer.encode(\"utf-8\"))\n\n        # Semantic tier\n        q_vec = np.asarray(list(self.embedder.embed([prompt]))[0], dtype=np.float32)\n        member = hashlib.sha256(f\"{prompt}|{time.time()}\".encode()).hexdigest()\n        await self.r.hset(b\"llmcache:sem:\" + member.encode(), mapping={b\"vec\": q_vec.tobytes(), b\"answer\": answer.encode(\"utf-8\"), b\"prompt\": prompt.encode(\"utf-8\")})\n        await self.r.zadd(self._key_index(model), {member.encode(): time.time()})\n        # Cap the semantic index at 10k entries\n        await self.r.zremrangebyrank(self._key_index(model), 0, -10001)\n\n\nasync def cached_call(cache: TwoTierCache, prompt: str, llm_fn: Callable[[str], Any], model: str = \"claude-sonnet-4-5\") -> str:\n    hit = await cache.get(prompt, model=model)\n    if hit:\n        return hit\n    answer = await llm_fn(prompt)\n    await cache.put(prompt, answer, model=model)\n    return answer\n",
+    "code": "import hashlib, redis.asyncio as aioredis, json\nfrom fastembed import TextEmbedding\nimport numpy as np\n\nr = aioredis.from_url('redis://localhost:6379', decode_responses=False)\nembed = TextEmbedding('BAAI/bge-small-en-v1.5')\n\ndef key(prompt, model):\n    return f'llmcache:{hashlib.sha256((model + prompt).encode()).hexdigest()}'\n\nasync def cached(prompt, llm_fn, model='claude-sonnet-4-5'):\n    cached = await r.get(key(prompt, model))\n    if cached: return cached.decode()\n    answer = await llm_fn(prompt)\n    await r.setex(key(prompt, model), 86400, answer)\n    return answer\n",
+    "dependencies": [
+      "redis",
+      "fastembed",
+      "numpy"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "redis",
+        "version": ">=5.0.0",
+        "purpose": "Async Redis client."
+      },
+      {
+        "name": "fastembed",
+        "version": ">=0.5.0",
+        "purpose": "Local embedding for semantic match."
+      },
+      {
+        "name": "numpy",
+        "version": ">=1.26.0",
+        "purpose": "Vector arithmetic."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "REDIS_URL",
+        "required": false,
+        "description": "Default redis://localhost:6379."
+      }
+    ],
+    "setup_steps": [
+      "Run Redis: `docker run -p 6379:6379 redis:7-alpine`",
+      "`pip install redis>=5.0.0 fastembed>=0.5.0 numpy`",
+      "Save the class as `llm_cache.py`.",
+      "Wrap your LLM client function via `cached_call(cache, prompt, llm_fn=your_call_claude)`.",
+      "Watch the hit rate in production - typical 30-60% on chat / FAQ traffic.",
+      "Tune SEMANTIC_THRESHOLD higher (0.95) for sensitive content; lower (0.88) for general FAQ.",
+      "For >10k semantic entries, swap to Redis Stack RedisSearch with proper HNSW index."
+    ],
+    "variations": [
+      {
+        "label": "Redis Stack with proper vector search",
+        "description": "Scales past 10k entries; sub-10ms semantic lookups.",
+        "code_snippet": "# Use Redis Stack (RedisSearch):\nfrom redis.commands.search.field import VectorField, TextField\nfrom redis.commands.search.indexDefinition import IndexDefinition\nr.ft('idx:llmcache').create_index([VectorField('vec', 'HNSW', {'TYPE': 'FLOAT32', 'DIM': 384, 'DISTANCE_METRIC': 'COSINE'})])"
+      },
+      {
+        "label": "Per-user cache namespacing",
+        "description": "Don't leak one user's answers to another.",
+        "code_snippet": "def _key_exact(prompt, system='', model='', user_id=''):\n    h = hashlib.sha256(f'{user_id}|{system}|{model}|{prompt}'.encode()).hexdigest()\n    return f'llmcache:{user_id}:{h}'"
+      },
+      {
+        "label": "Conditional caching by request flag",
+        "description": "Let callers opt out (fresh-data queries).",
+        "code_snippet": "@app.post('/chat')\nasync def chat(payload):\n    if payload.get('skip_cache'):\n        return await llm_call(payload['prompt'])\n    return await cached_call(cache, payload['prompt'], llm_call)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Hit rate is 0% despite repeated questions",
+        "cause": "Hashing includes timestamp or whitespace differs.",
+        "fix_snippet": "# Normalize prompts before hashing:\nimport re\ndef _normalize(s): return re.sub(r'\\s+', ' ', s.strip().lower())\nh = hashlib.sha256(_normalize(prompt).encode()).hexdigest()"
+      },
+      {
+        "error_text": "Semantic cache returns near-matches that aren't actually right",
+        "cause": "Threshold too low.",
+        "fix_snippet": "SEMANTIC_THRESHOLD = 0.95  # was 0.93 - tighter\n# Better: a/b test thresholds on your traffic + measure quality drop"
+      },
+      {
+        "error_text": "Cache grows unbounded",
+        "cause": "No TTL or no ZSET size cap.",
+        "fix_snippet": "# Exact tier: SETEX with TTL\n# Semantic tier: ZREMRANGEBYRANK to keep top 10k recent\nawait r.zremrangebyrank(self._key_index(model), 0, -10001)"
+      }
+    ],
+    "production_checklist": [
+      "Set TTL on every cache entry - never let it grow forever.",
+      "Cap the semantic index size + use ZREMRANGEBYRANK to evict oldest.",
+      "Namespace by user_id for any multi-tenant app - cross-user cache hits are data leaks.",
+      "Tune SEMANTIC_THRESHOLD on your traffic - 0.93 is a starting point, not gospel.",
+      "Track cache_hit_rate + cache_quality (sample 1% of hits and human-review).",
+      "For >10k entries move to Redis Stack with HNSW - linear scan stops at ~10k.",
+      "Don't cache responses with PII unless your Redis is on-prem + encrypted."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "BAAI/bge-small-en-v1.5"
+      ],
+      "library_versions": [
+        "redis==5.2.0",
+        "fastembed==0.5.0",
+        "Redis 7"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "redis",
+      "fastembed"
+    ],
+    "related_glossary_slugs": [
+      "semantic-cache",
+      "response-cache",
+      "embedding",
+      "cosine-similarity"
+    ],
+    "related_learn_slugs": [
+      "production-llm-101"
+    ],
+    "faq": [
+      {
+        "question": "Exact vs semantic - is semantic worth the complexity?",
+        "answer": "On real chat traffic, exact cache hits at 15-25%, semantic adds another 15-30% on top. For FAQ-shaped traffic the gap is larger; for code-gen traffic smaller. Run with exact-only first - if hit rate is satisfying, skip the semantic layer."
+      },
+      {
+        "question": "Does this work for streaming responses?",
+        "answer": "Yes - cache the full completed response, replay it as a fast stream on hit. But you lose 'live' feel - some apps prefer always-fresh streams over cache."
+      }
+    ],
+    "meta_title": "Redis LLM Response Cache (Exact + Semantic) | OSS AI Hub",
+    "meta_description": "Production two-tier LLM cache: exact + semantic similarity, 30-60% cost cut. Per-user namespacing, TTL, size cap. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "healthcheck-readiness-llm",
+    "title": "Healthcheck + Readiness for LLM Pods (Kubernetes-Ready)",
+    "tldr": "Health + readiness endpoints that probe model load, GPU memory, and downstream dependency latency. Drop-in for K8s + ECS.",
+    "description": "Two-endpoint pattern: /healthz (cheap liveness) + /readyz (model loaded, deps reachable, GPU memory available). K8s probes use them for rolling deploys.",
+    "category": "production",
+    "language": "python",
+    "framework": "fastapi",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "healthcheck",
+      "k8s",
+      "readiness"
+    ],
+    "best_for_tags": [
+      "k8s",
+      "healthcheck",
+      "production"
+    ],
+    "when_to_use": "Any LLM service deployed on K8s, ECS, or similar orchestrators. The orchestrator needs to distinguish 'process is up' (liveness) from 'process is ready to serve traffic' (readiness) - especially when model loading takes minutes.",
+    "when_not_to_use": "Skip when (1) running on a serverless platform that handles this for you; (2) you don't have downstream deps to probe (rare); (3) the model loads in <1s (still useful but lower value).",
+    "quick_start": "1) `pip install fastapi httpx`  2) Mount the /healthz + /readyz routes  3) Configure your Pod's livenessProbe + readinessProbe.",
+    "full_code": "\"\"\"K8s-ready /healthz + /readyz for LLM services.\"\"\"\nfrom __future__ import annotations\n\nimport asyncio\nimport os\nimport time\nfrom contextlib import asynccontextmanager\n\nimport httpx\nfrom fastapi import FastAPI, Response\n\n\nSTATE = {\n    \"model_loaded\": False,\n    \"model_loaded_at\": None,\n    \"last_dep_check_ok\": True,\n    \"last_dep_check_at\": 0.0,\n}\n\n\nasync def _load_model() -> None:\n    \"\"\"Replace with your real model load.\"\"\"\n    print(\"[startup] loading model...\")\n    await asyncio.sleep(5)   # simulate\n    STATE[\"model_loaded\"] = True\n    STATE[\"model_loaded_at\"] = time.time()\n    print(\"[startup] model ready\")\n\n\nasync def _check_deps() -> bool:\n    \"\"\"Probe critical downstream dependencies.\"\"\"\n    try:\n        async with httpx.AsyncClient(timeout=2.0) as c:\n            r = await c.get(os.environ.get(\"VLLM_HEALTH_URL\", \"http://vllm:8000/health\"))\n            return r.status_code == 200\n    except Exception:\n        return False\n\n\nasync def _periodic_dep_check() -> None:\n    while True:\n        STATE[\"last_dep_check_ok\"] = await _check_deps()\n        STATE[\"last_dep_check_at\"] = time.time()\n        await asyncio.sleep(15)\n\n\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    await _load_model()\n    dep_task = asyncio.create_task(_periodic_dep_check())\n    yield\n    dep_task.cancel()\n\n\napp = FastAPI(lifespan=lifespan)\n\n\n@app.get(\"/healthz\")\nasync def healthz():\n    \"\"\"Liveness: cheap - 'is the process running?'\"\"\"\n    return {\"status\": \"ok\"}\n\n\n@app.get(\"/readyz\")\nasync def readyz(response: Response):\n    \"\"\"Readiness: model loaded + deps reachable.\"\"\"\n    ready = STATE[\"model_loaded\"] and STATE[\"last_dep_check_ok\"]\n    body = {\n        \"ready\": ready,\n        \"model_loaded\": STATE[\"model_loaded\"],\n        \"model_loaded_at\": STATE[\"model_loaded_at\"],\n        \"last_dep_check_ok\": STATE[\"last_dep_check_ok\"],\n        \"last_dep_check_age_s\": time.time() - STATE[\"last_dep_check_at\"] if STATE[\"last_dep_check_at\"] else None,\n    }\n    if not ready:\n        response.status_code = 503\n    return body\n\n\n@app.get(\"/\")\nasync def root():\n    return {\"app\": \"ossai-llm-service\"}\n",
+    "code": "import asyncio, time\nfrom contextlib import asynccontextmanager\nfrom fastapi import FastAPI, Response\n\nSTATE = {'model_loaded': False, 'deps_ok': True}\n\nasync def load_model():\n    await asyncio.sleep(5)\n    STATE['model_loaded'] = True\n\n@asynccontextmanager\nasync def lifespan(app):\n    await load_model()\n    yield\n\napp = FastAPI(lifespan=lifespan)\n\n@app.get('/healthz')\nasync def healthz(): return {'ok': True}\n\n@app.get('/readyz')\nasync def readyz(resp: Response):\n    ready = STATE['model_loaded'] and STATE['deps_ok']\n    if not ready: resp.status_code = 503\n    return {'ready': ready, **STATE}\n",
+    "dependencies": [
+      "fastapi",
+      "httpx"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "fastapi",
+        "version": ">=0.115.0",
+        "purpose": "Web framework with lifespan support."
+      },
+      {
+        "name": "httpx",
+        "version": ">=0.28.0",
+        "purpose": "Async dep probing."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "VLLM_HEALTH_URL",
+        "required": false,
+        "description": "Downstream health URL to probe."
+      }
+    ],
+    "setup_steps": [
+      "`pip install fastapi>=0.115.0 httpx>=0.28.0 uvicorn`",
+      "Save the full_code as `health.py`.",
+      "Run `uvicorn health:app --port 8080`.",
+      "Hit /healthz (always 200 once process is up) and /readyz (503 until model loaded).",
+      "In your Pod manifest: livenessProbe -> /healthz, readinessProbe -> /readyz.",
+      "Set startupProbe with longer timeout for slow model loads (avoid premature liveness failures)."
+    ],
+    "variations": [
+      {
+        "label": "GPU memory check",
+        "description": "Fail readyz if VRAM is mostly consumed.",
+        "code_snippet": "import subprocess\ndef gpu_mem_ok() -> bool:\n    try:\n        out = subprocess.check_output(['nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits']).decode()\n        used, total = map(int, out.split('\\n')[0].split(','))\n        return used / total < 0.95\n    except Exception:\n        return True  # no GPU = trivially ok"
+      },
+      {
+        "label": "K8s probe config",
+        "description": "Standard probe spec for your Pod.",
+        "code_snippet": "containers:\n- name: llm-service\n  startupProbe:\n    httpGet: {path: /readyz, port: 8080}\n    failureThreshold: 30\n    periodSeconds: 10\n  livenessProbe:\n    httpGet: {path: /healthz, port: 8080}\n    periodSeconds: 30\n  readinessProbe:\n    httpGet: {path: /readyz, port: 8080}\n    periodSeconds: 5"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Pod crash-looping during startup",
+        "cause": "Liveness probe fires before model finishes loading.",
+        "fix_snippet": "# Use startupProbe with high failureThreshold:\nstartupProbe:\n  httpGet: {path: /readyz, port: 8080}\n  failureThreshold: 60   # 10 min @ 10s interval\n  periodSeconds: 10"
+      },
+      {
+        "error_text": "Readyz returns true but service fails on first request",
+        "cause": "Probe doesn't actually exercise the model.",
+        "fix_snippet": "# Run a smoke inference in startup BEFORE setting model_loaded=True:\nasync def _load_model():\n    model = load_real_model()\n    _ = model.generate('hi', max_tokens=5)   # warmup + verify\n    STATE['model_loaded'] = True"
+      },
+      {
+        "error_text": "Service marked unhealthy during a downstream blip",
+        "cause": "Dep check too aggressive - any single fail flaps readiness.",
+        "fix_snippet": "# Require 3 consecutive fails before going unhealthy:\nFAIL_THRESHOLD = 3\nasync def periodic_check():\n    fails = 0\n    while True:\n        ok = await _check_deps()\n        fails = 0 if ok else fails + 1\n        STATE['deps_ok'] = fails < FAIL_THRESHOLD\n        await asyncio.sleep(15)"
+      }
+    ],
+    "production_checklist": [
+      "Always have BOTH liveness + readiness - the orchestrator needs to distinguish them.",
+      "Use startupProbe in K8s for slow model loads - prevents premature liveness kills.",
+      "Probe a real inference (small prompt) in startup, not just 'process is up'.",
+      "Add downstream dep checks (vLLM, Redis, Postgres) to readiness - probe should fail if any critical dep is down.",
+      "Don't fail readiness on FIRST dep failure - use consecutive-fail threshold to avoid flapping.",
+      "Pipe /readyz response to a structured logger - mid-flight readiness changes are signal.",
+      "Add /metrics endpoint alongside (Prometheus) for the same dependency info."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "N/A - infra"
+      ],
+      "library_versions": [
+        "fastapi==0.115.6",
+        "httpx==0.28.1"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "fastapi",
+      "kubernetes"
+    ],
+    "related_glossary_slugs": [
+      "liveness-probe",
+      "readiness-probe",
+      "k8s-pod"
+    ],
+    "related_learn_slugs": [
+      "production-llm-101",
+      "k8s-llm-deployment"
+    ],
+    "faq": [
+      {
+        "question": "Liveness vs readiness vs startup probe - which when?",
+        "answer": "Startup: 'has the slow init finished?' - used during pod boot only, disables liveness checks until passed. Readiness: 'should I send traffic?' - used continuously by service discovery. Liveness: 'should I be restarted?' - last resort, fires on process hang. Most LLM bugs need readiness, not liveness."
+      },
+      {
+        "question": "Should /healthz check downstream deps?",
+        "answer": "No - liveness should be cheap + local. If your DB is down, restarting your pod doesn't help. Put dep checks in /readyz so the orchestrator stops sending traffic but doesn't restart unnecessarily."
+      }
+    ],
+    "meta_title": "Healthcheck + Readiness for LLM Pods | OSS AI Hub",
+    "meta_description": "Production K8s /healthz + /readyz for LLM services: model-loaded + dep-reachable + GPU-mem checks. MIT."
   }
 ]
