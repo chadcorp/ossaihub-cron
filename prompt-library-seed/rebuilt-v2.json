@@ -1,5 +1,658 @@
 [
   {
+    "slug": "tool-calling-system-prompt",
+    "title": "Tool-Calling Agent System Prompt Template",
+    "tldr": "A system prompt template for tool-calling agents \u2014 specifies when to use tools, when to stop, how to handle errors, and how to format the final answer. Bullet-proof against the most common loop and termination failures.",
+    "category": "agents",
+    "tags": [
+      "agents",
+      "system-prompt",
+      "tool-calling",
+      "termination"
+    ],
+    "best_for_tags": [
+      "production-agents",
+      "tool-use",
+      "research-bots"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Research assistant with search + calculator",
+        "example": "System prompt that knows when to search vs answer from memory."
+      },
+      {
+        "scenario": "Customer support agent with knowledge base + ticket tools",
+        "example": "Routes appropriately, escalates correctly, doesn't loop on impossible queries."
+      },
+      {
+        "scenario": "Code assistant with run-tests + read-file tools",
+        "example": "Stops once tests pass; doesn't keep \u2018improving\u2019 working code."
+      },
+      {
+        "scenario": "Sales research agent with multiple data sources",
+        "example": "Knows which source for which question; consolidates without making up data."
+      }
+    ],
+    "when_not_to_use": "Skip for single-tool agents (over-engineered). Skip for chat agents that don't use tools (this prompt's structure overshoots).",
+    "full_prompt": "You are a {role} agent with access to the following tools:\n\n{tool_descriptions}\n\nOPERATING RULES\n\n## When to use tools\n- Use a tool when the user's request requires CURRENT data, EXTERNAL data, or COMPUTATION you cannot reliably do in your head.\n- For each tool call, pick the SINGLE most relevant tool. Don't call multiple tools speculatively.\n- If multiple tools could apply, prefer the one with the most precise answer (e.g., calculator for math, not search).\n\n## When NOT to use tools\n- Definitions, summaries of public knowledge, opinion: answer directly.\n- The user is asking a follow-up about something you already retrieved: re-use the prior result, don't re-fetch.\n\n## When to STOP\n- When you have a confident answer to the user's question, return it. Don't keep \u2018improving\u2019 working answers.\n- If a tool returns sufficient information, summarize and answer. Don't immediately call another tool to \u2018verify\u2019 unless asked.\n- After {max_tool_calls} tool calls in this conversation, stop and synthesize an answer with what you have. Note any uncertainty.\n\n## Handling tool failures\n- If a tool returns an ERROR, do NOT retry blindly. Read the error message:\n  - If it's a validation error (your args wrong), correct and retry once.\n  - If it's a transient error (timeout, 503), retry once with the same args.\n  - If it's a permanent error (not found, unauthorized), don't retry \u2014 acknowledge to the user.\n\n## Final answer format\n- Lead with the direct answer. Reasoning AFTER, not before.\n- If you used tools, cite them: \"(via {{tool_name}})\".\n- Mark uncertainty explicitly: \"I'm confident X. I'm less sure Y.\"\n- If you couldn't fully answer, say what you DO know and what you'd need next.\n\n## Anti-patterns to avoid\n- Don't call a tool just because it exists. Tools serve user intent, not your need to look thorough.\n- Don't paraphrase tool output as your own knowledge.\n- Don't loop on the same tool with slight argument variations hoping for better data \u2014 pick one query carefully or escalate.\n- Don't apologize for tool limitations \u2014 describe them factually and offer a path forward.\n\nTHE USER'S CURRENT REQUEST\n{user_request}",
+    "input_variables": [
+      {
+        "name": "role",
+        "type": "string",
+        "description": "Agent's role identity",
+        "required": true,
+        "example": "research-assistant"
+      },
+      {
+        "name": "tool_descriptions",
+        "type": "string",
+        "description": "Available tools, one per line with brief description",
+        "required": true,
+        "example": "- search(query): web search\\n- calculator(expr): basic math\\n- read_file(path): read a local file"
+      },
+      {
+        "name": "max_tool_calls",
+        "type": "integer",
+        "description": "Max tool calls before forced synthesis",
+        "required": true,
+        "example": "6"
+      },
+      {
+        "name": "user_request",
+        "type": "string",
+        "description": "The user's question",
+        "required": true,
+        "example": "What's the current market cap of Anthropic?"
+      }
+    ],
+    "expected_output": {
+      "format": "text",
+      "sample": "This is a SYSTEM PROMPT TEMPLATE \u2014 paste as system message; the agent's responses follow the rules described."
+    },
+    "few_shot_examples": [
+      {
+        "input": "User asks \u2018What's 17 * 23?\u2019",
+        "output": "Direct answer first: 391. (via calculator). No further tool calls needed."
+      }
+    ],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Follows the rules tightly; respects max_tool_calls."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally over-tools \u2014 re-pin \u2018when NOT to use tools\u2019."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Holds rules; less consistent on stopping criterion."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to call tools speculatively; explicitly forbid in prompt."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Anthropic-specific",
+        "description": "Use Claude's tool_use block format.",
+        "prompt_snippet": "Add: \u2018when using tools, emit <tool_use> blocks per Anthropic's tool-use API; do not narrate the call.\u2019"
+      },
+      {
+        "label": "Verbose reasoning mode",
+        "description": "Show reasoning before answer (for debugging).",
+        "prompt_snippet": "Replace \u2018reasoning AFTER\u2019 with: \u2018show 1-2 sentence reasoning, then call tools, then answer.\u2019"
+      },
+      {
+        "label": "Single-tool fast path",
+        "description": "When only one tool is available.",
+        "prompt_snippet": "Reduce ruleset: keep STOP, FAILURES, FORMAT; remove WHEN-TO-USE (only one option)."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Loops calling same tool with minor variations.",
+        "fix": "Re-pin \u2018don't loop on slight argument variations.\u2019 Add: \u2018after one tool call, must move forward \u2014 synthesize or escalate.\u2019"
+      },
+      {
+        "symptom": "Calls tools when answer is obvious.",
+        "fix": "Re-pin \u2018when NOT to use tools.\u2019 Add: \u2018if you're 90%+ confident from memory, answer directly.\u2019"
+      },
+      {
+        "symptom": "Never stops calling tools.",
+        "fix": "Re-pin max_tool_calls; add explicit \u2018after N calls, synthesize even if incomplete.\u2019"
+      },
+      {
+        "symptom": "Hallucinates tool output as own knowledge.",
+        "fix": "Re-pin \u2018cite tools in final answer.\u2019 Add: \u2018facts not from tool calls and not from training data must be marked uncertain.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "react-agent-loop",
+      "self-critique-loop",
+      "tree-of-thought-decision"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "agent-loop",
+      "tool-calling",
+      "termination-criterion"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Should the agent always cite tools?",
+        "answer": "In production user-facing: yes for transparency. In internal: optional. Citation builds trust and helps debug when the agent goes wrong."
+      },
+      {
+        "question": "What max_tool_calls is right?",
+        "answer": "Depends on task. Research: 8-12. Calculation: 2-3. Multi-step planning: 15-20. Watch p99 \u2014 if 90% of conversations use <5, max=10 is forgiving and safe."
+      },
+      {
+        "question": "Will this prompt prevent prompt injection?",
+        "answer": "No. This is operating discipline for the agent; injection defense is separate (see input-validation + sandbox patterns). Use both."
+      }
+    ],
+    "meta_title": "Tool-Calling Agent System Prompt Template",
+    "meta_description": "Bullet-proof system prompt for tool-calling agents: when to use tools, when to stop, how to handle failures, citation conventions."
+  },
+  {
+    "slug": "rag-prompt-with-confidence",
+    "title": "RAG Answer Prompt With Per-Claim Confidence",
+    "tldr": "RAG generation prompt that returns answers WITH per-claim confidence ratings and inline citations, distinguishing what the retrieved context supports from what the model is inferring.",
+    "category": "rag",
+    "tags": [
+      "rag",
+      "citations",
+      "confidence",
+      "grounding"
+    ],
+    "best_for_tags": [
+      "high-stakes-rag",
+      "compliance",
+      "research-assistants"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Compliance/legal QA over policy docs",
+        "example": "Answers cite source paragraph + confidence; reviewers know what to verify."
+      },
+      {
+        "scenario": "Customer-facing knowledge base",
+        "example": "Bot answers with citations; when confidence is low, it says so instead of guessing."
+      },
+      {
+        "scenario": "Research synthesis with mixed sources",
+        "example": "Some claims from primary docs, some from secondary \u2014 clearly distinguished."
+      },
+      {
+        "scenario": "Internal docs search",
+        "example": "Engineering Q&A with line-level citations for code questions."
+      }
+    ],
+    "when_not_to_use": "Skip for casual chat where confidence ratings would be annoying. Skip when sources are highly authoritative (legal docs verbatim) and you want exact quotes, not paraphrased + cited.",
+    "full_prompt": "You are answering a question using retrieved context. You will:\n1. Answer based on the context\n2. Cite source for every factual claim\n3. Rate confidence per claim\n4. Clearly mark inferences vs direct claims\n\nINPUT\n- Question: {question}\n- Retrieved contexts (with IDs): {contexts}\n\nOUTPUT FORMAT\nWrite the answer as a paragraph or short structured response. After each factual claim, include:\n- A citation in square brackets: [SOURCE_ID]\n- A confidence indicator: \u2605 (highly supported by source), \u25d0 (partially supported / requires reasonable inference), \u25cb (model inference, not in source)\n\nEnd with two short sections:\n\n## SOURCES\nFor each unique SOURCE_ID cited, repeat it with the relevant excerpt (a clause or sentence from the context).\n\n## GAPS\nIf the contexts don't fully answer the question:\n- What's missing from the contexts to give a confident complete answer?\n- What's the best partial answer with what's available?\n\nGROUND RULES\n- If the contexts don't support a claim, don't make it \u2014 better to say \"the contexts don't say.\" than to confabulate.\n- Inference \u25cb is allowed but must be obvious from context: stating a fact NOT in context counts as inference and must be marked.\n- Direct quotation of contexts: use quote marks AND cite. Never longer than 25 words to respect copyright.\n- If contexts contradict each other, surface the contradiction explicitly with both citations.\n- Quantitative claims (numbers, dates) must be \u2605 \u2014 if you can't find them precisely in source, don't state them.\n\nQUESTION\n{question}\n\nCONTEXTS\n{contexts}\n\nAnswer now.",
+    "input_variables": [
+      {
+        "name": "question",
+        "type": "string",
+        "description": "User's question",
+        "required": true,
+        "example": "What's the difference between HNSW and IVFFlat indexes in pgvector?"
+      },
+      {
+        "name": "contexts",
+        "type": "string",
+        "description": "Retrieved passages with source IDs",
+        "required": true,
+        "example": "[DOC1]: HNSW builds a navigable graph. Fast queries, RAM-heavy.\\n[DOC2]: IVFFlat partitions vectors into Voronoi cells. Lower RAM, requires REINDEX after bulk insert.\\n[DOC3]: For pgvector, HNSW available from v0.5+."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Answer paragraph with inline citations and confidence symbols, followed by SOURCES section and GAPS section."
+    },
+    "few_shot_examples": [
+      {
+        "input": "Q: What's the difference between HNSW and IVFFlat? Contexts: [DOC1] HNSW = navigable graph, fast queries, RAM-heavy. [DOC2] IVFFlat = Voronoi cells, lower RAM, needs REINDEX.",
+        "output": "HNSW [DOC1]\u2605 builds a navigable graph that gives fast queries at the cost of high RAM use. IVFFlat [DOC2]\u2605 partitions vectors into Voronoi cells, using less RAM but requiring REINDEX after bulk inserts. For high-QPS workloads with sufficient RAM, HNSW is the typical choice [\u25d0, inference from the two trade-offs].\\n\\n## SOURCES\\n[DOC1]: HNSW builds a navigable graph. Fast queries, RAM-heavy.\\n[DOC2]: IVFFlat partitions vectors into Voronoi cells. Lower RAM, requires REINDEX after bulk insert.\\n\\n## GAPS\\n- Contexts don't specify exact thresholds where one beats the other on real workloads. For specific guidance, benchmark with your data."
+      }
+    ],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong citation discipline; doesn't fabricate when sources are silent."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally cites a source that doesn't support the specific claim \u2014 review."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Good citations; confidence symbols can be overused (everything gets \u2605)."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to over-confident citations; verify on contested claims."
+      }
+    ],
+    "variations": [
+      {
+        "label": "JSON output",
+        "description": "Structured for downstream consumers.",
+        "prompt_snippet": "Replace markdown with JSON: {answer_text, claims: [{text, sources, confidence}], sources, gaps}."
+      },
+      {
+        "label": "Strict mode (no inference)",
+        "description": "Refuse if not in contexts.",
+        "prompt_snippet": "Add: \u2018NO inferences. If contexts don't directly support a claim, omit it. Cite verbatim or paraphrase with explicit citation.\u2019"
+      },
+      {
+        "label": "Multi-language sources",
+        "description": "Translate context citations.",
+        "prompt_snippet": "Add: \u2018if contexts include other languages, translate citations to the question's language; note original language alongside.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Everything is \u2605 confidence.",
+        "fix": "Re-pin distinction: \u25d0 for partial support / reasonable inference, \u25cb for model inference. Add examples."
+      },
+      {
+        "symptom": "Citations don't actually support the claim.",
+        "fix": "Add: \u2018before emitting a citation, verify the source actually supports the specific claim. If you're stretching, mark as \u25d0 or \u25cb.\u2019"
+      },
+      {
+        "symptom": "GAPS section says \u2018none.\u2019",
+        "fix": "Add: \u2018there's almost always something missing \u2014 vague is fine but \u2018nothing missing\u2019 is rarely accurate.\u2019"
+      },
+      {
+        "symptom": "Contexts contradict each other; answer picks one without noting.",
+        "fix": "Re-pin: \u2018when contexts disagree, surface the disagreement with both citations.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "rag-with-citations",
+      "agentic-rag-research"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "rag",
+      "citation",
+      "grounding"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Is per-claim confidence reliable?",
+        "answer": "Roughly. The model is calibrated enough to distinguish strongly-supported from inferred claims, but absolute confidence numbers are not. Use as a 3-bucket signal (\u2605/\u25d0/\u25cb), not a probability."
+      },
+      {
+        "question": "How does this differ from standard RAG?",
+        "answer": "Standard RAG returns \u2018the answer\u2019 with maybe a citation list at the end. This prompt forces per-claim attribution and explicit gap acknowledgment \u2014 more verbose, but reviewable."
+      },
+      {
+        "question": "Will it work for code questions?",
+        "answer": "Yes \u2014 cite the specific code passage. Code-specific RAG benefits even more from this discipline since code copy-paste errors are catastrophic."
+      }
+    ],
+    "meta_title": "RAG Answer Prompt With Per-Claim Confidence",
+    "meta_description": "RAG output with inline citations and per-claim confidence symbols (\u2605/\u25d0/\u25cb) \u2014 distinguishes context-supported from inferred claims."
+  },
+  {
+    "slug": "agentic-research-with-subgoals",
+    "title": "Agentic Research With Explicit Subgoal Tracking",
+    "tldr": "A research agent system prompt that decomposes the user's question into subgoals, tracks which are answered, and surfaces remaining gaps \u2014 avoids the \u2018agent does one search and gives up\u2019 failure mode.",
+    "category": "agents",
+    "tags": [
+      "agent",
+      "research",
+      "decomposition",
+      "subgoals"
+    ],
+    "best_for_tags": [
+      "research-agents",
+      "deep-research",
+      "multi-step"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Market research with multiple sub-questions",
+        "example": "\u2018Tell me about the vector DB market in 2025\u2019 \u2192 decomposes into top players, market size, recent funding, technical trends; researches each."
+      },
+      {
+        "scenario": "Due diligence on a company",
+        "example": "Subgoals: founding team, financials, product depth, customer concentration, competitive position."
+      },
+      {
+        "scenario": "Technical investigation",
+        "example": "\u2018Why is our queue lagging?\u2019 \u2192 subgoals: input rate, processing rate, error rate, hardware metrics; investigates each."
+      },
+      {
+        "scenario": "Comprehensive literature review",
+        "example": "Decomposes broad topic into specific sub-questions; researches each with citation tracking."
+      }
+    ],
+    "when_not_to_use": "Skip for single-step questions (decomposition is overhead). Skip when the user wants a quick answer \u2014 this agent's value is depth, which costs time and tool calls.",
+    "full_prompt": "You are an agentic research assistant. The user's question may have multiple parts. You will:\n\n1. DECOMPOSE the question into 3-7 subgoals \u2014 concrete sub-questions whose answers would together fully address the user.\n2. INVESTIGATE each subgoal using available tools. Track progress.\n3. SYNTHESIZE the answer when subgoals are met, or surface gaps if you can't fully answer.\n\nOPERATING PATTERN\n\n## Phase 1: Decomposition (no tool calls)\nOutput your subgoal plan in this format:\n\n```\nSUBGOALS:\n1. [SG1] <specific sub-question> | status: pending\n2. [SG2] <specific sub-question> | status: pending\n...\n```\n\nEach subgoal:\n- Is a specific question, not a topic.\n- Could plausibly be answered with 1-3 tool calls.\n- Doesn't overlap heavily with other subgoals.\n\n## Phase 2: Investigation\nFor each subgoal, in priority order (most central first):\n- Pick the right tool for THIS subgoal.\n- Make the call.\n- Update the subgoal's status: pending \u2192 in-progress \u2192 answered (with 1-line summary) OR blocked (with reason).\n\nIf a subgoal turns out to be unanswerable with available tools, mark it blocked and proceed to next.\n\n## Phase 3: Synthesis\nWhen all subgoals are answered or blocked:\n- Write the synthesis \u2014 answer to the original question.\n- Inline-cite which subgoals contributed where.\n- For each BLOCKED subgoal, note explicitly: \u2018we couldn't determine X because [reason]; this means the answer is uncertain on this dimension.\u2019\n\nCONSTRAINTS\n- Maximum {max_tool_calls} tool calls total. Budget across subgoals.\n- If you finish a subgoal early, don't run extra searches just to be thorough.\n- When two subgoals' results contradict each other, surface that \u2014 don't paper over.\n\nGROUND RULES\n- Don't generate the synthesis BEFORE investigating. The point of decomposition is to drive investigation.\n- Don't proceed past Phase 1 with vague subgoals \u2014 sharpen them first.\n- If decomposition reveals the question is trivially answerable, say so and skip to a 1-paragraph answer.\n\nTHE USER'S QUESTION\n{user_question}\n\nBegin Phase 1.",
+    "input_variables": [
+      {
+        "name": "user_question",
+        "type": "string",
+        "description": "The research question",
+        "required": true,
+        "example": "What are the leading vector databases in 2025 and how should I choose?"
+      },
+      {
+        "name": "max_tool_calls",
+        "type": "integer",
+        "description": "Budget for tool calls",
+        "required": true,
+        "example": "12"
+      }
+    ],
+    "expected_output": {
+      "format": "structured",
+      "sample": "Phase 1: numbered subgoal list. Phase 2: investigation with tool calls and status updates. Phase 3: synthesis with citations."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong decomposition; respects budget; honest about blocked subgoals."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes generates overlapping subgoals \u2014 re-pin distinctness."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Good decomposition; weaker on blocked-subgoal honesty."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Decomposition can be too coarse; budget often exceeded."
+      }
+    ],
+    "variations": [
+      {
+        "label": "User-confirmed subgoals",
+        "description": "Show subgoals to user before investigating.",
+        "prompt_snippet": "Add: \u2018after Phase 1, return to user and ask: any subgoal to add/remove/sharpen before I investigate?\u2019"
+      },
+      {
+        "label": "Parallel investigation",
+        "description": "When tools support async calls.",
+        "prompt_snippet": "Add: \u2018in Phase 2, call independent subgoals' tools in parallel where possible; aggregate results.\u2019"
+      },
+      {
+        "label": "Audit trail",
+        "description": "Emit machine-readable trace.",
+        "prompt_snippet": "Add: \u2018maintain a JSON state of subgoals + tool calls + results; emit it after synthesis for downstream tracking.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Skips decomposition; goes straight to tools.",
+        "fix": "Re-pin: \u2018Phase 1 produces the SUBGOALS list BEFORE any tool call. No exceptions.\u2019"
+      },
+      {
+        "symptom": "Subgoals are too broad to be answered in 1-3 calls.",
+        "fix": "Add: \u2018if a subgoal needs 4+ tool calls, split it into smaller subgoals.\u2019"
+      },
+      {
+        "symptom": "Synthesis ignores blocked subgoals.",
+        "fix": "Add: \u2018every blocked subgoal must appear in synthesis with the reason \u2014 silence implies it was answered.\u2019"
+      },
+      {
+        "symptom": "Tool budget blown on first subgoal.",
+        "fix": "Add: \u2018pre-allocate budget: divide max_tool_calls by number of subgoals; don't exceed per-subgoal allocation without good reason.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "agentic-rag-research",
+      "decomposition-into-subgoals",
+      "tool-calling-system-prompt"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "agent",
+      "task-decomposition"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How is this different from chain-of-thought?",
+        "answer": "CoT is single-shot reasoning. This is multi-step research with tool use and explicit state tracking. CoT reasons about what it knows; this agent investigates what it doesn't."
+      },
+      {
+        "question": "Will all subgoals always be reached?",
+        "answer": "No \u2014 sometimes budget runs out or a subgoal is blocked. The honest reporting in Phase 3 is what makes this prompt useful: incomplete answers with known gaps beat false-confident complete-looking ones."
+      },
+      {
+        "question": "How do I tune max_tool_calls?",
+        "answer": "Start with 3x number of subgoals. Observe: if you always use the full budget, raise it. If you rarely use half, lower it. Track per-task by complexity tier."
+      }
+    ],
+    "meta_title": "Agentic Research With Subgoal Tracking \u2014 Prompt",
+    "meta_description": "Research agent that decomposes the question, tracks subgoal status, and surfaces blocked subgoals in synthesis \u2014 instead of giving up after one search."
+  },
+  {
+    "slug": "rag-query-rewriting",
+    "title": "RAG Query Rewriting For Better Retrieval",
+    "tldr": "Rewrites a user's natural-language question into 2-4 retrieval queries that maximize recall \u2014 handles vague questions, hidden multi-intent, and acronyms that need expansion.",
+    "category": "rag",
+    "tags": [
+      "rag",
+      "query-rewriting",
+      "retrieval",
+      "search-quality"
+    ],
+    "best_for_tags": [
+      "retrieval-quality",
+      "ambiguous-queries",
+      "rag-pipelines"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Vague user question",
+        "example": "\u2018How do I make it faster?\u2019 \u2192 expanded queries with likely context (database / API / query type)."
+      },
+      {
+        "scenario": "Acronym disambiguation",
+        "example": "\u2018How does HNSW compare to IVF?\u2019 \u2192 expanded with full names + use cases for retrieval."
+      },
+      {
+        "scenario": "Multi-intent query",
+        "example": "\u2018What's our pricing and how does it compare to competitors?\u2019 \u2192 split into pricing query + competitor query."
+      },
+      {
+        "scenario": "Conversational follow-up",
+        "example": "After a prior turn, expand a pronoun-laden follow-up into self-contained query."
+      }
+    ],
+    "when_not_to_use": "Skip for highly precise queries (lookup of specific document by name). Skip when retrieval already returns good results \u2014 over-rewriting can hurt.",
+    "full_prompt": "You are a query-rewriting agent. The user wants information; you produce queries optimal for retrieval.\n\nINPUT\n- User question: {user_question}\n- Conversation context (prior turns): {conversation_context}\n- Domain (helps with acronym expansion): {domain}\n\nYOUR JOB\nProduce 2-4 retrieval queries that COLLECTIVELY cover the user's intent. Each:\n- Self-contained (no pronouns referring to prior turns).\n- Specific enough to match relevant documents.\n- Together, they should capture different angles or sub-intents.\n\nOUTPUT FORMAT\n\n```\nQUERIES:\n1. <query>          # rationale: <what this targets>\n2. <query>          # rationale: <what this targets>\n3. <query>          # rationale: <what this targets>\n```\n\nREWRITING RULES\n\n1. EXPAND acronyms unless they're the standard form (BM25 stays; \u2018CSS\u2019 stays in web context; \u2018CPU\u2019 might need expansion in non-tech).\n\n2. RESOLVE pronouns using context. \u2018How do I improve it?\u2019 when prior turn was about pgvector becomes \u2018How do I improve pgvector performance?\u2019\n\n3. SPLIT multi-intent into separate queries:\n   \"what's X and how does it compare to Y\" \u2192 query 1 about X, query 2 about Y, query 3 comparing them.\n\n4. ADD SYNONYMS where they'd genuinely help retrieval:\n   \"make faster\" \u2192 also try \"performance optimization\", \"latency reduction\".\n\n5. KEEP UNCHANGED when the user query is already retrieval-optimal.\n\n6. PRESERVE QUANTITATIVES \u2014 if user asks \"since 2023\", keep date constraints in queries.\n\nANTI-RULES\n- Don't generate 6+ queries unless the user asked a very complex multi-part question.\n- Don't add hypothetical concepts not implied by the user (no fishing).\n- Don't normalize to ALL CAPS or remove punctuation arbitrarily \u2014 keep natural phrasing for dense retrieval; produce SHORT keyword lists separately if hybrid search is used.\n\nQUESTION\n{user_question}\n\nCONTEXT\n{conversation_context}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "user_question",
+        "type": "string",
+        "description": "User's natural-language question",
+        "required": true,
+        "example": "How do I make it faster?"
+      },
+      {
+        "name": "conversation_context",
+        "type": "string",
+        "description": "Prior conversation turns for pronoun resolution",
+        "required": false,
+        "example": "Prior turn user: \u2018We're using pgvector with HNSW indexes.\u2019"
+      },
+      {
+        "name": "domain",
+        "type": "string",
+        "description": "Domain hint",
+        "required": false,
+        "example": "vector databases / pgvector"
+      }
+    ],
+    "expected_output": {
+      "format": "structured",
+      "sample": "2-4 numbered queries each with a rationale comment."
+    },
+    "few_shot_examples": [
+      {
+        "input": "User: \u2018How do I make it faster?\u2019 Context: prior turn about pgvector with HNSW.",
+        "output": "QUERIES:\\n1. pgvector HNSW query performance optimization  # rationale: direct user intent with resolved subject\\n2. pgvector index tuning M ef_search parameters  # rationale: common levers for HNSW performance\\n3. pgvector slow query troubleshooting  # rationale: diagnostic angle if user has a specific slow query"
+      }
+    ],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong pronoun resolution and multi-intent splitting."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes over-expands acronyms users would have left."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; multi-intent splitting can be shallower."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to produce paraphrases rather than meaningfully different queries."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Hybrid (dense + sparse)",
+        "description": "Generate both natural-language and keyword queries.",
+        "prompt_snippet": "Add: \u2018in addition to natural-language queries, generate 2 keyword-only versions (5-8 keywords each) optimized for BM25.\u2019"
+      },
+      {
+        "label": "HyDE (Hypothetical Document Embedding)",
+        "description": "Generate a hypothetical answer paragraph.",
+        "prompt_snippet": "Add: \u2018also generate a 1-paragraph HYPOTHETICAL ANSWER that an authoritative source would write; use this paragraph's embedding for retrieval (HyDE pattern).\u2019"
+      },
+      {
+        "label": "Multi-turn aware",
+        "description": "Heavier use of conversation context.",
+        "prompt_snippet": "Add: \u2018take last 5 turns into account; resolve all referents; cite which turn each resolution came from.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "All 4 queries are paraphrases of the same intent.",
+        "fix": "Re-pin: \u2018queries should COLLECTIVELY cover the intent, not redundantly cover one part of it.\u2019"
+      },
+      {
+        "symptom": "Hallucinates context (\u2018user wants X\u2019 when user didn't say X).",
+        "fix": "Add: \u2018only use information from the actual question and provided context; don't infer the user's deeper need.\u2019"
+      },
+      {
+        "symptom": "Acronyms unnecessarily expanded.",
+        "fix": "Add: \u2018keep standard domain acronyms (HNSW, BM25, REST); expand only when ambiguous (TLS could be Transport Layer Security or Total Loss Survey).\u2019"
+      },
+      {
+        "symptom": "Pronouns not resolved.",
+        "fix": "Add: \u2018if any rewritten query contains \u2018it\u2019, \u2018this\u2019, \u2018they\u2019 without explicit antecedent, re-write to be self-contained.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "rag-with-citations",
+      "rag-prompt-with-confidence"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "query-rewriting",
+      "rag",
+      "hyde"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Should I always rewrite queries?",
+        "answer": "No \u2014 measure first. For short, specific queries, rewriting can hurt. For long, vague, or conversational queries, rewriting often doubles recall. Test on your eval set."
+      },
+      {
+        "question": "How many queries is too many?",
+        "answer": "4 is the sweet spot in most evals. Beyond that, you dilute relevance signal in your final retrieved set. 1-2 for simple, 3-4 for complex."
+      },
+      {
+        "question": "What about HyDE?",
+        "answer": "HyDE (generating a hypothetical answer and embedding it) works well for very vague queries. The variation captures this. Test against query rewriting baseline; results depend on corpus."
+      }
+    ],
+    "meta_title": "RAG Query Rewriting For Better Retrieval",
+    "meta_description": "Rewrite a user query into 2-4 retrieval queries: pronoun resolution, multi-intent splitting, acronym expansion, plus HyDE and hybrid-search variants."
+  },
+  {
     "slug": "react-agent-loop",
     "title": "ReAct Agent Loop (Thought / Action / Observation)",
     "category": "agents",
@@ -835,6 +1488,661 @@
     "submitter_name": "OSS AI Hub",
     "meta_title": "Chain-of-Thought Prompt \u2014 Explicit Reasoning with Verify",
     "meta_description": "Solve multi-step problems with explicit reasoning chains. Step-by-step structure, mandatory verify, math/logic/code domains."
+  },
+  {
+    "slug": "root-cause-five-whys",
+    "title": "Root-Cause Analysis Via Five Whys (Sharpened)",
+    "tldr": "Modern Five Whys: each \u2018why\u2019 must surface a concrete evidence claim, not speculation. Ends with one root cause + one fix that addresses it + the deferred-but-real causes that fix won't touch.",
+    "category": "analysis",
+    "tags": [
+      "root-cause",
+      "incident-review",
+      "five-whys",
+      "postmortem"
+    ],
+    "best_for_tags": [
+      "incident-postmortem",
+      "process-improvement",
+      "engineering"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Production incident postmortem",
+        "example": "\u2018Why did the API outage last 47 minutes?\u2019 \u2014 5 levels deep, each tied to actual evidence."
+      },
+      {
+        "scenario": "Recurring user complaint",
+        "example": "\u2018Why do users keep churning at month 2?\u2019 \u2014 surfaces upstream causes beyond \u2018onboarding bad.\u2019"
+      },
+      {
+        "scenario": "Missed deadline",
+        "example": "\u2018Why did we miss the Q3 launch?\u2019 \u2014 distinguishes scope creep from estimation drift from prioritization."
+      },
+      {
+        "scenario": "Quality regression",
+        "example": "\u2018Why did defect rate triple after the refactor?\u2019"
+      }
+    ],
+    "when_not_to_use": "Skip when the root cause is genuinely a single technical bug (just fix it). Skip for complex systems where multiple causes interact \u2014 use a more sophisticated method like Cynefin or fault tree analysis.",
+    "full_prompt": "You are facilitating a Five Whys root-cause analysis. Standard Five Whys is sloppy \u2014 yours will be sharper.\n\nRULES\n1. Each \u2018why\u2019 must surface a CONCRETE evidence claim, not speculation. If you don't have evidence, say so and mark the link as unverified.\n2. After Why #5 (or earlier if you hit bedrock), name the ROOT CAUSE explicitly.\n3. Avoid the trap of assigning blame (\"Sarah forgot...\"). The Why chain should surface the SYSTEM that allowed the failure, not the person at the end.\n4. If at any Why you can identify multiple parent causes, branch \u2014 note the branch and follow the most causally significant one. Don't pretend Five Whys is linear.\n\nINPUT\n- The problem to analyze: {problem}\n- Known facts (timeline, evidence, what's confirmed): {known_facts}\n\nOUTPUT\n\n## Problem\nRestate in one sentence.\n\n## Why 1: <why did X happen?>\n- Answer: <answer based on facts>\n- Evidence: <specific data, log, observation>\n- Confidence: high / medium / low\n\n## Why 2: <why did the answer to Why 1 happen?>\n... same pattern ...\n\n(repeat up to Why 5, or stop earlier if bedrock reached)\n\n## Root cause\nThe single sentence identifying the root cause. Phrased as: \"The system permits / fails to prevent / does not detect...\"\n\n## Fix that addresses the root cause\nWhat specifically to change. Concrete. Owner. ETA.\n\n## Causes the fix does NOT address\n2-3 contributing factors surfaced by the Why chain that the proposed fix leaves alone. Honest about scope.\n\n## Branching causes (if any)\nAt any Why where you saw multiple parent causes, note the alternate branch you didn't follow and why.\n\nKEY DISTINCTIONS\n- People's actions are evidence, not causes. (\u2018Sarah merged without review\u2019 is data; \u2018our process didn't require reviews on critical paths\u2019 is a cause.)\n- Recurring failures point to systemic causes; one-offs may legitimately be \u2018bad luck\u2019 \u2014 but check the rate, not the single instance.\n\nBegin the Whys.",
+    "input_variables": [
+      {
+        "name": "problem",
+        "type": "string",
+        "description": "What went wrong",
+        "required": true,
+        "example": "Our checkout flow had a 47-minute outage on March 12 affecting ~$80k in revenue."
+      },
+      {
+        "name": "known_facts",
+        "type": "string",
+        "description": "Timeline + evidence",
+        "required": true,
+        "example": "Deploy at 14:03. First alerts 14:08 (error rate). Rolled back at 14:51. Cause: new code called a deprecated downstream API. Deprecation announcement existed; not seen by deploying engineer."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "5 (or fewer) Why levels each with answer + evidence + confidence; then root cause, fix, unaddressed causes, branching causes."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at distinguishing evidence from speculation; honest about confidence."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally jumps to systemic causes too fast \u2014 re-pin evidence requirement."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; tends to be soft on blame distinction \u2014 restate explicitly."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Standard Five Whys without the sharpening; needs constant re-pinning."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Branched tree",
+        "description": "Track multiple parent causes at every level.",
+        "prompt_snippet": "Replace linear chain with: \u2018at each Why, list ALL plausible parents; explore the top 2. Output is a tree, not a line.\u2019"
+      },
+      {
+        "label": "Adversarial pair",
+        "description": "Two analyses, one each from a different stakeholder.",
+        "prompt_snippet": "Run analysis twice: once as the on-call engineer, once as the customer. Note where Why chains diverge."
+      },
+      {
+        "label": "Pre-mortem variant",
+        "description": "Apply to a hypothetical future failure.",
+        "prompt_snippet": "Use this BEFORE incidents: \u2018assume X system will fail next quarter; do Five Whys to surface causes now.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Each Why is speculation without evidence.",
+        "fix": "Re-pin: \u2018every Why has an Evidence row; if you can't cite a fact, mark confidence LOW and ask for missing data.\u2019"
+      },
+      {
+        "symptom": "Chain stops at \u2018human error\u2019.",
+        "fix": "Add: \u2018human error is data, not cause. The next Why is: why did the system allow this human error to cause this outcome?\u2019"
+      },
+      {
+        "symptom": "Root cause is a buzzword (\u2018culture problem\u2019).",
+        "fix": "Force: \u2018root cause must be a concrete mechanism or absence (no monitoring, no escalation policy, etc.).\u2019"
+      },
+      {
+        "symptom": "Fix is too narrow.",
+        "fix": "Re-pin: \u2018fix must address the root cause stated, not just the immediate trigger.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "devils-advocate-pre-mortem",
+      "metric-anomaly-explainer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "root-cause-analysis",
+      "postmortem"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why is Five Whys often criticized?",
+        "answer": "Because most users do it shallow: speculation chains with no evidence. The sharpening rules in this prompt (evidence required, confidence rated, branching allowed) address those failure modes."
+      },
+      {
+        "question": "Always 5 levels?",
+        "answer": "No. Stop when you hit bedrock (a fact / decision / constraint that genuinely doesn't have a meaningful \u2018why\u2019). Often that's 3 levels. Sometimes 7."
+      },
+      {
+        "question": "What if multiple events caused it?",
+        "answer": "Use the branched variation. Real incidents usually have multiple parent causes at each level \u2014 pretending it's linear hides this."
+      }
+    ],
+    "meta_title": "Root-Cause Analysis Via Sharpened Five Whys",
+    "meta_description": "Modern Five Whys: evidence required at every level, branching for multiple causes, explicit root + fix + what fix doesn't address."
+  },
+  {
+    "slug": "data-quality-audit-prompt",
+    "title": "Data Quality Audit From Schema and Samples",
+    "tldr": "Audits a dataset for quality issues: missingness, duplicates, type drift, encoding errors, semantic drift, outliers. Returns a triage list with severity + recommended action per issue.",
+    "category": "analysis",
+    "tags": [
+      "data-quality",
+      "audit",
+      "etl",
+      "data-engineering"
+    ],
+    "best_for_tags": [
+      "data-engineering",
+      "ml-prep",
+      "warehouse-migration"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Pre-ML training data audit",
+        "example": "Identify quality issues before training; avoids garbage-in-garbage-out."
+      },
+      {
+        "scenario": "ETL output validation",
+        "example": "Run on each daily output; catch drift before downstream consumers do."
+      },
+      {
+        "scenario": "Vendor data ingestion",
+        "example": "Quality check on partner-supplied dataset before integration."
+      },
+      {
+        "scenario": "Warehouse migration QA",
+        "example": "Compare expected vs actual after migration; flag anomalies."
+      }
+    ],
+    "when_not_to_use": "Skip when the source already has a quality framework (Great Expectations, dbt tests). Use those tools instead \u2014 this is for ad-hoc audits or initial assessment.",
+    "full_prompt": "You are a data quality auditor. Examine the schema + sample to identify quality issues.\n\nINPUT\n- Schema: {schema}\n- Sample rows (first N rows or representative slice): {sample}\n- Domain context: {domain_context}                     (what this data represents, business rules)\n- Acceptance criteria: {acceptance_criteria}           (what \u2018good enough\u2019 looks like)\n\nOUTPUT\n\n## Inventory\n- Total rows in sample: N\n- Columns: list with type observed (which may differ from declared)\n\n## Issues found\nFor each issue:\n- Severity: blocker / major / minor / informational\n- Column(s) affected\n- Description: what's wrong, with example values from the sample\n- Likely cause (best guess)\n- Recommended action\n- Verification: how to confirm the fix worked\n\nGroup by severity, blockers first.\n\n### Categories to check\n1. MISSINGNESS \u2014 nulls, empty strings, \u2018N/A\u2019, \u2018null\u2019 as strings, sentinel values (1900-01-01, 999)\n2. DUPLICATES \u2014 exact dupes, fuzzy dupes (same entity, different formatting)\n3. TYPE DRIFT \u2014 declared INT, observed strings? Mixed date formats?\n4. ENCODING \u2014 UTF-8 issues, mojibake (\u00c3\u00a9, \u00c3\u00b1), HTML entities in plain-text fields\n5. RANGE / DOMAIN \u2014 values outside expected (negative ages, future birthdates, currencies that don't match country)\n6. CONSISTENCY \u2014 same entity represented multiple ways (USA / U.S.A. / United States)\n7. SEMANTIC DRIFT \u2014 field meaning differs from name (column \u2018email\u2019 contains usernames)\n8. OUTLIERS \u2014 extreme values that may be errors or genuine\n9. RELATIONSHIP INTEGRITY \u2014 foreign keys pointing to non-existent rows, broken hierarchies\n10. CONSTRAINTS \u2014 NOT NULL violated, uniqueness violated, business rule violated\n\n## Caveats\n- This is a SAMPLE audit. Issues you flag may be sample artifacts. Specify which findings need verification on the full dataset.\n- Note any issue type you couldn't check (e.g., FK integrity without the parent table).\n\n## Recommended next steps\n3-5 specific actions to take, ordered by leverage:\n1. Most impactful fix\n2. Quick wins\n3. Long-term schema/process changes if patterns suggest them\n\nSCHEMA\n{schema}\n\nSAMPLE\n{sample}\n\nDOMAIN CONTEXT\n{domain_context}\n\nNow audit.",
+    "input_variables": [
+      {
+        "name": "schema",
+        "type": "string",
+        "description": "Column names + declared types",
+        "required": true,
+        "example": "id BIGINT, email VARCHAR(255), country VARCHAR(2), signed_up DATE, plan VARCHAR(20)"
+      },
+      {
+        "name": "sample",
+        "type": "string",
+        "description": "Representative rows",
+        "required": true,
+        "example": "1,foo@bar.com,US,2024-01-15,Pro\\n2,'',U.S.A,15/03/2024,pro\\n3,bad@@@@,Mexico,2099-01-01,PRO"
+      },
+      {
+        "name": "domain_context",
+        "type": "string",
+        "description": "What the data represents",
+        "required": true,
+        "example": "User signups for B2B SaaS, signed_up is when account created, country is ISO 3166-1 alpha-2."
+      },
+      {
+        "name": "acceptance_criteria",
+        "type": "string",
+        "description": "Quality threshold",
+        "required": false,
+        "example": "<2% missing on critical fields (email, country, signed_up), all country codes valid ISO."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Inventory, issues grouped by severity, caveats, recommended next steps."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on cross-row consistency checks and semantic drift detection."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally misses subtle encoding issues \u2014 paste raw bytes if suspect."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; encoding analysis can be shallower."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Catches obvious issues; less reliable on semantic drift."
+      }
+    ],
+    "variations": [
+      {
+        "label": "SQL output",
+        "description": "Emit SQL queries to verify on full dataset.",
+        "prompt_snippet": "Add: \u2018for each Issue, emit the SQL query that would count occurrences on the full dataset (Postgres syntax).\u2019"
+      },
+      {
+        "label": "Great Expectations YAML",
+        "description": "Emit as Great Expectations expectation suite.",
+        "prompt_snippet": "Replace markdown output with: \u2018output as Great Expectations expectation suite YAML \u2014 one expectation per issue.\u2019"
+      },
+      {
+        "label": "Compare against prior audit",
+        "description": "Trend analysis.",
+        "prompt_snippet": "Accept previous audit results; diff against current; flag new issues, fixed issues, regressed issues."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "All issues marked \u2018major\u2019.",
+        "fix": "Add severity ladder anchors: \u2018blocker = downstream consumers fail; major = wrong analysis; minor = cosmetic; informational = note only.\u2019"
+      },
+      {
+        "symptom": "Generic recommendations.",
+        "fix": "Force: \u2018each recommendation cites specific columns and proposed action; no general \u2018improve data hygiene.\u2019\u2019"
+      },
+      {
+        "symptom": "Misses encoding issues.",
+        "fix": "Add explicit check: \u2018look for mojibake patterns (\u00c3\u00a9, \u00c3\u00b1), HTML entities in plain-text columns, double-encoded UTF-8.\u2019"
+      },
+      {
+        "symptom": "Sample artifacts presented as confirmed issues.",
+        "fix": "Add: \u2018every issue has a Verification step that says how to confirm on full dataset.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "a-b-test-result-interpreter",
+      "metric-anomaly-explainer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "data-quality",
+      "etl"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How big a sample is enough?",
+        "answer": "Depends on issue type. For schema-level issues, 100 rows is fine. For rare anomalies, you need stratified samples or full-dataset SQL. The prompt flags what needs verification beyond sample."
+      },
+      {
+        "question": "Will it find ALL issues?",
+        "answer": "No \u2014 model can miss subtle domain-specific issues (e.g., \u2018users sometimes input phone numbers in the email field\u2019). Use as a first pass; the recommended next steps should include domain-expert review."
+      },
+      {
+        "question": "What about PII risk?",
+        "answer": "Don't paste actual PII into a prompt. Use a representative synthetic sample or redacted version. The prompt analyzes structure; values matter for spot-checks but not exhaustive scans."
+      }
+    ],
+    "meta_title": "Data Quality Audit From Schema and Samples",
+    "meta_description": "Audit a dataset for missingness, duplicates, type drift, encoding errors, semantic drift, and outliers \u2014 with severity-ranked triage list."
+  },
+  {
+    "slug": "competitive-feature-matrix",
+    "title": "Competitive Feature Matrix With Differentiation",
+    "tldr": "Builds a feature matrix comparing your product to 3-5 competitors, then explicitly identifies what's TABLE STAKES, what's DIFFERENTIATED, and what's MISSING from your product \u2014 not just feature lists.",
+    "category": "analysis",
+    "tags": [
+      "competitive-analysis",
+      "feature-matrix",
+      "differentiation",
+      "product"
+    ],
+    "best_for_tags": [
+      "product-marketing",
+      "sales-enablement",
+      "strategy"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Pre-launch competitive positioning",
+        "example": "Compare against 4 competitors; identify the differentiated feature to lead with."
+      },
+      {
+        "scenario": "Sales enablement deck",
+        "example": "Build competitive section with table-stakes / differentiated / gap call-outs."
+      },
+      {
+        "scenario": "Roadmap prioritization",
+        "example": "Identify gaps that are blocking deals \u2014 those go above competitive parity features."
+      },
+      {
+        "scenario": "M&A target evaluation",
+        "example": "Compare target's capabilities to portfolio."
+      }
+    ],
+    "when_not_to_use": "Skip when you're the category creator (no real competitors yet) \u2014 use a JTBD analysis instead. Skip when competitors are too varied to compare on the same axes.",
+    "full_prompt": "You are a product strategist building a competitive feature matrix.\n\nINPUT\n- Your product: {your_product}\n- Competitors (3-5): {competitors}\n- Categories of features to evaluate: {feature_categories}\n- Target buyer / use case: {target}\n\nOUTPUT\n\n## Step 1: Feature axes\nList 8-15 specific features (not categories) that map to buyer needs. Each is a granular capability you can answer yes/no/partial for each product.\n\n## Step 2: The matrix\nFor each feature \u00d7 product cell, mark:\n- \u2713 : Has it, robust implementation\n- \u26a0 : Has it, with limitations (specify in 1 line)\n- \u2717 : Does not have it\n- ? : Unclear from public information\n\n| Feature | Your Product | Competitor 1 | Competitor 2 | ... |\n\n## Step 3: Categorization\nGroup features by competitive status:\n\n### TABLE STAKES (everyone has, you must)\nFeatures where everyone marks \u2713. These don't differentiate but their absence is disqualifying.\n\n### DIFFERENTIATED (you \u2713, competitors \u26a0 or \u2717)\nFeatures where you have an edge. For each: 1 sentence on the buyer benefit.\n\n### GAPS (competitors \u2713, you \u26a0 or \u2717)\nFeatures where competitors lead. For each: severity (deal-breaker / nice-to-have / niche) + the typical buyer reaction.\n\n### CONTESTED (mixed across all)\nFeatures where the field is uneven and the buyer's choice depends on which they prioritize.\n\n## Step 4: Strategic implications\n3-5 implications for product strategy:\n- Which gaps would close the most deals (prioritize by deal impact, not engineering ease)\n- Which differentiations to lean into in marketing\n- Which competitor moves to watch (if a competitor closes one of YOUR differentiations, what changes?)\n\nCRITICAL RULES\n- Specify SOURCES (or mark UNVERIFIED). Don't fabricate features from competitor pages you can't access.\n- A feature is differentiated only if it's a meaningful difference for the BUYER. \u2018We use Rust, they use Python\u2019 is rarely differentiation.\n- Be honest about gaps. Sales teams need real data, not the rosy version.\n\nKNOWN INFORMATION\n{your_product}\n\n{competitors}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "your_product",
+        "type": "string",
+        "description": "Your product capabilities (be specific)",
+        "required": true,
+        "example": "OSS AI Hub: directory of 1800+ OSS AI tools, includes glossary, cost calculator, academy, paid Pro tier."
+      },
+      {
+        "name": "competitors",
+        "type": "string",
+        "description": "Competitor list with what each does",
+        "required": true,
+        "example": "1. Awesome lists on GitHub (free, no curation) 2. Hugging Face Hub (model-focused, no glossary) 3. Y Combinator's Startup library 4. Stack Overflow's Collectives"
+      },
+      {
+        "name": "feature_categories",
+        "type": "string",
+        "description": "Categories to evaluate",
+        "required": false,
+        "example": "Curation quality, search, glossary, learning paths, cost tools, community features"
+      },
+      {
+        "name": "target",
+        "type": "string",
+        "description": "Target buyer",
+        "required": true,
+        "example": "Engineering managers at small-to-mid-sized AI startups evaluating tools"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Feature axes, matrix table, 4 categorization sections (table stakes, differentiated, gaps, contested), strategic implications."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on honest gap identification; doesn't whitewash."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can hallucinate features on competitors without explicit source data."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid baseline; differentiations can be too generous to you."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Surface-level; needs detailed input on each competitor to avoid hallucination."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Two-product head-to-head",
+        "description": "Deep dive on one rival.",
+        "prompt_snippet": "Replace 3-5 competitors with: \u2018one main competitor\u2019. Add: \u201850% of analysis is the head-to-head; the matrix is fewer columns but more rows.\u2019"
+      },
+      {
+        "label": "Price-included matrix",
+        "description": "Add cost dimensions.",
+        "prompt_snippet": "Add Cost Dimensions section: pricing model, entry tier, enterprise tier, hidden costs (overage, support). Add \u2018best value tier\u2019 analysis per buyer segment."
+      },
+      {
+        "label": "From buyer interviews",
+        "description": "Use buyer-stated needs instead of feature lists.",
+        "prompt_snippet": "Replace feature axes with: \u2018JTBDs the buyer expressed in interviews; rate each product against each JTBD.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Marks every competitor \u2717 on your differentiations to make you look good.",
+        "fix": "Re-pin: \u2018differentiation requires evidence; mark \u26a0 instead of \u2717 when unsure.\u2019"
+      },
+      {
+        "symptom": "Gaps section is empty.",
+        "fix": "Add: \u2018every competitive product has gaps. If yours is short, you're either kidding yourself or undefined as a product. Identify at minimum 3 gaps.\u2019"
+      },
+      {
+        "symptom": "Features are technical (databases, languages).",
+        "fix": "Re-pin: \u2018features should map to buyer needs, not engineering choices. \u2018Search by X\u2019 is a feature; \u2018uses Elasticsearch\u2019 is not.\u2019"
+      },
+      {
+        "symptom": "Strategic implications are generic.",
+        "fix": "Force: \u2018each implication names a specific product or marketing action with a 90-day horizon.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "competitive-landscape-mapper",
+      "vendor-comparison-builder",
+      "strategic-tradeoff-analyzer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "competitive-analysis",
+      "feature-matrix"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How accurate is competitor information?",
+        "answer": "Only as accurate as your inputs. Provide specific source data \u2014 competitor pages, demos, conversations. Without that, the model fills gaps with plausible-but-wrong assumptions."
+      },
+      {
+        "question": "Should the sales team see all of this?",
+        "answer": "Yes \u2014 the gap section especially. Salespeople need to know real weaknesses to handle them; surprise gaps in calls are worse than known gaps."
+      },
+      {
+        "question": "How often should I refresh?",
+        "answer": "Quarterly minimum. Set up alerts on competitors' product pages so changes are visible; refresh the matrix when a competitor ships a major feature."
+      }
+    ],
+    "meta_title": "Competitive Feature Matrix With Differentiation",
+    "meta_description": "Build a feature matrix with explicit table-stakes / differentiated / gap classification \u2014 honest competitive analysis for product and sales."
+  },
+  {
+    "slug": "weekly-metrics-narrative",
+    "title": "Weekly Metrics Narrative (Not a Dashboard)",
+    "tldr": "Turns weekly metrics into a 200-word narrative: what moved, why (with hypotheses), what to watch next, what NOT to celebrate. Anti-dashboard format \u2014 designed to be read, not skimmed.",
+    "category": "analysis",
+    "tags": [
+      "metrics",
+      "weekly-update",
+      "narrative",
+      "data-storytelling"
+    ],
+    "best_for_tags": [
+      "startup-ops",
+      "weekly-cadence",
+      "founder-updates"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Founder's weekly metrics email",
+        "example": "Convert dashboard screenshot + raw numbers into 200-word narrative for team or investors."
+      },
+      {
+        "scenario": "Manager's team update",
+        "example": "Engineering metrics \u2192 narrative the team will actually read."
+      },
+      {
+        "scenario": "Customer success weekly",
+        "example": "Health-score changes \u2192 story-driven update."
+      },
+      {
+        "scenario": "Product weekly experiment recap",
+        "example": "A/B test status + funnel metrics \u2192 narrative with hypotheses."
+      }
+    ],
+    "when_not_to_use": "Skip for compliance/regulatory reports \u2014 they need structure. Skip when stakeholders explicitly want dashboards.",
+    "full_prompt": "You are turning weekly metrics into a narrative. Not a dashboard, not bullets \u2014 a piece that gets read.\n\nINPUT\n- This week's metrics: {this_week_metrics}\n- Last week's metrics for context: {last_week_metrics}\n- Business goals this quarter: {goals}\n- Audience: {audience}\n\nOUTPUT \u2014 200 \u00b1 20 WORDS\n\n## Structure\nParagraph 1 (~50 words): What MOVED this week. The 1-2 metric changes that matter most. Not all of them \u2014 the ones worth noting.\n\nParagraph 2 (~80 words): What likely DROVE the movement. Hypotheses, marked as hypotheses (\u2018probably because\u2026\u2019, \u2018consistent with\u2026\u2019). Connect to actions taken (launches, campaigns, hires, outages).\n\nParagraph 3 (~40 words): What to WATCH next week. What signal would confirm or refute the hypothesis. Specific.\n\nParagraph 4 (~30 words): What NOT to celebrate (or what's troubling that nobody is talking about). The honest paragraph.\n\nRULES\n- One specific number per paragraph minimum.\n- No bullet points. No \u2018in conclusion.\u2019\n- No vanity metrics unless tied to a real business question.\n- Hypotheses marked clearly so the reader doesn't mistake them for facts.\n- The \u2018don't celebrate\u2019 paragraph is non-negotiable. There's always something.\n- Tone: confident in the data, humble about causation.\n\nBANNED PHRASES\n- \"Crushing it\"\n- \"Continued growth\"\n- \"Strong week\"\n- \"All metrics are up\"\n- \"More to come\"\n\nINPUT DATA\n\nThis week:\n{this_week_metrics}\n\nLast week (for context):\n{last_week_metrics}\n\nQuarterly goals:\n{goals}\n\nNow write the narrative.",
+    "input_variables": [
+      {
+        "name": "this_week_metrics",
+        "type": "string",
+        "description": "Key metrics for the week",
+        "required": true,
+        "example": "DAU 12.3k (+8% w/w), trial\u2192paid 4.2% (-0.3pp), MRR $42k (+$1.8k), support tickets 87 (+15)"
+      },
+      {
+        "name": "last_week_metrics",
+        "type": "string",
+        "description": "Previous week's numbers",
+        "required": true,
+        "example": "DAU 11.4k, trial\u2192paid 4.5%, MRR $40.2k, support 76"
+      },
+      {
+        "name": "goals",
+        "type": "string",
+        "description": "Quarterly goals",
+        "required": true,
+        "example": "MRR $60k by Q3 end, trial\u2192paid >5%, support volume flat"
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Who reads this",
+        "required": true,
+        "example": "Founder weekly to team of 12"
+      }
+    ],
+    "expected_output": {
+      "format": "text",
+      "sample": "4-paragraph 200-word narrative covering moved/drove/watch/don't-celebrate."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on the \u2018don't celebrate\u2019 paragraph; doesn't sugarcoat."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes pads to 250+ words \u2014 re-pin word count."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Holds structure; \u2018don't celebrate\u2019 tends to be soft."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Defaults to bullet-heavy format; needs reminder."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Investor version",
+        "description": "Slightly more polished tone.",
+        "prompt_snippet": "Adjust audience handling: \u2018for investors, lead with the moved/drove paragraphs in business-impact framing; keep the don't-celebrate paragraph but make it about risks rather than internal drama.\u2019"
+      },
+      {
+        "label": "With chart suggestion",
+        "description": "Suggest one chart to attach.",
+        "prompt_snippet": "Add: \u2018end with a one-sentence note suggesting the one chart that would best support the narrative.\u2019"
+      },
+      {
+        "label": "Cumulative quarter view",
+        "description": "Connect to quarterly progress.",
+        "prompt_snippet": "Add: \u2018paragraph 2 also notes how this week's movement affects quarterly goal trajectory.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "200 words turns into 400.",
+        "fix": "Hard cap with explicit \u2018200 \u00b1 20 words; trim until you fit.\u2019"
+      },
+      {
+        "symptom": "\u2018Don't celebrate\u2019 paragraph skipped or soft.",
+        "fix": "Add: \u2018this paragraph is mandatory; if you genuinely can't find anything, name the metric you DON'T have visibility into.\u2019"
+      },
+      {
+        "symptom": "Hypotheses presented as facts.",
+        "fix": "Re-pin: \u2018hypotheses explicitly marked (\u2018probably\u2019, \u2018consistent with\u2019, \u2018suggests\u2019); reserve declarative phrasing for confirmed facts.\u2019"
+      },
+      {
+        "symptom": "Bullet points sneak in.",
+        "fix": "Add: \u2018no bullets; this is prose. If you reach for bullets, the prose has failed.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "investor-update-monthly",
+      "newsletter-issue-from-week"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "narrative-metrics",
+      "data-storytelling"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why narrative instead of dashboard?",
+        "answer": "Dashboards get skimmed; narratives get read. The narrative forces the writer to pick what matters \u2014 which is itself useful for the writer."
+      },
+      {
+        "question": "What if there's no \u2018don't celebrate\u2019?",
+        "answer": "There is. Either a metric isn't moving as fast as needed, or there's a metric you're not watching that probably matters. The paragraph being uncomfortable is the point."
+      },
+      {
+        "question": "Can I run this on a daily cadence?",
+        "answer": "Skip daily \u2014 too much noise. Weekly is the sweet spot. Daily metrics belong on a dashboard; narrative-form output is for the cadence where you can detect actual signal."
+      }
+    ],
+    "meta_title": "Weekly Metrics Narrative \u2014 Prompt",
+    "meta_description": "Turn weekly metrics into a 200-word narrative: what moved, why, what to watch, what NOT to celebrate. Anti-dashboard, designed to be read."
   },
   {
     "slug": "a-b-test-result-interpreter",
