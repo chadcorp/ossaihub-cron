@@ -2480,6 +2480,290 @@
     "meta_description": "YAML-config prompt regression tests with assertions, multi-provider, LLM-rubric judging \u2014 ready for CI."
   },
   {
+    "slug": "braintrust-online-eval-experiment",
+    "title": "Braintrust Online Eval Experiment",
+    "tldr": "Run an evaluation experiment in Braintrust: log inputs/outputs/scores, compare experiments side-by-side, track quality regressions over time with one decorator.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "Braintrust",
+    "tags": [
+      "braintrust",
+      "evaluation",
+      "experiment-tracking",
+      "regression"
+    ],
+    "best_for_tags": [
+      "llm-eval",
+      "experiment-tracking",
+      "ci-eval"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "When iterating on prompts/models and need experiment-level tracking \u2014 compare \u2018prompt v3\u2019 to \u2018prompt v2\u2019 on the same dataset, with diff-style review.",
+    "when_not_to_use": "Skip for one-off evals (use Promptfoo or pytest). Skip for very private data \u2014 Braintrust is cloud (or self-host).",
+    "quick_start": "pip install braintrust openai && BRAINTRUST_API_KEY=... python eval.py",
+    "full_code": "\"\"\"Braintrust evaluation experiment.\n\nPattern:\n  - Define a Task (the thing under test): your prompt or function.\n  - Define Scorers: how to grade outputs (exact match, LLM-as-judge, etc.).\n  - Run on a Dataset: list of {input, expected} pairs.\n  - Braintrust logs, scores, and surfaces regressions vs prior experiments.\n\"\"\"\nfrom __future__ import annotations\n\nimport os\n\nfrom braintrust import Eval, init_logger\nfrom autoevals import Factuality, LevenshteinScorer\n\nlogger = init_logger(project=\"ossaihub-prompts\")\n\n\n# ----------------- TASK -----------------\n\ndef my_summarizer(input: str) -> str:\n    \"\"\"The thing under test \u2014 usually wraps your LLM call.\"\"\"\n    from openai import OpenAI\n    client = OpenAI()\n    resp = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        temperature=0,\n        messages=[\n            {\"role\": \"system\", \"content\": \"Summarize in exactly 2 sentences.\"},\n            {\"role\": \"user\", \"content\": input},\n        ],\n    )\n    return resp.choices[0].message.content\n\n\n# ----------------- DATASET -----------------\n\nDATASET = [\n    {\n        \"input\": \"Reciprocal rank fusion combines ranked lists from multiple retrievers. Each document's final score is the sum of 1/(k+rank) across all input lists. The constant k smooths the early-rank dominance.\",\n        \"expected\": \"Reciprocal rank fusion sums 1/(k+rank) scores across retrievers to merge ranked lists. The k constant prevents top-ranked items from dominating.\",\n    },\n    {\n        \"input\": \"HNSW indexes provide fast query times for high-dimensional vector search but require significant RAM. IVFFlat is the alternative when memory matters more than latency.\",\n        \"expected\": \"HNSW gives fast vector search but uses lots of RAM. IVFFlat trades query speed for lower memory.\",\n    },\n]\n\n\n# ----------------- SCORERS -----------------\n\n# Built-in: factuality LLM-judge, levenshtein distance, ...\n# Custom: define your own\n\ndef length_check(input, output, expected):\n    \"\"\"Custom scorer: penalize if output is way longer than expected.\"\"\"\n    ratio = len(output) / max(len(expected), 1)\n    return 1.0 if 0.5 <= ratio <= 2.0 else 0.5\n\n\n# ----------------- RUN EVAL -----------------\n\nEval(\n    name=\"summarizer-v1\",\n    data=lambda: DATASET,\n    task=lambda input, *args: my_summarizer(input),\n    scores=[\n        Factuality,                       # autoevals built-in LLM judge\n        LevenshteinScorer,                # text similarity to expected\n        length_check,                     # custom\n    ],\n    experiment_name=\"prompt-v3-with-temp-0\",   # name the experiment\n    metadata={\"prompt_version\": \"v3\", \"model\": \"gpt-4o-mini\"},\n)\n# Output: Braintrust dashboard URL where you can browse, compare, and diff.\n",
+    "dependencies": [
+      {
+        "name": "braintrust",
+        "version": ">=0.0.150",
+        "purpose": "Evaluation framework + dashboard"
+      },
+      {
+        "name": "autoevals",
+        "version": ">=0.0.50",
+        "purpose": "Built-in scorers (LLM-judge etc.)"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Task LLM"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "BRAINTRUST_API_KEY",
+        "required": true,
+        "description": "Braintrust API key",
+        "example": "..."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "Sign up at braintrust.dev (free tier).",
+      "pip install braintrust autoevals openai",
+      "export BRAINTRUST_API_KEY=... OPENAI_API_KEY=sk-...",
+      "python eval.py",
+      "Open dashboard URL printed in output."
+    ],
+    "variations": [
+      {
+        "label": "Self-hosted",
+        "description": "Run Braintrust on your own infra.",
+        "code_snippet": "# Use Braintrust's self-hosting via Docker; same SDK API, different endpoint URL."
+      },
+      {
+        "label": "CI integration",
+        "description": "Fail CI on regression.",
+        "code_snippet": "# Use braintrust eval CLI: braintrust eval my_eval.py --fail-on-regression\\n# Threshold per-scorer for what counts as regression"
+      },
+      {
+        "label": "Production logging (not eval)",
+        "description": "Log live traffic for later analysis.",
+        "code_snippet": "from braintrust import wrap_openai\\nclient = wrap_openai(OpenAI())  # auto-logs every chat call"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "BraintrustError: API key not configured",
+        "cause": "Env var missing.",
+        "fix_snippet": "export BRAINTRUST_API_KEY=... before running. Or pass api_key=... to init_logger."
+      },
+      {
+        "error_text": "Dataset items missing expected field",
+        "cause": "Scorers that need expected (e.g., Levenshtein) fail.",
+        "fix_snippet": "Either: provide expected in dataset, OR use scorers that don't need it (Factuality on context alone)."
+      },
+      {
+        "error_text": "Eval is slow",
+        "cause": "LLM-judge scorers call LLMs per item.",
+        "fix_snippet": "Set max_concurrency in Eval; or use simpler scorers (Levenshtein doesn't call LLM)."
+      },
+      {
+        "error_text": "Can't compare experiments",
+        "cause": "Different experiment_name uses different versions of dataset.",
+        "fix_snippet": "Pin dataset (don't shuffle). Use experiment naming convention with versions."
+      }
+    ],
+    "production_checklist": [
+      "Pin dataset; don't shuffle between runs.",
+      "Use experiment_name with version + git commit for traceability.",
+      "Set scorer thresholds; track regressions automatically.",
+      "Run in CI on prompt PRs; surface diffs in review.",
+      "Keep separate experiments for dev/staging/prod.",
+      "Mask PII in dataset; Braintrust logs raw inputs."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "braintrust==0.0.150",
+        "autoevals==0.0.50"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "braintrust"
+    ],
+    "related_glossary_slugs": [
+      "llm-evaluation",
+      "experiment-tracking"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Braintrust vs Langfuse vs Promptfoo?",
+        "answer": "Braintrust: best for systematic experiments + dataset evaluation. Langfuse: best for tracing/observability. Promptfoo: best for prompt regression in CI. Different stages of the pipeline."
+      },
+      {
+        "question": "Self-host?",
+        "answer": "Yes \u2014 Braintrust offers self-hosted via Docker for teams with privacy requirements."
+      },
+      {
+        "question": "Can I use autoevals separately?",
+        "answer": "Yes \u2014 autoevals is the open-source scorer library; runs independently of Braintrust dashboard. Just import scorers and use them directly."
+      },
+      {
+        "question": "Cost?",
+        "answer": "Braintrust free tier covers small teams. Storage + scoring LLM calls scale with usage. Most cost is the scoring LLM, not the platform."
+      }
+    ],
+    "github_url": "https://github.com/braintrustdata/braintrust",
+    "meta_title": "Braintrust Online Eval Experiment \u2014 Starter",
+    "meta_description": "Run a Braintrust eval: dataset, task, scorers (factuality / similarity / custom), experiment tracking, regression alerts."
+  },
+  {
+    "slug": "deepeval-llm-test-cases",
+    "title": "DeepEval Pytest-Style LLM Testing",
+    "tldr": "Treat LLM outputs as testable units with DeepEval \u2014 pytest-compatible test cases for relevance, faithfulness, hallucination, bias. Run in CI like any other test suite.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "DeepEval + pytest",
+    "tags": [
+      "deepeval",
+      "pytest",
+      "testing",
+      "llm-test"
+    ],
+    "best_for_tags": [
+      "ci-testing",
+      "regression",
+      "deterministic-evals"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "When you want LLM eval to feel like normal testing \u2014 pytest fixtures, parameterize, assert. DeepEval bridges eval metrics into a familiar test framework.",
+    "when_not_to_use": "Skip for exploratory eval (use Promptfoo or notebooks). Skip for purely retrieval-quality metrics (RAGAS is more focused).",
+    "quick_start": "pip install deepeval pytest && OPENAI_API_KEY=sk-... pytest tests/test_llm.py -v",
+    "full_code": "\"\"\"DeepEval pytest tests.\n\nEach test asserts that an LLM output meets quality bars:\n  - Answer relevancy (does it answer the question?)\n  - Faithfulness (claims supported by context?)\n  - Hallucination (claims fabricated?)\n  - Custom metrics (your own)\n\"\"\"\nfrom __future__ import annotations\n\nimport pytest\nfrom deepeval import assert_test\nfrom deepeval.metrics import (\n    AnswerRelevancyMetric,\n    FaithfulnessMetric,\n    HallucinationMetric,\n    GEval,\n)\nfrom deepeval.test_case import LLMTestCase, LLMTestCaseParams\n\n\n# ----------------- TEST CASES -----------------\n\n@pytest.fixture\ndef rag_relevancy():\n    return AnswerRelevancyMetric(threshold=0.7, model=\"gpt-4o-mini\")\n\n\n@pytest.fixture\ndef rag_faithfulness():\n    return FaithfulnessMetric(threshold=0.8, model=\"gpt-4o-mini\")\n\n\n@pytest.fixture\ndef custom_brevity():\n    return GEval(\n        name=\"Brevity\",\n        criteria=\"Evaluation criteria: the response should be under 100 words. Score 1 if under 100, 0 if over.\",\n        evaluation_params=[LLMTestCaseParams.ACTUAL_OUTPUT],\n        threshold=0.5,\n        model=\"gpt-4o-mini\",\n    )\n\n\n# ----------------- TESTS -----------------\n\ndef test_rag_answer_relevancy(rag_relevancy):\n    \"\"\"The answer should address the question.\"\"\"\n    test_case = LLMTestCase(\n        input=\"What is reciprocal rank fusion?\",\n        actual_output=\"Reciprocal rank fusion sums 1/(k+rank) scores across retrievers to merge ranked lists.\",\n        retrieval_context=[\n            \"RRF combines ranked results from multiple retrievers via sum of reciprocals.\"\n        ],\n    )\n    assert_test(test_case, [rag_relevancy])\n\n\ndef test_rag_faithfulness(rag_faithfulness):\n    \"\"\"The answer must be supported by the retrieval context.\"\"\"\n    test_case = LLMTestCase(\n        input=\"What's the formula for RRF?\",\n        actual_output=\"RRF score = sum across retrievers of 1/(k+rank), where k is a smoothing constant.\",\n        retrieval_context=[\n            \"RRF formula: score(d) = \u03a3 1/(k+r) where r is rank of doc d in each retriever's list.\"\n        ],\n    )\n    assert_test(test_case, [rag_faithfulness])\n\n\n@pytest.mark.parametrize(\"question,answer\", [\n    (\"Define embedding.\", \"An embedding is a dense vector that captures semantic meaning.\"),\n    (\"Define vector database.\", \"A vector database stores embeddings and supports similarity search.\"),\n])\ndef test_definitions_are_brief(question, answer, custom_brevity):\n    test_case = LLMTestCase(input=question, actual_output=answer)\n    assert_test(test_case, [custom_brevity])\n\n\ndef test_no_hallucination_simple():\n    \"\"\"Detect fabricated facts.\"\"\"\n    metric = HallucinationMetric(threshold=0.5, model=\"gpt-4o-mini\")\n    test_case = LLMTestCase(\n        input=\"What year was Anthropic founded?\",\n        actual_output=\"Anthropic was founded in 2021.\",\n        context=[\"Anthropic is an AI safety company founded in 2021 by former OpenAI researchers.\"],\n    )\n    assert_test(test_case, [metric])\n",
+    "dependencies": [
+      {
+        "name": "deepeval",
+        "version": ">=1.0",
+        "purpose": "LLM testing framework"
+      },
+      {
+        "name": "pytest",
+        "version": ">=8.0",
+        "purpose": "Test runner"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Underlying judge LLM"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key for judges",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install deepeval pytest openai",
+      "export OPENAI_API_KEY=sk-...",
+      "pytest tests/test_llm.py -v"
+    ],
+    "variations": [
+      {
+        "label": "CI integration",
+        "description": "Run on every PR.",
+        "code_snippet": "# .github/workflows/llm-eval.yml: pytest tests/test_llm.py --json-report"
+      },
+      {
+        "label": "Synthetic data generation",
+        "description": "DeepEval generates test cases.",
+        "code_snippet": "from deepeval.synthesizer import Synthesizer\\ndataset = Synthesizer().generate(documents=['my_doc.pdf'])"
+      },
+      {
+        "label": "Conversation-level metrics",
+        "description": "Evaluate multi-turn dialogues.",
+        "code_snippet": "from deepeval.test_case import ConversationalTestCase\\n# Eval an entire conversation, not just one turn"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Test marked as passed but metric is borderline",
+        "cause": "Threshold too lenient.",
+        "fix_snippet": "Tune threshold per metric; 0.7-0.8 is typical for relevancy/faithfulness."
+      },
+      {
+        "error_text": "Different scores across runs",
+        "cause": "Judge non-determinism.",
+        "fix_snippet": "Use temperature=0 in the metric's underlying LLM call. Pin judge model version."
+      },
+      {
+        "error_text": "GEval criteria vague produces unreliable scores",
+        "cause": "GEval needs precise criteria.",
+        "fix_snippet": "Make criteria specific: \u2018Score 1 if X, 0 if Y.\u2019 Vague criteria \u2192 noisy results."
+      }
+    ],
+    "production_checklist": [
+      "Run in CI on prompt/model changes; gate merges.",
+      "Pin judge model version; results drift across versions.",
+      "Track test pass rates over time; sudden drops = regressions.",
+      "Use deterministic scorers (similarity, exact match) where possible; cheaper, more reliable.",
+      "Synthetic data for breadth, real cases for ground truth."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "deepeval==1.0.0",
+        "pytest==8.3.3"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "deepeval"
+    ],
+    "related_glossary_slugs": [
+      "llm-evaluation",
+      "regression-testing"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "DeepEval vs RAGAS vs Promptfoo?",
+        "answer": "DeepEval: pytest-style integration. RAGAS: RAG-specific metrics. Promptfoo: YAML-driven matrix testing. Pick by where it fits in your existing workflow."
+      },
+      {
+        "question": "Custom metrics?",
+        "answer": "GEval lets you write criteria in natural language; useful for domain-specific quality bars not covered by built-ins."
+      },
+      {
+        "question": "Cost?",
+        "answer": "Each metric calls a judge LLM per test case. Use gpt-4o-mini for judges in CI; reserve gpt-4o for high-stakes."
+      }
+    ],
+    "github_url": "https://github.com/confident-ai/deepeval",
+    "meta_title": "DeepEval Pytest-Style LLM Testing \u2014 Starter",
+    "meta_description": "Pytest-compatible LLM eval with DeepEval: relevancy, faithfulness, hallucination, custom GEval metrics. CI-ready."
+  },
+  {
     "slug": "openai-fine-tune-pipeline",
     "title": "OpenAI Fine-Tune End-to-End Pipeline",
     "tldr": "Complete OpenAI fine-tune workflow: prepare JSONL training data, validate format, upload, kick off job, poll completion, evaluate the resulting model. With cost estimate before commit.",
@@ -8132,6 +8416,280 @@
     "github_url": "https://github.com/pgvector/pgvector",
     "meta_title": "PGVector RAG on Postgres \u2014 Starter",
     "meta_description": "RAG inside Postgres: HNSW indexes, hybrid SQL+vector queries, transactional ingest, connection pooling. No new infra to add."
+  },
+  {
+    "slug": "weaviate-hybrid-named-vectors",
+    "title": "Weaviate Hybrid Search With Named Vectors",
+    "tldr": "Weaviate v1.24+ named vectors: store multiple embeddings per object (semantic + keyword + image), search across them in a hybrid query. Schema-first, GraphQL-native.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "Weaviate",
+    "tags": [
+      "weaviate",
+      "named-vectors",
+      "hybrid-search",
+      "multi-modal"
+    ],
+    "best_for_tags": [
+      "multi-modal-rag",
+      "rich-search",
+      "schema-first"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "When you need multiple vector representations per object (e.g., title-only vector + full-text vector + image vector) AND structured filtering. Weaviate's schema-first approach + named vectors fits this.",
+    "when_not_to_use": "Skip for simple single-vector use cases (Qdrant or Chroma simpler). Skip if you don't want a heavy database \u2014 Weaviate runs as a service.",
+    "quick_start": "docker run -p 8080:8080 -p 50051:50051 cr.weaviate.io/semitechnologies/weaviate:latest && pip install weaviate-client && python weaviate_demo.py",
+    "full_code": "\"\"\"Weaviate v4 client: hybrid search with named vectors.\n\nEach object has TWO vectors (title vs full text); query can target either or both.\n\"\"\"\nfrom __future__ import annotations\n\nimport weaviate\nimport weaviate.classes as wvc\nfrom weaviate.classes.config import Configure, DataType, Property\n\n\nclient = weaviate.connect_to_local()  # default localhost:8080\n\n\n# ----------------- SCHEMA -----------------\n\ndef ensure_collection():\n    if client.collections.exists(\"Article\"):\n        return\n    client.collections.create(\n        name=\"Article\",\n        properties=[\n            Property(name=\"title\", data_type=DataType.TEXT),\n            Property(name=\"body\", data_type=DataType.TEXT),\n            Property(name=\"category\", data_type=DataType.TEXT),\n            Property(name=\"published_at\", data_type=DataType.DATE),\n        ],\n        vectorizer_config=[\n            Configure.NamedVectors.text2vec_openai(\n                name=\"title_vector\",\n                source_properties=[\"title\"],\n            ),\n            Configure.NamedVectors.text2vec_openai(\n                name=\"body_vector\",\n                source_properties=[\"body\"],\n            ),\n        ],\n    )\n\n\n# ----------------- INGEST -----------------\n\ndef ingest(articles: list[dict]) -> int:\n    coll = client.collections.get(\"Article\")\n    with coll.batch.dynamic() as batch:\n        for a in articles:\n            batch.add_object(properties=a)\n    return len(articles)\n\n\n# ----------------- QUERIES -----------------\n\ndef hybrid_query(query: str, *, target_vector: str = \"body_vector\", limit: int = 5):\n    \"\"\"Hybrid (BM25 + vector) search against a specific named vector.\"\"\"\n    coll = client.collections.get(\"Article\")\n    return coll.query.hybrid(\n        query=query,\n        target_vector=target_vector,\n        limit=limit,\n        return_metadata=wvc.query.MetadataQuery(score=True),\n    ).objects\n\n\ndef filtered_query(query: str, category: str, limit: int = 5):\n    \"\"\"Hybrid + metadata filter.\"\"\"\n    coll = client.collections.get(\"Article\")\n    return coll.query.hybrid(\n        query=query,\n        target_vector=\"body_vector\",\n        filters=wvc.query.Filter.by_property(\"category\").equal(category),\n        limit=limit,\n    ).objects\n\n\ndef cross_vector_query(query: str, limit: int = 5):\n    \"\"\"Query both vectors; weight differently.\"\"\"\n    coll = client.collections.get(\"Article\")\n    # Search title_vector first (broad recall)\n    title_hits = coll.query.near_text(query=query, target_vector=\"title_vector\", limit=limit * 2).objects\n    # Then body_vector\n    body_hits = coll.query.near_text(query=query, target_vector=\"body_vector\", limit=limit * 2).objects\n    # Merge by RRF in application code\n    return title_hits + body_hits  # simplified; real version does RRF dedup\n\n\nif __name__ == \"__main__\":\n    ensure_collection()\n    sample = [\n        {\"title\": \"Reciprocal Rank Fusion\", \"body\": \"RRF merges ranked lists from retrievers...\", \"category\": \"rag\", \"published_at\": \"2024-01-15T00:00:00Z\"},\n        {\"title\": \"HNSW vs IVFFlat\", \"body\": \"HNSW gives faster queries...\", \"category\": \"infra\", \"published_at\": \"2024-02-10T00:00:00Z\"},\n    ]\n    ingest(sample)\n\n    for hit in hybrid_query(\"how do I combine retrievers\"):\n        print(f\"  {hit.properties.get('title')}: score={hit.metadata.score}\")\n\n    client.close()\n",
+    "dependencies": [
+      {
+        "name": "weaviate-client",
+        "version": ">=4.7",
+        "purpose": "Weaviate v4 Python client"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "For text2vec_openai vectorizer",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "docker run -d -p 8080:8080 -p 50051:50051 -e OPENAI_APIKEY=$OPENAI_API_KEY cr.weaviate.io/semitechnologies/weaviate:latest",
+      "pip install weaviate-client",
+      "export OPENAI_API_KEY=sk-...",
+      "python weaviate_demo.py",
+      "Browse http://localhost:8080/v1/meta"
+    ],
+    "variations": [
+      {
+        "label": "Weaviate Cloud",
+        "description": "Managed; no self-host.",
+        "code_snippet": "client = weaviate.connect_to_weaviate_cloud(cluster_url='...', auth_credentials=weaviate.auth.AuthApiKey('...'))"
+      },
+      {
+        "label": "Local embeddings (no OpenAI)",
+        "description": "Use text2vec-transformers for self-contained.",
+        "code_snippet": "# Run weaviate with TRANSFORMERS_INFERENCE_API; replace vectorizer with text2vec_transformers"
+      },
+      {
+        "label": "Image vector",
+        "description": "Multi-modal collection.",
+        "code_snippet": "Configure.NamedVectors.multi2vec_clip(name='image_vector', image_fields=['image'])"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "WeaviateConnectionError: failed to connect",
+        "cause": "Weaviate not running or wrong port.",
+        "fix_snippet": "Verify: curl http://localhost:8080/v1/meta. Adjust connect_to_local() port if you mapped differently."
+      },
+      {
+        "error_text": "Vectorizer not configured",
+        "cause": "OPENAI_APIKEY not passed to Weaviate at startup.",
+        "fix_snippet": "When starting docker: -e OPENAI_APIKEY=$OPENAI_API_KEY. Vectorizers run inside Weaviate, need the key."
+      },
+      {
+        "error_text": "v4 vs v3 client confusion",
+        "cause": "Old documentation uses v3 syntax.",
+        "fix_snippet": "Pin weaviate-client>=4.0; v3 syntax (client.data_object.create) is removed. Use collections.get(...) pattern."
+      },
+      {
+        "error_text": "Batch upload silently dropping objects",
+        "cause": "Errors in batch not surfaced.",
+        "fix_snippet": "After batch context exits, check batch.failed_objects; log and retry."
+      }
+    ],
+    "production_checklist": [
+      "Use Weaviate Cloud or replicated cluster for production HA.",
+      "Set up backups (Weaviate has built-in backup module).",
+      "Monitor schema migrations; classes are append-only for properties.",
+      "Use client.close() to clean up gRPC connections.",
+      "Pin client version + Weaviate version compatibility.",
+      "Test multi-tenant isolation via tenant property if used."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "weaviate-client==4.9.0",
+        "Weaviate server 1.27"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "weaviate"
+    ],
+    "related_glossary_slugs": [
+      "named-vectors",
+      "hybrid-search"
+    ],
+    "related_learn_slugs": [],
+    "license": "BSD-3-Clause",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Weaviate vs Qdrant?",
+        "answer": "Weaviate: schema-first, named vectors, GraphQL native. Qdrant: schema-loose, faster perf benchmarks, payload filtering. Pick by team preference; both are production-grade."
+      },
+      {
+        "question": "Why named vectors?",
+        "answer": "Different aspects of an object benefit from different vectorizations. Title vs body, English vs other languages, text vs image \u2014 named vectors let one object hold multiple representations."
+      },
+      {
+        "question": "Can I do this in Qdrant?",
+        "answer": "Yes \u2014 Qdrant supports multiple vectors per point. Different ergonomics. Weaviate's vectorizer integration is built-in; Qdrant's is application-level."
+      },
+      {
+        "question": "GraphQL vs REST vs gRPC?",
+        "answer": "v4 client uses gRPC by default (fastest). GraphQL still available for ad-hoc queries via browser. REST for legacy. gRPC for app code."
+      }
+    ],
+    "github_url": "https://github.com/weaviate/weaviate",
+    "meta_title": "Weaviate Hybrid Search With Named Vectors \u2014 Starter",
+    "meta_description": "Multiple vectors per object (title + body + image), hybrid BM25+vector search, schema-first. Weaviate v4 client."
+  },
+  {
+    "slug": "lancedb-embedded-vector-store",
+    "title": "LanceDB Embedded Vector Store (No Server)",
+    "tldr": "LanceDB stores vectors in a columnar Parquet/Lance format on disk \u2014 no server, no Docker. Great for embedded apps, desktop tools, and serverless functions where a stateful server isn't an option.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "LanceDB",
+    "tags": [
+      "lancedb",
+      "embedded",
+      "serverless",
+      "no-ops"
+    ],
+    "best_for_tags": [
+      "desktop-apps",
+      "serverless",
+      "embedded-rag"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": false,
+    "when_to_use": "When you need vector search but can't or don't want to run a server. Reads from disk (or S3), works in AWS Lambda, ships with a desktop app. Files are Parquet-compatible.",
+    "when_not_to_use": "Skip for high-write workloads (Lance format optimized for read). Skip for very high QPS (no shared index across requests). Skip when you need a queryable API for non-Python consumers.",
+    "quick_start": "pip install lancedb && python lance_demo.py",
+    "full_code": "\"\"\"LanceDB embedded vector store.\n\nFiles: ./data/lancedb/<table>.lance\nNo server. Just import and read/write.\n\"\"\"\nfrom __future__ import annotations\n\nimport lancedb\nimport pyarrow as pa\nfrom sentence_transformers import SentenceTransformer\n\nembedder = SentenceTransformer(\"all-MiniLM-L6-v2\")\n\n\ndef get_db(path: str = \"./data/lancedb\"):\n    return lancedb.connect(path)\n\n\ndef ensure_table(db) -> \"lancedb.Table\":\n    if \"documents\" in db.table_names():\n        return db.open_table(\"documents\")\n    schema = pa.schema([\n        pa.field(\"id\", pa.int64()),\n        pa.field(\"text\", pa.string()),\n        pa.field(\"source\", pa.string()),\n        pa.field(\"vector\", pa.list_(pa.float32(), 384)),  # all-MiniLM-L6-v2 is 384 dims\n    ])\n    return db.create_table(\"documents\", schema=schema)\n\n\ndef ingest(rows: list[dict]) -> int:\n    db = get_db()\n    table = ensure_table(db)\n    # Embed\n    texts = [r[\"text\"] for r in rows]\n    vectors = embedder.encode(texts).tolist()\n    for r, v in zip(rows, vectors):\n        r[\"vector\"] = v\n    table.add(rows)\n    return len(rows)\n\n\ndef query(question: str, *, k: int = 5, filter_source: str | None = None):\n    db = get_db()\n    table = db.open_table(\"documents\")\n    qvec = embedder.encode([question])[0].tolist()\n    search = table.search(qvec).limit(k)\n    if filter_source:\n        search = search.where(f\"source = '{filter_source}'\")\n    return search.to_pandas()\n\n\ndef create_index():\n    \"\"\"Build an ANN index for faster queries on large tables.\"\"\"\n    db = get_db()\n    table = db.open_table(\"documents\")\n    table.create_index(\n        vector_column_name=\"vector\",\n        index_type=\"IVF_PQ\",                # alternatives: IVF_HNSW_SQ, FLAT\n        num_partitions=256,\n        num_sub_vectors=96,\n    )\n\n\nif __name__ == \"__main__\":\n    ingest([\n        {\"id\": 1, \"text\": \"Reciprocal rank fusion combines retriever lists.\", \"source\": \"rag.md\"},\n        {\"id\": 2, \"text\": \"HNSW is fast but RAM-heavy.\", \"source\": \"vectors.md\"},\n        {\"id\": 3, \"text\": \"Embedded vector stores skip the server.\", \"source\": \"infra.md\"},\n    ])\n    print(query(\"how do I merge retrievers?\"))\n",
+    "dependencies": [
+      {
+        "name": "lancedb",
+        "version": ">=0.13",
+        "purpose": "Embedded vector store"
+      },
+      {
+        "name": "pyarrow",
+        "version": ">=17.0",
+        "purpose": "Schema definitions (LanceDB internals)"
+      },
+      {
+        "name": "sentence-transformers",
+        "version": ">=3.0",
+        "purpose": "Local embeddings"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "pip install lancedb sentence-transformers pyarrow",
+      "python lance_demo.py",
+      "Data persists to ./data/lancedb/"
+    ],
+    "variations": [
+      {
+        "label": "S3 backing",
+        "description": "Store data on S3 instead of local disk.",
+        "code_snippet": "db = lancedb.connect('s3://my-bucket/lancedb/', storage_options={'aws_access_key_id': '...', 'aws_secret_access_key': '...'})"
+      },
+      {
+        "label": "Hybrid search",
+        "description": "Add full-text search alongside vector.",
+        "code_snippet": "table.create_fts_index(['text'])  # full-text search\\n# Then: table.search(query='...', query_type='hybrid')"
+      },
+      {
+        "label": "AWS Lambda deployment",
+        "description": "Ship LanceDB in a Lambda layer.",
+        "code_snippet": "# Bundle lancedb + sentence-transformers in a Lambda layer (~200MB).\\n# Use S3 for table storage; Lambda has read-only filesystem except /tmp."
+      },
+      {
+        "label": "Versioning",
+        "description": "Time-travel queries.",
+        "code_snippet": "table.checkout(version=3)  # query previous version of data\\ntable.list_versions()  # see history"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ValueError: Vector dimensions don't match",
+        "cause": "Schema fixed at 384; switching embedding model.",
+        "fix_snippet": "Either re-create table with new dim, or use a fresh table per model. Schema is immutable for vector column dimensions."
+      },
+      {
+        "error_text": "Slow queries on large tables",
+        "cause": "No ANN index.",
+        "fix_snippet": "Call table.create_index() once after substantial ingest. IVF_PQ is the safe default."
+      },
+      {
+        "error_text": "ImportError: No module named 'pyarrow'",
+        "cause": "Optional dep missing.",
+        "fix_snippet": "pip install pyarrow. LanceDB schema definitions require it."
+      },
+      {
+        "error_text": "Data not visible across processes",
+        "cause": "Each process opens its own connection.",
+        "fix_snippet": "Normal \u2014 LanceDB is file-based. Just open the same path; latest writes are visible to all readers."
+      }
+    ],
+    "production_checklist": [
+      "For serverless (Lambda), pre-bake the dependency layer (lancedb + embedder).",
+      "Use S3 backing for distributed access; local disk for single-process.",
+      "Build ANN index after bulk ingest; queries without are linear scan.",
+      "Snapshot tables periodically (Lance versioning is built in).",
+      "Pin lancedb version; storage format has evolved.",
+      "For high-write workloads, consider Qdrant/Pinecone instead."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "all-MiniLM-L6-v2"
+      ],
+      "library_versions": [
+        "lancedb==0.13.0",
+        "pyarrow==17.0.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "lancedb"
+    ],
+    "related_glossary_slugs": [
+      "embedded-vector-store",
+      "lance-format"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "LanceDB vs SQLite vector extension?",
+        "answer": "LanceDB: purpose-built for vectors, ANN indexes, version control. SQLite + vector: minimal addition to existing SQLite. For pure vector workloads, LanceDB. For mixed SQL + vector, SQLite extension wins simplicity."
+      },
+      {
+        "question": "Can I run this in the browser?",
+        "answer": "Not directly \u2014 Python only. For browser, LanceDB has a Rust core; community ports for WASM exist but aren't production-grade yet."
+      },
+      {
+        "question": "Schema migration?",
+        "answer": "Add columns: yes via Lance's schema evolution. Change vector dim: no, recreate table. Plan dimensions carefully upfront."
+      },
+      {
+        "question": "Why Lance format?",
+        "answer": "Columnar, optimized for ML workloads, Parquet-compatible. Lets you read with pandas/Spark/DuckDB without LanceDB. Vector queries need LanceDB's index reader."
+      }
+    ],
+    "github_url": "https://github.com/lancedb/lancedb",
+    "meta_title": "LanceDB Embedded Vector Store \u2014 Starter",
+    "meta_description": "Embedded vector DB with no server: Lance/Parquet format on disk or S3, ANN indexes, versioning. Great for Lambda + desktop apps."
   },
   {
     "slug": "fastapi-ollama-streaming-chat",
