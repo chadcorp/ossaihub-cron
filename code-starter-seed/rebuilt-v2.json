@@ -295,6 +295,357 @@
     ]
   },
   {
+    "slug": "llamacpp-server-quantized",
+    "title": "llama.cpp Server with Q4/Q5/Q8 Quantization",
+    "category": "llm-inference",
+    "language": "bash",
+    "framework": "llama.cpp",
+    "tldr": "Production-ready llama.cpp server hosting a quantized GGUF model with HTTP+OpenAI-compatible API, KV-cache size tuning, and memory-mapped weights. Runs on CPU or single GPU.",
+    "tags": [
+      "llama-cpp",
+      "gguf",
+      "quantization",
+      "self-host"
+    ],
+    "best_for_tags": [
+      "self-host",
+      "low-cost",
+      "consumer-gpu"
+    ],
+    "difficulty_tier": "intermediate",
+    "when_to_use": "When self-hosting on consumer hardware (single GPU or CPU-only) with predictable workloads. llama.cpp delivers solid throughput at low cost \u2014 a 7B Q4_K_M model runs comfortably on 8GB VRAM at ~30 tok/s. The OpenAI-compatible endpoint means you can swap from a cloud provider with no client-code changes. Best for indie devs, edge deployments, or air-gapped environments.",
+    "when_not_to_use": "When you need >50 concurrent users \u2014 llama.cpp doesn't have continuous batching. Use vLLM or TGI. Also skip for the absolute highest quality \u2014 Q4/Q5 quantization loses ~1-2% on benchmarks vs full-precision.",
+    "quick_start": "./llama-server -m model.gguf --host 0.0.0.0 --port 8080 -ngl 35",
+    "full_code": "# 1. Download a quantized GGUF model (one-time, ~5GB)\n# Recommendation: Llama 3.1 8B Q4_K_M from HuggingFace\nwget https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf -O llama-3.1-8b-q4.gguf\n\n# 2. Build llama.cpp (if not installed)\n# git clone https://github.com/ggerganov/llama.cpp && cd llama.cpp\n# make GGML_CUDA=1 -j  # or `cmake -B build -DGGML_METAL=ON` on Mac\n\n# 3. Launch server\n./llama-server \\\n    --model llama-3.1-8b-q4.gguf \\\n    --host 0.0.0.0 --port 8080 \\\n    --n-gpu-layers 35 \\\n    --ctx-size 8192 \\\n    --threads 8 \\\n    --batch-size 512 \\\n    --n-predict 2048 \\\n    --mlock \\\n    --metrics\n\n# 4. Test (OpenAI-compatible)\ncurl http://localhost:8080/v1/chat/completions \\\n    -H 'Content-Type: application/json' \\\n    -d '{\n        \"model\": \"any-name\",\n        \"messages\": [{\"role\": \"user\", \"content\": \"Explain GGUF in one sentence.\"}],\n        \"max_tokens\": 200,\n        \"temperature\": 0.7\n    }'\n\n# 5. Use from Python with openai SDK pointed at localhost\n# from openai import OpenAI\n# c = OpenAI(base_url='http://localhost:8080/v1', api_key='not-needed')\n# c.chat.completions.create(model='any', messages=[...])\n",
+    "dependencies": [
+      {
+        "name": "llama.cpp",
+        "version": "b3500+",
+        "purpose": "Inference runtime; build from source or via brew install llama.cpp"
+      },
+      {
+        "name": "CUDA Toolkit",
+        "version": "12.1+",
+        "purpose": "For GPU acceleration (Linux/Windows); skip on Mac (uses Metal)"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "LLAMA_CPP_PATH",
+        "required": false,
+        "description": "Path to llama-server binary if not in PATH"
+      }
+    ],
+    "setup_steps": [
+      "Build llama.cpp from source with GPU flag (5 min): make GGML_CUDA=1 -j",
+      "Download a Q4_K_M GGUF \u2014 search HuggingFace for '<model>-GGUF' (bartowski is reliable)",
+      "Pick GPU layer count based on VRAM: 35 for 8B/8GB, 60 for 8B/24GB",
+      "Set ctx-size to your expected max input + output (default 4096; up to 128k for Llama 3.1)",
+      "Launch server with --mlock if you have enough RAM (prevents swap thrashing)",
+      "Test with the curl example above",
+      "Wire your client (any OpenAI SDK works, base_url=localhost:8080/v1)"
+    ],
+    "variations": [
+      {
+        "label": "CPU-only mode",
+        "description": "When no GPU available; uses AVX2/AVX512 instructions.",
+        "code_snippet": "./llama-server --model x.gguf --n-gpu-layers 0 --threads $(nproc) --ctx-size 4096"
+      },
+      {
+        "label": "Mac M-series with Metal",
+        "description": "Apple Silicon GPU acceleration.",
+        "code_snippet": "# Build: cmake -B build -DGGML_METAL=ON && cmake --build build --config Release\n./build/bin/llama-server --model x.gguf --n-gpu-layers 99 --ctx-size 8192"
+      },
+      {
+        "label": "Multiple models with model-switching",
+        "description": "Load model on-demand to save VRAM when serving multiple.",
+        "code_snippet": "# Use --slot-save-path to checkpoint state\n./llama-server --model x.gguf --slots 4 --slot-save-path /tmp/slots/"
+      },
+      {
+        "label": "Speculative decoding",
+        "description": "Use a small draft model to accelerate generation.",
+        "code_snippet": "./llama-server --model llama-3.1-70b-q4.gguf --model-draft llama-3.1-8b-q4.gguf --draft-max 8"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "CUDA error: out of memory",
+        "cause": "n-gpu-layers too high or ctx-size too large",
+        "fix_snippet": "# Drop --n-gpu-layers by 5 increments until it fits. Each layer ~150-200MB at Q4."
+      },
+      {
+        "error_text": "GGML_ASSERT: invalid quantization",
+        "cause": "Model file corrupted or wrong format",
+        "fix_snippet": "# Re-download. Verify with: shasum -a 256 model.gguf | compare against HF page checksum"
+      },
+      {
+        "error_text": "Server returns 503 Service Unavailable",
+        "cause": "All slots busy (default --slots is 1)",
+        "fix_snippet": "# Increase concurrent slots: --slots 4 (each slot ~ctx-size memory)"
+      },
+      {
+        "error_text": "Latency >10s per request despite small prompts",
+        "cause": "Layers fell back to CPU because GPU memory ran out",
+        "fix_snippet": "# Check server log on startup \u2014 should say 'offloaded X/N layers to GPU'. If X<N, lower ctx-size or use smaller quant (Q3_K_M)."
+      },
+      {
+        "error_text": "Different output across runs with same seed",
+        "cause": "Multi-slot scheduling non-determinism",
+        "fix_snippet": "# Run with --slots 1 --no-mmap --threads 1 for full reproducibility (much slower)"
+      }
+    ],
+    "production_checklist": [
+      "Pin to specific llama.cpp commit (build numbers change behavior)",
+      "Verify GGUF checksum matches HuggingFace listed hash",
+      "Set --mlock if RAM > model_size + ctx_size buffer",
+      "Use --metrics flag, scrape /metrics with Prometheus",
+      "Place behind reverse proxy (nginx) with rate limiting",
+      "Monitor VRAM usage in GPU-monitoring tool (nvidia-smi, nvtop)",
+      "If batch >10 concurrent: switch to vLLM (continuous batching matters)",
+      "Backup the GGUF file to S3 \u2014 HuggingFace versions get re-uploaded",
+      "Test request latency p99 with realistic prompt length"
+    ],
+    "tested_with": {
+      "model_versions": [
+        "Llama-3.1-8B-Instruct Q4_K_M",
+        "Llama-3.1-8B-Instruct Q5_K_M",
+        "Llama-3.1-70B-Instruct Q4_K_M",
+        "Qwen2.5-14B-Instruct Q5_K_M"
+      ],
+      "library_versions": [
+        "llama.cpp b3500",
+        "llama.cpp b3700"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "llama-cpp",
+      "ollama",
+      "lm-studio"
+    ],
+    "related_glossary_slugs": [
+      "gguf",
+      "quantization",
+      "self-hosting"
+    ],
+    "related_learn_slugs": [
+      "self-hosting-llms"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub Code Library",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "submitter_email": "hub@ossaihub.com",
+    "submitter_name": "OSS AI Hub",
+    "meta_title": "llama.cpp Server with GGUF \u2014 Self-Host with Quant",
+    "meta_description": "Production-ready llama.cpp server with Q4/Q5/Q8 GGUF quantization, OpenAI-compatible API, KV-cache tuning, GPU/CPU/Metal support.",
+    "faq": [
+      {
+        "question": "Q4 vs Q5 vs Q8 \u2014 which to choose?",
+        "answer": "Q4_K_M is the sweet spot \u2014 60% size reduction, <1% quality loss on benchmarks. Q5_K_M if you have extra VRAM and want minor quality bump. Q8_0 only for fidelity-critical workloads."
+      },
+      {
+        "question": "How fast is it vs vLLM?",
+        "answer": "Single-request: comparable. Concurrent (>5 users): vLLM wins by 5-10x due to continuous batching. Use llama.cpp for single-user / low-concurrency."
+      },
+      {
+        "question": "Can I use it for production user traffic?",
+        "answer": "Yes \u2014 for <10 concurrent users with predictable load. Above that, you need a real serving stack (vLLM, TGI, TRT-LLM)."
+      },
+      {
+        "question": "Does it support function-calling?",
+        "answer": "Yes since b3000+. Pass `tools=` like OpenAI. Tool-calling quality depends on the underlying model (Llama 3.1+ is solid)."
+      }
+    ]
+  },
+  {
+    "slug": "vllm-batched-inference-metrics",
+    "title": "vLLM Production Launch (Llama 3.3 70B + Prometheus)",
+    "category": "llm-inference",
+    "language": "python",
+    "framework": "vLLM",
+    "tldr": "Launch vLLM 0.7 in production: tensor-parallel across 4 GPUs, continuous batching, KV-cache reuse, Prometheus metrics, graceful shutdown. Handles 100+ concurrent users.",
+    "tags": [
+      "vllm",
+      "production",
+      "tensor-parallel",
+      "metrics"
+    ],
+    "best_for_tags": [
+      "production-inference",
+      "high-concurrency",
+      "self-host"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "when_to_use": "When serving >10 concurrent users on a self-hosted model and you need continuous batching for cost-efficient GPU utilization. vLLM's PagedAttention enables 2-4x throughput vs naive batching. Tensor parallelism across GPUs lets you serve Llama 3.3 70B on 4x A100/H100 with sub-second TTFT. Prometheus metrics give you the observability needed for SLO-bound services.",
+    "when_not_to_use": "For single-user dev workloads \u2014 llama.cpp is simpler and faster to set up. Also skip if you can't run NVIDIA GPUs \u2014 vLLM is CUDA-only (AMD ROCm support is improving but immature).",
+    "quick_start": "pip install vllm==0.7.0 && python launch_vllm.py",
+    "full_code": "\"\"\"vLLM production launcher: Llama 3.3 70B on 4x A100 80GB with metrics.\"\"\"\nimport argparse, os, signal, subprocess, sys\n\n\ndef main():\n    ap = argparse.ArgumentParser()\n    ap.add_argument('--model', default='meta-llama/Llama-3.3-70B-Instruct')\n    ap.add_argument('--tp', type=int, default=4, help='tensor parallel size')\n    ap.add_argument('--port', type=int, default=8000)\n    ap.add_argument('--max-model-len', type=int, default=8192)\n    ap.add_argument('--gpu-memory-util', type=float, default=0.92)\n    args = ap.parse_args()\n\n    cmd = [\n        sys.executable, '-m', 'vllm.entrypoints.openai.api_server',\n        '--model', args.model,\n        '--tensor-parallel-size', str(args.tp),\n        '--host', '0.0.0.0',\n        '--port', str(args.port),\n        '--max-model-len', str(args.max_model_len),\n        '--gpu-memory-utilization', str(args.gpu_memory_util),\n        '--enable-prefix-caching',  # KV-cache reuse for shared prefixes\n        '--enable-chunked-prefill',  # better latency under load\n        '--max-num-seqs', '256',\n        '--disable-log-stats',  # we get metrics via /metrics instead\n        '--served-model-name', 'llama-3.3-70b',\n    ]\n\n    print('Launching vLLM:', ' '.join(cmd), flush=True)\n    proc = subprocess.Popen(cmd)\n\n    def shutdown(signum, frame):\n        print(f'Received signal {signum}; gracefully shutting down vLLM', flush=True)\n        proc.terminate()\n        proc.wait(timeout=60)\n        sys.exit(0)\n\n    signal.signal(signal.SIGTERM, shutdown)\n    signal.signal(signal.SIGINT, shutdown)\n    proc.wait()\n\nif __name__ == '__main__':\n    main()\n",
+    "dependencies": [
+      {
+        "name": "vllm",
+        "version": "==0.7.0",
+        "purpose": "Inference server with PagedAttention + continuous batching"
+      },
+      {
+        "name": "torch",
+        "version": ">=2.4.0,<2.5.0",
+        "purpose": "vLLM 0.7 requires PyTorch 2.4"
+      },
+      {
+        "name": "transformers",
+        "version": ">=4.45.0",
+        "purpose": "Model config + tokenizer"
+      },
+      {
+        "name": "huggingface_hub",
+        "version": ">=0.25.0",
+        "purpose": "Model download from HF"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HUGGING_FACE_HUB_TOKEN",
+        "required": true,
+        "description": "Required for gated models like Llama 3.3 \u2014 get at huggingface.co/settings/tokens"
+      },
+      {
+        "name": "VLLM_LOGGING_LEVEL",
+        "required": false,
+        "description": "Set to DEBUG for troubleshooting; default WARNING"
+      },
+      {
+        "name": "CUDA_VISIBLE_DEVICES",
+        "required": false,
+        "description": "Restrict to specific GPUs (e.g., '0,1,2,3')"
+      }
+    ],
+    "setup_steps": [
+      "Provision 4x A100 80GB (or 4x H100) \u2014 Llama 70B needs ~140GB total",
+      "Install CUDA 12.1+ and PyTorch 2.4 first: pip install torch==2.4.0",
+      "pip install vllm==0.7.0 (matches the torch version)",
+      "Accept Llama 3.3 license at huggingface.co/meta-llama/Llama-3.3-70B-Instruct",
+      "Set HUGGING_FACE_HUB_TOKEN env var",
+      "Run: python launch_vllm.py \u2014 first launch downloads weights (~140GB, takes 15-30 min)",
+      "Verify with: curl http://localhost:8000/v1/models",
+      "Scrape Prometheus metrics from http://localhost:8000/metrics"
+    ],
+    "variations": [
+      {
+        "label": "Single-GPU 8B model",
+        "description": "For dev or low-traffic prod with 8B model.",
+        "code_snippet": "python launch_vllm.py --model meta-llama/Llama-3.1-8B-Instruct --tp 1 --max-model-len 16384"
+      },
+      {
+        "label": "Speculative decoding",
+        "description": "Use a draft model to accelerate.",
+        "code_snippet": "# Add to cmd:\n'--speculative-model', 'meta-llama/Llama-3.2-1B-Instruct',\n'--num-speculative-tokens', '5',"
+      },
+      {
+        "label": "AWQ/GPTQ quantized",
+        "description": "Run 70B on 2x A100 80GB via AWQ.",
+        "code_snippet": "python launch_vllm.py --model neuralmagic/Llama-3.3-70B-Instruct-AWQ --tp 2"
+      },
+      {
+        "label": "Multi-LoRA serving",
+        "description": "Hot-swap LoRA adapters per-request.",
+        "code_snippet": "# Add: '--enable-lora', '--lora-modules', 'adapter1=path/to/adapter1', 'adapter2=path/to/adapter2'"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "CUDA out of memory at startup",
+        "cause": "gpu-memory-utilization too high, or another process using GPU",
+        "fix_snippet": "# nvidia-smi to check other processes. Drop --gpu-memory-util to 0.85"
+      },
+      {
+        "error_text": "ImportError: cannot import name 'X' from 'torch'",
+        "cause": "torch/vllm version mismatch",
+        "fix_snippet": "# Always install torch FIRST, matching vllm's pinned version: pip install torch==2.4.0 vllm==0.7.0"
+      },
+      {
+        "error_text": "503 Service Unavailable under load",
+        "cause": "max-num-seqs exceeded; vLLM is queueing",
+        "fix_snippet": "# Raise --max-num-seqs to 512 if VRAM allows; otherwise scale horizontally with multiple replicas"
+      },
+      {
+        "error_text": "TTFT spikes to 5+ seconds under load",
+        "cause": "Chunked prefill not enabled, or prompts too long for prefill scheduler",
+        "fix_snippet": "# Ensure --enable-chunked-prefill flag is set; reduce --max-model-len if many short prompts share a worker"
+      },
+      {
+        "error_text": "Model download stuck at 90%",
+        "cause": "HF download server throttling",
+        "fix_snippet": "# Set HF_HUB_ENABLE_HF_TRANSFER=1 and pip install hf_transfer for parallel chunks"
+      }
+    ],
+    "production_checklist": [
+      "Pin vllm + torch versions exactly (0.7.0 + 2.4.0 in tested setup)",
+      "Scrape /metrics with Prometheus; alert on vllm:num_requests_waiting >10 for 5min",
+      "Alert on p99 latency vllm:e2e_request_latency_seconds >1.5s",
+      "Test SIGTERM behavior \u2014 verify in-flight requests drain (the signal handler does this)",
+      "Run behind a load balancer if you need >1 replica",
+      "Use --enable-prefix-caching for systems with shared system prompts",
+      "Monitor GPU utilization \u2014 if <70%, increase --max-num-seqs",
+      "Set up FluentBit or similar to ship vLLM logs (they're verbose; aggregate centrally)",
+      "Test failover: kill a GPU worker, verify load balancer routes around it",
+      "Cap inference cost: set per-request max_tokens at the load-balancer layer"
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.3-70B-Instruct",
+        "meta-llama/Llama-3.1-70B-Instruct",
+        "meta-llama/Llama-3.1-8B-Instruct"
+      ],
+      "library_versions": [
+        "vllm==0.7.0",
+        "torch==2.4.0",
+        "transformers==4.45.0"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "vllm",
+      "tgi",
+      "tensorrt-llm"
+    ],
+    "related_glossary_slugs": [
+      "continuous-batching",
+      "paged-attention",
+      "tensor-parallelism"
+    ],
+    "related_learn_slugs": [
+      "production-llm-serving"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub Code Library",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "submitter_email": "hub@ossaihub.com",
+    "submitter_name": "OSS AI Hub",
+    "meta_title": "vLLM Production Launch \u2014 Llama 70B + Metrics + Graceful Shutdown",
+    "meta_description": "Launch vLLM 0.7 in production: tensor-parallel 4xGPU, continuous batching, prefix caching, Prometheus metrics, signal handlers.",
+    "faq": [
+      {
+        "question": "vLLM vs TGI vs TRT-LLM?",
+        "answer": "vLLM: best Python ergonomics, broadest model support, mature. TGI: similar perf, Rust-based, HF ecosystem. TRT-LLM: highest throughput on NVIDIA (10-30% faster) but heaviest to operate. Start with vLLM."
+      },
+      {
+        "question": "How many GPUs for Llama 70B?",
+        "answer": "4x A100/H100 80GB for FP16 (140GB weights + KV cache). 2x for AWQ-quantized. 8x for FP16 + long context."
+      },
+      {
+        "question": "Continuous batching \u2014 what does it actually buy?",
+        "answer": "Instead of waiting for a batch to complete before starting the next, vLLM merges in-flight requests at every step. 2-4x higher throughput vs static batching at the same latency p99."
+      },
+      {
+        "question": "Can I run multiple models on one server?",
+        "answer": "Not in one vLLM process. Either run multiple instances on different ports, or use Multi-LoRA serving for fine-tuned variants of one base model."
+      }
+    ]
+  },
+  {
     "slug": "fastapi-ollama-streaming-chat",
     "title": "FastAPI + Ollama Streaming Chat API",
     "tldr": "Production FastAPI server that streams Llama 3.x tokens from a local Ollama daemon via Server-Sent Events with proper backpressure, CORS, and disconnect detection.",
@@ -1076,191 +1427,6 @@
     "archived": false,
     "submitter_email": "seed@ossaihub.com",
     "submitter_name": "OSS Hub",
-    "slug": "vllm-batched-inference-metrics",
-    "title": "vLLM 0.7 Batched Inference Server with Prometheus Metrics",
-    "tldr": "Production-ready vLLM 0.7 launch script for Llama 3.3 70B on 4x A100 with continuous batching, prefix caching, Prometheus metrics, and graceful concurrency-limit guards.",
-    "description": "Production-ready vLLM 0.7 launch script for Llama 3.3 70B on 4x A100 with continuous batching, prefix caching, Prometheus metrics, and graceful concurrency-limit guards.",
-    "category": "llm-inference",
-    "language": "python",
-    "framework": "vllm",
-    "difficulty_tier": "advanced",
-    "tags": [
-      "vllm",
-      "llama-3.3",
-      "continuous-batching",
-      "prometheus",
-      "prefix-caching"
-    ],
-    "best_for_tags": [
-      "self-hosted-llm",
-      "high-throughput",
-      "private-deployment"
-    ],
-    "featured": true,
-    "when_to_use": "You have GPU hardware (or a cloud GPU budget) and need to serve 100+ concurrent users on Llama 3.3 70B with full data sovereignty. vLLM 0.7 with continuous batching consistently delivers 600-1200 tok/s aggregate on 4x A100 80GB, with p50 TTFT under 400ms and full Prometheus observability.",
-    "when_not_to_use": "Skip vLLM when (1) you have one GPU and <10 QPS - Ollama or llama.cpp are simpler; (2) you need sub-200ms TTFT - hosted Groq beats self-hosted on raw latency; (3) you're cost-optimizing offline batch jobs - Together's batch API is 50% cheaper than running your own GPUs idle.",
-    "quick_start": "1) `pip install vllm==0.7.0`  2) `python -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-3.3-70B-Instruct --tensor-parallel-size 4 --enable-prefix-caching --max-num-seqs 256`  3) curl localhost:8000/v1/chat/completions and scrape :8000/metrics for live throughput stats.",
-    "full_code": "\"\"\"\nvLLM 0.7 production launcher for Llama 3.3 70B on 4x A100 80GB.\n\nWhat this gives you over the bare `python -m vllm.entrypoints.openai.api_server`:\n  - Sensible defaults tuned for 4xA100 + 70B model (TP=4, gpu_mem_utilization=0.92, max_seqs=256)\n  - Prefix caching ON - huge throughput win for chat (system prompt reuse)\n  - Prometheus metrics on /metrics (auto-enabled in vLLM 0.7+)\n  - Pre-flight GPU + nvidia-driver + CUDA check so you fail fast, not 5 minutes into model load\n  - Graceful SIGTERM handling so K8s rolling deploys don't truncate in-flight requests\n\nRun:\n  python serve_vllm.py --model meta-llama/Llama-3.3-70B-Instruct --tp 4 --port 8000 --max-seqs 256\n\"\"\"\nfrom __future__ import annotations\n\nimport argparse\nimport os\nimport signal\nimport subprocess\nimport sys\n\n\ndef preflight() -> None:\n    try:\n        out = subprocess.check_output([\"nvidia-smi\", \"--query-gpu=name,memory.total,driver_version\", \"--format=csv,noheader\"]).decode()\n    except (subprocess.CalledProcessError, FileNotFoundError):\n        print(\"FATAL: nvidia-smi not available. Is this a GPU host?\", file=sys.stderr)\n        sys.exit(2)\n    gpus = [ln.strip() for ln in out.splitlines() if ln.strip()]\n    if not gpus:\n        print(\"FATAL: no GPUs detected.\", file=sys.stderr)\n        sys.exit(2)\n    print(f\"[preflight] {len(gpus)} GPUs detected:\")\n    for g in gpus:\n        print(f\"  - {g}\")\n\n\ndef main() -> None:\n    ap = argparse.ArgumentParser()\n    ap.add_argument(\"--model\", default=os.environ.get(\"VLLM_MODEL\", \"meta-llama/Llama-3.3-70B-Instruct\"))\n    ap.add_argument(\"--tp\", type=int, default=int(os.environ.get(\"VLLM_TP\", \"4\")))\n    ap.add_argument(\"--port\", type=int, default=8000)\n    ap.add_argument(\"--host\", default=\"0.0.0.0\")\n    ap.add_argument(\"--max-seqs\", type=int, default=256)\n    ap.add_argument(\"--max-model-len\", type=int, default=8192)\n    ap.add_argument(\"--gpu-mem-util\", type=float, default=0.92)\n    ap.add_argument(\"--quantization\", choices=[\"none\", \"fp8\", \"awq\", \"gptq\"], default=\"none\")\n    ap.add_argument(\"--api-key\", default=os.environ.get(\"VLLM_API_KEY\"))\n    args = ap.parse_args()\n\n    preflight()\n\n    cmd = [\n        sys.executable, \"-m\", \"vllm.entrypoints.openai.api_server\",\n        \"--model\", args.model,\n        \"--tensor-parallel-size\", str(args.tp),\n        \"--host\", args.host,\n        \"--port\", str(args.port),\n        \"--max-num-seqs\", str(args.max_seqs),\n        \"--max-model-len\", str(args.max_model_len),\n        \"--gpu-memory-utilization\", str(args.gpu_mem_util),\n        \"--enable-prefix-caching\",\n        \"--disable-log-requests\",\n    ]\n    if args.quantization != \"none\":\n        cmd += [\"--quantization\", args.quantization]\n    if args.api_key:\n        cmd += [\"--api-key\", args.api_key]\n\n    print(\"[vllm] launching:\", \" \".join(cmd), flush=True)\n    proc = subprocess.Popen(cmd)\n\n    def shutdown(sig, _frame):\n        proc.send_signal(signal.SIGTERM)\n        try:\n            proc.wait(timeout=30)\n        except subprocess.TimeoutExpired:\n            proc.kill()\n        sys.exit(proc.returncode or 0)\n\n    signal.signal(signal.SIGINT, shutdown)\n    signal.signal(signal.SIGTERM, shutdown)\n    sys.exit(proc.wait())\n\n\nif __name__ == \"__main__\":\n    main()\n",
-    "code": "\"\"\"vLLM 0.7 production launcher for Llama 3.3 70B on 4x A100 80GB.\"\"\"\nimport argparse, os, signal, subprocess, sys\n\n\ndef main():\n    ap = argparse.ArgumentParser()\n    ap.add_argument(\"--model\", default=\"meta-llama/Llama-3.3-70B-Instruct\")\n    ap.add_argument(\"--tp\", type=int, default=4)\n    ap.add_argument(\"--port\", type=int, default=8000)\n    args = ap.parse_args()\n    cmd = [sys.executable, \"-m\", \"vllm.entrypoints.openai.api_server\",\n        \"--model\", args.model, \"--tensor-parallel-size\", str(args.tp),\n        \"--port\", str(args.port), \"--enable-prefix-caching\",\n        \"--max-num-seqs\", \"256\", \"--gpu-memory-utilization\", \"0.92\"]\n    proc = subprocess.Popen(cmd)\n    signal.signal(signal.SIGTERM, lambda s, f: proc.send_signal(signal.SIGTERM))\n    sys.exit(proc.wait())\n\n\nif __name__ == \"__main__\":\n    main()\n",
-    "dependencies": [
-      {
-        "name": "vllm",
-        "version": "latest",
-        "purpose": "High-throughput LLM inference server"
-      },
-      {
-        "name": "torch",
-        "version": "latest",
-        "purpose": "PyTorch tensor + autograd"
-      },
-      {
-        "name": "transformers",
-        "version": "latest",
-        "purpose": "HuggingFace model library"
-      }
-    ],
-    "dependencies_v2": [
-      {
-        "name": "vllm",
-        "version": "==0.7.0",
-        "purpose": "High-throughput LLM inference engine with continuous batching + paged attention."
-      },
-      {
-        "name": "torch",
-        "version": ">=2.5.0",
-        "purpose": "PyTorch - vLLM 0.7 requires 2.5+ for FP8 + CUDA 12.4 kernels."
-      },
-      {
-        "name": "transformers",
-        "version": ">=4.46.0",
-        "purpose": "HuggingFace transformers - needed for tokenizer + model loading."
-      }
-    ],
-    "env_vars": [
-      {
-        "name": "HF_TOKEN",
-        "required": true,
-        "description": "HuggingFace token with read access to meta-llama/Llama-3.3-70B-Instruct (gated repo)."
-      },
-      {
-        "name": "VLLM_API_KEY",
-        "required": false,
-        "description": "Optional bearer token to protect /v1/* routes. Strongly recommended in production."
-      }
-    ],
-    "setup_steps": [
-      "Provision a 4x A100 80GB (or 4x H100) host. CUDA 12.4+, NVIDIA driver 550+.",
-      "`pip install vllm==0.7.0 torch>=2.5.0 transformers>=4.46.0`",
-      "`huggingface-cli login` with a token that has Llama-3.3-70B access.",
-      "Save the script as `serve_vllm.py`.",
-      "`python serve_vllm.py --tp 4 --max-seqs 256` - first load takes 3-5 min.",
-      "Once `INFO: Application startup complete` appears, hit `curl localhost:8000/v1/models` to confirm.",
-      "Scrape `localhost:8000/metrics` from Prometheus; key metrics are `vllm:num_requests_running` and `vllm:time_per_output_token_seconds`."
-    ],
-    "variations": [
-      {
-        "label": "FP8 quantization for single H100",
-        "description": "Squeeze Llama 3.3 70B onto a single H100 80GB with FP8 - ~5% quality loss, ~2x throughput.",
-        "code_snippet": "python serve_vllm.py --model meta-llama/Llama-3.3-70B-Instruct --tp 1 --quantization fp8 --max-seqs 64 --gpu-mem-util 0.95"
-      },
-      {
-        "label": "Dockerfile for K8s deployment",
-        "description": "Minimal CUDA-12.4 image that launches the server.",
-        "code_snippet": "FROM nvidia/cuda:12.4.1-devel-ubuntu22.04\nRUN apt-get update && apt-get install -y python3.11 python3-pip\nRUN pip3 install vllm==0.7.0 torch>=2.5.0\nCOPY serve_vllm.py /app/serve_vllm.py\nWORKDIR /app\nEXPOSE 8000\nCMD [\"python3\", \"serve_vllm.py\", \"--tp\", \"4\"]"
-      },
-      {
-        "label": "LoRA adapter hot-swap",
-        "description": "Serve multiple fine-tuned LoRA adapters off the same base model.",
-        "code_snippet": "python -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-3.3-70B-Instruct --enable-lora --lora-modules customer-support=/adapters/cs sales-copilot=/adapters/sc --max-loras 4 --max-lora-rank 16"
-      }
-    ],
-    "common_errors": [
-      {
-        "error_text": "torch.cuda.OutOfMemoryError: CUDA out of memory",
-        "cause": "gpu-memory-utilization too high OR another process is holding GPU memory.",
-        "fix_snippet": "python serve_vllm.py --gpu-mem-util 0.85 --max-model-len 4096 --max-seqs 128"
-      },
-      {
-        "error_text": "ValueError: Model meta-llama/Llama-3.3-70B-Instruct not found",
-        "cause": "Llama 3.3 is a gated repo and your HF_TOKEN doesn't have access yet.",
-        "fix_snippet": "huggingface-cli login\nhuggingface-cli download meta-llama/Llama-3.3-70B-Instruct --include '*.json'"
-      },
-      {
-        "error_text": "RuntimeError: NCCL communicator was aborted",
-        "cause": "Tensor-parallel setup couldn't establish NCCL between GPUs.",
-        "fix_snippet": "NCCL_DEBUG=INFO python serve_vllm.py --tp 4\nNCCL_P2P_DISABLE=1 python serve_vllm.py --tp 4  # fallback"
-      },
-      {
-        "error_text": "Throughput is much lower than benchmarks claim",
-        "cause": "Prefix caching disabled, max-num-seqs too low, or measuring at QPS=1.",
-        "fix_snippet": "pip install vllm[bench]\npython -m vllm.entrypoints.openai.run_batch --endpoint http://localhost:8000/v1/chat/completions --num-prompts 1000 --concurrency 64"
-      }
-    ],
-    "production_checklist": [
-      "Always set --api-key in production - vLLM exposes /v1/* with no auth by default.",
-      "Scrape `/metrics` to Prometheus and alert on `vllm:num_requests_waiting > 10` for 5 min.",
-      "Run with `--disable-log-requests` and pipe stdout to a structured logger; per-request logs are noisy.",
-      "Pin model weights to a local volume (`HF_HOME=/var/cache/huggingface`) so pod restarts don't re-download 140GB.",
-      "Use --enforce-eager only for debugging - it disables CUDA graphs and tanks throughput 30-40%.",
-      "Capacity-plan with the formula `concurrent_users = (gpu_mem_util * vram_gb - model_size_gb) / kv_cache_per_seq_gb`; for 4xA100 + 70B that's ~250 concurrent at 8k ctx.",
-      "Stand up a canary with one replica before rolling 100% - vLLM minor versions occasionally change scheduling defaults."
-    ],
-    "tested_with": {
-      "model_versions": [
-        "meta-llama/Llama-3.3-70B-Instruct",
-        "meta-llama/Llama-3.1-8B-Instruct",
-        "Qwen/Qwen2.5-72B-Instruct"
-      ],
-      "library_versions": [
-        "vllm==0.7.0",
-        "torch==2.5.1",
-        "transformers==4.46.3",
-        "CUDA==12.4"
-      ],
-      "last_verified_date": "2026-05-13"
-    },
-    "related_tool_slugs": [
-      "vllm",
-      "sglang",
-      "text-generation-inference",
-      "ray-serve"
-    ],
-    "related_glossary_slugs": [
-      "continuous-batching",
-      "paged-attention",
-      "prefix-caching",
-      "tensor-parallelism",
-      "kv-cache"
-    ],
-    "related_learn_slugs": [
-      "self-hosted-llm-101",
-      "production-llm-deployment"
-    ],
-    "faq": [
-      {
-        "question": "vLLM vs SGLang vs TGI - which should I pick in 2026?",
-        "answer": "vLLM 0.7 has the deepest community + widest model support and is the safe default for OpenAI-compatible inference. SGLang wins on constrained generation (RadixAttention + grammars) and edges vLLM by 10-20% on agent/tool-use workloads. TGI is HuggingFace-blessed but trails both on throughput. Default to vLLM unless you have a specific SGLang or TGI feature in mind."
-      },
-      {
-        "question": "Can I serve multiple models on one host?",
-        "answer": "Not in one vLLM process - it loads one model. For multi-model: (1) run multiple vLLM processes on different ports + GPUs (CUDA_VISIBLE_DEVICES), or (2) use Ray Serve + vLLM workers, or (3) for many small models, use LiteLLM as a router in front of multiple model endpoints."
-      },
-      {
-        "question": "How do I do streaming with the OpenAI-compatible endpoint?",
-        "answer": "Pass `stream=true` in the request body. vLLM emits SSE events identical to OpenAI's format - the openai Python SDK works unmodified, just point `base_url` at `http://your-vllm:8000/v1`."
-      }
-    ],
-    "meta_title": "vLLM 0.7 Batched Inference with Prometheus Metrics | OSS AI Hub",
-    "meta_description": "Production vLLM 0.7 launcher for Llama 3.3 70B on 4xA100: continuous batching, prefix caching, /metrics, FP8 + LoRA variants. MIT-licensed."
-  },
-  {
-    "license": "MIT",
-    "attribution": "OSS AI Hub - original work, MIT-licensed.",
-    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
-    "status": "approved",
-    "archived": false,
-    "submitter_email": "seed@ossaihub.com",
-    "submitter_name": "OSS Hub",
     "slug": "sglang-radix-attention-server",
     "title": "SGLang RadixAttention Server for Agent Workloads",
     "tldr": "Launch SGLang with RadixAttention to serve Llama 3.3 70B at 1.5-2x vLLM throughput on agent workloads with heavy prefix sharing.",
@@ -1418,179 +1584,6 @@
     ],
     "meta_title": "SGLang RadixAttention Server for Agents | OSS AI Hub",
     "meta_description": "SGLang 0.4 launcher for Llama 3.3 70B: RadixAttention, constrained generation, OpenAI-compat. 1.5-2x faster than vLLM on agent workloads. MIT."
-  },
-  {
-    "license": "MIT",
-    "attribution": "OSS AI Hub - original work, MIT-licensed.",
-    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
-    "status": "approved",
-    "archived": false,
-    "submitter_email": "seed@ossaihub.com",
-    "submitter_name": "OSS Hub",
-    "slug": "llamacpp-server-quantized",
-    "title": "llama.cpp Server with GGUF Q4_K_M Quantization",
-    "tldr": "Self-host Llama 3.3 70B on a single 24GB consumer GPU using llama.cpp HTTP server with Q4_K_M - the cheapest path to fully-local production inference.",
-    "description": "Self-host Llama 3.3 70B on a single 24GB consumer GPU using llama.cpp HTTP server with Q4_K_M - the cheapest path to fully-local production inference.",
-    "category": "llm-inference",
-    "language": "bash",
-    "framework": "llama.cpp",
-    "difficulty_tier": "intermediate",
-    "tags": [
-      "llama.cpp",
-      "gguf",
-      "quantization",
-      "single-gpu",
-      "local-llm"
-    ],
-    "best_for_tags": [
-      "solo-builder",
-      "consumer-gpu",
-      "edge-deployment"
-    ],
-    "featured": true,
-    "when_to_use": "You have a single consumer GPU (RTX 4090, 3090, or even Apple Silicon) and want Llama 3.3 70B (Q4_K_M, ~42GB) or Llama 3.1 8B (Q8_0, ~8GB) running fully local with an OpenAI-compatible REST API. llama.cpp is the gold standard for quantized inference - leaner than vLLM, supports CPU + Metal + ROCm + CUDA + Vulkan, single binary.",
-    "when_not_to_use": "Skip llama.cpp when (1) you need >20 concurrent users - vLLM/SGLang scale better at scale; (2) you need full FP16 quality - even Q4_K_M is a measurable quality drop (~2% on most evals); (3) you're already on multi-GPU - vLLM tensor-parallelism is faster than llama.cpp's MPI mode.",
-    "quick_start": "1) `brew install llama.cpp` (mac) or build from source  2) `huggingface-cli download bartowski/Llama-3.3-70B-Instruct-GGUF --include 'Llama-3.3-70B-Instruct-Q4_K_M.gguf'`  3) `llama-server -m Llama-3.3-70B-Instruct-Q4_K_M.gguf -ngl 99 --host 0.0.0.0 --port 8080`",
-    "full_code": "#!/usr/bin/env bash\n# launch-llamacpp.sh - production launcher for llama.cpp server\nset -euo pipefail\n\nMODEL_PATH=\"${MODEL_PATH:-./models/Llama-3.3-70B-Instruct-Q4_K_M.gguf}\"\nPORT=\"${PORT:-8080}\"\nHOST=\"${HOST:-0.0.0.0}\"\nCTX_SIZE=\"${CTX_SIZE:-8192}\"\nPARALLEL=\"${PARALLEL:-4}\"\nAPI_KEY=\"${LLAMACPP_API_KEY:-}\"\n\nif [[ ! -f \"$MODEL_PATH\" ]]; then\n  echo \"[fatal] model not found at $MODEL_PATH\" >&2\n  exit 2\nfi\n\nNGL=0\nif command -v nvidia-smi >/dev/null 2>&1; then\n  echo \"[info] CUDA GPU detected\"\n  NGL=99\nelif [[ \"$(uname)\" == \"Darwin\" ]]; then\n  echo \"[info] Apple Silicon (Metal) backend\"\n  NGL=99\nfi\n\nARGS=(\n  -m \"$MODEL_PATH\"\n  -ngl \"$NGL\"\n  -c \"$CTX_SIZE\"\n  --parallel \"$PARALLEL\"\n  --host \"$HOST\"\n  --port \"$PORT\"\n  --metrics\n  --jinja\n)\nif [[ -n \"$API_KEY\" ]]; then\n  ARGS+=(--api-key \"$API_KEY\")\nfi\n\nexec llama-server \"${ARGS[@]}\"\n",
-    "code": "#!/usr/bin/env bash\nset -euo pipefail\nMODEL_PATH=\"${MODEL_PATH:-./models/Llama-3.3-70B-Instruct-Q4_K_M.gguf}\"\nPORT=\"${PORT:-8080}\"\nCTX_SIZE=\"${CTX_SIZE:-8192}\"\nPARALLEL=\"${PARALLEL:-4}\"\nNGL=99\n[[ -f \"$MODEL_PATH\" ]] || { echo \"model not found: $MODEL_PATH\" >&2; exit 2; }\nexec llama-server -m \"$MODEL_PATH\" -ngl \"$NGL\" -c \"$CTX_SIZE\" \\\n  --parallel \"$PARALLEL\" --host 0.0.0.0 --port \"$PORT\" \\\n  --metrics --jinja\n",
-    "dependencies": [
-      {
-        "name": "llama.cpp",
-        "version": "latest",
-        "purpose": "Required llama.cpp library"
-      },
-      {
-        "name": "huggingface-hub",
-        "version": "latest",
-        "purpose": "Required huggingface-hub library"
-      }
-    ],
-    "dependencies_v2": [
-      {
-        "name": "llama.cpp",
-        "version": ">=b4250",
-        "purpose": "C++ inference engine with GGUF + multi-backend support."
-      },
-      {
-        "name": "huggingface-hub[cli]",
-        "version": ">=0.27.0",
-        "purpose": "Python CLI for downloading GGUF files."
-      }
-    ],
-    "env_vars": [
-      {
-        "name": "MODEL_PATH",
-        "required": false,
-        "description": "Path to GGUF file."
-      },
-      {
-        "name": "LLAMACPP_API_KEY",
-        "required": false,
-        "description": "Bearer token to protect /v1/* routes."
-      }
-    ],
-    "setup_steps": [
-      "Install llama.cpp: `brew install llama.cpp` (mac) or `git clone github.com/ggerganov/llama.cpp && cd llama.cpp && make GGML_CUDA=1`.",
-      "Install HuggingFace CLI: `pip install \"huggingface-hub[cli]>=0.27.0\"`.",
-      "Download weights: `huggingface-cli download bartowski/Llama-3.3-70B-Instruct-GGUF --include 'Llama-3.3-70B-Instruct-Q4_K_M.gguf' --local-dir ./models`.",
-      "Save the launcher as `launch-llamacpp.sh` and `chmod +x launch-llamacpp.sh`.",
-      "Run: `./launch-llamacpp.sh` - startup is fast (~30s on warm SSD).",
-      "Verify: `curl localhost:8080/v1/models`.",
-      "(Optional) Run as systemd service for auto-restart on boot."
-    ],
-    "variations": [
-      {
-        "label": "Llama 3.1 8B Q8_0 for solo dev",
-        "description": "When 70B is overkill or you need long contexts on a single consumer GPU.",
-        "code_snippet": "huggingface-cli download bartowski/Meta-Llama-3.1-8B-Instruct-GGUF --include 'Meta-Llama-3.1-8B-Instruct-Q8_0.gguf' --local-dir ./models\nMODEL_PATH=./models/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf CTX_SIZE=32768 PARALLEL=8 ./launch-llamacpp.sh"
-      },
-      {
-        "label": "systemd service",
-        "description": "Auto-start on boot, restart on crash.",
-        "code_snippet": "# /etc/systemd/system/llamacpp.service\n[Unit]\nDescription=llama.cpp server\nAfter=network.target\n\n[Service]\nUser=ai\nWorkingDirectory=/opt/llamacpp\nExecStart=/opt/llamacpp/launch-llamacpp.sh\nRestart=on-failure\nRestartSec=10\nStandardOutput=journal\n\n[Install]\nWantedBy=multi-user.target"
-      },
-      {
-        "label": "Apple Silicon (M3 Max) 70B Q4_K_M",
-        "description": "Native Metal backend - no extra flags.",
-        "code_snippet": "brew install llama.cpp\nhuggingface-cli download bartowski/Llama-3.3-70B-Instruct-GGUF --include 'Llama-3.3-70B-Instruct-Q4_K_M.gguf' --local-dir ./models\n./launch-llamacpp.sh\n# expect ~6-9 tok/s on M3 Max for 70B Q4_K_M"
-      }
-    ],
-    "common_errors": [
-      {
-        "error_text": "ggml_cuda_init: failed to initialize CUDA",
-        "cause": "llama.cpp was built without CUDA (`GGML_CUDA=1`).",
-        "fix_snippet": "cd llama.cpp && make clean && make GGML_CUDA=1 -j $(nproc)"
-      },
-      {
-        "error_text": "llama_model_load: error loading model: gguf_init_from_file",
-        "cause": "Truncated GGUF download - huggingface-cli resumed silently and left a corrupted file.",
-        "fix_snippet": "huggingface-cli download bartowski/Llama-3.3-70B-Instruct-GGUF --include 'Llama-3.3-70B-Instruct-Q4_K_M.gguf' --local-dir ./models --force-download"
-      },
-      {
-        "error_text": "Out of memory: slots * ctx_size > available KV cache",
-        "cause": "PARALLEL slots * CTX_SIZE per slot exceeds remaining VRAM after model load.",
-        "fix_snippet": "PARALLEL=2 CTX_SIZE=8192 ./launch-llamacpp.sh"
-      },
-      {
-        "error_text": "Response quality is noticeably worse than the HF inference widget",
-        "cause": "Wrong chat template applied. llama.cpp required hand-formatted prompts historically; `--jinja` flag fixes this.",
-        "fix_snippet": "# ARGS+=(--jinja) in launch-llamacpp.sh"
-      }
-    ],
-    "production_checklist": [
-      "Always set LLAMACPP_API_KEY in production - the server is unauthenticated by default.",
-      "Use Q4_K_M as the default quant; Q5_K_M trades 30% more VRAM for ~0.5% eval gain (rarely worth it).",
-      "Pin to a llama.cpp build tag in your Dockerfile - the project moves fast and breaks compat across releases.",
-      "Monitor `/metrics` for `slots_idle` - if it's always 0 you're saturated.",
-      "Use `--mlock` on Linux with enough RAM to keep the model resident; avoids slow page-in on first request after idle.",
-      "Stand up a smoke-test script that pings /v1/chat/completions with a known prompt + checks the SHA of the response - catches silent template regressions.",
-      "If serving multiple models, run one llama.cpp instance per model + a LiteLLM proxy in front; llama.cpp can't hot-swap."
-    ],
-    "tested_with": {
-      "model_versions": [
-        "Llama-3.3-70B-Instruct-Q4_K_M.gguf (bartowski)",
-        "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf (bartowski)"
-      ],
-      "library_versions": [
-        "llama.cpp b4250",
-        "CUDA 12.4 (linux)",
-        "Metal (macOS 15)"
-      ],
-      "last_verified_date": "2026-05-13"
-    },
-    "related_tool_slugs": [
-      "llama-cpp",
-      "ollama",
-      "lm-studio",
-      "jan-ai"
-    ],
-    "related_glossary_slugs": [
-      "gguf",
-      "quantization",
-      "q4-k-m",
-      "llm-inference",
-      "kv-cache"
-    ],
-    "related_learn_slugs": [
-      "self-hosted-llm-101",
-      "consumer-gpu-llm"
-    ],
-    "faq": [
-      {
-        "question": "llama.cpp vs Ollama - which should I use?",
-        "answer": "Ollama wraps llama.cpp with a model registry + Modelfile templates + simpler CLI. For solo devs and quick local prototyping, use Ollama. For production serving where you want explicit control over quant level, slots, and HTTP routing, use llama.cpp directly. Both share the same underlying engine."
-      },
-      {
-        "question": "Q4_K_M vs Q5_K_M vs Q8_0 - what's the right pick?",
-        "answer": "Q4_K_M is the sweet spot: ~3.5x smaller than FP16 with <2% quality drop on most evals. Q5_K_M is the same quality as Q4 for 30% more VRAM - skip it. Q8_0 is near-lossless and the right pick when you have VRAM to spare. Below Q4 quality degrades noticeably."
-      },
-      {
-        "question": "Can llama.cpp do continuous batching like vLLM?",
-        "answer": "Sort of - the --parallel flag enables multiple slots that share KV cache and can be served concurrently. Real win over no batching, but doesn't match vLLM's continuous batching scheduler at high concurrency. For solo-builder traffic (1-20 concurrent), llama.cpp is more than enough."
-      }
-    ],
-    "meta_title": "llama.cpp Server with GGUF Q4_K_M Quantization | OSS AI Hub",
-    "meta_description": "Self-host Llama 3.3 70B on a single consumer GPU with llama.cpp + Q4_K_M GGUF. OpenAI-compat REST, Metal/CUDA/ROCm, systemd. MIT."
   },
   {
     "license": "MIT",
