@@ -45,11 +45,14 @@ def post_with_retry(url, api_key, body_bytes, attempts=10):
                 last = e.read().decode("utf-8")[:500]
             except Exception:
                 pass
-            is_rate = e.code == 429 or "429" in last or "rate limit" in last.lower()
-            if 500 <= e.code < 600 or e.code == 429:
-                base_wait = 20.0 if is_rate else 1.0
-                wait = min(120.0, base_wait * (1.7 ** i)) + random.uniform(0, 1)
-                print(f"  retry {i+1}/{attempts} in {wait:.1f}s ({e.code}{' rate-limit' if is_rate else ''}) body={last[:150]}", flush=True)
+            # 403 from Base44/Cloudflare is silent rate limit (HTML challenge page); treat as retryable.
+            is_cf_block = e.code == 403 and ("<!DOCTYPE html>" in last or "cloudflare" in last.lower())
+            is_rate = e.code == 429 or is_cf_block or "429" in last or "rate limit" in last.lower()
+            if 500 <= e.code < 600 or e.code == 429 or is_cf_block:
+                base_wait = 30.0 if is_rate else 1.0   # longer base for CF 403s
+                wait = min(180.0, base_wait * (1.7 ** i)) + random.uniform(0, 3)
+                tag = "cf-block" if is_cf_block else ("rate-limit" if is_rate else "")
+                print(f"  retry {i+1}/{attempts} in {wait:.1f}s ({e.code} {tag}) body={last[:150]}", flush=True)
                 time.sleep(wait)
                 continue
             raise RuntimeError(f"{e.code}: {last}")
