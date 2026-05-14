@@ -3960,6 +3960,272 @@
     "meta_description": "Minimal-dependency structured output: OpenAI JSON mode + jsonschema validation + retry-with-feedback. ~30 lines, no Pydantic."
   },
   {
+    "slug": "openai-streaming-tool-calls",
+    "title": "OpenAI Streaming With Tool Calls",
+    "tldr": "Stream OpenAI responses while handling tool calls mid-stream. Yields partial assistant text + tool-call detection + tool results \u2014 UI sees text appear in real-time even when tools are invoked.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "OpenAI SDK",
+    "tags": [
+      "openai",
+      "streaming",
+      "tool-calling",
+      "ui"
+    ],
+    "best_for_tags": [
+      "chat-ui",
+      "agents",
+      "responsive-experience"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "when_to_use": "Building a chat UI where the agent uses tools mid-response. Na\u00efve implementations break streaming \u2014 this pattern preserves both streaming text and tool invocation.",
+    "when_not_to_use": "Skip for batch/non-UI processing (streaming overhead). Skip for simple single-tool calls where streaming text doesn't matter.",
+    "quick_start": "pip install openai && OPENAI_API_KEY=sk-... python streaming_tools.py",
+    "full_code": "\"\"\"OpenAI streaming + tool calls.\n\nStream pattern:\n  1. Open stream with tools available\n  2. Yield content chunks as they arrive\n  3. When tool_call complete, pause stream, run tool, feed result back\n  4. Resume stream with tool output appended to conversation\n  5. Continue yielding until completion\n\nThis is more involved than non-streaming because tool_calls arrive in deltas\nthat must be assembled.\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nfrom typing import Iterator\n\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n\nTOOLS = [{\n    \"type\": \"function\",\n    \"function\": {\n        \"name\": \"get_weather\",\n        \"description\": \"Get weather for a location\",\n        \"parameters\": {\n            \"type\": \"object\",\n            \"properties\": {\"location\": {\"type\": \"string\"}},\n            \"required\": [\"location\"],\n        },\n    },\n}]\n\n\ndef get_weather(location: str) -> dict:\n    return {\"location\": location, \"temp\": 22, \"condition\": \"sunny\"}\n\n\nTOOL_IMPL = {\"get_weather\": get_weather}\n\n\ndef stream_with_tools(user_message: str, *, model: str = \"gpt-4o-mini\") -> Iterator[dict]:\n    \"\"\"Yield events: {'type': 'text', 'content': '...'} or {'type': 'tool_call', 'name': ..., 'args': ..., 'result': ...}.\"\"\"\n\n    messages: list[dict] = [\n        {\"role\": \"user\", \"content\": user_message},\n    ]\n\n    for _ in range(5):  # max iterations\n        stream = client.chat.completions.create(\n            model=model,\n            messages=messages,\n            tools=TOOLS,\n            stream=True,\n        )\n\n        # Accumulators\n        assistant_text = \"\"\n        tool_calls: list[dict] = []  # built up from deltas\n\n        for chunk in stream:\n            delta = chunk.choices[0].delta\n\n            # Text content\n            if delta.content:\n                assistant_text += delta.content\n                yield {\"type\": \"text\", \"content\": delta.content}\n\n            # Tool call deltas (assembled incrementally)\n            if delta.tool_calls:\n                for tc_delta in delta.tool_calls:\n                    idx = tc_delta.index\n                    # Extend list if needed\n                    while len(tool_calls) <= idx:\n                        tool_calls.append({\"id\": \"\", \"name\": \"\", \"arguments\": \"\"})\n                    if tc_delta.id:\n                        tool_calls[idx][\"id\"] = tc_delta.id\n                    if tc_delta.function:\n                        if tc_delta.function.name:\n                            tool_calls[idx][\"name\"] += tc_delta.function.name\n                        if tc_delta.function.arguments:\n                            tool_calls[idx][\"arguments\"] += tc_delta.function.arguments\n\n        # Append assistant message\n        assistant_msg = {\"role\": \"assistant\", \"content\": assistant_text or None}\n        if tool_calls:\n            assistant_msg[\"tool_calls\"] = [\n                {\"id\": tc[\"id\"], \"type\": \"function\", \"function\": {\"name\": tc[\"name\"], \"arguments\": tc[\"arguments\"]}}\n                for tc in tool_calls\n            ]\n        messages.append(assistant_msg)\n\n        # If no tool calls, we're done\n        if not tool_calls:\n            return\n\n        # Execute tools and feed results\n        for tc in tool_calls:\n            try:\n                args = json.loads(tc[\"arguments\"])\n            except json.JSONDecodeError:\n                args = {}\n            fn = TOOL_IMPL.get(tc[\"name\"])\n            result = fn(**args) if fn else {\"error\": f\"unknown tool {tc['name']}\"}\n            yield {\"type\": \"tool_call\", \"name\": tc[\"name\"], \"args\": args, \"result\": result}\n            messages.append({\n                \"role\": \"tool\",\n                \"tool_call_id\": tc[\"id\"],\n                \"content\": json.dumps(result, default=str),\n            })\n\n        # Loop: continue stream until completion without tool_calls\n\n\n# ----------------- DEMO -----------------\n\nif __name__ == \"__main__\":\n    for event in stream_with_tools(\"What's the weather in Tokyo? Then summarize.\"):\n        if event[\"type\"] == \"text\":\n            print(event[\"content\"], end=\"\", flush=True)\n        elif event[\"type\"] == \"tool_call\":\n            print(f\"\\n[tool_call: {event['name']}({event['args']}) \u2192 {event['result']}]\")\n    print()\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "OpenAI client"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai",
+      "export OPENAI_API_KEY=sk-...",
+      "python streaming_tools.py"
+    ],
+    "variations": [
+      {
+        "label": "Async version",
+        "description": "Use AsyncOpenAI.",
+        "code_snippet": "from openai import AsyncOpenAI\\nclient = AsyncOpenAI()\\nasync for chunk in await client.chat.completions.create(..., stream=True):\\n    ..."
+      },
+      {
+        "label": "SSE wrapper for HTTP",
+        "description": "Wrap as Server-Sent Events for a web client.",
+        "code_snippet": "# In FastAPI:\\n@app.post('/chat')\\ndef chat(): return StreamingResponse((f'data: {json.dumps(e)}\\\\n\\\\n' for e in stream_with_tools(msg)), media_type='text/event-stream')"
+      },
+      {
+        "label": "Parallel tool execution",
+        "description": "When multiple tool_calls arrive, run in parallel.",
+        "code_snippet": "# Replace sequential for-loop over tool_calls with: results = asyncio.gather(*[run_tool_async(tc) for tc in tool_calls])"
+      },
+      {
+        "label": "Vercel AI SDK style",
+        "description": "Same pattern via the Vercel AI SDK.",
+        "code_snippet": "# The Vercel AI SDK (JS/TS) handles this assembly automatically; use streamText with maxToolRoundtrips."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "JSON parse error on tool arguments",
+        "cause": "Stream was cut off mid-JSON.",
+        "fix_snippet": "Verify the stream completed (check finish_reason). If 'length' (max_tokens), increase. If 'stop', JSON should be complete; investigate model output."
+      },
+      {
+        "error_text": "Tool calls assembled with wrong arguments",
+        "cause": "Index mismatch on delta accumulation.",
+        "fix_snippet": "Starter handles indices correctly. If you've modified, ensure tool_calls list is sized by delta.index, not appended."
+      },
+      {
+        "error_text": "First chunk of text never appears",
+        "cause": "Buffering on client side or print without flush.",
+        "fix_snippet": "Use flush=True on print; in HTTP context, disable buffering on the response."
+      },
+      {
+        "error_text": "Infinite tool-call loop",
+        "cause": "Tool returns trigger another tool call.",
+        "fix_snippet": "Cap iterations (starter has 5). Also: check if tool results contain something the model interprets as a new question."
+      }
+    ],
+    "production_checklist": [
+      "Cap iterations; runaway tool loops are common.",
+      "Stream chunks immediately; don't buffer client-side.",
+      "Test resumption \u2014 if connection drops mid-stream, what happens?",
+      "Tool errors should surface as 'tool_call' events with error field, not crash the stream.",
+      "Log full conversation incl. tool results for debugging.",
+      "Test with slow tools: stream should pause cleanly, not error."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "openai==1.51.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "streaming",
+      "tool-calling",
+      "sse"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why is this harder than non-streaming?",
+        "answer": "Tool calls arrive in deltas (name comes first, then arguments piece by piece). You must assemble them before executing. Non-streaming has the complete tool_calls list in one response."
+      },
+      {
+        "question": "Does it work with Claude?",
+        "answer": "Same pattern \u2014 Anthropic also streams tool_use blocks via deltas. The accumulation logic differs slightly; see the Claude streaming starter."
+      },
+      {
+        "question": "Can I show the tool args as they're being typed?",
+        "answer": "Technically yes \u2014 but typically you wait for the full args before executing. Showing partial JSON to users tends to confuse more than inform."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "OpenAI Streaming With Tool Calls \u2014 Starter",
+    "meta_description": "Stream OpenAI responses + handle tool calls mid-stream. Assembles delta tool_calls, pauses for execution, resumes streaming."
+  },
+  {
+    "slug": "tool-result-validation-loop",
+    "title": "Tool Result Validation + Auto-Retry",
+    "tldr": "After a tool returns, validate the result against expected schema. If invalid, give the model a corrected re-call prompt. Catches bad arguments + bad tool outputs before they propagate.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "OpenAI SDK + Pydantic",
+    "tags": [
+      "validation",
+      "retry",
+      "tool-calling",
+      "robustness"
+    ],
+    "best_for_tags": [
+      "production-agents",
+      "reliable-tools",
+      "agent-quality"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "When tool outputs vary in quality (third-party APIs, scraped data) and you want the agent to recover from bad data automatically without crashing the conversation.",
+    "when_not_to_use": "Skip when tools are deterministic and trusted. Skip in latency-sensitive paths where the retry overhead matters.",
+    "quick_start": "pip install openai pydantic && OPENAI_API_KEY=sk-... python validated_tools.py",
+    "full_code": "\"\"\"Tool-call validation loop.\n\nFor each tool result:\n  1. Validate against expected schema (Pydantic).\n  2. If invalid: format error back to model, ask for corrected call.\n  3. Retry up to N times.\n  4. If still invalid: surface error to user, don't crash.\n\nUseful for tools that:\n  - Hit third-party APIs with inconsistent shapes\n  - Run user-provided code (e.g., SQL queries)\n  - Compute heavily and may run out of time / return partial results\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nfrom typing import Any, Callable\n\nfrom openai import OpenAI\nfrom pydantic import BaseModel, Field, ValidationError\n\nclient = OpenAI()\n\n\n# ----------------- TOOL OUTPUT SCHEMAS -----------------\n\nclass WeatherResult(BaseModel):\n    location: str\n    temp_celsius: float = Field(ge=-100, le=100)\n    condition: str\n    humidity_pct: int | None = Field(default=None, ge=0, le=100)\n\n\nclass SearchResult(BaseModel):\n    query: str\n    results: list[dict] = Field(min_length=1, max_length=10)\n\n\n# ----------------- TOOLS (may return inconsistent shapes!) -----------------\n\ndef fake_weather(location: str) -> dict:\n    \"\"\"Sometimes returns malformed data.\"\"\"\n    if \"moon\" in location.lower():\n        return {\"error\": \"no weather available on the moon\"}\n    return {\"location\": location, \"temp_celsius\": 22, \"condition\": \"clear\", \"humidity_pct\": 60}\n\n\ndef fake_search(query: str) -> dict:\n    \"\"\"Sometimes empty results.\"\"\"\n    if \"kjdfgskldjfg\" in query:\n        return {\"query\": query, \"results\": []}  # invalid: min_length=1\n    return {\"query\": query, \"results\": [{\"title\": \"result 1\"}]}\n\n\nTOOL_REGISTRY: dict[str, tuple[Callable, type[BaseModel]]] = {\n    \"get_weather\": (fake_weather, WeatherResult),\n    \"search\": (fake_search, SearchResult),\n}\n\n\n# ----------------- VALIDATED EXECUTION -----------------\n\ndef execute_with_validation(tool_name: str, args: dict) -> dict:\n    \"\"\"Run tool, validate output. Returns {ok: bool, data: ..., error: ...}.\"\"\"\n    if tool_name not in TOOL_REGISTRY:\n        return {\"ok\": False, \"error\": f\"unknown tool {tool_name}\"}\n    fn, schema = TOOL_REGISTRY[tool_name]\n    try:\n        raw = fn(**args)\n    except Exception as e:\n        return {\"ok\": False, \"error\": f\"tool execution failed: {e}\"}\n    try:\n        validated = schema(**raw)\n        return {\"ok\": True, \"data\": validated.model_dump()}\n    except ValidationError as e:\n        return {\"ok\": False, \"error\": f\"validation error: {e.errors()}\", \"raw\": raw}\n\n\n# ----------------- AGENT LOOP WITH RETRY -----------------\n\nTOOL_DEFINITIONS = [\n    {\"type\": \"function\", \"function\": {\n        \"name\": \"get_weather\",\n        \"description\": \"Get weather for a location\",\n        \"parameters\": {\"type\": \"object\", \"properties\": {\"location\": {\"type\": \"string\"}}, \"required\": [\"location\"]},\n    }},\n    {\"type\": \"function\", \"function\": {\n        \"name\": \"search\",\n        \"description\": \"Search results for a query\",\n        \"parameters\": {\"type\": \"object\", \"properties\": {\"query\": {\"type\": \"string\"}}, \"required\": [\"query\"]},\n    }},\n]\n\n\ndef run_agent(user_message: str, *, max_iters: int = 6, max_retries_per_tool: int = 2) -> str:\n    messages = [{\"role\": \"user\", \"content\": user_message}]\n    retries: dict[str, int] = {}  # per-tool-call retry count\n\n    for _ in range(max_iters):\n        resp = client.chat.completions.create(\n            model=\"gpt-4o-mini\",\n            messages=messages,\n            tools=TOOL_DEFINITIONS,\n            temperature=0,\n        )\n        msg = resp.choices[0].message\n        if not msg.tool_calls:\n            return msg.content\n\n        messages.append(msg.model_dump())\n        for tc in msg.tool_calls:\n            args = json.loads(tc.function.arguments)\n            result = execute_with_validation(tc.function.name, args)\n\n            if result[\"ok\"]:\n                messages.append({\n                    \"role\": \"tool\",\n                    \"tool_call_id\": tc.id,\n                    \"content\": json.dumps(result[\"data\"]),\n                })\n            else:\n                # Track retries for THIS specific tool call\n                key = f\"{tc.function.name}::{tc.function.arguments}\"\n                retries[key] = retries.get(key, 0) + 1\n                if retries[key] > max_retries_per_tool:\n                    # Give up; surface error\n                    messages.append({\n                        \"role\": \"tool\",\n                        \"tool_call_id\": tc.id,\n                        \"content\": json.dumps({\n                            \"error\": \"tool repeatedly returned invalid data\",\n                            \"details\": result.get(\"error\"),\n                        }),\n                    })\n                else:\n                    # Retry by feeding error back\n                    messages.append({\n                        \"role\": \"tool\",\n                        \"tool_call_id\": tc.id,\n                        \"content\": json.dumps({\n                            \"validation_error\": result.get(\"error\"),\n                            \"raw_output\": result.get(\"raw\"),\n                            \"instruction\": \"Re-call the tool with corrected arguments OR pick a different tool. If you need user input, ask the user.\",\n                        }),\n                    })\n    return \"ERROR: max iterations exceeded\"\n\n\nif __name__ == \"__main__\":\n    # Normal case\n    print(run_agent(\"What's the weather in Tokyo?\"))\n    # Error case \u2014 moon\n    print(run_agent(\"What's the weather on the moon?\"))\n    # Empty result\n    print(run_agent(\"Search for kjdfgskldjfg\"))\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "OpenAI client"
+      },
+      {
+        "name": "pydantic",
+        "version": ">=2.0",
+        "purpose": "Tool output validation"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai pydantic",
+      "export OPENAI_API_KEY=sk-...",
+      "python validated_tools.py"
+    ],
+    "variations": [
+      {
+        "label": "Custom recovery prompts",
+        "description": "Per-tool retry instructions.",
+        "code_snippet": "# Map tool_name \u2192 retry_instruction; surface specific guidance for known failure modes."
+      },
+      {
+        "label": "Validation alongside execution",
+        "description": "Trigger validation in parallel.",
+        "code_snippet": "# For slow tools, validate the schema in a separate worker; main loop can continue."
+      },
+      {
+        "label": "Schema evolution",
+        "description": "Accept old + new schemas.",
+        "code_snippet": "# Try new_schema first; if fails, try old_schema; mark as deprecated."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Infinite retry loop",
+        "cause": "Tool always returns invalid; model can't fix it.",
+        "fix_snippet": "max_retries_per_tool caps it. After cap, surface error to user \u2014 don't keep retrying."
+      },
+      {
+        "error_text": "ValidationError too cryptic for the model",
+        "cause": "Pydantic errors are verbose.",
+        "fix_snippet": "Format the error: extract field path + expected type; pass that. Model handles concrete error messages better."
+      },
+      {
+        "error_text": "Model keeps making the same wrong call",
+        "cause": "Error message not informative enough.",
+        "fix_snippet": "Include `raw_output` so model sees what came back, not just that it was wrong. Often the model adjusts its NEXT tool choice based on this."
+      },
+      {
+        "error_text": "Validation succeeds but semantics wrong",
+        "cause": "Pydantic checks types, not meaning.",
+        "fix_snippet": "Add custom validators (@field_validator) for semantic checks. Or do a second LLM validation pass for tools where it matters."
+      }
+    ],
+    "production_checklist": [
+      "Define schemas for every tool output; treat them as contracts.",
+      "Cap retries; bound the cost.",
+      "Log all validation failures; they show where tools or schemas need updating.",
+      "Surface unrecoverable errors to user cleanly \u2014 don't crash the conversation.",
+      "Test with deliberately-broken tools to verify recovery.",
+      "Version schemas; tool updates may break them."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "openai==1.51.0",
+        "pydantic==2.9.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "tool-validation",
+      "agent-recovery"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why validate tool outputs?",
+        "answer": "Real tools fail in surprising ways: third-party API returns null fields, scrapers get blocked, calculations overflow. Validation catches this BEFORE bad data corrupts the agent's reasoning."
+      },
+      {
+        "question": "Doesn't this make agents brittle?",
+        "answer": "Opposite \u2014 agents without validation silently propagate garbage. With it, garbage gets a clear error path. The agent (or user) sees the failure and can adapt."
+      },
+      {
+        "question": "Cost of validation?",
+        "answer": "Pydantic validation: microseconds. Retry loops: more LLM calls. The cost is in the retry, not the validation itself. Cap retries low (2-3)."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Tool Result Validation + Auto-Retry \u2014 Starter",
+    "meta_description": "Validate tool outputs against Pydantic schemas; auto-retry with error feedback on failure. Robust agents that recover from bad tool data."
+  },
+  {
     "slug": "groq-low-latency-chat",
     "title": "Groq LPU Sub-200ms Streaming Chat",
     "category": "llm-clients",
