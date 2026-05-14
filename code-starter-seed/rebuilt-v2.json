@@ -4058,6 +4058,285 @@
     "meta_description": "Two-tier prompt-injection detection: regex patterns + LLM classifier. Returns verdict + confidence so callers can block, warn, or pass through."
   },
   {
+    "slug": "pytest-mocking-openai-calls",
+    "title": "Pytest: Mocking OpenAI Calls With Realistic Fixtures",
+    "tldr": "Mock OpenAI / Anthropic API calls in pytest using respx (httpx) or monkeypatching \u2014 without changing your production code. Includes fixtures for chat, embeddings, and streaming responses.",
+    "category": "testing",
+    "language": "python",
+    "framework": "pytest + respx",
+    "tags": [
+      "pytest",
+      "mocking",
+      "openai",
+      "testing"
+    ],
+    "best_for_tags": [
+      "unit-tests",
+      "ci-friendly",
+      "deterministic-tests"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "When testing LLM-using code in CI without hitting real APIs (cost + flakiness + latency). Especially useful for testing error paths, retry logic, and edge-case responses.",
+    "when_not_to_use": "Skip for integration tests where you DO want to call real APIs (in a separate suite gated by a flag). Skip for one-shot smoke tests of model behavior.",
+    "quick_start": "pip install pytest respx httpx && pytest tests/test_llm.py -v",
+    "full_code": "\"\"\"Pytest fixtures for mocking OpenAI calls.\n\nWe use respx (httpx mock) so the OpenAI client's HTTP layer is intercepted \u2014\nno monkey-patching the SDK itself. Production code stays untouched.\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport pytest\nimport respx\nfrom httpx import Response\n\n\n# ----------------- FIXTURES -----------------\n\n@pytest.fixture\ndef mock_chat_completion():\n    \"\"\"Returns a function that creates a mocked OpenAI chat completion response.\"\"\"\n    def _make(content: str, *, model: str = \"gpt-4o-mini\", prompt_tokens: int = 50, completion_tokens: int = 30):\n        return {\n            \"id\": \"chatcmpl-test\",\n            \"object\": \"chat.completion\",\n            \"created\": 1700000000,\n            \"model\": model,\n            \"choices\": [{\n                \"index\": 0,\n                \"message\": {\"role\": \"assistant\", \"content\": content},\n                \"finish_reason\": \"stop\",\n            }],\n            \"usage\": {\n                \"prompt_tokens\": prompt_tokens,\n                \"completion_tokens\": completion_tokens,\n                \"total_tokens\": prompt_tokens + completion_tokens,\n            },\n        }\n    return _make\n\n\n@pytest.fixture\ndef mock_embedding():\n    \"\"\"Returns a function that creates a mocked OpenAI embeddings response.\"\"\"\n    def _make(*, n_inputs: int, dim: int = 1536):\n        return {\n            \"object\": \"list\",\n            \"model\": \"text-embedding-3-small\",\n            \"data\": [\n                {\"object\": \"embedding\", \"embedding\": [0.1] * dim, \"index\": i}\n                for i in range(n_inputs)\n            ],\n            \"usage\": {\"prompt_tokens\": n_inputs * 10, \"total_tokens\": n_inputs * 10},\n        }\n    return _make\n\n\n@pytest.fixture\ndef mock_tool_call_completion():\n    \"\"\"Returns a function for chat completions that include tool calls.\"\"\"\n    def _make(tool_name: str, tool_args: dict, *, content: str | None = None):\n        return {\n            \"id\": \"chatcmpl-test\",\n            \"object\": \"chat.completion\",\n            \"created\": 1700000000,\n            \"model\": \"gpt-4o-mini\",\n            \"choices\": [{\n                \"index\": 0,\n                \"message\": {\n                    \"role\": \"assistant\",\n                    \"content\": content,\n                    \"tool_calls\": [{\n                        \"id\": \"call_test_123\",\n                        \"type\": \"function\",\n                        \"function\": {\n                            \"name\": tool_name,\n                            \"arguments\": json.dumps(tool_args),\n                        },\n                    }],\n                },\n                \"finish_reason\": \"tool_calls\",\n            }],\n            \"usage\": {\"prompt_tokens\": 100, \"completion_tokens\": 20, \"total_tokens\": 120},\n        }\n    return _make\n\n\n# ----------------- TESTS -----------------\n\n@respx.mock\ndef test_chat_returns_expected_content(mock_chat_completion):\n    \"\"\"Production code under test.\"\"\"\n    from openai import OpenAI\n    client = OpenAI(api_key=\"test-key\")\n\n    respx.post(\"https://api.openai.com/v1/chat/completions\").respond(\n        json=mock_chat_completion(\"Hello, world!\")\n    )\n\n    resp = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[{\"role\": \"user\", \"content\": \"say hi\"}],\n    )\n    assert resp.choices[0].message.content == \"Hello, world!\"\n    assert resp.usage.total_tokens == 80\n\n\n@respx.mock\ndef test_embedding_returns_correct_dim(mock_embedding):\n    from openai import OpenAI\n    client = OpenAI(api_key=\"test-key\")\n\n    respx.post(\"https://api.openai.com/v1/embeddings\").respond(\n        json=mock_embedding(n_inputs=3, dim=1536)\n    )\n\n    resp = client.embeddings.create(input=[\"a\", \"b\", \"c\"], model=\"text-embedding-3-small\")\n    assert len(resp.data) == 3\n    assert len(resp.data[0].embedding) == 1536\n\n\n@respx.mock\ndef test_tool_call_response(mock_tool_call_completion):\n    from openai import OpenAI\n    client = OpenAI(api_key=\"test-key\")\n\n    respx.post(\"https://api.openai.com/v1/chat/completions\").respond(\n        json=mock_tool_call_completion(\"get_weather\", {\"location\": \"Tokyo\"})\n    )\n\n    resp = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[{\"role\": \"user\", \"content\": \"weather\"}],\n        tools=[{\"type\": \"function\", \"function\": {\"name\": \"get_weather\", \"parameters\": {}}}],\n    )\n    tc = resp.choices[0].message.tool_calls[0]\n    assert tc.function.name == \"get_weather\"\n    assert json.loads(tc.function.arguments)[\"location\"] == \"Tokyo\"\n\n\n@respx.mock\ndef test_retry_on_rate_limit():\n    \"\"\"First call gets 429; second succeeds. Production code should retry.\"\"\"\n    from openai import OpenAI\n    client = OpenAI(api_key=\"test-key\", max_retries=3)\n\n    route = respx.post(\"https://api.openai.com/v1/chat/completions\")\n    route.side_effect = [\n        Response(429, headers={\"retry-after\": \"1\"}, json={\"error\": \"rate_limited\"}),\n        Response(200, json={\n            \"id\": \"x\", \"object\": \"chat.completion\", \"created\": 0, \"model\": \"gpt-4o-mini\",\n            \"choices\": [{\"index\": 0, \"message\": {\"role\": \"assistant\", \"content\": \"ok\"}, \"finish_reason\": \"stop\"}],\n            \"usage\": {\"prompt_tokens\": 1, \"completion_tokens\": 1, \"total_tokens\": 2},\n        }),\n    ]\n    resp = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[{\"role\": \"user\", \"content\": \"hi\"}],\n    )\n    assert resp.choices[0].message.content == \"ok\"\n    assert route.call_count == 2  # first failed, second succeeded\n",
+    "dependencies": [
+      {
+        "name": "pytest",
+        "version": ">=8.0",
+        "purpose": "Test framework"
+      },
+      {
+        "name": "respx",
+        "version": ">=0.21",
+        "purpose": "Mock httpx-based clients"
+      },
+      {
+        "name": "httpx",
+        "version": ">=0.27",
+        "purpose": "Underlying HTTP client OpenAI uses"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "pip install pytest respx httpx openai",
+      "Save tests in tests/test_llm.py",
+      "Run: pytest tests/test_llm.py -v",
+      "No OPENAI_API_KEY needed (test-key works for mocked calls)."
+    ],
+    "variations": [
+      {
+        "label": "Streaming response mock",
+        "description": "Mock a streamed chat completion.",
+        "code_snippet": "# respx supports streaming; mock the SSE response:\\nrespx.post(...).respond(stream=[\\n  'data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}\\\\n\\\\n',\\n  'data: {\"choices\":[{\"delta\":{\"content\":\" world\"}}]}\\\\n\\\\n',\\n  'data: [DONE]\\\\n\\\\n',\\n])"
+      },
+      {
+        "label": "Async tests",
+        "description": "Mock AsyncOpenAI.",
+        "code_snippet": "@pytest.mark.asyncio\\n@respx.mock\\nasync def test_async_chat():\\n    from openai import AsyncOpenAI\\n    client = AsyncOpenAI(api_key='test-key')\\n    respx.post(...).respond(json=...)\\n    resp = await client.chat.completions.create(...)"
+      },
+      {
+        "label": "Anthropic mock",
+        "description": "Same pattern, different URL.",
+        "code_snippet": "respx.post('https://api.anthropic.com/v1/messages').respond(json={'id': 'msg_test', 'type': 'message', 'role': 'assistant', 'content': [{'type': 'text', 'text': 'hi'}], 'model': 'claude-3-5-haiku-latest', 'stop_reason': 'end_turn', 'usage': {'input_tokens': 10, 'output_tokens': 5}})"
+      },
+      {
+        "label": "Recording real responses",
+        "description": "Use VCR to record once, replay on subsequent runs.",
+        "code_snippet": "# pip install vcrpy\\nimport vcr\\n@vcr.use_cassette('cassettes/test_chat.yaml')\\ndef test_chat(): ...  # First run hits real API and records; subsequent replay."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "AssertionError: respx call not matched",
+        "cause": "URL or method mismatch.",
+        "fix_snippet": "Verify exact URL \u2014 OpenAI client uses https://api.openai.com/v1/.... Use respx.post() or respx.get() matching the SDK's actual request method."
+      },
+      {
+        "error_text": "Connection refused or timeout",
+        "cause": "respx didn't intercept; real network call attempted.",
+        "fix_snippet": "Decorate every test with @respx.mock (not just module-level). Or use respx as a pytest fixture: @pytest.fixture(autouse=True) -> respx_mock = respx.mock(); respx_mock.start(); yield; respx_mock.stop()."
+      },
+      {
+        "error_text": "AsyncMock not being awaited",
+        "cause": "Async test without @pytest.mark.asyncio.",
+        "fix_snippet": "Install pytest-asyncio. Decorate async tests with @pytest.mark.asyncio. Configure mode in pyproject.toml: [tool.pytest.ini_options] asyncio_mode = 'auto'."
+      },
+      {
+        "error_text": "Tests pass locally, fail in CI with \u2018module not found\u2019",
+        "cause": "Local has API keys set; mocks bypassed.",
+        "fix_snippet": "Ensure tests don't depend on env vars to \u2018decide\u2019 whether to mock. Always mock in unit tests; gate real-API integration tests behind a separate marker (@pytest.mark.integration)."
+      }
+    ],
+    "production_checklist": [
+      "Separate unit tests (mocked) from integration tests (real API) via pytest markers.",
+      "Run unit tests on every push; integration tests on a slower cadence.",
+      "Cap test runtime: a unit test hitting the network is broken.",
+      "Use deterministic fixtures \u2014 random embeddings break similarity tests.",
+      "Cover error paths: 429, 500, network failure, malformed response.",
+      "Test the wrapping logic, not the SDK itself \u2014 don't test \u2018OpenAI returned content\u2019; test \u2018our retry logic ran\u2019."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "pytest==8.3.3",
+        "respx==0.21.1",
+        "httpx==0.27.2",
+        "openai==1.51.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "pytest"
+    ],
+    "related_glossary_slugs": [
+      "mocking",
+      "unit-testing",
+      "integration-testing"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why respx and not unittest.mock?",
+        "answer": "respx mocks at the HTTP layer; your production code uses the SDK normally. unittest.mock would patch SDK methods, but breaks if you change SDK versions and tests can't catch SDK errors. respx is more robust."
+      },
+      {
+        "question": "Should I record real responses or hand-craft mocks?",
+        "answer": "Hand-craft for unit tests (you control all paths). Record (VCR) for tricky edge cases or initial test setup. Hand-crafted is more maintainable long-term."
+      },
+      {
+        "question": "Do I still need integration tests?",
+        "answer": "Yes \u2014 at least one per major LLM path, run nightly or on release branches. Unit tests prove your code; integration tests prove the SDK + LLM still works as expected."
+      },
+      {
+        "question": "How do I test prompt quality?",
+        "answer": "That's evaluation, not unit testing. Use RAGAS / Promptfoo / llm-as-judge for prompt quality. Keep unit tests focused on code logic."
+      }
+    ],
+    "github_url": "https://github.com/lundberg/respx",
+    "meta_title": "Pytest Mocking OpenAI Calls \u2014 Starter",
+    "meta_description": "Mock OpenAI/Anthropic API calls with respx in pytest. Realistic fixtures for chat, embeddings, tool calls, retries \u2014 production code untouched."
+  },
+  {
+    "slug": "snapshot-tests-for-llm-outputs",
+    "title": "Snapshot Tests For LLM Outputs (Approval Testing)",
+    "tldr": "Approval-testing pattern for LLM outputs: save the first \u2018known good\u2019 output to a snapshot file, then fail tests when output drifts. Includes human-review gating for legitimate changes.",
+    "category": "testing",
+    "language": "python",
+    "framework": "pytest + syrupy",
+    "tags": [
+      "snapshot-testing",
+      "regression",
+      "approval-testing",
+      "llm"
+    ],
+    "best_for_tags": [
+      "prompt-regression",
+      "non-deterministic-outputs",
+      "high-stakes-prompts"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "When you have prompts whose outputs you've manually verified as good and you want to catch unintentional drift (model upgrade, prompt edit, fixture change). Pair with temperature=0.",
+    "when_not_to_use": "Skip when outputs are genuinely non-deterministic (creative writing). Skip when you have ground-truth labels (use direct assertions).",
+    "quick_start": "pip install pytest syrupy && pytest --snapshot-update  # first run; then commit __snapshots__",
+    "full_code": "\"\"\"Snapshot testing for LLM outputs.\n\nPattern:\n  1. First run: pytest --snapshot-update \u2192 saves current outputs to __snapshots__/\n  2. CI runs: pytest \u2192 compares against saved; fails if changed.\n  3. Legitimate change: review diff manually, run pytest --snapshot-update,\n     commit the new snapshot.\n\nPair with temperature=0 to remove noise. The snapshot tests then catch:\n  - Model version drift\n  - Prompt template changes\n  - Fixture changes\n\"\"\"\nfrom __future__ import annotations\n\nimport pytest\nfrom syrupy.assertion import SnapshotAssertion\nfrom syrupy.extensions.json import JSONSnapshotExtension\n\n\n# Production function under test\ndef summarize(text: str, *, model: str = \"gpt-4o-mini\") -> dict:\n    \"\"\"Real implementation calls OpenAI; we mock it in test.\"\"\"\n    from openai import OpenAI\n    client = OpenAI()\n    resp = client.chat.completions.create(\n        model=model,\n        temperature=0,\n        messages=[\n            {\"role\": \"system\", \"content\": \"Summarize in exactly 3 sentences.\"},\n            {\"role\": \"user\", \"content\": text},\n        ],\n    )\n    return {\n        \"model\": model,\n        \"summary\": resp.choices[0].message.content,\n        \"input_chars\": len(text),\n        \"tokens\": resp.usage.total_tokens,\n    }\n\n\n@pytest.fixture\ndef snapshot_json(snapshot: SnapshotAssertion) -> SnapshotAssertion:\n    \"\"\"Use JSON snapshot extension \u2014 cleaner diffs than default.\"\"\"\n    return snapshot.use_extension(JSONSnapshotExtension)\n\n\nTEST_CASES = [\n    {\"id\": \"short_news\", \"text\": \"OpenAI announced a new model called o2 on Tuesday.\"},\n    {\"id\": \"technical_paper\", \"text\": \"Reciprocal rank fusion (RRF) combines results from multiple retrievers via 1/(k+rank) scoring.\"},\n    {\"id\": \"ambiguous\", \"text\": \"The plant was magnificent.\"},\n]\n\n\n@pytest.mark.parametrize(\"case\", TEST_CASES, ids=lambda c: c[\"id\"])\ndef test_summary_snapshot(case, snapshot_json, monkeypatch):\n    \"\"\"Snapshot the structured output.\"\"\"\n    # In a real test, we'd mock OpenAI here. For the snapshot to be stable,\n    # we provide a deterministic mock per test case.\n    def fake_chat(self, **kwargs):\n        # Return a deterministic answer per case\n        canned = {\n            \"short_news\": \"OpenAI launched a new model called o2 on Tuesday. The release marks their latest in 2025. Details on capabilities and pricing were limited.\",\n            \"technical_paper\": \"Reciprocal rank fusion is a method for combining ranked lists. Each document gets a score of 1/(k+rank) summed across retrievers. It's scale-free and robust to heterogeneous retrievers.\",\n            \"ambiguous\": \"The plant was magnificent. No further details are provided. The sentence could refer to either a factory or vegetation.\",\n        }\n        from types import SimpleNamespace\n        msg = SimpleNamespace(content=canned[case[\"id\"]])\n        choice = SimpleNamespace(message=msg, finish_reason=\"stop\", index=0)\n        usage = SimpleNamespace(total_tokens=80)\n        return SimpleNamespace(choices=[choice], usage=usage)\n\n    # Patch only for this test\n    from openai.resources.chat.completions import Completions\n    monkeypatch.setattr(Completions, \"create\", fake_chat)\n\n    result = summarize(case[\"text\"])\n\n    # Strip non-deterministic fields if any (timestamps, IDs)\n    snapshot_data = {k: v for k, v in result.items() if k != \"tokens\"}\n    # tokens can vary slightly; check it's within range separately\n    assert 20 <= result[\"tokens\"] <= 200\n\n    assert snapshot_data == snapshot_json\n",
+    "dependencies": [
+      {
+        "name": "pytest",
+        "version": ">=8.0",
+        "purpose": "Test framework"
+      },
+      {
+        "name": "syrupy",
+        "version": ">=4.6",
+        "purpose": "Snapshot testing for pytest"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "pip install pytest syrupy",
+      "Add tests/test_summary_snapshot.py",
+      "First run: pytest --snapshot-update",
+      "Review and commit __snapshots__/ directory.",
+      "Subsequent runs: pytest (compares to saved snapshots).",
+      "When intentionally changing: pytest --snapshot-update, review diff, commit."
+    ],
+    "variations": [
+      {
+        "label": "Snapshot the prompt template, not the output",
+        "description": "Catch unintentional prompt edits.",
+        "code_snippet": "def test_prompt_template_unchanged(snapshot):\\n    from app.prompts import SUMMARIZER_PROMPT\\n    assert SUMMARIZER_PROMPT == snapshot"
+      },
+      {
+        "label": "Selective field comparison",
+        "description": "Compare only stable fields.",
+        "code_snippet": "# Filter out non-deterministic fields:\\nstable = {k: v for k, v in result.items() if k not in ('tokens', 'request_id', 'timestamp')}\\nassert stable == snapshot"
+      },
+      {
+        "label": "Semantic similarity check instead of exact",
+        "description": "Allow surface drift in wording.",
+        "code_snippet": "from sentence_transformers import util\\nold_emb = embed(snapshot.read())\\nnew_emb = embed(result['summary'])\\nassert util.cos_sim(old_emb, new_emb) > 0.9"
+      },
+      {
+        "label": "Visual diff in CI",
+        "description": "GitHub Actions diff comment.",
+        "code_snippet": "# In CI: when snapshot fails, post the diff as PR comment for reviewer.\\n# Reviewer decides: regression or intentional."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Snapshot file missing",
+        "cause": "First run after writing test, --snapshot-update not used.",
+        "fix_snippet": "Run pytest --snapshot-update once; commit __snapshots__/."
+      },
+      {
+        "error_text": "Snapshot diff is huge for tiny prompt change",
+        "cause": "Real LLM output is non-deterministic even at temp=0.",
+        "fix_snippet": "Pin model version, temperature=0, seed if supported. Mock the LLM for snapshot tests (as in the starter). Use semantic similarity variant for genuinely non-deterministic outputs."
+      },
+      {
+        "error_text": "Snapshot tests fail in CI but pass locally",
+        "cause": "Locale, line endings, or whitespace differences.",
+        "fix_snippet": "Normalize before snapshot: strip whitespace, sort dicts. Add .gitattributes for consistent line endings."
+      },
+      {
+        "error_text": "Snapshot file is unreadable in PR review",
+        "cause": "Default syrupy format is dense.",
+        "fix_snippet": "Use JSONSnapshotExtension (starter does this) \u2014 gives line-by-line diffs in JSON."
+      }
+    ],
+    "production_checklist": [
+      "Commit snapshots; treat as part of the codebase.",
+      "Snapshot review in PRs: any change to __snapshots__/ requires explicit reviewer attention.",
+      "Pair with model version pinning; otherwise model upgrades constantly fail snapshots.",
+      "For genuinely non-deterministic outputs, use semantic similarity variation.",
+      "Set up CI to comment on PR with snapshot diff for easier review.",
+      "Keep snapshots focused on stable contracts (structure, key facts), not full prose."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "pytest==8.3.3",
+        "syrupy==4.7.2"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "snapshot-testing",
+      "approval-testing",
+      "regression"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "When does this beat traditional assertion testing?",
+        "answer": "When the \u2018correct\u2019 output is hard to write as a clean assertion but easy to recognize. Snapshot tests are approval-by-review \u2014 humans agree once, machine catches drift forever."
+      },
+      {
+        "question": "Doesn't this just rubber-stamp wrong outputs?",
+        "answer": "If you accept a bad snapshot, yes. The discipline: don't run --snapshot-update without reading the diff carefully. Treat updates as code reviews."
+      },
+      {
+        "question": "How is this different from Jest snapshot tests?",
+        "answer": "Same pattern; syrupy is the Python equivalent. Works the same way \u2014 first run records, subsequent compare."
+      },
+      {
+        "question": "Can I snapshot real (non-mocked) LLM outputs?",
+        "answer": "Only with pinned model version + temperature=0 + integration test marker. Even then, expect occasional drift requiring update. For unit tests, mock the LLM."
+      }
+    ],
+    "github_url": "https://github.com/syrupy-project/syrupy",
+    "meta_title": "Snapshot Tests For LLM Outputs \u2014 Starter",
+    "meta_description": "Approval testing for LLM outputs with syrupy: save known-good output, fail on drift, review legitimate changes. Plus semantic-similarity variant."
+  },
+  {
     "slug": "chroma-local-rag-quickstart",
     "title": "Chroma Local RAG Quickstart With Persistent Storage",
     "tldr": "Local-first RAG with ChromaDB \u2014 persists embeddings to disk, supports cosine similarity, and includes a clean ingest/query split so you can swap in your own document loader.",
