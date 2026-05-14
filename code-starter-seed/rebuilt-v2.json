@@ -13226,5 +13226,1024 @@
     "faq": [],
     "meta_title": "Vector DB Migration Tool (Qdrant <-> Pinecone <-> pgvector) | OSS AI Hub",
     "meta_description": "Migrate vectors + payloads between Qdrant, Pinecone, pgvector, Chroma. Idempotent batching + checksum verification."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "dspy-self-improving-pipeline",
+    "title": "DSPy Self-Improving Prompt Pipeline",
+    "tldr": "DSPy module with BootstrapFewShot optimizer that auto-generates few-shot examples from labeled data. Self-improves over training set.",
+    "description": "DSPy module with BootstrapFewShot optimizer that auto-generates few-shot examples from labeled data. Self-improves over training set.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "dspy",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "dspy",
+      "optimization",
+      "prompts"
+    ],
+    "best_for_tags": [
+      "self-improvement",
+      "prompt-optimization"
+    ],
+    "featured": false,
+    "when_to_use": "You have labeled data and want prompts to optimize automatically vs hand-tuning. DSPy compiles prompts via gradient-free optimization - effectively 'prompt fine-tuning'.",
+    "when_not_to_use": "Skip when (1) no labeled data; (2) prefer explicit prompts; (3) team unfamiliar with DSPy's signature/module abstractions.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import dspy\nfrom dspy.teleprompt import BootstrapFewShot\n\nlm = dspy.LM('anthropic/claude-sonnet-4-5')\ndspy.settings.configure(lm=lm)\n\nclass QA(dspy.Signature):\n    'Answer questions from context.'\n    context = dspy.InputField()\n    question = dspy.InputField()\n    answer = dspy.OutputField()\n\ncot = dspy.ChainOfThought(QA)\n# trainset = [dspy.Example(context='...', question='...', answer='...').with_inputs('context','question') for _ in range(20)]\noptimizer = BootstrapFewShot(metric=lambda ex, pred, _: ex.answer.lower() in pred.answer.lower())\noptimized_cot = optimizer.compile(cot, trainset=trainset)\n",
+    "dependencies": [
+      "dspy-ai"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "dspy-ai",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install dspy-ai"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "DSPy Self-Improving Prompt Pipeline | OSS AI Hub",
+    "meta_description": "DSPy module with BootstrapFewShot optimizer that auto-generates few-shot examples from labeled data. Self-improves over training set."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "pydantic-ai-validated-agent",
+    "title": "Pydantic AI Validated Agent (Type-Safe)",
+    "tldr": "Pydantic AI: agent framework with Pydantic validation on every step. Cleaner DX than LangChain for typed workflows.",
+    "description": "Pydantic AI: agent framework with Pydantic validation on every step. Cleaner DX than LangChain for typed workflows.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "pydantic-ai",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "pydantic-ai",
+      "type-safe"
+    ],
+    "best_for_tags": [
+      "type-safety",
+      "validation"
+    ],
+    "featured": false,
+    "when_to_use": "Type-safe agents with Pydantic models for every input/output. Best when you'd rather have static guarantees than LangChain's flexibility.",
+    "when_not_to_use": "Skip when (1) workflow is highly dynamic; (2) you need LangGraph-style state machines; (3) already invested in LangChain.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from pydantic_ai import Agent\nfrom pydantic import BaseModel\n\nclass Triage(BaseModel):\n    category: str\n    urgency: int\n\nagent = Agent('anthropic:claude-sonnet-4-5', result_type=Triage,\n    system_prompt='Triage support messages.')\n\nresult = agent.run_sync('My payment failed twice.')\nprint(result.data.category, result.data.urgency)\n",
+    "dependencies": [
+      "pydantic-ai"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "pydantic-ai",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install pydantic-ai"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Pydantic AI Validated Agent (Type-Safe) | OSS AI Hub",
+    "meta_description": "Pydantic AI: agent framework with Pydantic validation on every step. Cleaner DX than LangChain for typed workflows."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "react-agent-from-scratch",
+    "title": "ReAct Agent from Scratch (200 Lines, No Framework)",
+    "tldr": "Pure-Python ReAct agent: Thought / Action / Observation loop with no framework. ~200 lines, full control.",
+    "description": "Pure-Python ReAct agent: Thought / Action / Observation loop with no framework. ~200 lines, full control.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "vanilla",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "react",
+      "from-scratch",
+      "vanilla"
+    ],
+    "best_for_tags": [
+      "education",
+      "minimal"
+    ],
+    "featured": false,
+    "when_to_use": "Understanding what agent frameworks actually do under the hood, OR building something LangGraph/CrewAI can't easily express.",
+    "when_not_to_use": "Skip when (1) you need framework features (state persistence, eval integration); (2) team prefers maintained code; (3) production at scale.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import re\nfrom anthropic import Anthropic\n\nTOOLS = {\n    'calculator': lambda x: str(eval(x, {'__builtins__': {}})),\n    'wikipedia': lambda q: f'(mock) wiki result for: {q}',\n}\n\nSYSTEM = '''You are a ReAct agent. Use this format:\nThought: ... \nAction: tool_name(args)\nObservation: ...\nThought: ...\nAction: ...\nFinalAnswer: ...'''\n\ndef agent_loop(question, max_iter=8):\n    history = f'Question: {question}\\n'\n    for _ in range(max_iter):\n        out = Anthropic().messages.create(model='claude-sonnet-4-5', max_tokens=500,\n            system=SYSTEM, messages=[{'role':'user','content':history}]).content[0].text\n        history += out\n        if 'FinalAnswer:' in out:\n            return out.split('FinalAnswer:')[-1].strip()\n        m = re.search(r'Action:\\s*(\\w+)\\((.+?)\\)', out)\n        if not m: break\n        result = TOOLS.get(m.group(1), lambda x: 'unknown tool')(m.group(2))\n        history += f'\\nObservation: {result}\\n'\n    return 'max iterations'\n\nprint(agent_loop('What is 17 * 23?'))\n",
+    "dependencies": [
+      "anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "anthropic",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install anthropic"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "ReAct Agent from Scratch (200 Lines, No Framework) | OSS AI Hub",
+    "meta_description": "Pure-Python ReAct agent: Thought / Action / Observation loop with no framework. ~200 lines, full control."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "langgraph-self-correcting-coder",
+    "title": "LangGraph Self-Correcting Coder (Code -> Test -> Fix Loop)",
+    "tldr": "Self-correcting code agent: generate code, run it, capture errors, regenerate with error context. Until tests pass or max iter.",
+    "description": "Self-correcting code agent: generate code, run it, capture errors, regenerate with error context. Until tests pass or max iter.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "langgraph",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "langgraph",
+      "code-agent",
+      "self-correcting"
+    ],
+    "best_for_tags": [
+      "code-agent",
+      "tdd-agent"
+    ],
+    "featured": false,
+    "when_to_use": "Code generation tasks where 'first attempt is right' fails often. Self-correcting loop adds 30-50% pass-rate at the cost of 2-5x latency.",
+    "when_not_to_use": "Skip when (1) trivial generation tasks; (2) latency-critical; (3) no sandboxed code execution available.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from typing import TypedDict\nfrom langgraph.graph import StateGraph, END\n\nclass State(TypedDict):\n    task: str\n    code: str\n    error: str\n    iteration: int\n\ndef generate(s): return {'code': llm_generate(s['task'], error=s.get('error',''))}\ndef run(s):\n    try: exec(s['code']); return {'error': ''}\n    except Exception as e: return {'error': str(e), 'iteration': s.get('iteration', 0)+1}\ndef route(s): return 'done' if not s['error'] or s['iteration'] > 5 else 'generate'\n\ng = StateGraph(State)\ng.add_node('generate', generate); g.add_node('run', run)\ng.set_entry_point('generate')\ng.add_edge('generate', 'run')\ng.add_conditional_edges('run', route, {'generate': 'generate', 'done': END})\n",
+    "dependencies": [
+      "langgraph"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "langgraph",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install langgraph"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "LangGraph Self-Correcting Coder (Code -> Test -> Fix Loop) | OSS AI Hub",
+    "meta_description": "Self-correcting code agent: generate code, run it, capture errors, regenerate with error context. Until tests pass or max iter."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "metagpt-software-company",
+    "title": "MetaGPT Software Company (Product Manager / Architect / Engineer)",
+    "tldr": "MetaGPT: orchestrates ProductManager + Architect + ProjectManager + Engineer agents to ship code from one user prompt.",
+    "description": "MetaGPT: orchestrates ProductManager + Architect + ProjectManager + Engineer agents to ship code from one user prompt.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "metagpt",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "metagpt",
+      "multi-agent",
+      "code"
+    ],
+    "best_for_tags": [
+      "code-generation",
+      "software-team"
+    ],
+    "featured": false,
+    "when_to_use": "Demo / research / a one-prompt-to-app workflow where the cost of a full agent team is OK. MetaGPT is the most polished 'AI software company' OSS.",
+    "when_not_to_use": "Skip for production - the multi-agent overhead doesn't pay off vs a single strong coder agent like Aider/Claude Code.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from metagpt.software_company import generate_repo\n\nrepo = generate_repo(\n    idea='Build a todo list web app with FastAPI backend + React frontend.',\n    n_round=5,\n)\nprint(repo.output_dir)  # generated project on disk\n",
+    "dependencies": [
+      "metagpt"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "metagpt",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install metagpt"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "MetaGPT Software Company (Product Manager / Architect / Engineer) | OSS AI Hub",
+    "meta_description": "MetaGPT: orchestrates ProductManager + Architect + ProjectManager + Engineer agents to ship code from one user prompt."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "babyagi-task-list",
+    "title": "BabyAGI Task-List Autonomous Agent",
+    "tldr": "Classic BabyAGI: maintains a task list, executes the top task, creates new tasks from results, prioritizes, repeats.",
+    "description": "Classic BabyAGI: maintains a task list, executes the top task, creates new tasks from results, prioritizes, repeats.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "babyagi",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "babyagi",
+      "autonomous",
+      "task-list"
+    ],
+    "best_for_tags": [
+      "autonomous-agent",
+      "education"
+    ],
+    "featured": false,
+    "when_to_use": "Educational + showing the basic 'autonomous agent' pattern. Open-ended exploration tasks where 'what to do next?' is part of the problem.",
+    "when_not_to_use": "Skip for any real production - BabyAGI is a research pattern, not a production framework. Modern agents (LangGraph, smolagents) are more robust.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import openai\nfrom collections import deque\n\ntasks = deque(['Research vLLM 0.7 features'])\nobjective = 'Write a 200-word brief on vLLM 0.7.'\nresults = []\nwhile tasks and len(results) < 5:\n    task = tasks.popleft()\n    out = openai.chat.completions.create(model='gpt-5', messages=[{'role':'user','content':f'Do: {task}'}]).choices[0].message.content\n    results.append((task, out))\n    new_tasks = openai.chat.completions.create(model='gpt-5', messages=[\n        {'role':'user','content':f'Given objective: {objective}\\nWe just did: {task}\\nResult: {out}\\nList 1-3 next tasks.'}\n    ]).choices[0].message.content.split('\\n')\n    tasks.extend(t.strip('- ') for t in new_tasks if t.strip())\n",
+    "dependencies": [
+      "openai"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "openai",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install openai"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "BabyAGI Task-List Autonomous Agent | OSS AI Hub",
+    "meta_description": "Classic BabyAGI: maintains a task list, executes the top task, creates new tasks from results, prioritizes, repeats."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "claude-code-sdk-agent",
+    "title": "Claude Code SDK Agent (Anthropic's Official Coding Agent)",
+    "tldr": "Claude Code SDK: Anthropic's official coding agent SDK. Headless mode for CI, full agent loop with tool use + edit + run.",
+    "description": "Claude Code SDK: Anthropic's official coding agent SDK. Headless mode for CI, full agent loop with tool use + edit + run.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "claude-code-sdk",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "claude-code",
+      "anthropic",
+      "coding-agent"
+    ],
+    "best_for_tags": [
+      "coding-agent",
+      "claude"
+    ],
+    "featured": true,
+    "when_to_use": "Embed Claude Code agent into your tooling - CI jobs, internal dev tools, scheduled refactors. The SDK gives you headless access to the full Claude Code agent.",
+    "when_not_to_use": "Skip when (1) you only need chat completions (use the Anthropic SDK); (2) you're building a different coding agent UX; (3) you can't accept Claude Code's tool-use surface.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from claude_code_sdk import query\n\n# Headless one-shot query\nresult = query(\n    prompt='Refactor src/utils.py to use type hints. Run tests after.',\n    cwd='./my-project',\n    max_iterations=10,\n)\nprint(result.summary)\nfor change in result.file_changes:\n    print(f'{change.path}: {change.change_type}')\n",
+    "dependencies": [
+      "claude-code-sdk"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "claude-code-sdk",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install claude-code-sdk"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Claude Code SDK Agent (Anthropic's Official Coding Agent) | OSS AI Hub",
+    "meta_description": "Claude Code SDK: Anthropic's official coding agent SDK. Headless mode for CI, full agent loop with tool use + edit + run."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "agentic-workflow-prefect",
+    "title": "Agentic Workflow with Prefect (Durable Multi-Step)",
+    "tldr": "Prefect flow that orchestrates LLM-powered agents with retries, schedules, observability. For multi-hour ETL+LLM pipelines.",
+    "description": "Prefect flow that orchestrates LLM-powered agents with retries, schedules, observability. For multi-hour ETL+LLM pipelines.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "prefect",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "prefect",
+      "workflow",
+      "durable"
+    ],
+    "best_for_tags": [
+      "durable-agents",
+      "scheduled"
+    ],
+    "featured": false,
+    "when_to_use": "Multi-step pipelines that mix data ops + LLM steps + want durable execution (retry on crash, schedule, observability). Prefect 3 handles this well.",
+    "when_not_to_use": "Skip when (1) single-LLM-call workflow; (2) you don't need scheduling; (3) you're already on Airflow / Dagster.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from prefect import flow, task\nfrom anthropic import Anthropic\n\n@task(retries=3)\ndef llm_summarize(text: str) -> str:\n    return Anthropic().messages.create(model='claude-sonnet-4-5', max_tokens=200,\n        messages=[{'role':'user','content':f'Summarize:\\n{text}'}]).content[0].text\n\n@flow(name='daily-report')\ndef daily_report():\n    docs = fetch_new_docs()\n    summaries = [llm_summarize(d) for d in docs]\n    send_email(summaries)\n\nif __name__ == '__main__': daily_report.serve(cron='0 9 * * *')\n",
+    "dependencies": [
+      "prefect",
+      "anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "prefect",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "anthropic",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install prefect anthropic"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Agentic Workflow with Prefect (Durable Multi-Step) | OSS AI Hub",
+    "meta_description": "Prefect flow that orchestrates LLM-powered agents with retries, schedules, observability. For multi-hour ETL+LLM pipelines."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "agno-fast-agent",
+    "title": "Agno Fast Agent Framework (Lightweight Phidata Successor)",
+    "tldr": "Agno: lightweight Python agent framework. ~5x faster instantiation than LangChain, focused on tool-use + structured output.",
+    "description": "Agno: lightweight Python agent framework. ~5x faster instantiation than LangChain, focused on tool-use + structured output.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "agno",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "agno",
+      "lightweight"
+    ],
+    "best_for_tags": [
+      "lightweight",
+      "fast"
+    ],
+    "featured": false,
+    "when_to_use": "When you want a thin Python agent framework that doesn't drag in LangChain's surface. Good for production where startup time + memory matter.",
+    "when_not_to_use": "Skip when (1) you need LangGraph's state machines; (2) deep LangChain ecosystem use; (3) need multi-agent orchestration (use CrewAI / LangGraph).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from agno.agent import Agent\nfrom agno.models.anthropic import Claude\nfrom agno.tools.duckduckgo import DuckDuckGoTools\n\nagent = Agent(\n    model=Claude(id='claude-sonnet-4-5'),\n    tools=[DuckDuckGoTools()],\n    markdown=True,\n)\nagent.print_response('What is the OSS AI Hub?')\n",
+    "dependencies": [
+      "agno"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "agno",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install agno"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Agno Fast Agent Framework (Lightweight Phidata Successor) | OSS AI Hub",
+    "meta_description": "Agno: lightweight Python agent framework. ~5x faster instantiation than LangChain, focused on tool-use + structured output."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "a2a-agent-protocol",
+    "title": "Google A2A Agent-to-Agent Protocol",
+    "tldr": "A2A protocol implementation: standardized agent-to-agent communication. Like MCP but for agent collaboration.",
+    "description": "A2A protocol implementation: standardized agent-to-agent communication. Like MCP but for agent collaboration.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "a2a",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "a2a",
+      "google",
+      "protocol",
+      "interop"
+    ],
+    "best_for_tags": [
+      "interop",
+      "multi-agent"
+    ],
+    "featured": false,
+    "when_to_use": "Building agents that need to interoperate with other agents (different teams, different vendors). A2A is Google's open protocol for this.",
+    "when_not_to_use": "Skip when (1) all your agents are in-process; (2) protocol still maturing (don't bet production on bleeding edge); (3) MCP already covers your use case.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from a2a import AgentCard, A2AServer, Task\n\ncard = AgentCard(\n    name='ossai-research-agent',\n    description='Researches OSS AI tools.',\n    skills=[{'name': 'web_search'}, {'name': 'summarize'}],\n    capabilities={'streaming': True},\n)\n\nasync def task_handler(task: Task):\n    yield {'type': 'progress', 'message': 'Searching...'}\n    yield {'type': 'result', 'data': '...'}\n\nserver = A2AServer(agent_card=card, task_handler=task_handler)\nserver.start(port=8000)\n",
+    "dependencies": [
+      "a2a"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "a2a",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install a2a"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Google A2A Agent-to-Agent Protocol | OSS AI Hub",
+    "meta_description": "A2A protocol implementation: standardized agent-to-agent communication. Like MCP but for agent collaboration."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "mcp-notion-server",
+    "title": "MCP Notion Server (Pages, Databases, Search)",
+    "tldr": "MCP server for Notion: search pages, read blocks, create pages, update properties. Handles Notion's paginated children API.",
+    "description": "MCP server for Notion: search pages, read blocks, create pages, update properties. Handles Notion's paginated children API.",
+    "category": "mcp-servers",
+    "language": "typescript",
+    "framework": "mcp",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "mcp",
+      "notion"
+    ],
+    "best_for_tags": [
+      "mcp",
+      "notion"
+    ],
+    "featured": false,
+    "when_to_use": "Agents that read/write Notion (knowledge bases, project trackers). MCP server keeps the OAuth + pagination behind one clean interface.",
+    "when_not_to_use": "Skip when (1) Notion isn't part of your stack; (2) read-only access is enough (just use the API directly); (3) need real-time sync (not what MCP is for).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import { Server } from '@modelcontextprotocol/sdk/server/index.js';\nimport { Client } from '@notionhq/client';\n\nconst notion = new Client({ auth: process.env.NOTION_API_KEY });\nconst server = new Server({ name: 'notion', version: '1.0.0' }, { capabilities: { tools: {} } });\n\n// search_pages, read_page, create_page tools - register via setRequestHandler\n",
+    "dependencies": [
+      "@modelcontextprotocol/sdk",
+      "@notionhq/client"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "@modelcontextprotocol/sdk",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "@notionhq/client",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install @modelcontextprotocol/sdk @notionhq/client"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "MCP Notion Server (Pages, Databases, Search) | OSS AI Hub",
+    "meta_description": "MCP server for Notion: search pages, read blocks, create pages, update properties. Handles Notion's paginated children API."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "mcp-gmail-server",
+    "title": "MCP Gmail Server (with PII Redaction)",
+    "tldr": "MCP server for Gmail: OAuth2, label management, send/draft, built-in PII redaction on outgoing messages.",
+    "description": "MCP server for Gmail: OAuth2, label management, send/draft, built-in PII redaction on outgoing messages.",
+    "category": "mcp-servers",
+    "language": "python",
+    "framework": "mcp",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "mcp",
+      "gmail"
+    ],
+    "best_for_tags": [
+      "mcp",
+      "email"
+    ],
+    "featured": false,
+    "when_to_use": "Agents that triage email / draft replies / file emails. PII redaction is critical when LLMs are reading/writing email content.",
+    "when_not_to_use": "Skip when (1) inbound email only (use a different transport); (2) sensitive industry without explicit policy approval; (3) Gmail isn't your stack.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from mcp.server.fastmcp import FastMCP\nfrom googleapiclient.discovery import build\nfrom google.oauth2.credentials import Credentials\nimport os, re\n\nmcp = FastMCP('gmail')\ncreds = Credentials.from_authorized_user_file('token.json')\nsvc = build('gmail', 'v1', credentials=creds)\n\ndef redact(text):\n    text = re.sub(r'\\b\\d{4}-?\\d{4}-?\\d{4}-?\\d{4}\\b', '[CARD]', text)\n    text = re.sub(r'\\b\\d{3}-\\d{2}-\\d{4}\\b', '[SSN]', text)\n    return text\n\n@mcp.tool()\nasync def search(q: str) -> list:\n    res = svc.users().messages().list(userId='me', q=q, maxResults=10).execute()\n    return res.get('messages', [])\n\nif __name__ == '__main__': mcp.run()\n",
+    "dependencies": [
+      "mcp",
+      "google-api-python-client"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "mcp",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "google-api-python-client",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install mcp google-api-python-client"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "MCP Gmail Server (with PII Redaction) | OSS AI Hub",
+    "meta_description": "MCP server for Gmail: OAuth2, label management, send/draft, built-in PII redaction on outgoing messages."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "mcp-custom-stdio-skeleton",
+    "title": "MCP Custom Server Skeleton (stdio Transport)",
+    "tldr": "Minimal MCP server skeleton on stdio transport. Drop-in starting point for any custom integration.",
+    "description": "Minimal MCP server skeleton on stdio transport. Drop-in starting point for any custom integration.",
+    "category": "mcp-servers",
+    "language": "python",
+    "framework": "mcp",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "mcp",
+      "skeleton",
+      "stdio"
+    ],
+    "best_for_tags": [
+      "mcp-template",
+      "tutorial"
+    ],
+    "featured": false,
+    "when_to_use": "You want to build a custom MCP server and need the smallest working skeleton to extend. This is it - ~30 lines, registers one tool, runs on stdio.",
+    "when_not_to_use": "Skip when (1) you're integrating an existing service (use the official MCP server for it); (2) you need HTTP transport (use mcp-streamable-http-server).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from mcp.server.fastmcp import FastMCP\n\nmcp = FastMCP('my-custom-server')\n\n@mcp.tool()\ndef echo(text: str) -> str:\n    'Echo the input.'\n    return f'Echoed: {text}'\n\n@mcp.tool()\nasync def compute(a: int, b: int) -> int:\n    'Add two numbers.'\n    return a + b\n\nif __name__ == '__main__':\n    mcp.run()  # stdio transport by default\n",
+    "dependencies": [
+      "mcp"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "mcp",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install mcp"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "MCP Custom Server Skeleton (stdio Transport) | OSS AI Hub",
+    "meta_description": "Minimal MCP server skeleton on stdio transport. Drop-in starting point for any custom integration."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "mcp-streamable-http-server",
+    "title": "MCP Streamable HTTP Server (Remote Access)",
+    "tldr": "MCP server over Streamable HTTP transport (not stdio). Enables hosting MCP servers remotely behind auth.",
+    "description": "MCP server over Streamable HTTP transport (not stdio). Enables hosting MCP servers remotely behind auth.",
+    "category": "mcp-servers",
+    "language": "python",
+    "framework": "mcp",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "mcp",
+      "http",
+      "remote"
+    ],
+    "best_for_tags": [
+      "mcp",
+      "remote-mcp"
+    ],
+    "featured": false,
+    "when_to_use": "Hosting an MCP server that clients access over the network (not local subprocess). Required for multi-tenant SaaS MCP and remote dev environments.",
+    "when_not_to_use": "Skip when (1) local subprocess works (stdio simpler); (2) you can use existing remote MCP infrastructure; (3) auth is a deal-breaker.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from mcp.server.fastmcp import FastMCP\n\nmcp = FastMCP('remote-server')\n\n@mcp.tool()\ndef hello(name: str) -> str:\n    return f'Hello {name}'\n\nif __name__ == '__main__':\n    mcp.run(transport='streamable-http', host='0.0.0.0', port=8080)\n# Clients connect to http://<host>:8080/mcp\n",
+    "dependencies": [
+      "mcp"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "mcp",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install mcp"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "MCP Streamable HTTP Server (Remote Access) | OSS AI Hub",
+    "meta_description": "MCP server over Streamable HTTP transport (not stdio). Enables hosting MCP servers remotely behind auth."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "mcp-test-harness",
+    "title": "MCP Test Harness (Verify Servers Conform to Spec)",
+    "tldr": "Test harness that exercises an MCP server: list_tools / call_tool / error responses. Catches spec drift early.",
+    "description": "Test harness that exercises an MCP server: list_tools / call_tool / error responses. Catches spec drift early.",
+    "category": "mcp-servers",
+    "language": "python",
+    "framework": "mcp",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "mcp",
+      "testing"
+    ],
+    "best_for_tags": [
+      "mcp",
+      "testing"
+    ],
+    "featured": false,
+    "when_to_use": "Maintaining a custom MCP server. The harness gives you reproducible tests against the spec - catches breaking changes when you upgrade the SDK.",
+    "when_not_to_use": "Skip when (1) you're not maintaining an MCP server; (2) using official servers (they have their own tests); (3) one-off prototype.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import asyncio\nfrom mcp.client.session import ClientSession\nfrom mcp.client.stdio import StdioServerParameters, stdio_client\n\nasync def test_server():\n    params = StdioServerParameters(command='python', args=['my_server.py'])\n    async with stdio_client(params) as (read, write):\n        async with ClientSession(read, write) as session:\n            await session.initialize()\n            tools = await session.list_tools()\n            assert 'echo' in [t.name for t in tools.tools]\n            result = await session.call_tool('echo', {'text': 'hi'})\n            assert 'Echoed: hi' in result.content[0].text\n            print('PASS')\n\nasyncio.run(test_server())\n",
+    "dependencies": [
+      "mcp"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "mcp",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install mcp"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Cap iterations + timeouts.",
+      "Log every step to Langfuse/LangSmith.",
+      "Test failure paths in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "MCP Test Harness (Verify Servers Conform to Spec) | OSS AI Hub",
+    "meta_description": "Test harness that exercises an MCP server: list_tools / call_tool / error responses. Catches spec drift early."
   }
 ]
