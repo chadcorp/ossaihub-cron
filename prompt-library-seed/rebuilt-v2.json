@@ -14590,6 +14590,334 @@
     "meta_description": "Convert raw EOD notes into a clean standup update. 3 bullets per section, no filler, real blockers only, async-friendly format."
   },
   {
+    "slug": "fermi-estimation",
+    "title": "Fermi Estimation From Sparse Data",
+    "tldr": "Estimate quantities via Fermi decomposition \u2014 break the unknown into knowable factors, surface assumptions, produce a calibrated range, not a single point.",
+    "category": "reasoning",
+    "tags": [
+      "fermi-estimation",
+      "reasoning",
+      "decomposition",
+      "uncertainty"
+    ],
+    "best_for_tags": [
+      "product-strategy",
+      "sizing",
+      "investment-decisions"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Market sizing for a feature",
+        "example": "\u2018How many enterprises would buy this?\u2019 \u2192 decomposed estimate with 5 assumptions explicit."
+      },
+      {
+        "scenario": "Infrastructure capacity",
+        "example": "\u2018How many GPUs do we need for serving 50M users?\u2019 \u2014 Fermi from traffic patterns."
+      },
+      {
+        "scenario": "Revenue impact projection",
+        "example": "\u2018If we launched this, what's expected MRR uplift?\u2019 \u2192 decomposed with ranges."
+      },
+      {
+        "scenario": "Interview prep",
+        "example": "Mock cases: \u2018How many tennis balls fit in a 747?\u2019 practice rigor."
+      }
+    ],
+    "when_not_to_use": "Skip when actual data exists (use it). Skip for one-of-a-kind situations where decomposition introduces more uncertainty than it removes. Skip when stakeholders demand a single point estimate; Fermi is honest about ranges.",
+    "full_prompt": "You are a Fermi-estimation expert. The user has a quantity to estimate. Decompose it and produce a calibrated estimate.\n\nINPUT\n- The quantity to estimate: {quantity}\n- Available context / data: {available_data}\n- The decision this estimate informs: {decision_context}\n\nOUTPUT\n\n## 1. Decomposition\nExpress the unknown as a PRODUCT of factors, each more knowable than the whole.\n\nExample:\n  Annual coffee shop revenue =\n    (cafes in city) \u00d7 (avg revenue per cafe) \u00d7 1 year\n\n  ALL of these factors are individually easier to estimate than \u2018annual coffee shop revenue\u2019 directly.\n\nChoose your decomposition; aim for 3-7 factors. Too few = unhelpfully coarse. Too many = false precision.\n\n## 2. Estimate each factor\nFor each factor:\n- Best guess (geometric mean of plausible range)\n- Low estimate (10th percentile \u2014 \u2018it's unlikely to be lower than this\u2019)\n- High estimate (90th percentile)\n- Source / reasoning (cite if from data; mark as gut if not)\n\n## 3. Combine\n- Best estimate: product of factor best-guesses\n- Range: product of lows \u00d7 product of highs (rough; or use log-normal math for sophistication)\n\n## 4. Sensitivity analysis\nWhich factor's range dominates the uncertainty? If one factor swings the result by 10x and others by 2x, it's the bottleneck factor \u2014 that's where to invest in better data.\n\n## 5. Sanity checks\n- Compare against any related known number (\"US GDP is ~$25T; my estimate must be smaller\").\n- Compare against bounds (\"there are only 8B people on Earth; my estimate must be lower\").\n- Compare against analogous quantities (\"similar product class X did roughly Y\").\n\n## 6. The honest answer\n- Best estimate (single number with appropriate sig figs \u2014 usually 1-2)\n- Range (with confidence level)\n- One-line summary the user can quote\n- Two-line caveat about what you DON'T know\n\n## 7. How to halve the uncertainty\nWhat ONE piece of data would most reduce the range? (Often the sensitivity-dominant factor.)\n\nRULES\n- Decompose into KNOWABLE factors. \u2018Adoption rate\u2019 isn't knowable; \u2018users who saw feature X in past 30 days\u2019 might be.\n- Round aggressively \u2014 false precision is worse than acknowledged uncertainty.\n- When using gut estimates, label them explicitly.\n- Don't be afraid of wide ranges; \u2018$1M-$100M\u2019 honest beats \u2018$8M\u2019 pretend-precise.\n\nQUANTITY\n{quantity}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "quantity",
+        "type": "string",
+        "description": "What to estimate",
+        "required": true,
+        "example": "Annual market size for AI-powered legal research tools in the US"
+      },
+      {
+        "name": "available_data",
+        "type": "string",
+        "description": "Known data / context",
+        "required": true,
+        "example": "There are ~1.3M lawyers in the US. Top legal-tech vendors charge $150-500/seat/month. Adoption of new legal tech tends to be 5-15% in 2-3 years."
+      },
+      {
+        "name": "decision_context",
+        "type": "string",
+        "description": "What decision uses this estimate",
+        "required": true,
+        "example": "Whether to invest $5M Series A in building this product"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Seven sections: decomposition, factor-by-factor estimates, combination, sensitivity, sanity checks, honest answer, how-to-halve-uncertainty."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong decompositions; honest about uncertainty."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can be over-confident \u2014 re-pin range honesty."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; sensitivity analysis sometimes shallow."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Decomposes but ranges can be too narrow."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Two-by-two scenario",
+        "description": "Best/worst case + base case.",
+        "prompt_snippet": "Replace ranges with: \u2018pessimistic / base / optimistic scenarios; each is a full decomposition.\u2019 Surface 3 numbers."
+      },
+      {
+        "label": "Log-normal combination",
+        "description": "More rigorous range math.",
+        "prompt_snippet": "Add: \u2018compute range using log-normal: ln(estimate) = sum of ln(factors); range = exp(ln_best \u00b1 1.65\u00b7sqrt(sum of factor variances)).\u2019"
+      },
+      {
+        "label": "Triangulation",
+        "description": "Multiple decompositions for cross-check.",
+        "prompt_snippet": "Add: \u2018also produce a SECOND decomposition using different factors; if estimates diverge significantly, surface why.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Decomposition reuses the unknown.",
+        "fix": "Re-pin: \u2018each factor must be more knowable than the whole.\u2019 Reject decompositions where \u2018adoption rate\u2019 is a factor without further decomposition."
+      },
+      {
+        "symptom": "Ranges artificially narrow.",
+        "fix": "Add: \u2018low estimate should be roughly 10% likely; high estimate roughly 90%. If your range covers only \u2018probable\u2019 values, widen it.\u2019"
+      },
+      {
+        "symptom": "Sanity checks omitted.",
+        "fix": "Force: \u2018at least 2 sanity checks comparing to known bounds or analogs.\u2019"
+      },
+      {
+        "symptom": "False precision (estimate to 3 sig figs).",
+        "fix": "Add: \u2018round to 1-2 significant figures; precision should match confidence.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "market-sizing-fermi",
+      "decomposition-into-subgoals"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "fermi-estimation",
+      "decomposition"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Aren't Fermi estimates inaccurate?",
+        "answer": "They're honest \u2014 explicitly uncertain rather than falsely precise. A well-decomposed Fermi estimate with a 3x range is more useful for decisions than a single number that's secretly a guess."
+      },
+      {
+        "question": "When are they NOT useful?",
+        "answer": "When real data exists. Don't Fermi-estimate \u2018our company's MRR\u2019 when you can pull the actual number. Use Fermi for forward-looking or external questions."
+      },
+      {
+        "question": "How do I get better at this?",
+        "answer": "Practice on knowables (\u2018how many cars on the highway right now?\u2019) then check actuals. Track your range hit rate \u2014 if 90% confidence intervals miss 50% of the time, you're overconfident."
+      }
+    ],
+    "meta_title": "Fermi Estimation From Sparse Data \u2014 Prompt",
+    "meta_description": "Decompose unknowns into knowable factors, produce calibrated range estimates, identify dominant uncertainty. Honest sizing, not false precision."
+  },
+  {
+    "slug": "second-order-thinking",
+    "title": "Second-Order Thinking Probe",
+    "tldr": "Pushes the user past first-order analysis (immediate effects) into second-order (consequences of the consequences) \u2014 for strategic decisions where the obvious answer is wrong because everyone else thought of it first.",
+    "category": "reasoning",
+    "tags": [
+      "second-order",
+      "strategy",
+      "decision-making",
+      "reasoning"
+    ],
+    "best_for_tags": [
+      "strategic-decisions",
+      "market-thinking",
+      "competitive-strategy"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Pricing change decision",
+        "example": "First-order: \u2018raise price 30% \u2192 revenue up 25%.\u2019 Second-order: \u2018competitors notice; price war; net revenue down 15% in 18 months.\u2019"
+      },
+      {
+        "scenario": "Hiring strategy",
+        "example": "First: \u2018aggressive hiring will speed shipping.\u2019 Second: \u2018team coordination overhead; ship velocity per engineer falls; culture dilution.\u2019"
+      },
+      {
+        "scenario": "Feature launch impact",
+        "example": "First: \u2018users will love feature X.\u2019 Second: \u2018power users will use it to spam; cost spikes.\u2019"
+      },
+      {
+        "scenario": "Investment thesis",
+        "example": "First: \u2018this category is hot.\u2019 Second: \u2018that's why a hundred competitors entered; margins will compress.\u2019"
+      }
+    ],
+    "when_not_to_use": "Skip for execution decisions (just do them). Skip when the first-order analysis is already specific enough \u2014 over-thinking is its own failure mode.",
+    "full_prompt": "You are a strategic thinking coach. The user proposes a decision based on first-order effects. You'll push to second-order.\n\nINPUT\n- The decision being considered: {decision}\n- The user's first-order analysis (immediate expected effects): {first_order}\n- Time horizon: {horizon}\n- Domain (helps you draw on analogous patterns): {domain}\n\nOUTPUT\n\n## 1. Acknowledge the first-order\nRestate the user's first-order analysis. Note where it seems right (don't strawman).\n\n## 2. Second-order chain\nFor 3-5 effects, ask \u2018and then what?\u2019\n\n### Effect chain N\n- First-order: <user's claim or implied>\n- Second-order: what does this CAUSE to happen?\n- Third-order (if relevant): what does THAT then cause?\n- Specific actors involved (not \u2018the market\u2019; specific stakeholder groups)\n- Timing: this kicks in around <when>\n\n## 3. Counter-moves and reactions\nThe decision creates incentives for others. Who responds and how?\n- Competitors: how does this change their best move?\n- Customers (different segments): different reactions, named\n- Suppliers / regulators: any structural shifts?\n- Internal team: morale, incentives, focus changes\n\n## 4. \u2018Why doesn't everyone already do this?\u2019\nThe Buffett question. If second-order analysis says this is great, ask:\n- Has someone tried this before? What happened?\n- What's the actual barrier \u2014 capital, knowledge, time, or just no one's thought of it?\n- If the answer is \u2018no one's thought of it,\u2019 be skeptical. Often the second-order is why it's avoided.\n\n## 5. Reframe\nGiven the second-order analysis, is the decision still right?\n- Yes \u2014 but with adjusted expectations or sequencing\n- Conditionally \u2014 with prerequisites met\n- Probably not \u2014 second-order dominates\n- Same direction but different approach to capture upside while mitigating second-order\n\n## 6. Leading indicators of second-order kicking in\nSpecific things to watch for that would confirm or refute the second-order chain.\n\nRULES\n- Second-order isn't second-guessing. The first-order may still be right; this stresses-tests it.\n- Specific actors over abstractions. \u2018Pro-tier customers\u2019 beats \u2018users.\u2019\n- Timing matters. Second-order in 6 months is different from second-order in 5 years.\n- When second-order is ambiguous, surface that \u2014 don't manufacture confident chains.\n\nDECISION\n{decision}\n\nFIRST-ORDER ANALYSIS\n{first_order}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "decision",
+        "type": "string",
+        "description": "The decision being considered",
+        "required": true,
+        "example": "Raise our annual plan price from $99 to $129"
+      },
+      {
+        "name": "first_order",
+        "type": "string",
+        "description": "The user's immediate analysis",
+        "required": true,
+        "example": "Most existing customers will absorb the increase; revenue per customer rises 30%; some marginal customers churn but net positive."
+      },
+      {
+        "name": "horizon",
+        "type": "string",
+        "description": "Time frame",
+        "required": true,
+        "example": "12-24 months"
+      },
+      {
+        "name": "domain",
+        "type": "string",
+        "description": "Industry/context",
+        "required": false,
+        "example": "B2B SaaS, mid-market, competitive segment"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: acknowledge first-order, effect chains, counter-moves, \u2018why doesn't everyone do this?\u2019, reframe, leading indicators."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on competitive reaction analysis; doesn't manufacture chains."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally projects too far \u2014 re-pin specificity."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; \u2018why doesn't everyone do this\u2019 can be soft."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Surface-level second-order; needs explicit \u2018specific actors\u2019 direction."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Adversarial expert",
+        "description": "Steelmanned opposition.",
+        "prompt_snippet": "Add: \u2018also: write a 200-word critique from a thoughtful skeptic; what would they say is the real first-order miss?\u2019"
+      },
+      {
+        "label": "Pre-mortem variant",
+        "description": "Combine with imagining failure.",
+        "prompt_snippet": "Add: \u2018then imagine this decision failed; write 3 most likely causes referencing the second-order chains.\u2019"
+      },
+      {
+        "label": "Game-theoretic",
+        "description": "More formal multi-actor reasoning.",
+        "prompt_snippet": "Add: \u2018where multiple actors interact, sketch payoff matrices or sequential-game trees for the key interactions.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Second-order chains are vague (\u2018the market reacts\u2019).",
+        "fix": "Re-pin: \u2018specific actors, specific reactions, specific timing.\u2019"
+      },
+      {
+        "symptom": "Strawmans the first-order.",
+        "fix": "Add: \u2018acknowledge what the first-order gets right before challenging it.\u2019"
+      },
+      {
+        "symptom": "\u2018Why doesn't everyone do this?\u2019 skipped.",
+        "fix": "Force: \u2018if you don't address this question, you've assumed the second-order doesn't matter without evidence.\u2019"
+      },
+      {
+        "symptom": "Conclusion is \u2018yes, do it\u2019 without modification.",
+        "fix": "Add: \u2018even a \u2018proceed\u2019 conclusion should specify what the second-order changes about HOW to proceed.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "devils-advocate-pre-mortem",
+      "first-principles-rebuilder",
+      "strategic-tradeoff-analyzer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "second-order-thinking",
+      "counter-positioning"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "When is second-order analysis worth the time?",
+        "answer": "When the decision is large, hard to reverse, or sets precedent. Daily ops decisions: skip. Pricing changes, major hires, market entry: essential."
+      },
+      {
+        "question": "Doesn't this lead to analysis paralysis?",
+        "answer": "Cap it: max 3 levels deep. The point is to surface the most important second-order, not to map every branch."
+      },
+      {
+        "question": "What if my industry is too unique for analogies?",
+        "answer": "Few industries are that unique. Look at adjacent markets that have gone through similar transitions; you'll find precedent."
+      }
+    ],
+    "meta_title": "Second-Order Thinking Probe \u2014 Prompt",
+    "meta_description": "Push past first-order analysis to second-order consequences: specific actors, timing, counter-moves, and the \u2018why doesn't everyone do this\u2019 check."
+  },
+  {
     "slug": "tree-of-thought-decision",
     "title": "Tree-of-Thought Decision Explorer",
     "tldr": "Forces the model to branch out 3 candidate approaches, evaluate each on stated criteria, prune the weakest, and commit to a recommendation \u2014 better than single-path reasoning for high-stakes decisions.",
