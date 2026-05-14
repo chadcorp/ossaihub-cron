@@ -5995,5 +5995,758 @@
     ],
     "meta_title": "Golden Dataset A/B Harness for Prompt Changes | OSS AI Hub",
     "meta_description": "Production pure-pytest A/B harness: gold cases + keyword scoring + regression threshold for prompt-change CI gates. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "langfuse-self-hosted-tracing",
+    "title": "Langfuse Self-Hosted LLM Tracing (Docker Compose + Python SDK)",
+    "tldr": "Self-hosted Langfuse: docker-compose with Postgres + ClickHouse, Python SDK trace decorator, React dashboard. The OSS LLM observability standard for 2026.",
+    "description": "Production Langfuse stack: web + worker containers + Postgres + ClickHouse (for cheap span storage), plus the @observe decorator and a sample RAG trace.",
+    "category": "observability",
+    "language": "python",
+    "framework": "langfuse",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "langfuse",
+      "tracing",
+      "self-hosted",
+      "observability"
+    ],
+    "best_for_tags": [
+      "self-hosted-obs",
+      "tracing",
+      "production"
+    ],
+    "featured": true,
+    "when_to_use": "You need first-class LLM tracing (prompt, response, tokens, cost, latency per span) self-hosted on your infra. Langfuse v3 ships ClickHouse for cheap long-retention, has the cleanest UI of any open-source LLM observability tool, and integrates with every major SDK.",
+    "when_not_to_use": "Skip when (1) you have <100 LLM calls/day - the infra overhead isn't worth it; (2) you're all-in on a vendor stack (Datadog LLM Observability, Helicone Cloud); (3) you only need cost tracking - simpler proxies (Helicone) suffice.",
+    "quick_start": "1) `git clone https://github.com/langfuse/langfuse && docker compose up -d`  2) `pip install langfuse`  3) Set LANGFUSE_PUBLIC_KEY + SECRET_KEY  4) Decorate your function with @observe.",
+    "full_code": "\"\"\"Langfuse self-hosted: docker-compose stub + Python SDK wiring.\"\"\"\n# ---- docker-compose.yml (run via `docker compose up -d`) ----\n# Save as docker-compose.yml in the repo root.\n#\n# version: \"3.8\"\n# services:\n#   langfuse-server:\n#     image: langfuse/langfuse:3\n#     depends_on: [postgres, clickhouse]\n#     ports: [\"3000:3000\"]\n#     environment:\n#       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres\n#       CLICKHOUSE_URL: http://clickhouse:8123\n#       CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000\n#       NEXTAUTH_SECRET: \"${NEXTAUTH_SECRET}\"\n#       NEXTAUTH_URL: http://localhost:3000\n#       SALT: \"${SALT}\"\n#   postgres:\n#     image: postgres:16\n#     environment: { POSTGRES_PASSWORD: postgres }\n#     volumes: [pgdata:/var/lib/postgresql/data]\n#   clickhouse:\n#     image: clickhouse/clickhouse-server:24\n#     volumes: [chdata:/var/lib/clickhouse]\n# volumes: { pgdata: {}, chdata: {} }\n\n\n# ---- Python SDK: trace every LLM call automatically ----\nfrom __future__ import annotations\n\nimport os\nfrom langfuse import observe, Langfuse\nfrom anthropic import Anthropic\n\n\nlangfuse = Langfuse(\n    public_key=os.environ[\"LANGFUSE_PUBLIC_KEY\"],\n    secret_key=os.environ[\"LANGFUSE_SECRET_KEY\"],\n    host=os.environ.get(\"LANGFUSE_HOST\", \"http://localhost:3000\"),\n)\nclaude = Anthropic()\n\n\n@observe(name=\"rag_answer\", as_type=\"generation\")\ndef answer(question: str, contexts: list[str]) -> str:\n    \"\"\"Annotated with @observe - Langfuse captures input, output, tokens, latency automatically.\"\"\"\n    ctx = \"\\n\\n\".join(f\"[{i+1}] {c}\" for i, c in enumerate(contexts))\n    msg = claude.messages.create(\n        model=\"claude-sonnet-4-5\",\n        max_tokens=500,\n        messages=[{\"role\": \"user\", \"content\": f\"Answer from context only.\\n\\nContext:\\n{ctx}\\n\\nQuestion: {question}\"}],\n    )\n    # Optional: attach scores / metadata\n    langfuse.score(name=\"manual_quality_score\", value=None)  # leave for human review\n    return msg.content[0].text\n\n\nif __name__ == \"__main__\":\n    out = answer(\"What is the refund window?\", [\"Refunds are issued within 30 days of purchase.\"])\n    print(out)\n    langfuse.flush()  # ensure spans are sent before process exit\n",
+    "code": "from langfuse import observe, Langfuse\nfrom anthropic import Anthropic\nimport os\n\nlangfuse = Langfuse(public_key=os.environ['LANGFUSE_PUBLIC_KEY'], secret_key=os.environ['LANGFUSE_SECRET_KEY'], host='http://localhost:3000')\nclaude = Anthropic()\n\n@observe(name='rag_answer', as_type='generation')\ndef answer(question, contexts):\n    ctx = '\\n'.join(contexts)\n    msg = claude.messages.create(model='claude-sonnet-4-5', max_tokens=500,\n        messages=[{'role': 'user', 'content': f'Answer from context.\\nContext: {ctx}\\nQ: {question}'}])\n    return msg.content[0].text\n\nprint(answer('Refund window?', ['Refunds within 30 days.']))\nlangfuse.flush()\n",
+    "dependencies": [
+      "langfuse",
+      "anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "langfuse",
+        "version": ">=2.50.0",
+        "purpose": "Self-hosted LLM observability SDK."
+      },
+      {
+        "name": "anthropic",
+        "version": ">=0.40.0",
+        "purpose": "Example provider - swap for openai/litellm."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "LANGFUSE_PUBLIC_KEY",
+        "required": true,
+        "description": "From your Langfuse project settings."
+      },
+      {
+        "name": "LANGFUSE_SECRET_KEY",
+        "required": true,
+        "description": "Pair with public key."
+      },
+      {
+        "name": "LANGFUSE_HOST",
+        "required": false,
+        "description": "Default http://localhost:3000 for self-hosted."
+      }
+    ],
+    "setup_steps": [
+      "Clone Langfuse: `git clone https://github.com/langfuse/langfuse && cd langfuse`",
+      "Generate secrets: `openssl rand -base64 32 > .secret`",
+      "`docker compose up -d` (Langfuse v3 needs Postgres + ClickHouse, both in compose).",
+      "Open http://localhost:3000, create org + project, copy public + secret keys.",
+      "`pip install langfuse>=2.50.0 anthropic`",
+      "Export keys, save the Python file, run - check the trace at localhost:3000.",
+      "Wire into your existing app via @observe decorator on top-level functions."
+    ],
+    "variations": [
+      {
+        "label": "Langfuse Cloud (hosted)",
+        "description": "Skip the self-host - cloud free tier covers 50k events/mo.",
+        "code_snippet": "host='https://cloud.langfuse.com'  # or 'https://us.cloud.langfuse.com'"
+      },
+      {
+        "label": "OpenAI auto-instrumentation",
+        "description": "Wrap the OpenAI client for automatic span capture.",
+        "code_snippet": "from langfuse.openai import openai  # drop-in replacement\nclient = openai.OpenAI()  # every call is auto-traced"
+      },
+      {
+        "label": "Pair with prompt registry",
+        "description": "Manage prompts in Langfuse UI, pull at runtime.",
+        "code_snippet": "prompt = langfuse.get_prompt('rag_answer', label='production')\nresponse = claude.messages.create(model='claude-sonnet-4-5', messages=[{'role': 'user', 'content': prompt.compile(question='...')}])"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ClickHouse container fails to start",
+        "cause": "Memory limits too low or ClickHouse 24 requires AVX2.",
+        "fix_snippet": "# Bump Docker Desktop memory to 4GB minimum; for very old hardware:\n# image: clickhouse/clickhouse-server:23.8  # last AVX-optional release"
+      },
+      {
+        "error_text": "Spans never appear in UI",
+        "cause": "Forgot to call langfuse.flush() before process exit.",
+        "fix_snippet": "import atexit\natexit.register(langfuse.flush)"
+      },
+      {
+        "error_text": "Trace shows 0ms latency on streamed responses",
+        "cause": "Langfuse measures wrapper duration, not generator duration.",
+        "fix_snippet": "# Pass usage manually for streams:\n@observe(as_type='generation')\ndef stream():\n    start = time.time()\n    for chunk in claude.messages.stream(...):\n        yield chunk\n    langfuse.update_current_observation(end_time=datetime.now(), usage_details={'input': 100, 'output': 250})"
+      }
+    ],
+    "production_checklist": [
+      "Use Langfuse v3 with ClickHouse - the Postgres-only v2 doesn't scale past 1M traces.",
+      "Rotate the secret + public keys per environment (dev/staging/prod).",
+      "Tag traces with environment + user_id - filtering matters at scale.",
+      "Set retention policy in Langfuse UI - default keeps everything forever.",
+      "Monitor the worker container - it batches spans; if it dies, spans pile up.",
+      "Back up Postgres + ClickHouse volumes separately - they hold different data.",
+      "Wire prompt versions through Langfuse's prompt registry - lets you A/B without code changes."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "gpt-5"
+      ],
+      "library_versions": [
+        "langfuse==2.55.0",
+        "Langfuse server v3 (Docker)",
+        "PostgreSQL 16",
+        "ClickHouse 24"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "langfuse",
+      "phoenix-arize",
+      "helicone"
+    ],
+    "related_glossary_slugs": [
+      "llm-observability",
+      "tracing",
+      "spans",
+      "prompt-versioning"
+    ],
+    "related_learn_slugs": [
+      "llm-observability-101"
+    ],
+    "faq": [
+      {
+        "question": "Langfuse vs Phoenix vs Helicone?",
+        "answer": "Langfuse: best UI + prompt registry + datasets + evals - the all-in-one. Phoenix (Arize): best OTel native - integrates with existing observability stacks. Helicone: simplest setup (one-line proxy) - best for cost tracking + basic logging only. For new self-hosted setups in 2026, Langfuse is the default."
+      },
+      {
+        "question": "Do I need ClickHouse?",
+        "answer": "For Langfuse v3: yes. v2 was Postgres-only and limited to ~1M traces. v3's hybrid storage (Postgres for projects/users/prompts + ClickHouse for spans) is the only way to keep <100ms query latency past a few weeks of production traffic."
+      }
+    ],
+    "meta_title": "Langfuse Self-Hosted LLM Tracing | OSS AI Hub",
+    "meta_description": "Production Langfuse v3: docker-compose with Postgres + ClickHouse, @observe decorator, prompt registry. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "phoenix-arize-otel-tracing",
+    "title": "Phoenix (Arize) LLM Tracing with OpenTelemetry",
+    "tldr": "Arize Phoenix self-hosted with OTel collector + LLM semantic conventions. Auto-instruments OpenAI/Anthropic/LangChain.",
+    "description": "Phoenix is the OTel-native LLM observability tool. Self-host the collector + UI, drop in OpenInference instrumentors, and every LLM call appears as standardized spans.",
+    "category": "observability",
+    "language": "python",
+    "framework": "phoenix",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "phoenix",
+      "otel",
+      "arize",
+      "openinference"
+    ],
+    "best_for_tags": [
+      "otel",
+      "tracing",
+      "vendor-neutral"
+    ],
+    "when_to_use": "You already run an OTel stack (Datadog, Grafana Tempo, Honeycomb) and want LLM spans to flow into it via standard semantic conventions. Phoenix is the only LLM observability tool that's truly OTel-native - other tools bolt OTel on as an export option.",
+    "when_not_to_use": "Skip when (1) you need a prompt registry / datasets UI - Langfuse is friendlier; (2) you don't have an existing observability stack - Phoenix is bare-bones outside spans; (3) you want all-in-one setup.",
+    "quick_start": "1) `pip install arize-phoenix openinference-instrumentation-anthropic`  2) Run `phoenix serve` in another terminal  3) Instrument your code with one import.",
+    "full_code": "\"\"\"Phoenix (Arize) OTel tracing for Anthropic + OpenAI + LangChain.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom openinference.instrumentation.anthropic import AnthropicInstrumentor\nfrom openinference.instrumentation.openai import OpenAIInstrumentor\nimport phoenix as px\nfrom phoenix.otel import register\n\n\n# Option 1: launch local Phoenix UI (development)\nsession = px.launch_app()  # opens http://localhost:6006\n\n# Option 2: send to a remote Phoenix collector (production)\n# os.environ[\"PHOENIX_COLLECTOR_ENDPOINT\"] = \"http://phoenix.internal:6006\"\n\n\n# Register the OTel tracer provider\ntracer_provider = register(\n    project_name=\"ossai-rag\",\n    endpoint=os.environ.get(\"PHOENIX_COLLECTOR_ENDPOINT\", \"http://localhost:6006/v1/traces\"),\n)\n\n# One-line auto-instrumentation - every call becomes an OTel span\nAnthropicInstrumentor().instrument(tracer_provider=tracer_provider)\nOpenAIInstrumentor().instrument(tracer_provider=tracer_provider)\n\n\n# Your code runs unchanged - spans appear in Phoenix automatically\nfrom anthropic import Anthropic\n\nclaude = Anthropic()\nresult = claude.messages.create(\n    model=\"claude-sonnet-4-5\",\n    max_tokens=500,\n    messages=[{\"role\": \"user\", \"content\": \"What is OpenTelemetry?\"}],\n)\nprint(result.content[0].text)\n\n\n# Custom spans for non-LLM steps in your pipeline\nfrom opentelemetry import trace\ntracer = trace.get_tracer(__name__)\n\nwith tracer.start_as_current_span(\"retrieval\") as span:\n    span.set_attribute(\"retrieval.k\", 5)\n    span.set_attribute(\"retrieval.score_threshold\", 0.55)\n    # ... your retrieval code\n    span.set_attribute(\"retrieval.num_results\", 5)\n\n\n# Inspect spans in browser: localhost:6006\n# Export to Datadog / Honeycomb / Grafana Tempo by pointing PHOENIX_COLLECTOR_ENDPOINT\n# at your OTel collector (same semantic conventions flow through).\n",
+    "code": "from openinference.instrumentation.anthropic import AnthropicInstrumentor\nfrom phoenix.otel import register\n\ntracer_provider = register(project_name='ossai-rag')\nAnthropicInstrumentor().instrument(tracer_provider=tracer_provider)\n\n# Your existing code now produces OTel spans automatically\nfrom anthropic import Anthropic\nresult = Anthropic().messages.create(model='claude-sonnet-4-5', max_tokens=200,\n    messages=[{'role': 'user', 'content': 'hi'}])\n",
+    "dependencies": [
+      "arize-phoenix",
+      "openinference-instrumentation-anthropic",
+      "openinference-instrumentation-openai"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "arize-phoenix",
+        "version": ">=5.0.0",
+        "purpose": "Phoenix UI + collector."
+      },
+      {
+        "name": "openinference-instrumentation-anthropic",
+        "version": ">=0.1.10",
+        "purpose": "Anthropic auto-instrumentor."
+      },
+      {
+        "name": "openinference-instrumentation-openai",
+        "version": ">=0.1.18",
+        "purpose": "OpenAI auto-instrumentor."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "PHOENIX_COLLECTOR_ENDPOINT",
+        "required": false,
+        "description": "Override for production collector (default localhost:6006)."
+      }
+    ],
+    "setup_steps": [
+      "`pip install arize-phoenix openinference-instrumentation-anthropic openinference-instrumentation-openai`",
+      "Dev: `python -c \"import phoenix; phoenix.launch_app()\"` opens UI at localhost:6006.",
+      "Prod: docker run -p 6006:6006 arizephoenix/phoenix:latest (with persistent volume).",
+      "Add the instrumentor imports + register() call at app startup.",
+      "Run your existing code - spans appear automatically.",
+      "Optional: point PHOENIX_COLLECTOR_ENDPOINT at your central OTel collector to forward to Datadog/Tempo/Honeycomb."
+    ],
+    "variations": [
+      {
+        "label": "LangChain auto-instrumentation",
+        "description": "Same pattern for LangChain.",
+        "code_snippet": "from openinference.instrumentation.langchain import LangChainInstrumentor\nLangChainInstrumentor().instrument(tracer_provider=tracer_provider)"
+      },
+      {
+        "label": "Export to Datadog (OTel)",
+        "description": "Send spans into Datadog APM.",
+        "code_snippet": "# Use the OTel SDK with Datadog OTLP endpoint\nfrom opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter\nfrom opentelemetry.sdk.trace.export import BatchSpanProcessor\nexporter = OTLPSpanExporter(endpoint='https://otlp.datadoghq.com/v1/traces', headers={'DD-API-KEY': os.environ['DD_API_KEY']})\ntracer_provider.add_span_processor(BatchSpanProcessor(exporter))"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Spans show up empty (no LLM fields)",
+        "cause": "Forgot to call .instrument() AFTER importing the LLM client.",
+        "fix_snippet": "# Order matters - instrument BEFORE creating client instances\nAnthropicInstrumentor().instrument(tracer_provider=tracer_provider)\nclient = Anthropic()  # now this is wrapped"
+      },
+      {
+        "error_text": "Phoenix UI shows 'no traces yet' despite running",
+        "cause": "PHOENIX_COLLECTOR_ENDPOINT mismatch.",
+        "fix_snippet": "# Match the endpoint in register() to the running Phoenix instance:\nphoenix.launch_app(port=6006)\nregister(endpoint='http://localhost:6006/v1/traces')"
+      },
+      {
+        "error_text": "Memory leak in long-running app",
+        "cause": "BatchSpanProcessor not flushing.",
+        "fix_snippet": "import atexit\natexit.register(lambda: tracer_provider.shutdown())"
+      }
+    ],
+    "production_checklist": [
+      "Always run Phoenix collector + UI as separate containers in prod - the launch_app() dev mode is in-process only.",
+      "Use BatchSpanProcessor (default in `register()`) - SimpleSpanProcessor kills throughput.",
+      "Tag spans with environment + tenant_id + user_id for filtering.",
+      "Set sample rate < 1.0 at scale: `tracer_provider.add_span_processor(BatchSpanProcessor(exporter, sampler=TraceIdRatioBased(0.1)))`",
+      "Forward to your central observability stack via OTLP - Phoenix is a local lens, not your system of record.",
+      "Pin openinference-instrumentation-* versions - they break with provider SDK changes.",
+      "Use Phoenix's eval datasets feature to attach quality scores to historical spans."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "arize-phoenix==5.0.0",
+        "openinference==0.1.18",
+        "OpenTelemetry SDK 1.27"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "phoenix-arize",
+      "langfuse",
+      "opentelemetry"
+    ],
+    "related_glossary_slugs": [
+      "opentelemetry",
+      "openinference",
+      "tracing",
+      "spans"
+    ],
+    "related_learn_slugs": [
+      "otel-llm-101"
+    ],
+    "faq": [
+      {
+        "question": "Phoenix vs Langfuse - which observability tool?",
+        "answer": "Phoenix: OTel-native, best when you already have an OTel pipeline (Datadog/Tempo/Honeycomb). Langfuse: richer UI + prompt registry + datasets, best as a standalone LLM platform. If you'd otherwise build OTel forwarding yourself, Phoenix is one less system. If you need prompt management + evals + traces in one UI, Langfuse wins."
+      },
+      {
+        "question": "Can I use Phoenix without OTel infrastructure?",
+        "answer": "Yes - it runs standalone as a local UI. But the value compounds when you forward spans to your OTel stack: same semantic conventions, ingest into Datadog/Honeycomb/Tempo, query alongside your service spans."
+      }
+    ],
+    "meta_title": "Phoenix (Arize) LLM Tracing with OpenTelemetry | OSS AI Hub",
+    "meta_description": "Production Phoenix recipe: OTel-native LLM tracing with auto-instrumentors for Anthropic/OpenAI/LangChain. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "helicone-proxy-observability",
+    "title": "Helicone Drop-In Proxy for LLM Cost + Latency Tracking",
+    "tldr": "One-line OpenAI-API proxy via Helicone captures cost, latency, prompt+response for every call. Self-host option included.",
+    "description": "Helicone is the simplest LLM observability: change base_url + add one header, and every call is logged. Self-host the OSS version or use cloud free tier.",
+    "category": "observability",
+    "language": "bash",
+    "framework": "helicone",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "helicone",
+      "proxy",
+      "cost-tracking"
+    ],
+    "best_for_tags": [
+      "observability",
+      "proxy",
+      "cost-tracking"
+    ],
+    "featured": false,
+    "when_to_use": "Smallest-possible-effort LLM observability. One-line code change (base_url + auth header), free cloud tier for <100k calls/mo, or self-host with Postgres + Clickhouse. Best when you just need cost + latency tracking and don't need a prompt registry.",
+    "when_not_to_use": "Skip Helicone when (1) you need datasets + evals - Langfuse/Phoenix are richer; (2) you can't accept the proxy hop (~10-30ms added latency); (3) you have multi-provider calls and don't want to maintain a separate proxy.",
+    "quick_start": "1) Sign up at helicone.ai (free) OR clone + docker compose up  2) Change OpenAI base_url to https://oai.helicone.ai/v1  3) Add `Helicone-Auth: Bearer sk-helicone-...` header.",
+    "full_code": "\"\"\"Helicone proxy - one-line OpenAI / Anthropic observability.\"\"\"\nimport os\nfrom openai import OpenAI\n\n# OpenAI through Helicone (cloud)\noai = OpenAI(\n    base_url=\"https://oai.helicone.ai/v1\",\n    api_key=os.environ[\"OPENAI_API_KEY\"],\n    default_headers={\n        \"Helicone-Auth\": f\"Bearer {os.environ['HELICONE_API_KEY']}\",\n        \"Helicone-User-Id\": \"user-abc-123\",                # tag traffic\n        \"Helicone-Property-Environment\": \"prod\",            # arbitrary tags\n        \"Helicone-Cache-Enabled\": \"true\",                   # automatic response caching\n        \"Helicone-Cache-Bucket-Max-Size\": \"10\",\n    },\n)\nresp = oai.chat.completions.create(\n    model=\"gpt-4o-mini\",\n    messages=[{\"role\": \"user\", \"content\": \"What is the weather?\"}],\n)\nprint(resp.choices[0].message.content)\n\n\n# Anthropic through Helicone (cloud)\nfrom anthropic import Anthropic\n\nclaude = Anthropic(\n    base_url=\"https://anthropic.helicone.ai\",\n    api_key=os.environ[\"ANTHROPIC_API_KEY\"],\n    default_headers={\n        \"Helicone-Auth\": f\"Bearer {os.environ['HELICONE_API_KEY']}\",\n    },\n)\nmsg = claude.messages.create(\n    model=\"claude-sonnet-4-5\",\n    max_tokens=500,\n    messages=[{\"role\": \"user\", \"content\": \"Same question, different model\"}],\n)\nprint(msg.content[0].text)\n",
+    "code": "from openai import OpenAI\nimport os\n\nclient = OpenAI(\n    base_url='https://oai.helicone.ai/v1',\n    api_key=os.environ['OPENAI_API_KEY'],\n    default_headers={'Helicone-Auth': f'Bearer {os.environ[\"HELICONE_API_KEY\"]}'},\n)\nprint(client.chat.completions.create(model='gpt-4o-mini',\n    messages=[{'role': 'user', 'content': 'hi'}]).choices[0].message.content)\n",
+    "dependencies": [
+      "openai",
+      "anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "openai",
+        "version": ">=1.50.0",
+        "purpose": "OpenAI SDK - works through Helicone proxy unchanged."
+      },
+      {
+        "name": "anthropic",
+        "version": ">=0.40.0",
+        "purpose": "Anthropic SDK."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HELICONE_API_KEY",
+        "required": true,
+        "description": "From helicone.ai dashboard (or your self-host instance)."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": false,
+        "description": "Helicone proxies your existing OpenAI key."
+      },
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": false,
+        "description": "Helicone proxies Anthropic too via anthropic.helicone.ai."
+      }
+    ],
+    "setup_steps": [
+      "Cloud (easiest): Sign up at helicone.ai - free tier covers 10k requests/mo.",
+      "OR self-host: `git clone https://github.com/Helicone/helicone && cd docker && docker compose up -d`",
+      "Generate an API key in the Helicone UI.",
+      "Change your OpenAI client `base_url` to `https://oai.helicone.ai/v1` (or your self-hosted URL).",
+      "Add the `Helicone-Auth: Bearer ...` header to default_headers.",
+      "Run your existing code - logs appear in Helicone dashboard within seconds.",
+      "(Optional) Add Helicone-User-Id / Helicone-Property-* headers for filtering."
+    ],
+    "variations": [
+      {
+        "label": "Self-host with docker compose",
+        "description": "OSS-licensed; Postgres + ClickHouse + Helicone web.",
+        "code_snippet": "# Clone Helicone, then:\ncd helicone/docker\ncp .env.example .env  # fill in secrets\ndocker compose up -d\n# UI at localhost:3000"
+      },
+      {
+        "label": "Caching for cost savings",
+        "description": "Identical prompts return cached responses for N seconds.",
+        "code_snippet": "default_headers = {\n  'Helicone-Auth': 'Bearer ...',\n  'Helicone-Cache-Enabled': 'true',\n  'Helicone-Cache-Bucket-Max-Size': '10',\n  'Helicone-Cache-Seed': 'v1',  # bump to invalidate\n}"
+      },
+      {
+        "label": "Rate limiting per user",
+        "description": "Helicone enforces per-user rate limits at the proxy layer.",
+        "code_snippet": "default_headers['Helicone-RateLimit-Policy'] = '100;w=60;s=user'  # 100 req/60s per Helicone-User-Id"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "401 Unauthorized from Helicone proxy",
+        "cause": "Helicone-Auth header missing or malformed.",
+        "fix_snippet": "default_headers={'Helicone-Auth': f'Bearer sk-helicone-...'}  # MUST start with 'Bearer '"
+      },
+      {
+        "error_text": "Latency jumped 100-300ms",
+        "cause": "Self-hosted Helicone running on slow infra OR routing through a distant region.",
+        "fix_snippet": "# Cloud: pick the regional endpoint nearest your app:\n# oai.helicone.ai (global)\n# oai-eu.helicone.ai (EU)"
+      },
+      {
+        "error_text": "Logs missing for some calls",
+        "cause": "Default async logging can drop on process exit.",
+        "fix_snippet": "# Pass synchronous logging via a header for critical paths:\ndefault_headers['Helicone-Sync-Log'] = 'true'  # but adds 50-100ms"
+      }
+    ],
+    "production_checklist": [
+      "Self-host for compliance / data residency - Helicone Cloud sees every prompt + response.",
+      "Always set Helicone-User-Id so per-user analytics work.",
+      "Use Helicone-Cache-Enabled for FAQ-shaped traffic - 30-70% cost savings on repeated queries.",
+      "Test the proxy URL latency from your app's region before deploying.",
+      "Have a fallback path that bypasses Helicone if the proxy is down (set up health check + circuit breaker).",
+      "Rotate the Helicone API key quarterly.",
+      "Pin the OpenAI SDK version - default_headers behavior has changed historically."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "openai==1.55.0",
+        "anthropic==0.40.0",
+        "Helicone OSS 1.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "helicone",
+      "langfuse",
+      "phoenix-arize"
+    ],
+    "related_glossary_slugs": [
+      "llm-observability",
+      "proxy",
+      "response-caching"
+    ],
+    "related_learn_slugs": [
+      "llm-observability-101"
+    ],
+    "faq": [
+      {
+        "question": "Helicone vs Langfuse vs Phoenix?",
+        "answer": "Helicone: cheapest setup (one-line code change). Langfuse: best UI + prompt registry. Phoenix: OTel-native. For 'I just need cost + latency tracking' use Helicone. For 'I want a control plane' use Langfuse. For 'I have an OTel stack already' use Phoenix."
+      },
+      {
+        "question": "Does the proxy hop matter?",
+        "answer": "Yes, but typically 10-30ms vs direct API calls. For chat apps that's invisible. For trading/scoring use cases sub-100ms TTFT, run Helicone self-hosted in the same region as your app, or skip the proxy and use Langfuse SDK (in-process)."
+      }
+    ],
+    "meta_title": "Helicone Proxy LLM Cost + Latency Tracking | OSS AI Hub",
+    "meta_description": "Drop-in Helicone proxy: one-line LLM observability with cost, latency, caching, rate limits. Cloud + self-hosted. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "opentelemetry-llm-genai",
+    "title": "OpenTelemetry GenAI Semantic Conventions (Vendor-Neutral)",
+    "tldr": "OTel GenAI semantic conventions implementation. Emit standardized spans (gen_ai.system, gen_ai.request.model) ingestible by any OTel backend.",
+    "description": "Hand-rolled OTel spans following the GenAI semantic conventions: spans named gen_ai.* with standard attributes for model, tokens, system, prompt, response. Works with any OTel collector.",
+    "category": "observability",
+    "language": "python",
+    "framework": "opentelemetry",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "opentelemetry",
+      "otel",
+      "genai",
+      "semantic-conventions"
+    ],
+    "best_for_tags": [
+      "otel",
+      "vendor-neutral",
+      "standards"
+    ],
+    "when_to_use": "You're committed to OTel + want vendor independence for the long term. The GenAI semantic conventions (gen_ai.system, gen_ai.request.model, etc.) are stabilizing in 2026 - any backend (Datadog, Grafana, Honeycomb, Phoenix, Langfuse) that adopts them will read your spans natively.",
+    "when_not_to_use": "Skip when (1) you'd rather use vendor-specific SDKs (Langfuse) - more features, less ceremony; (2) you don't already have an OTel collector; (3) the GenAI semconv hasn't reached v1.0 - until then expect rough edges.",
+    "quick_start": "1) `pip install opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp`  2) Initialize tracer  3) Wrap LLM calls in spans with standard gen_ai.* attributes.",
+    "full_code": "\"\"\"OpenTelemetry GenAI semantic conventions for LLM tracing.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom anthropic import Anthropic\nfrom opentelemetry import trace\nfrom opentelemetry.sdk.resources import Resource\nfrom opentelemetry.sdk.trace import TracerProvider\nfrom opentelemetry.sdk.trace.export import BatchSpanProcessor\nfrom opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter\n\n\n# 1. Set up OTel tracer with OTLP HTTP export\nprovider = TracerProvider(resource=Resource.create({\"service.name\": \"ossai-rag\"}))\nprovider.add_span_processor(BatchSpanProcessor(\n    OTLPSpanExporter(endpoint=os.environ.get(\"OTEL_EXPORTER_OTLP_ENDPOINT\", \"http://localhost:4318/v1/traces\"))\n))\ntrace.set_tracer_provider(provider)\ntracer = trace.get_tracer(__name__)\n\n\ndef call_llm(prompt: str) -> str:\n    # 2. Emit a gen_ai.* span following the GenAI semantic conventions\n    with tracer.start_as_current_span(\"chat anthropic claude-sonnet-4-5\") as span:\n        span.set_attribute(\"gen_ai.system\", \"anthropic\")\n        span.set_attribute(\"gen_ai.request.model\", \"claude-sonnet-4-5\")\n        span.set_attribute(\"gen_ai.request.temperature\", 0.4)\n        span.set_attribute(\"gen_ai.request.max_tokens\", 500)\n\n        client = Anthropic()\n        resp = client.messages.create(\n            model=\"claude-sonnet-4-5\",\n            max_tokens=500,\n            temperature=0.4,\n            messages=[{\"role\": \"user\", \"content\": prompt}],\n        )\n\n        # 3. Post-call: response attributes\n        span.set_attribute(\"gen_ai.response.model\", resp.model)\n        span.set_attribute(\"gen_ai.response.id\", resp.id)\n        span.set_attribute(\"gen_ai.response.finish_reasons\", [resp.stop_reason])\n        span.set_attribute(\"gen_ai.usage.input_tokens\", resp.usage.input_tokens)\n        span.set_attribute(\"gen_ai.usage.output_tokens\", resp.usage.output_tokens)\n\n        # 4. (Optional, privacy-sensitive) Capture prompt + completion\n        if os.environ.get(\"OTEL_GENAI_CAPTURE_CONTENT\", \"false\").lower() == \"true\":\n            span.set_attribute(\"gen_ai.prompt\", prompt)\n            span.set_attribute(\"gen_ai.completion\", resp.content[0].text)\n\n        return resp.content[0].text\n\n\nif __name__ == \"__main__\":\n    print(call_llm(\"Explain OTel GenAI semantic conventions in one paragraph.\"))\n    provider.shutdown()  # flush spans\n",
+    "code": "from opentelemetry import trace\nfrom opentelemetry.sdk.trace import TracerProvider\ntrace.set_tracer_provider(TracerProvider())\ntracer = trace.get_tracer(__name__)\n\nwith tracer.start_as_current_span('chat anthropic claude-sonnet-4-5') as span:\n    span.set_attribute('gen_ai.system', 'anthropic')\n    span.set_attribute('gen_ai.request.model', 'claude-sonnet-4-5')\n    span.set_attribute('gen_ai.usage.input_tokens', 100)\n    span.set_attribute('gen_ai.usage.output_tokens', 250)\n",
+    "dependencies": [
+      "opentelemetry-api",
+      "opentelemetry-sdk",
+      "opentelemetry-exporter-otlp",
+      "anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "opentelemetry-api",
+        "version": ">=1.27.0",
+        "purpose": "OTel API."
+      },
+      {
+        "name": "opentelemetry-sdk",
+        "version": ">=1.27.0",
+        "purpose": "OTel reference SDK."
+      },
+      {
+        "name": "opentelemetry-exporter-otlp",
+        "version": ">=1.27.0",
+        "purpose": "OTLP HTTP / gRPC exporter."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OTEL_EXPORTER_OTLP_ENDPOINT",
+        "required": false,
+        "description": "OTel collector endpoint (default localhost:4318)."
+      },
+      {
+        "name": "OTEL_GENAI_CAPTURE_CONTENT",
+        "required": false,
+        "description": "'true' to capture prompt+completion (PII risk)."
+      }
+    ],
+    "setup_steps": [
+      "`pip install opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp anthropic`",
+      "Run an OTel collector locally OR point at your existing one (Datadog, Honeycomb, Grafana, Phoenix).",
+      "Save the full_code as `otel_genai.py`.",
+      "Run `python otel_genai.py` - span appears in your collector.",
+      "Verify in your backend that gen_ai.* attributes are surfaced as filterable fields.",
+      "Decide on the prompt/completion capture policy (consider PII + log retention before enabling)."
+    ],
+    "variations": [
+      {
+        "label": "Wrap as context manager",
+        "description": "Reusable @llm_span decorator.",
+        "code_snippet": "from contextlib import contextmanager\n@contextmanager\ndef llm_span(name, system, model, **req_attrs):\n    with tracer.start_as_current_span(name) as span:\n        span.set_attribute('gen_ai.system', system)\n        span.set_attribute('gen_ai.request.model', model)\n        for k, v in req_attrs.items():\n            span.set_attribute(f'gen_ai.request.{k}', v)\n        yield span"
+      },
+      {
+        "label": "Use existing instrumentor + customize",
+        "description": "Combine openinference + manual attributes.",
+        "code_snippet": "from openinference.instrumentation.anthropic import AnthropicInstrumentor\nAnthropicInstrumentor().instrument()  # auto-emits gen_ai.* spans for every Anthropic call"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Spans emitted but no gen_ai.* attributes in backend",
+        "cause": "Backend doesn't display unknown attributes by default.",
+        "fix_snippet": "# In Grafana Tempo: configure span attribute mapping rules\n# In Datadog: enable LLM Observability product (different ingest path)"
+      },
+      {
+        "error_text": "OTLP exporter fails: connection refused",
+        "cause": "Wrong protocol or port - HTTP is 4318, gRPC is 4317.",
+        "fix_snippet": "# HTTP:\nfrom opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter\nexporter = OTLPSpanExporter(endpoint='http://localhost:4318/v1/traces')\n# gRPC:\n# from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter\n# endpoint='localhost:4317'"
+      },
+      {
+        "error_text": "PII in prompt attributes leaked to logs",
+        "cause": "OTEL_GENAI_CAPTURE_CONTENT=true in prod without redaction.",
+        "fix_snippet": "# Always redact PII before setting attributes:\nimport re\nredacted = re.sub(r'\\d{4}-\\d{4}-\\d{4}-\\d{4}', '[CARD]', prompt)\nspan.set_attribute('gen_ai.prompt', redacted)"
+      }
+    ],
+    "production_checklist": [
+      "Decide on prompt/completion capture policy explicitly - it's PII + cost-sensitive.",
+      "Use BatchSpanProcessor (default) - not SimpleSpanProcessor in production.",
+      "Set service.name + service.version on the Resource - your backend's filtering depends on these.",
+      "Pin opentelemetry-* package versions - semconv is still evolving.",
+      "Forward to a central collector, not directly to your APM vendor - lets you swap vendors later.",
+      "Use sampling (TraceIdRatioBased(0.1)) at scale - 10% sample is usually enough.",
+      "Subscribe to OpenTelemetry GenAI working group updates - the semconv names are being finalized."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "opentelemetry==1.27.0",
+        "anthropic==0.40.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "opentelemetry",
+      "phoenix-arize"
+    ],
+    "related_glossary_slugs": [
+      "opentelemetry",
+      "semantic-conventions",
+      "tracing",
+      "otlp"
+    ],
+    "related_learn_slugs": [
+      "otel-llm-101"
+    ],
+    "faq": [
+      {
+        "question": "Why not just use openinference?",
+        "answer": "openinference IS the OTel GenAI semconv implementation. Use openinference instrumentors for one-line auto-instrumentation; write manual spans only when you need fine-grained attribute control or you're calling a provider openinference doesn't support yet."
+      },
+      {
+        "question": "Is the GenAI semconv stable?",
+        "answer": "As of 2026-05, the spec is at v1.27 - mostly stable for chat completions, still evolving for tool use + embeddings + RAG. Use it now but be prepared for minor attribute renames in the next 12 months. The stable kernel (gen_ai.system, gen_ai.request.model, gen_ai.usage.*) won't move."
+      }
+    ],
+    "meta_title": "OpenTelemetry GenAI Semantic Conventions | OSS AI Hub",
+    "meta_description": "Production OTel GenAI semconv: vendor-neutral LLM tracing with standardized gen_ai.* attributes. Datadog/Grafana/Phoenix compatible. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "langsmith-evaluation-tracing",
+    "title": "LangSmith Eval + Tracing Setup (LangChain Stack)",
+    "tldr": "LangSmith trace decorator + eval datasets + production traffic sampling. Pre-baked RAG evaluators.",
+    "description": "LangSmith hosted observability + eval: @traceable decorator, dataset upload, RAG eval suite via Client SDK, optional traffic sampling.",
+    "category": "observability",
+    "language": "python",
+    "framework": "langsmith",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "langsmith",
+      "langchain",
+      "evals"
+    ],
+    "best_for_tags": [
+      "langchain-stack",
+      "tracing",
+      "evals"
+    ],
+    "when_to_use": "You're all-in on LangChain / LangGraph and want the best-integrated observability + eval stack. LangSmith is built by the same team and auto-traces every LangChain run; the eval datasets feature is the smoothest of any LLM platform.",
+    "when_not_to_use": "Skip LangSmith when (1) you're not on LangChain - the value is diluted; (2) you need self-hosting - LangSmith is cloud-only (Enterprise self-host exists but pricey); (3) you have privacy constraints - cloud-only data ingest.",
+    "quick_start": "1) Sign up at smith.langchain.com  2) `pip install langsmith`  3) Set LANGSMITH_TRACING=true + LANGSMITH_API_KEY  4) Run any LangChain code.",
+    "full_code": "\"\"\"LangSmith tracing + eval pipeline.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom langsmith import Client, traceable\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_core.prompts import ChatPromptTemplate\n\n# Enable tracing via env vars - LangChain auto-detects these\nos.environ.setdefault(\"LANGSMITH_TRACING\", \"true\")\nos.environ.setdefault(\"LANGSMITH_PROJECT\", \"ossai-rag\")\n# LANGSMITH_API_KEY must be set externally\n\nclient = Client()\nllm = ChatAnthropic(model=\"claude-sonnet-4-5\")\n\n\n# 1. Trace any function with @traceable\n@traceable(run_type=\"chain\", name=\"rag_answer\")\ndef rag_answer(question: str, contexts: list[str]) -> str:\n    ctx = \"\\n\\n\".join(f\"[{i+1}] {c}\" for i, c in enumerate(contexts))\n    prompt = ChatPromptTemplate.from_messages([\n        (\"system\", \"Answer ONLY from the context. Cite [n].\"),\n        (\"human\", \"Context:\\n{ctx}\\n\\nQuestion: {q}\"),\n    ]).format_messages(ctx=ctx, q=question)\n    return llm.invoke(prompt).content\n\n\n# 2. Create an eval dataset (one-time)\ndef create_dataset() -> None:\n    dataset = client.create_dataset(\n        \"ossai-rag-eval-v1\",\n        description=\"Frozen eval set for RAG quality regression.\",\n    )\n    for ex in [\n        {\"q\": \"Refund window?\", \"ctx\": [\"Refunds within 30 days.\"], \"expected\": \"30 days\"},\n        {\"q\": \"Ship internationally?\", \"ctx\": [\"US + Canada only.\"], \"expected\": \"US and Canada\"},\n    ]:\n        client.create_example(\n            inputs={\"question\": ex[\"q\"], \"contexts\": ex[\"ctx\"]},\n            outputs={\"expected\": ex[\"expected\"]},\n            dataset_id=dataset.id,\n        )\n\n\n# 3. Run an evaluation\ndef run_eval() -> None:\n    from langsmith.evaluation import evaluate\n\n    def keyword_evaluator(run, example) -> dict:\n        expected = example.outputs[\"expected\"].lower()\n        actual = run.outputs.get(\"output\", \"\").lower()\n        return {\"key\": \"contains_expected\", \"score\": 1.0 if expected in actual else 0.0}\n\n    evaluate(\n        lambda inputs: {\"output\": rag_answer(inputs[\"question\"], inputs[\"contexts\"])},\n        data=\"ossai-rag-eval-v1\",\n        evaluators=[keyword_evaluator],\n        experiment_prefix=\"ragv1\",\n    )\n\n\nif __name__ == \"__main__\":\n    print(rag_answer(\"Refund window?\", [\"Refunds within 30 days.\"]))\n    # create_dataset()  # uncomment first time\n    # run_eval()        # uncomment to run eval\n",
+    "code": "import os\nfrom langsmith import traceable\n\nos.environ['LANGSMITH_TRACING'] = 'true'\nos.environ['LANGSMITH_PROJECT'] = 'ossai-rag'\n\n@traceable(run_type='chain', name='rag_answer')\ndef rag_answer(question: str, contexts: list[str]) -> str:\n    # your RAG logic - automatically traced\n    return f'Answer to: {question}'\n",
+    "dependencies": [
+      "langsmith",
+      "langchain-anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "langsmith",
+        "version": ">=0.2.0",
+        "purpose": "LangSmith client SDK."
+      },
+      {
+        "name": "langchain-anthropic",
+        "version": ">=0.3.0",
+        "purpose": "Example provider for the @traceable demo."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "LANGSMITH_API_KEY",
+        "required": true,
+        "description": "From smith.langchain.com settings."
+      },
+      {
+        "name": "LANGSMITH_TRACING",
+        "required": false,
+        "description": "Set to 'true' to enable auto-tracing for all LangChain calls."
+      },
+      {
+        "name": "LANGSMITH_PROJECT",
+        "required": false,
+        "description": "Project name (default: 'default')."
+      }
+    ],
+    "setup_steps": [
+      "Sign up at smith.langchain.com - free tier covers 5k traces/month.",
+      "`pip install langsmith>=0.2.0`",
+      "Export LANGSMITH_API_KEY + LANGSMITH_TRACING=true + LANGSMITH_PROJECT=your-project.",
+      "Run any LangChain code - traces appear in the UI automatically.",
+      "Decorate non-LangChain functions with @traceable for hand-rolled span capture.",
+      "(Optional) Upload eval datasets + run evaluations via the Client SDK.",
+      "Wire prompt versioning via `client.pull_prompt('your-prompt-hub-id')` for centralized prompt management."
+    ],
+    "variations": [
+      {
+        "label": "Sample 10% of production traffic",
+        "description": "Reduce trace volume + cost.",
+        "code_snippet": "import random\n@traceable(run_type='chain', name='rag_answer', client=Client(api_key=os.environ['LANGSMITH_API_KEY']))\ndef rag_answer(...):\n    if random.random() > 0.1:\n        # Disable tracing for this call: set env var per-call via context manager\n        ..."
+      },
+      {
+        "label": "Compare two prompts as an experiment",
+        "description": "Built-in A/B against the same dataset.",
+        "code_snippet": "evaluate(\n  lambda inp: {'output': rag_v1(inp['question'])},\n  data='ossai-rag-eval-v1', experiment_prefix='rag_v1')\nevaluate(\n  lambda inp: {'output': rag_v2(inp['question'])},\n  data='ossai-rag-eval-v1', experiment_prefix='rag_v2')\n# Compare in UI"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Traces don't appear in UI",
+        "cause": "LANGSMITH_TRACING env var not set OR set after import.",
+        "fix_snippet": "# Set env vars BEFORE importing langchain modules:\nimport os\nos.environ['LANGSMITH_TRACING'] = 'true'\nfrom langchain_anthropic import ChatAnthropic  # only AFTER"
+      },
+      {
+        "error_text": "Rate limit on traces ingest",
+        "cause": "Free tier exceeded.",
+        "fix_snippet": "# Either bump to paid tier OR sample:\nimport random\nif random.random() < 0.1:\n    # only this run gets traced\n    result = rag_answer.invoke({...})"
+      },
+      {
+        "error_text": "Eval shows wrong inputs/outputs",
+        "cause": "Mismatch between function signature and dataset schema.",
+        "fix_snippet": "# Dataset inputs must match function param names:\nclient.create_example(inputs={'question': '...', 'contexts': [...]}, outputs={'expected': '...'}, dataset_id=ds.id)\n# Function signature: rag_answer(question, contexts) NOT rag_answer(q, ctx)"
+      }
+    ],
+    "production_checklist": [
+      "Use Enterprise plan for any PII / regulated workload - free tier ingests prompts on cloud servers.",
+      "Sample at 10-20% in prod - storing every trace is wasteful and expensive.",
+      "Frozen eval datasets per release version - don't edit them mid-cycle.",
+      "Use prompt hub for production prompts - lets you A/B without code deploys.",
+      "Track agent-trace tags (tenant_id, user_id) for filtering at scale.",
+      "Set LANGSMITH_OTEL_ENABLED=true to also export OTel spans for forwarding.",
+      "Pin langsmith version - the Run schema has shifted a few times."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "langsmith==0.2.0",
+        "langchain-anthropic==0.3.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "langsmith",
+      "langchain"
+    ],
+    "related_glossary_slugs": [
+      "llm-observability",
+      "evals",
+      "prompt-versioning"
+    ],
+    "related_learn_slugs": [
+      "langchain-101"
+    ],
+    "faq": [
+      {
+        "question": "LangSmith vs Langfuse if I'm on LangChain?",
+        "answer": "LangSmith: tighter LangChain integration (zero-config tracing), better eval datasets UI, prompt hub. Langfuse: vendor-neutral, self-hostable, broader provider support. If your stack is 80%+ LangChain, LangSmith. If you're multi-framework or need self-host, Langfuse."
+      },
+      {
+        "question": "Can I self-host LangSmith?",
+        "answer": "Yes but only on the Enterprise tier ($$). For SMB self-hosting, Langfuse is the practical choice."
+      }
+    ],
+    "meta_title": "LangSmith Eval + Tracing Setup | OSS AI Hub",
+    "meta_description": "Production LangSmith: @traceable decorator, eval datasets, A/B experiments, prompt hub for LangChain stacks. MIT."
   }
 ]
