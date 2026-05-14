@@ -858,6 +858,315 @@
     "meta_description": "Code agent helper for git operations: create branch, apply edits, commit, push, open PR. Safety guards: no force push, no main edits."
   },
   {
+    "slug": "document-ingestion-pipeline-batched",
+    "title": "Document Ingestion Pipeline With Batched Embedding",
+    "tldr": "End-to-end ingest pipeline: walk a folder/S3, chunk text intelligently (paragraph-aware), embed in batches with retry, upsert to vector DB. Includes progress tracking and resume.",
+    "category": "data-pipelines",
+    "language": "python",
+    "framework": "Custom",
+    "tags": [
+      "ingestion",
+      "chunking",
+      "pipeline",
+      "rag"
+    ],
+    "best_for_tags": [
+      "rag-prep",
+      "bulk-ingest",
+      "production"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "when_to_use": "When bringing documents into a RAG system \u2014 initial bulk load or scheduled updates. The starter handles the recurring problems: too-big files, transient embedding errors, resumability.",
+    "when_not_to_use": "Skip for trivial corpora (<100 docs \u2014 just inline). Skip when you have a managed solution (Pinecone Assistants, OpenAI Assistants File API).",
+    "quick_start": "pip install qdrant-client fastembed tqdm && python ingest.py ./docs",
+    "full_code": "\"\"\"Document ingestion pipeline.\n\nStages:\n  1. Discover: walk filesystem (or S3) for documents.\n  2. Read: extract text by file type (txt, md, pdf basics).\n  3. Chunk: paragraph-aware, with overlap.\n  4. Embed: batched, retried.\n  5. Upsert: into vector DB (Qdrant here; swap as needed).\n  6. Track: progress + resume from last completed file.\n\"\"\"\nfrom __future__ import annotations\n\nimport hashlib\nimport json\nimport os\nimport sys\nfrom pathlib import Path\nfrom typing import Iterable\n\nfrom fastembed import TextEmbedding\nfrom qdrant_client import QdrantClient\nfrom qdrant_client.models import Distance, PointStruct, VectorParams\nfrom tenacity import retry, stop_after_attempt, wait_exponential\nfrom tqdm import tqdm\n\nCOLLECTION = \"docs\"\nEMBED_MODEL_NAME = \"BAAI/bge-small-en-v1.5\"\nEMBED_DIM = 384\nCHUNK_CHARS = 1200\nCHUNK_OVERLAP = 200\nBATCH_SIZE = 32\nSTATE_FILE = \".ingest_state.json\"\n\nembedder = TextEmbedding(EMBED_MODEL_NAME)\nqdrant = QdrantClient(url=\"http://localhost:6333\")\n\n\ndef ensure_collection() -> None:\n    if not qdrant.collection_exists(COLLECTION):\n        qdrant.create_collection(\n            collection_name=COLLECTION,\n            vectors_config=VectorParams(size=EMBED_DIM, distance=Distance.COSINE),\n        )\n\n\n# ----------------- 1. DISCOVER -----------------\n\ndef discover(root: Path) -> list[Path]:\n    \"\"\"All readable files under root.\"\"\"\n    exts = {\".txt\", \".md\", \".markdown\", \".rst\"}\n    return sorted([p for p in root.rglob(\"*\") if p.is_file() and p.suffix.lower() in exts])\n\n\n# ----------------- 2. READ -----------------\n\ndef read_file(path: Path) -> str:\n    return path.read_text(encoding=\"utf-8\", errors=\"replace\")\n\n\n# ----------------- 3. CHUNK -----------------\n\ndef chunk(text: str, *, max_chars: int = CHUNK_CHARS, overlap: int = CHUNK_OVERLAP) -> list[str]:\n    \"\"\"Paragraph-aware splitting with overlap.\n\n    Splits on \\n\\n; combines short paragraphs until reaching max_chars;\n    re-splits if a single paragraph exceeds max_chars.\n    \"\"\"\n    paragraphs = [p.strip() for p in text.split(\"\\n\\n\") if p.strip()]\n    chunks: list[str] = []\n    current = \"\"\n    for p in paragraphs:\n        if len(p) > max_chars:\n            # Split very long paragraph into sub-chunks\n            for i in range(0, len(p), max_chars - overlap):\n                chunks.append(p[i : i + max_chars])\n            continue\n        if len(current) + len(p) + 2 > max_chars:\n            chunks.append(current)\n            # overlap: include tail of previous chunk\n            current = current[-overlap:] + \"\\n\\n\" + p if overlap else p\n        else:\n            current = current + \"\\n\\n\" + p if current else p\n    if current:\n        chunks.append(current)\n    return chunks\n\n\n# ----------------- 4. EMBED -----------------\n\n@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10))\ndef embed_batch(texts: list[str]) -> list[list[float]]:\n    return [v.tolist() for v in embedder.embed(texts)]\n\n\n# ----------------- 5. UPSERT -----------------\n\ndef point_id_for(file_path: Path, chunk_index: int) -> int:\n    h = hashlib.sha256(f\"{file_path}::{chunk_index}\".encode()).hexdigest()\n    return int(h[:15], 16)  # Qdrant accepts int IDs\n\n\ndef upsert(file_path: Path, chunks: list[str], vectors: list[list[float]]) -> None:\n    points = [\n        PointStruct(\n            id=point_id_for(file_path, i),\n            vector=vec,\n            payload={\n                \"source\": str(file_path),\n                \"chunk_index\": i,\n                \"text\": chunks[i],\n            },\n        )\n        for i, vec in enumerate(vectors)\n    ]\n    qdrant.upsert(collection_name=COLLECTION, points=points)\n\n\n# ----------------- 6. STATE / RESUME -----------------\n\ndef load_state() -> dict:\n    if Path(STATE_FILE).exists():\n        return json.loads(Path(STATE_FILE).read_text())\n    return {\"completed\": []}\n\n\ndef save_state(state: dict) -> None:\n    Path(STATE_FILE).write_text(json.dumps(state, indent=2))\n\n\n# ----------------- MAIN -----------------\n\ndef ingest(root: Path) -> None:\n    ensure_collection()\n    state = load_state()\n    completed = set(state[\"completed\"])\n\n    files = discover(root)\n    todo = [f for f in files if str(f) not in completed]\n    print(f\"{len(files)} total files, {len(todo)} to ingest ({len(completed)} already done)\")\n\n    for f in tqdm(todo, desc=\"files\"):\n        try:\n            text = read_file(f)\n            chunks = chunk(text)\n            if not chunks:\n                continue\n            # Embed in mini-batches within the file\n            vectors: list[list[float]] = []\n            for i in range(0, len(chunks), BATCH_SIZE):\n                batch = chunks[i : i + BATCH_SIZE]\n                vectors.extend(embed_batch(batch))\n            upsert(f, chunks, vectors)\n            completed.add(str(f))\n            state[\"completed\"] = list(completed)\n            save_state(state)\n        except Exception as e:\n            print(f\"\\nERROR on {f}: {e}\")\n            # Continue to next file rather than abort the run.\n\n\nif __name__ == \"__main__\":\n    root = Path(sys.argv[1] if len(sys.argv) > 1 else \"./docs\")\n    ingest(root)\n",
+    "dependencies": [
+      {
+        "name": "qdrant-client",
+        "version": ">=1.12",
+        "purpose": "Vector DB"
+      },
+      {
+        "name": "fastembed",
+        "version": ">=0.4",
+        "purpose": "Local embeddings"
+      },
+      {
+        "name": "tenacity",
+        "version": ">=8.0",
+        "purpose": "Retry logic"
+      },
+      {
+        "name": "tqdm",
+        "version": ">=4.66",
+        "purpose": "Progress bars"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "docker run -d -p 6333:6333 qdrant/qdrant",
+      "pip install qdrant-client fastembed tenacity tqdm",
+      "mkdir docs && place .txt/.md files in",
+      "python ingest.py ./docs",
+      "Re-run resumes from last completed file."
+    ],
+    "variations": [
+      {
+        "label": "S3 source",
+        "description": "Walk an S3 bucket instead of filesystem.",
+        "code_snippet": "import boto3\\ns3 = boto3.client('s3')\\nfor page in s3.get_paginator('list_objects_v2').paginate(Bucket=BUCKET, Prefix=PREFIX):\\n    for obj in page.get('Contents', []):\\n        yield obj['Key']"
+      },
+      {
+        "label": "PDF support",
+        "description": "Add PDF extraction.",
+        "code_snippet": "import pypdf\\ndef read_pdf(path):\\n    pdf = pypdf.PdfReader(path)\\n    return '\\\\n\\\\n'.join(page.extract_text() for page in pdf.pages)"
+      },
+      {
+        "label": "Markdown-aware chunking",
+        "description": "Split at header boundaries.",
+        "code_snippet": "# Split on lines starting with #, ## etc; each section becomes a chunk (further split if too long)."
+      },
+      {
+        "label": "Async pipeline",
+        "description": "Parallel reads and embeds.",
+        "code_snippet": "# Use asyncio.gather to read N files in parallel; embed in batches via async fastembed alternative or thread pool."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Qdrant connection refused",
+        "cause": "Qdrant not running.",
+        "fix_snippet": "docker run -d -p 6333:6333 qdrant/qdrant. Check with: curl http://localhost:6333/healthz"
+      },
+      {
+        "error_text": "Memory blows up on large folders",
+        "cause": "Loading all file paths into memory or batching too aggressively.",
+        "fix_snippet": "Use generators for discover(); reduce BATCH_SIZE. For TB-scale, write a streaming version."
+      },
+      {
+        "error_text": "Slow on first run",
+        "cause": "fastembed downloading model (~80MB).",
+        "fix_snippet": "Pre-download in setup: python -c 'from fastembed import TextEmbedding; TextEmbedding(\"BAAI/bge-small-en-v1.5\")'"
+      },
+      {
+        "error_text": "Resume picks up wrong files after rename",
+        "cause": "State file tracks paths; renames look like new files.",
+        "fix_snippet": "Track by content hash instead of path if renames are common. Trade-off: hash takes more time per file."
+      }
+    ],
+    "production_checklist": [
+      "Log every file's success/failure with timestamp.",
+      "Cap chunks per file to avoid one giant file consuming the run.",
+      "Run from a stable mount; don't ingest from /tmp or container ephemeral storage.",
+      "Set Qdrant write timeouts; bulk upserts can stall.",
+      "Validate sample chunks after ingest \u2014 was text extracted correctly?",
+      "Monitor disk + memory; large corpora need observability.",
+      "Pin embedding model version; switching invalidates all vectors."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "BAAI/bge-small-en-v1.5"
+      ],
+      "library_versions": [
+        "qdrant-client==1.12.0",
+        "fastembed==0.4.1",
+        "tenacity==8.5.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "qdrant",
+      "fastembed"
+    ],
+    "related_glossary_slugs": [
+      "chunking",
+      "embedding",
+      "ingestion"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "What chunk size is right?",
+        "answer": "1000-1500 chars (~250-400 tokens) is a good baseline. Smaller chunks = better precision in retrieval but more chunks to manage. Larger = more context per hit but worse precision."
+      },
+      {
+        "question": "Is overlap necessary?",
+        "answer": "Helps when answers span chunk boundaries. 10-20% overlap (200 of 1200 chars) is standard. Don't over-overlap \u2014 wasted storage."
+      },
+      {
+        "question": "How long does ingest take?",
+        "answer": "Roughly 100ms per chunk on CPU with fastembed; faster with GPU. 10k chunks ~ 15-20 min on a laptop. Scale linearly."
+      },
+      {
+        "question": "Can I rerun safely?",
+        "answer": "Yes \u2014 point IDs are deterministic (file path + chunk index). Re-ingest updates in place. State file skips already-done files."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Document Ingestion Pipeline With Batched Embedding",
+    "meta_description": "End-to-end RAG ingest: discover \u2192 chunk \u2192 embed batched \u2192 upsert to vector DB \u2192 resumable state. Production-grade in ~200 lines."
+  },
+  {
+    "slug": "etl-llm-cleanup-pipeline",
+    "title": "LLM-Powered Data Cleanup ETL",
+    "tldr": "ETL pipeline that uses an LLM to clean messy structured data: normalize entity names, fix encoding issues, classify free-text into enums. Runs in batches with cost tracking.",
+    "category": "data-pipelines",
+    "language": "python",
+    "framework": "OpenAI SDK + pandas",
+    "tags": [
+      "etl",
+      "data-cleaning",
+      "llm",
+      "structured-output"
+    ],
+    "best_for_tags": [
+      "data-quality",
+      "post-processing",
+      "structured-data"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "When you have messy data (variant entity names, mojibake, free-text fields needing classification) and rules-based cleanup falls short. LLMs handle the long-tail cases regex doesn't.",
+    "when_not_to_use": "Skip for high-volume data where cost matters (use rules + spot-check). Skip when ground truth matters and you can't validate at scale \u2014 LLMs introduce noise.",
+    "quick_start": "pip install openai pandas instructor && OPENAI_API_KEY=sk-... python cleanup.py messy.csv clean.csv",
+    "full_code": "\"\"\"ETL pipeline using LLM for data cleanup.\n\nOperations supported:\n  - normalize_entity: 'USA' / 'U.S.A.' / 'United States' -> 'United States'\n  - fix_encoding: 'Caf\\u00e9' / 'Cafe' / 'Caf\u00e9' -> 'Caf\u00e9'\n  - classify_free_text: 'I cant log in' -> {category: 'auth', subcategory: 'login_failure'}\n  - extract_entities: free text -> structured fields\n\nBatches inputs for cost efficiency; caches deterministic results.\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport sys\nfrom pathlib import Path\nfrom typing import Literal\n\nimport instructor\nimport pandas as pd\nfrom openai import OpenAI\nfrom pydantic import BaseModel, Field\n\noai = instructor.from_openai(OpenAI())\n\n# ----------------- SCHEMAS -----------------\n\nclass NormalizedEntity(BaseModel):\n    original: str\n    canonical: str\n    confidence: Literal[\"high\", \"medium\", \"low\"]\n\n\nclass TicketClassification(BaseModel):\n    category: Literal[\"auth\", \"billing\", \"feature_request\", \"bug_report\", \"other\"]\n    severity: Literal[\"urgent\", \"high\", \"medium\", \"low\"]\n    summary: str = Field(description=\"One-sentence summary of the ticket\")\n\n\n# ----------------- BATCH OPERATIONS -----------------\n\ndef normalize_entities(values: list[str], *, kind: str = \"country\") -> list[NormalizedEntity]:\n    \"\"\"Map varied spellings to canonical form.\"\"\"\n    prompt = f\"\"\"Normalize these {kind} names to their canonical form.\n\nExamples:\n  'USA' -> 'United States' (high confidence)\n  'U.S.A.' -> 'United States' (high)\n  'Brasil' -> 'Brazil' (high)\n  'Britain' -> 'United Kingdom' (medium - could mean different things)\n\nInput values: {json.dumps(values)}\n\nFor each input, output original, canonical, and confidence.\"\"\"\n\n    class BatchResponse(BaseModel):\n        results: list[NormalizedEntity]\n\n    resp = oai.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        response_model=BatchResponse,\n        max_retries=2,\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n    )\n    return resp.results\n\n\ndef classify_tickets(texts: list[str]) -> list[TicketClassification]:\n    \"\"\"Classify support ticket text.\"\"\"\n    prompt = f\"\"\"Classify each support ticket below. For each, output category, severity, and one-sentence summary.\n\nTickets:\n{json.dumps(texts, indent=2)}\"\"\"\n\n    class BatchResponse(BaseModel):\n        results: list[TicketClassification]\n\n    resp = oai.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        response_model=BatchResponse,\n        max_retries=2,\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n    )\n    return resp.results\n\n\n# ----------------- PIPELINE -----------------\n\ndef run_pipeline(input_csv: Path, output_csv: Path, *, batch_size: int = 20) -> None:\n    df = pd.read_csv(input_csv)\n    print(f\"Loaded {len(df)} rows\")\n\n    # Example transformations \u2014 adjust to your schema\n    if \"country\" in df.columns:\n        unique = df[\"country\"].dropna().unique().tolist()\n        normalized = normalize_entities(unique, kind=\"country\")\n        mapping = {n.original: n.canonical for n in normalized if n.confidence != \"low\"}\n        df[\"country_normalized\"] = df[\"country\"].map(mapping).fillna(df[\"country\"])\n        print(f\"  normalized {len(mapping)} country values\")\n\n    if \"support_ticket_body\" in df.columns:\n        results: list[TicketClassification] = []\n        for i in range(0, len(df), batch_size):\n            batch = df[\"support_ticket_body\"].iloc[i : i + batch_size].tolist()\n            results.extend(classify_tickets(batch))\n            print(f\"  classified {min(i + batch_size, len(df))} / {len(df)}\")\n        df[\"category\"] = [r.category for r in results]\n        df[\"severity\"] = [r.severity for r in results]\n        df[\"summary\"] = [r.summary for r in results]\n\n    df.to_csv(output_csv, index=False)\n    print(f\"Wrote {output_csv}\")\n\n\nif __name__ == \"__main__\":\n    in_csv = Path(sys.argv[1])\n    out_csv = Path(sys.argv[2] if len(sys.argv) > 2 else in_csv.with_stem(in_csv.stem + \"_clean\"))\n    run_pipeline(in_csv, out_csv)\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "LLM client"
+      },
+      {
+        "name": "instructor",
+        "version": ">=1.5",
+        "purpose": "Structured output"
+      },
+      {
+        "name": "pandas",
+        "version": ">=2.2",
+        "purpose": "Data manipulation"
+      },
+      {
+        "name": "pydantic",
+        "version": ">=2.0",
+        "purpose": "Schemas"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai instructor pandas pydantic",
+      "export OPENAI_API_KEY=sk-...",
+      "python cleanup.py messy.csv clean.csv"
+    ],
+    "variations": [
+      {
+        "label": "With caching layer",
+        "description": "Cache LLM results to avoid re-computing identical inputs.",
+        "code_snippet": "import diskcache\\ncache = diskcache.Cache('./etl_cache')\\nkey = hashlib.sha256(json.dumps(input).encode()).hexdigest()\\nif key in cache: return cache[key]\\nresult = oai.chat.completions.create(...)\\ncache[key] = result"
+      },
+      {
+        "label": "Streaming for huge CSVs",
+        "description": "Process row-by-row, write incrementally.",
+        "code_snippet": "for chunk in pd.read_csv(input_csv, chunksize=1000):\\n    chunk = process(chunk)\\n    chunk.to_csv(output_csv, mode='a', header=False, index=False)"
+      },
+      {
+        "label": "Validation pass",
+        "description": "Verify LLM output with rules.",
+        "code_snippet": "# After LLM call: check canonical values against an allowed enum. Flag unknowns for human review.\\n# Reject rows where confidence='low'."
+      },
+      {
+        "label": "Cost tracking",
+        "description": "Estimate spend.",
+        "code_snippet": "total_tokens = 0\\nresp = client.chat.completions.create(...)\\ntotal_tokens += resp.usage.total_tokens\\n# At end: print(f'cost ~ ${total_tokens * 0.15 / 1_000_000}')"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ValidationError: Field required (Literal)",
+        "cause": "LLM returned a value outside the enum.",
+        "fix_snippet": "Add 'other' / 'unknown' to the Literal, OR set max_retries higher so Instructor re-prompts the model."
+      },
+      {
+        "error_text": "Batch too large; LLM truncates output",
+        "cause": "Output exceeds model's max_tokens.",
+        "fix_snippet": "Reduce batch_size. Match output token count to batch size: ~50-100 tokens per item is typical."
+      },
+      {
+        "error_text": "Inconsistent normalization across batches",
+        "cause": "LLM doesn't see all values at once.",
+        "fix_snippet": "Build a canonical mapping from unique values first (single LLM call), then map all rows. The starter does this for countries."
+      },
+      {
+        "error_text": "Slow runtime",
+        "cause": "Single-threaded; one batch at a time.",
+        "fix_snippet": "Use AsyncOpenAI + asyncio.gather to run batches in parallel. Respect rate limits."
+      }
+    ],
+    "production_checklist": [
+      "Always validate LLM output downstream (constraint checks, range checks).",
+      "Sample 5-10% of output for human review on each run.",
+      "Pin model version; output shape drifts subtly across versions.",
+      "Cache deterministic results (temperature=0, same input).",
+      "Track per-run cost; sudden spikes indicate prompt/data drift.",
+      "Build a feedback loop \u2014 when humans correct LLM output, feed corrections back as few-shot.",
+      "Document which transformations are LLM-based vs rules-based."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "openai==1.51.0",
+        "instructor==1.5.2",
+        "pandas==2.2.3"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "pandas",
+      "instructor"
+    ],
+    "related_glossary_slugs": [
+      "etl",
+      "data-cleaning",
+      "structured-output"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "When is LLM cleanup worth it vs regex?",
+        "answer": "When the variation is unbounded (free text, named entities, multilingual). For closed-set normalization (state codes), regex/lookup is faster and cheaper."
+      },
+      {
+        "question": "How do I prevent silent corruption?",
+        "answer": "Always emit confidence levels and validate downstream. Reject low-confidence transformations. Run a parallel rule-based check on a sample of LLM-cleaned rows."
+      },
+      {
+        "question": "Cost estimate for 100k rows?",
+        "answer": "~$1-5 with gpt-4o-mini for typical short fields. Scales with field length and batch efficiency. Use cheaper models for simple transformations."
+      },
+      {
+        "question": "Can I run this offline?",
+        "answer": "Swap OpenAI for an Ollama-served model. Quality drops on complex normalization; works fine for classification."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "LLM-Powered Data Cleanup ETL \u2014 Starter",
+    "meta_description": "Pandas + LLM ETL pipeline: normalize entities, classify free text, extract structured fields. Batched, validated, cost-aware."
+  },
+  {
     "slug": "modal-llm-serverless-deploy",
     "title": "Modal Serverless LLM Service With GPU",
     "tldr": "Deploy an LLM-backed FastAPI service to Modal in one file. GPU autoscaling, secrets management, request-scoped cold-start optimization, and 0.5s warm starts.",
@@ -3687,6 +3996,315 @@
     "github_url": "https://github.com/mem0ai/mem0",
     "meta_title": "Mem0 Personal Assistant Memory \u2014 Starter",
     "meta_description": "Per-user memory for chat agents: store facts the user shares, retrieve relevant ones per query, update vs add semantics handled by Mem0."
+  },
+  {
+    "slug": "claude-vision-image-analysis",
+    "title": "Claude Vision For Structured Image Analysis",
+    "tldr": "Send an image to Claude with a structured output schema; returns Pydantic-validated description, objects detected, suggested alt-text, and confidence per claim.",
+    "category": "multimodal",
+    "language": "python",
+    "framework": "Anthropic + Instructor",
+    "tags": [
+      "vision",
+      "claude",
+      "multimodal",
+      "structured-output"
+    ],
+    "best_for_tags": [
+      "image-analysis",
+      "accessibility",
+      "content-moderation"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "When you need to extract structured information from images at scale \u2014 alt text, content moderation, document analysis, chart extraction. Claude's vision is strong on text-in-image and on cautious labeling.",
+    "when_not_to_use": "Skip for face recognition (Claude refuses by design). Skip for pixel-precise tasks (object bounding boxes, instance segmentation) \u2014 vision LLMs give regions, not coordinates.",
+    "quick_start": "pip install anthropic instructor && ANTHROPIC_API_KEY=sk-ant-... python vision.py path/to/image.png",
+    "full_code": "\"\"\"Structured image analysis with Claude vision + Instructor.\n\nReturns Pydantic-validated output: description, objects, suggested alt text,\nconfidence per claim. Works with file paths, URLs, or base64.\n\"\"\"\nfrom __future__ import annotations\n\nimport base64\nimport sys\nfrom pathlib import Path\nfrom typing import Literal\n\nimport instructor\nfrom anthropic import Anthropic\nfrom pydantic import BaseModel, Field\n\n\nclass DetectedObject(BaseModel):\n    name: str = Field(description=\"Name of object (e.g., 'bicycle', 'sign with text')\")\n    location: Literal[\"top-left\", \"top-center\", \"top-right\", \"middle-left\", \"center\", \"middle-right\", \"bottom-left\", \"bottom-center\", \"bottom-right\"]\n    confidence: Literal[\"high\", \"medium\", \"low\"]\n    text_on_object: str | None = Field(default=None, description=\"Any visible text on or near the object\")\n\n\nclass ImageAnalysis(BaseModel):\n    overall_description: str = Field(description=\"2-3 sentence description\")\n    purpose: Literal[\"informational\", \"decorative\", \"functional\", \"advertisement\", \"instructional\", \"unknown\"]\n    suggested_alt_text: str = Field(max_length=125, description=\"WCAG-grade alt text\")\n    long_description: str | None = Field(default=None, description=\"Only if the image carries meaning alt text can't convey\")\n    objects: list[DetectedObject]\n    visible_text: str | None = Field(default=None, description=\"All text visible in the image, verbatim\")\n    confidence_overall: Literal[\"high\", \"medium\", \"low\"]\n    safety_concerns: list[str] = Field(default_factory=list, description=\"Any content concerns (violence, etc.)\")\n\n\nclient = instructor.from_anthropic(Anthropic())\n\n\ndef image_to_base64(image_path: Path) -> tuple[str, str]:\n    \"\"\"Returns (b64_data, media_type).\"\"\"\n    suffix = image_path.suffix.lower()\n    media_type = {\n        \".png\": \"image/png\",\n        \".jpg\": \"image/jpeg\",\n        \".jpeg\": \"image/jpeg\",\n        \".gif\": \"image/gif\",\n        \".webp\": \"image/webp\",\n    }.get(suffix, \"image/png\")\n    data = base64.standard_b64encode(image_path.read_bytes()).decode()\n    return data, media_type\n\n\ndef analyze(image_path: Path, *, context: str | None = None) -> ImageAnalysis:\n    b64, media_type = image_to_base64(image_path)\n\n    user_content = [\n        {\n            \"type\": \"image\",\n            \"source\": {\n                \"type\": \"base64\",\n                \"media_type\": media_type,\n                \"data\": b64,\n            },\n        },\n        {\n            \"type\": \"text\",\n            \"text\": f\"\"\"Analyze this image. Return structured output per the schema.\n\nContext (optional): {context or 'none'}\n\nRules:\n- Describe what's MEANINGFUL in context, not just visual features.\n- Suggested alt text: under 125 chars, no \"image of\" prefix.\n- Long description: only if needed beyond alt text.\n- Mark confidence honestly; low confidence is fine to admit.\n- Note safety concerns explicitly; empty list is acceptable.\n- Do not identify specific named individuals.\"\"\",\n        },\n    ]\n\n    return client.messages.create(\n        model=\"claude-3-7-sonnet-latest\",\n        max_tokens=1024,\n        max_retries=2,\n        messages=[{\"role\": \"user\", \"content\": user_content}],\n        response_model=ImageAnalysis,\n    )\n\n\nif __name__ == \"__main__\":\n    image_path = Path(sys.argv[1] if len(sys.argv) > 1 else \"test.png\")\n    result = analyze(image_path)\n    print(result.model_dump_json(indent=2))\n",
+    "dependencies": [
+      {
+        "name": "anthropic",
+        "version": ">=0.39",
+        "purpose": "Claude SDK with vision"
+      },
+      {
+        "name": "instructor",
+        "version": ">=1.5",
+        "purpose": "Structured output"
+      },
+      {
+        "name": "pydantic",
+        "version": ">=2.0",
+        "purpose": "Schemas"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Anthropic API key",
+        "example": "sk-ant-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install anthropic instructor pydantic",
+      "export ANTHROPIC_API_KEY=sk-ant-...",
+      "python vision.py path/to/image.png"
+    ],
+    "variations": [
+      {
+        "label": "From URL",
+        "description": "Pass URL directly.",
+        "code_snippet": "user_content[0] = {'type': 'image', 'source': {'type': 'url', 'url': 'https://example.com/image.png'}}"
+      },
+      {
+        "label": "Multi-image",
+        "description": "Compare two images.",
+        "code_snippet": "user_content = [\\n  {'type': 'image', 'source': {...image1}},\\n  {'type': 'image', 'source': {...image2}},\\n  {'type': 'text', 'text': 'Compare these two images...'}\\n]"
+      },
+      {
+        "label": "OpenAI vision instead",
+        "description": "Use gpt-4o vision.",
+        "code_snippet": "from openai import OpenAI\\nclient = instructor.from_openai(OpenAI())\\n# Different image content format: {'type': 'image_url', 'image_url': {'url': f'data:{media_type};base64,{b64}'}}"
+      },
+      {
+        "label": "Batch processing",
+        "description": "Process many images.",
+        "code_snippet": "import concurrent.futures\\nwith concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:\\n    results = list(ex.map(analyze, image_paths))"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "BadRequestError: image is too large",
+        "cause": "File exceeds API limit (~5MB for Claude, 20MB for GPT-4o).",
+        "fix_snippet": "Resize before sending: from PIL import Image; img = Image.open(path); img.thumbnail((2048, 2048)); img.save(path)."
+      },
+      {
+        "error_text": "Empty visible_text when image has obvious text",
+        "cause": "OCR limitations in vision LLMs for small/stylized text.",
+        "fix_snippet": "Crop tightly around text region before sending. Or use a dedicated OCR (Tesseract) for text extraction, vision LLM for understanding."
+      },
+      {
+        "error_text": "Refuses to identify specific people",
+        "cause": "Both Claude and GPT-4o refuse face recognition by design.",
+        "fix_snippet": "Use a dedicated face recognition service if you legitimately need this (with consent + legal review). Vision LLMs intentionally don't do this."
+      },
+      {
+        "error_text": "Confidence always high",
+        "cause": "Model is over-confident.",
+        "fix_snippet": "Tighten the prompt: 'mark confidence low when image is ambiguous, blurry, or you're inferring. High should be rare.'"
+      }
+    ],
+    "production_checklist": [
+      "Resize images before sending; reduces tokens significantly.",
+      "Cache results by image hash; re-analysis of same image is waste.",
+      "Validate visible_text against OCR if accuracy matters.",
+      "Set safety_concerns review pipeline; auto-flag for moderation.",
+      "Don't store user-uploaded images longer than needed; PII risk.",
+      "Test on adversarial images (deepfakes, optical illusions, low-light) before production.",
+      "Pin model version; vision capabilities improve but also change behavior across versions."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-3-7-sonnet"
+      ],
+      "library_versions": [
+        "anthropic==0.39.0",
+        "instructor==1.5.2",
+        "pydantic==2.9.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "anthropic"
+    ],
+    "related_glossary_slugs": [
+      "multimodal",
+      "vision-model",
+      "alt-text"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Claude vs GPT-4o for vision?",
+        "answer": "Both strong. Claude tends to be more cautious / less confident, more careful about not identifying people. GPT-4o is slightly faster, equally good on charts. Pick by other criteria (API ergonomics, cost)."
+      },
+      {
+        "question": "Bounding box coordinates?",
+        "answer": "Vision LLMs give regions ('top-left'), not precise coordinates. For pixel-precise bounding, use SAM, YOLO, or a dedicated vision model."
+      },
+      {
+        "question": "Is the result safe to display directly to users?",
+        "answer": "Run through a content-safety check first. Even with safety_concerns field, false negatives happen. For high-stakes (e.g., moderation), add a second pass."
+      },
+      {
+        "question": "How fast is this?",
+        "answer": "~3-8 seconds per image including upload. Parallelize for throughput. Caching helps for re-analysis."
+      }
+    ],
+    "github_url": "https://github.com/anthropics/anthropic-sdk-python",
+    "meta_title": "Claude Vision For Structured Image Analysis",
+    "meta_description": "Send images to Claude with Pydantic schema: structured description, alt text, objects with location + confidence, safety flags."
+  },
+  {
+    "slug": "whisper-transcription-with-speakers",
+    "title": "Whisper Transcription With Speaker Diarization",
+    "tldr": "Transcribe audio with OpenAI Whisper + pyannote speaker diarization. Produces transcript labeled by speaker with confidence-aware merging when speakers cross talk.",
+    "category": "multimodal",
+    "language": "python",
+    "framework": "Whisper + pyannote",
+    "tags": [
+      "audio",
+      "transcription",
+      "whisper",
+      "diarization"
+    ],
+    "best_for_tags": [
+      "meeting-transcription",
+      "podcast-processing",
+      "interview-analysis"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "When you need transcripts AND speaker labels \u2014 meetings, interviews, podcasts, courtroom recordings. Whisper handles speech-to-text; pyannote handles \u2018who spoke when\u2019.",
+    "when_not_to_use": "Skip when there's only one speaker (no diarization needed). Skip for very short clips \u2014 overhead dominates. Skip for non-supported languages (check Whisper's language list).",
+    "quick_start": "pip install openai-whisper pyannote.audio torch torchaudio && python diarize.py meeting.mp3",
+    "full_code": "\"\"\"Transcribe + diarize an audio file.\n\nPipeline:\n  1. Diarize: pyannote produces a timeline of who spoke when.\n  2. Transcribe: Whisper transcribes the full audio with word-level timestamps.\n  3. Merge: assign each transcribed word to the speaker active at that timestamp.\n  4. Emit: transcript with [Speaker N] labels.\n\nOutput is a list of (speaker, start_seconds, end_seconds, text) segments.\n\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport sys\nfrom dataclasses import dataclass\nfrom pathlib import Path\n\nimport torch\nimport whisper\nfrom pyannote.audio import Pipeline\n\n\n@dataclass\nclass Segment:\n    speaker: str          # \"SPEAKER_00\", \"SPEAKER_01\", ...\n    start: float          # seconds\n    end: float\n    text: str\n\n\ndef transcribe(audio_path: Path, *, model_size: str = \"base\") -> dict:\n    \"\"\"Whisper transcription with word-level timestamps.\"\"\"\n    model = whisper.load_model(model_size)\n    return model.transcribe(str(audio_path), word_timestamps=True)\n\n\ndef diarize(audio_path: Path, hf_token: str) -> list[tuple[float, float, str]]:\n    \"\"\"Pyannote speaker diarization.\"\"\"\n    pipeline = Pipeline.from_pretrained(\n        \"pyannote/speaker-diarization-3.1\", use_auth_token=hf_token\n    )\n    if torch.cuda.is_available():\n        pipeline.to(torch.device(\"cuda\"))\n    diarization = pipeline(str(audio_path))\n    return [(turn.start, turn.end, speaker) for turn, _, speaker in diarization.itertracks(yield_label=True)]\n\n\ndef merge(whisper_result: dict, diarization: list[tuple[float, float, str]]) -> list[Segment]:\n    \"\"\"Assign each Whisper segment to the most-overlapping speaker.\"\"\"\n    segments: list[Segment] = []\n    for seg in whisper_result[\"segments\"]:\n        seg_start = seg[\"start\"]\n        seg_end = seg[\"end\"]\n        # Find speaker with max temporal overlap\n        best_speaker = \"UNKNOWN\"\n        best_overlap = 0.0\n        for d_start, d_end, speaker in diarization:\n            overlap = max(0, min(seg_end, d_end) - max(seg_start, d_start))\n            if overlap > best_overlap:\n                best_overlap = overlap\n                best_speaker = speaker\n        segments.append(Segment(\n            speaker=best_speaker, start=seg_start, end=seg_end, text=seg[\"text\"].strip()\n        ))\n    return segments\n\n\ndef format_transcript(segments: list[Segment]) -> str:\n    \"\"\"Group consecutive same-speaker segments into paragraphs.\"\"\"\n    out = []\n    current_speaker = None\n    current_text = []\n    current_start = None\n    for seg in segments:\n        if seg.speaker != current_speaker:\n            if current_speaker is not None:\n                out.append(f\"[{current_speaker} @ {current_start:.1f}s] {' '.join(current_text)}\")\n            current_speaker = seg.speaker\n            current_text = [seg.text]\n            current_start = seg.start\n        else:\n            current_text.append(seg.text)\n    if current_speaker is not None:\n        out.append(f\"[{current_speaker} @ {current_start:.1f}s] {' '.join(current_text)}\")\n    return \"\\n\\n\".join(out)\n\n\ndef process(audio_path: Path, hf_token: str) -> str:\n    print(\"Transcribing...\")\n    whisper_result = transcribe(audio_path)\n    print(\"Diarizing...\")\n    diarization = diarize(audio_path, hf_token)\n    print(\"Merging...\")\n    segments = merge(whisper_result, diarization)\n    return format_transcript(segments)\n\n\nif __name__ == \"__main__\":\n    audio = Path(sys.argv[1] if len(sys.argv) > 1 else \"audio.mp3\")\n    hf_token = os.environ[\"HF_TOKEN\"]\n    print(process(audio, hf_token))\n",
+    "dependencies": [
+      {
+        "name": "openai-whisper",
+        "version": ">=20240930",
+        "purpose": "Whisper STT"
+      },
+      {
+        "name": "pyannote.audio",
+        "version": ">=3.1",
+        "purpose": "Speaker diarization"
+      },
+      {
+        "name": "torch",
+        "version": ">=2.0",
+        "purpose": "PyTorch (GPU support)"
+      },
+      {
+        "name": "torchaudio",
+        "version": ">=2.0",
+        "purpose": "Audio I/O"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "HF token (pyannote model is gated)",
+        "example": "hf_..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai-whisper pyannote.audio torch torchaudio",
+      "Get HF_TOKEN from huggingface.co; accept pyannote/speaker-diarization-3.1 license on HF.",
+      "export HF_TOKEN=hf_...",
+      "python diarize.py meeting.mp3"
+    ],
+    "variations": [
+      {
+        "label": "Use OpenAI Whisper API",
+        "description": "Cloud Whisper instead of local.",
+        "code_snippet": "from openai import OpenAI\\nclient = OpenAI()\\nwith open(audio_path, 'rb') as f:\\n    transcript = client.audio.transcriptions.create(model='whisper-1', file=f, response_format='verbose_json', timestamp_granularities=['word'])"
+      },
+      {
+        "label": "Speaker name mapping",
+        "description": "Replace SPEAKER_00 with names.",
+        "code_snippet": "# Pyannote uses anonymous labels. If you know who spoke, provide voiceprints or just rename after the fact.\\nname_map = {'SPEAKER_00': 'Alice', 'SPEAKER_01': 'Bob'}"
+      },
+      {
+        "label": "Webhook delivery",
+        "description": "Process async; deliver result via webhook.",
+        "code_snippet": "# Use Celery / RQ for the heavy work. POST result to client's webhook URL when done."
+      },
+      {
+        "label": "Streaming transcription",
+        "description": "Real-time with diarization.",
+        "code_snippet": "# Streaming is harder: pyannote handles streaming via Pipeline.from_pretrained('pyannote/speaker-diarization-3.1', streaming=True)\\n# Whisper streaming: faster-whisper or stream-then-transcribe-chunks."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "HF gated model error",
+        "cause": "pyannote model requires accepting license on HF.",
+        "fix_snippet": "Visit huggingface.co/pyannote/speaker-diarization-3.1, accept license, then HF_TOKEN works."
+      },
+      {
+        "error_text": "GPU not used, very slow",
+        "cause": "PyTorch installed without CUDA.",
+        "fix_snippet": "pip install torch --index-url https://download.pytorch.org/whl/cu121 (or matching CUDA version). Verify: python -c 'import torch; print(torch.cuda.is_available())'"
+      },
+      {
+        "error_text": "Wrong speaker assignment on cross-talk",
+        "cause": "Two speakers overlap; one dominates the merge.",
+        "fix_snippet": "Merge logic uses max overlap. For better cross-talk handling, use word-level Whisper + word-level overlap. Or accept the limitation; pure overlap is hard."
+      },
+      {
+        "error_text": "Diarization detects 1 speaker for 2-speaker audio",
+        "cause": "Audio too short or speakers too similar in voice.",
+        "fix_snippet": "Pyannote needs ~1 min minimum and distinguishable voices. For short clips, manual splitting may be needed."
+      }
+    ],
+    "production_checklist": [
+      "Run on GPU for any production use; CPU is 10-30x slower.",
+      "Pre-process audio: normalize loudness, downsample to 16kHz (Whisper's native).",
+      "Validate against ground-truth transcripts on a sample.",
+      "Set expected speaker count (num_speakers parameter) if known.",
+      "Anonymize before sending audio to cloud Whisper if PII concerns.",
+      "Track per-clip processing time + cost.",
+      "Test with adversarial audio: heavy accents, background noise, overlapping speech."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "whisper-base",
+        "pyannote/speaker-diarization-3.1"
+      ],
+      "library_versions": [
+        "openai-whisper==20240930",
+        "pyannote.audio==3.3.2"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "whisper",
+      "pyannote"
+    ],
+    "related_glossary_slugs": [
+      "transcription",
+      "diarization",
+      "speech-to-text"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Local Whisper vs API?",
+        "answer": "Local: free, slower, requires GPU for speed. API: faster, costs ~$0.006/minute, no setup. Pick based on cost-volume curve and privacy needs."
+      },
+      {
+        "question": "What model size?",
+        "answer": "base: fast, decent. small: better quality, 2x slower. medium: noticeably better, 4x slower. large: best, 10x slower. For meetings: small or medium."
+      },
+      {
+        "question": "Will it work in noisy environments?",
+        "answer": "Whisper is robust but degrades. Pre-process with noise reduction (RNNoise) for crucial transcripts. Diarization especially suffers in noise."
+      },
+      {
+        "question": "How to handle multiple languages in one recording?",
+        "answer": "Whisper auto-detects per chunk. For mixed-language audio (code-switching), word-level timestamps + manual review work better than treating it as one language."
+      }
+    ],
+    "github_url": "https://github.com/openai/whisper",
+    "meta_title": "Whisper Transcription With Speaker Diarization",
+    "meta_description": "Transcribe + diarize audio: Whisper + pyannote. Produces speaker-labeled transcripts with word-level alignment. Local or via API."
   },
   {
     "slug": "langfuse-tracing-decorator",
