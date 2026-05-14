@@ -6748,5 +6748,713 @@
     ],
     "meta_title": "LangSmith Eval + Tracing Setup | OSS AI Hub",
     "meta_description": "Production LangSmith: @traceable decorator, eval datasets, A/B experiments, prompt hub for LangChain stacks. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "instructor-structured-output",
+    "title": "Instructor for Pydantic-Validated Structured Output",
+    "tldr": "Instructor wraps OpenAI/Anthropic clients to return Pydantic-validated responses with auto-retry on validation failures.",
+    "description": "Production-grade structured output: define a Pydantic model, get a typed object back from any LLM, with automatic retries on validation errors and built-in observability.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "instructor",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "instructor",
+      "pydantic",
+      "structured-output"
+    ],
+    "best_for_tags": [
+      "structured-output",
+      "validation",
+      "production"
+    ],
+    "featured": true,
+    "when_to_use": "You need structured data out of an LLM and you've been hand-parsing JSON. Instructor is the simplest path - one line wraps your client, you write Pydantic models, you get validated Python objects. Works with OpenAI, Anthropic, Mistral, Cohere, Gemini, Ollama, and anything LiteLLM-compatible.",
+    "when_not_to_use": "Skip when (1) you need 100% schema compliance via token-level constraint - use Outlines or OpenAI strict json_schema; (2) you're already on BAML's typed-prompt DSL - don't mix; (3) very long outputs where retries are expensive.",
+    "quick_start": "1) `pip install instructor anthropic pydantic`  2) Define a Pydantic model  3) `client = instructor.from_anthropic(Anthropic())` and call with response_model=YourModel.",
+    "full_code": "\"\"\"Instructor + Anthropic Claude: Pydantic-validated structured output.\"\"\"\nfrom __future__ import annotations\n\nimport instructor\nfrom anthropic import Anthropic\nfrom pydantic import BaseModel, Field\nfrom typing import Literal\n\n\nclass Triage(BaseModel):\n    category: Literal[\"billing\", \"tech\", \"general\"]\n    urgency: Literal[\"low\", \"medium\", \"high\"]\n    summary: str = Field(description=\"One-sentence summary of the user's intent.\")\n\n\nclass Order(BaseModel):\n    \"\"\"Extract a structured order from free-text.\"\"\"\n    customer_name: str\n    items: list[str]\n    total_cents: int = Field(ge=0, description=\"Total in cents (integer).\")\n    note: str | None = None\n\n\nclient = instructor.from_anthropic(Anthropic())\n\n\ndef triage(message: str) -> Triage:\n    return client.messages.create(\n        model=\"claude-sonnet-4-5\",\n        max_tokens=300,\n        max_retries=3,                # auto-retry on validation failure\n        response_model=Triage,\n        messages=[\n            {\"role\": \"system\", \"content\": \"Triage incoming support messages.\"},\n            {\"role\": \"user\", \"content\": message},\n        ],\n    )\n\n\ndef extract_order(text: str) -> Order:\n    return client.messages.create(\n        model=\"claude-sonnet-4-5\",\n        max_tokens=500,\n        max_retries=3,\n        response_model=Order,\n        messages=[{\"role\": \"user\", \"content\": f\"Extract the order from:\\n{text}\"}],\n    )\n\n\nif __name__ == \"__main__\":\n    t = triage(\"My payment failed twice. I need help by EOD.\")\n    print(f\"category={t.category} urgency={t.urgency} summary={t.summary}\")\n\n    o = extract_order(\"Two Llama tee shirts at $25 each + one mug at $12 for Jane Doe.\")\n    print(f\"customer={o.customer_name} items={o.items} total_cents={o.total_cents}\")\n",
+    "code": "import instructor\nfrom anthropic import Anthropic\nfrom pydantic import BaseModel\nfrom typing import Literal\n\n\nclass Triage(BaseModel):\n    category: Literal['billing', 'tech', 'general']\n    urgency: Literal['low', 'medium', 'high']\n    summary: str\n\n\nclient = instructor.from_anthropic(Anthropic())\nresult = client.messages.create(\n    model='claude-sonnet-4-5',\n    max_tokens=300, max_retries=3, response_model=Triage,\n    messages=[{'role': 'user', 'content': 'My payment failed. Help needed today.'}],\n)\nprint(result.category, result.urgency, result.summary)\n",
+    "dependencies": [
+      "instructor",
+      "anthropic",
+      "pydantic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "instructor",
+        "version": ">=1.7.0",
+        "purpose": "Pydantic-validated LLM output wrapper."
+      },
+      {
+        "name": "anthropic",
+        "version": ">=0.40.0",
+        "purpose": "Example provider; instructor supports many."
+      },
+      {
+        "name": "pydantic",
+        "version": ">=2.9.0",
+        "purpose": "Schema definitions + validation."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Claude API key."
+      }
+    ],
+    "setup_steps": [
+      "`pip install instructor>=1.7.0 anthropic pydantic>=2.9.0`",
+      "Export ANTHROPIC_API_KEY (or OPENAI_API_KEY etc.).",
+      "Define your Pydantic model(s).",
+      "Wrap the client: `instructor.from_anthropic(Anthropic())`.",
+      "Call with `response_model=YourModel, max_retries=3`.",
+      "Catch `instructor.exceptions.InstructorRetryException` if all retries fail.",
+      "(Optional) Wire Langfuse for trace observability on response_model calls."
+    ],
+    "variations": [
+      {
+        "label": "OpenAI variant",
+        "description": "Same API, different provider.",
+        "code_snippet": "from openai import OpenAI\nclient = instructor.from_openai(OpenAI())\n# Then identical client.chat.completions.create(... response_model=...)"
+      },
+      {
+        "label": "Streaming partial objects",
+        "description": "Show fields populating in real time.",
+        "code_snippet": "from instructor import Partial\nfor partial in client.messages.create_partial(model='claude-sonnet-4-5', response_model=Order, ...):\n    print(partial)  # progressively-filled Order"
+      },
+      {
+        "label": "Iterable responses (extract list)",
+        "description": "Return a stream of validated objects.",
+        "code_snippet": "from instructor import Iterable\nfor row in client.messages.create_iterable(model='claude-sonnet-4-5', response_model=Iterable[Order], messages=[...]):\n    save(row)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ValidationError: 1 validation error for Order",
+        "cause": "LLM emitted invalid types for fields.",
+        "fix_snippet": "# Use max_retries=3 (default in instructor). For persistent failures:\n# 1) Add Field(description='...') on confusing fields\n# 2) Add a system message that explicitly describes the schema\n# 3) Drop to a stronger model (claude-sonnet-4-5 vs haiku)"
+      },
+      {
+        "error_text": "InstructorRetryException after 3 attempts",
+        "cause": "Schema too strict OR prompt ambiguous.",
+        "fix_snippet": "from instructor.exceptions import InstructorRetryException\ntry:\n    result = client.messages.create(..., response_model=Order, max_retries=3)\nexcept InstructorRetryException as e:\n    print(f'Last validation error: {e.last_completion}')"
+      },
+      {
+        "error_text": "Output looks right but Literal field fails",
+        "cause": "Model returned a value not in the Literal set.",
+        "fix_snippet": "# Wider Literal + downstream normalize:\ncategory: Literal['billing', 'tech', 'general', 'other']\n# OR add a system message: 'Reply with EXACTLY one of: billing, tech, general'"
+      }
+    ],
+    "production_checklist": [
+      "Set max_retries=3 (default) - lower = more failures, higher = cost balloon.",
+      "Make field descriptions instructive (`Field(description='Total in cents as integer, no decimals')`) - dramatically improves accuracy.",
+      "Add Pydantic validators for cross-field invariants (e.g. items_count == len(items)).",
+      "Log InstructorRetryException to your observability stack - persistent failures usually mean a prompt bug.",
+      "Pin instructor version - the from_anthropic/from_openai API has stabilized but minor versions tweak.",
+      "Cache by hash of (system_prompt + user_message + schema_hash) - same inputs deterministic.",
+      "For high-volume tasks, drop to a smaller model (haiku) + larger max_retries."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "gpt-5",
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "instructor==1.7.0",
+        "anthropic==0.40.0",
+        "pydantic==2.9.2"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "instructor",
+      "pydantic",
+      "outlines"
+    ],
+    "related_glossary_slugs": [
+      "structured-output",
+      "pydantic",
+      "function-calling",
+      "json-schema"
+    ],
+    "related_learn_slugs": [
+      "structured-outputs-101"
+    ],
+    "faq": [
+      {
+        "question": "Instructor vs OpenAI strict json_schema vs Outlines?",
+        "answer": "Instructor: easiest API, multi-provider, retries on validation failure (probabilistic compliance). OpenAI strict json_schema: 100% compliance via constrained decoding, OpenAI-only. Outlines: 100% compliance, works on local models. Pick instructor when you want one API across providers; pick strict mode / Outlines when you can't afford any malformed output."
+      },
+      {
+        "question": "Can I nest models?",
+        "answer": "Yes - Pydantic nesting works as expected. Add depth carefully though; deeply nested schemas confuse weaker models. For depths >3, consider flattening or splitting the call into stages."
+      }
+    ],
+    "meta_title": "Instructor for Pydantic-Validated LLM Output | OSS AI Hub",
+    "meta_description": "Production Instructor recipe: Pydantic-validated structured output with auto-retry. Multi-provider (Claude, OpenAI, Ollama). MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "outlines-grammar-constrained",
+    "title": "Outlines Grammar-Constrained Generation (100% Schema Compliance)",
+    "tldr": "Outlines forces token-by-token JSON / regex / CFG-grammar constrained output on any HF model. 100% schema compliance.",
+    "description": "Outlines hooks the generation loop to mask invalid tokens at each step. Works with vLLM, llama.cpp, Transformers; supports JSON schema, regex, and CFG grammars.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "outlines",
+    "difficulty_tier": "expert",
+    "tags": [
+      "outlines",
+      "constrained-decoding",
+      "structured-output"
+    ],
+    "best_for_tags": [
+      "strict-schema",
+      "constrained-gen",
+      "local-llm"
+    ],
+    "when_to_use": "You're running a local model (Llama, Qwen, Mixtral) and need bullet-proof structured output without retries. Outlines guarantees the model emits valid JSON / regex / grammar token-by-token; no validation failures possible.",
+    "when_not_to_use": "Skip Outlines when (1) you're on hosted APIs - OpenAI strict json_schema / Anthropic tool use are simpler; (2) free-form text matters more than structure; (3) the schema is too complex - constrained decoding can degrade quality.",
+    "quick_start": "1) `pip install outlines transformers torch`  2) Load model  3) Wrap with `outlines.generate.json(model, Schema)` or `outlines.generate.regex(model, pattern)`.",
+    "full_code": "\"\"\"Outlines constrained generation against Llama 3.1 8B (local).\"\"\"\nfrom __future__ import annotations\n\nimport outlines\nfrom pydantic import BaseModel, Field\nfrom typing import Literal\n\n\nclass Order(BaseModel):\n    customer_name: str\n    items: list[str] = Field(min_length=1)\n    total_cents: int = Field(ge=0)\n    priority: Literal[\"low\", \"normal\", \"high\"]\n\n\n# 1. Load model (any HF model)\nmodel = outlines.models.transformers(\"meta-llama/Llama-3.1-8B-Instruct\")\n\n# 2. Constrained JSON generation - 100% schema-compliant\ngenerator = outlines.generate.json(model, Order)\n\nprompt = \"\"\"Extract an order from this text. Reply with JSON only.\n\nText: Jane Doe ordered two t-shirts at $25 each. Priority: high.\n\"\"\"\norder: Order = generator(prompt, max_tokens=300)\nprint(order)  # already a validated Pydantic object\n\n\n# 3. Regex-constrained generation - useful for IDs, phones, dates\nphone_gen = outlines.generate.regex(model, r\"\\+1-\\d{3}-\\d{3}-\\d{4}\")\nprint(phone_gen(\"Generate a US phone number: \", max_tokens=20))\n\n\n# 4. CFG-constrained generation - SQL, arithmetic, custom DSL\nsql_cfg = \"\"\"\n?start: select_stmt\nselect_stmt: \"SELECT\" columns \"FROM\" table (\"WHERE\" condition)?\ncolumns: column (\",\" column)*\ncolumn: NAME\ntable: NAME\ncondition: NAME \"=\" VALUE\nNAME: /[a-z_][a-z0-9_]*/\nVALUE: /'[a-z0-9]+'/\n\"\"\"\nsql_gen = outlines.generate.cfg(model, sql_cfg)\nprint(sql_gen(\"Write a SQL query for users with name='alice': \", max_tokens=100))\n",
+    "code": "import outlines\nfrom pydantic import BaseModel\nfrom typing import Literal\n\n\nclass Order(BaseModel):\n    customer_name: str\n    items: list[str]\n    priority: Literal['low', 'normal', 'high']\n\n\nmodel = outlines.models.transformers('meta-llama/Llama-3.1-8B-Instruct')\ngenerator = outlines.generate.json(model, Order)\norder = generator('Extract: Jane ordered shoes. Priority: high.', max_tokens=300)\nprint(order)\n",
+    "dependencies": [
+      "outlines",
+      "transformers",
+      "torch",
+      "pydantic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "outlines",
+        "version": ">=0.1.0",
+        "purpose": "Constrained generation."
+      },
+      {
+        "name": "transformers",
+        "version": ">=4.46.0",
+        "purpose": "HF model loading."
+      },
+      {
+        "name": "torch",
+        "version": ">=2.5.0",
+        "purpose": "Inference backend."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "For gated models (Llama)."
+      }
+    ],
+    "setup_steps": [
+      "Provision a GPU (any 16GB+ card for 8B; 80GB for 70B).",
+      "`pip install outlines>=0.1.0 transformers torch pydantic`",
+      "`huggingface-cli login`",
+      "Save the full_code as `outlines_demo.py`.",
+      "Run `python outlines_demo.py` - first run downloads weights (~16GB for 8B Instruct).",
+      "For production, swap `outlines.models.transformers` for `outlines.models.vllm` (much faster)."
+    ],
+    "variations": [
+      {
+        "label": "vLLM backend (10-50x faster)",
+        "description": "Constrained gen on top of vLLM.",
+        "code_snippet": "model = outlines.models.vllm('meta-llama/Llama-3.1-8B-Instruct')\n# Same generators work; throughput is much higher"
+      },
+      {
+        "label": "llama.cpp backend",
+        "description": "Run on CPU or Apple Silicon.",
+        "code_snippet": "model = outlines.models.llamacpp('./models/Llama-3.1-8B-Q4_K_M.gguf', n_gpu_layers=-1)"
+      },
+      {
+        "label": "Constrained streaming",
+        "description": "Stream tokens that satisfy the grammar.",
+        "code_snippet": "for token in outlines.generate.json(model, Schema, sampler=outlines.samplers.greedy()).stream(prompt):\n    print(token, end='', flush=True)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Generation hangs / 0 tokens/sec",
+        "cause": "Compilation of the JSON schema FSM happening lazily.",
+        "fix_snippet": "# Warm up the generator BEFORE serving:\ngenerator = outlines.generate.json(model, Order)\n_ = generator('warmup', max_tokens=10)  # compile + cache the FSM"
+      },
+      {
+        "error_text": "ValueError: cannot compile grammar (recursive)",
+        "cause": "Pydantic model has circular references.",
+        "fix_snippet": "# Flatten recursive structures or use ForwardRef carefully.\n# Outlines requires non-recursive schemas for FSM compilation."
+      },
+      {
+        "error_text": "Tokens / quality degraded vs unconstrained",
+        "cause": "Strict grammar forces token choices that may not be the highest-probability ones.",
+        "fix_snippet": "# Loosen the schema: use `str` over `Literal[...]` when possible.\n# OR: generate freely, then re-extract with constrained gen on a stronger model."
+      }
+    ],
+    "production_checklist": [
+      "Pre-compile FSMs at startup (warmup call) - cold compile adds 1-5s to first request.",
+      "Use vLLM backend at scale - the Transformers backend is single-stream only.",
+      "Cache compiled FSMs in /tmp/outlines_cache/ - reuse across processes.",
+      "Watch for grammar that's too strict - quality drops when the next 'best' token isn't allowed.",
+      "Combine with retry: even constrained gen can produce semantically wrong outputs.",
+      "For chat agents, use constrained gen only on tool-call format - free-form on the answer text.",
+      "Pin outlines minor version - the API has been moving."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.1-8B-Instruct",
+        "Qwen/Qwen2.5-7B-Instruct"
+      ],
+      "library_versions": [
+        "outlines==0.1.0",
+        "transformers==4.46.3",
+        "vllm==0.7.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "outlines",
+      "vllm",
+      "instructor"
+    ],
+    "related_glossary_slugs": [
+      "constrained-decoding",
+      "json-schema",
+      "context-free-grammar",
+      "fsm"
+    ],
+    "related_learn_slugs": [
+      "structured-outputs-101",
+      "constrained-decoding-101"
+    ],
+    "faq": [
+      {
+        "question": "Outlines vs Instructor?",
+        "answer": "Outlines: token-level constraint = 100% schema compliance, works on local models. Instructor: validation-and-retry = ~95-99% compliance, works on any provider including hosted ones. Use Outlines when you self-host AND can't tolerate any malformed output. Use Instructor when convenience + provider portability matter more."
+      },
+      {
+        "question": "Does Outlines work with hosted APIs?",
+        "answer": "Indirectly - it needs token-level access to mask invalid tokens. Hosted APIs (OpenAI, Anthropic) don't expose that. For hosted APIs use OpenAI's strict json_schema (constrained at OpenAI's end) or Instructor (post-validation retry)."
+      }
+    ],
+    "meta_title": "Outlines Grammar-Constrained Generation | OSS AI Hub",
+    "meta_description": "Production Outlines recipe: token-level JSON / regex / CFG constrained generation for local models. 100% schema compliance. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "openai-strict-json-mode",
+    "title": "OpenAI Strict JSON Mode (response_format with Schema Enforcement)",
+    "tldr": "OpenAI strict json_schema mode with token-level enforcement. Zero malformed JSON guaranteed.",
+    "description": "OpenAI's strict response_format with json_schema: GPT-5 / GPT-4o emit JSON that's guaranteed to match the supplied schema, validated at token-emit time.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "openai",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "openai",
+      "json-schema",
+      "strict"
+    ],
+    "best_for_tags": [
+      "strict-json",
+      "openai",
+      "production"
+    ],
+    "when_to_use": "You're on OpenAI (GPT-5 / GPT-4o family) and need 100% schema-compliant JSON output. Strict mode is constrained decoding on OpenAI's servers - no retries needed, no validation library, the response just IS valid.",
+    "when_not_to_use": "Skip when (1) you're using Anthropic - Anthropic's tool use offers structured output without strict mode; (2) you need schemas with `additionalProperties: true` - strict mode requires closed schemas; (3) you need oneOf/anyOf - strict mode is limited there.",
+    "quick_start": "1) `pip install openai pydantic`  2) Define Pydantic model OR raw JSON schema  3) `client.chat.completions.parse(... response_format=YourModel)`.",
+    "full_code": "\"\"\"OpenAI strict JSON via response_format + Pydantic.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom openai import OpenAI\nfrom pydantic import BaseModel, Field\nfrom typing import Literal\n\n\nclass CalendarEvent(BaseModel):\n    name: str\n    date: str = Field(description=\"ISO 8601 date YYYY-MM-DD\")\n    participants: list[str]\n    location: Literal[\"zoom\", \"office\", \"external\"]\n\n\nclient = OpenAI()\n\n\ndef extract_event(text: str) -> CalendarEvent:\n    \"\"\"Use the typed .parse() helper - returns a validated Pydantic model directly.\"\"\"\n    completion = client.chat.completions.parse(\n        model=\"gpt-5\",                    # or \"gpt-4o-2024-08-06\" or later\n        messages=[\n            {\"role\": \"system\", \"content\": \"Extract event details. Reply with the parsed event ONLY.\"},\n            {\"role\": \"user\", \"content\": text},\n        ],\n        response_format=CalendarEvent,\n    )\n    return completion.choices[0].message.parsed   # already a CalendarEvent instance\n\n\n# Alternative: raw json_schema mode if you don't use Pydantic\ndef extract_event_raw(text: str) -> dict:\n    SCHEMA = {\n        \"type\": \"json_schema\",\n        \"json_schema\": {\n            \"name\": \"calendar_event\",\n            \"strict\": True,\n            \"schema\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"name\": {\"type\": \"string\"},\n                    \"date\": {\"type\": \"string\"},\n                    \"participants\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n                    \"location\": {\"type\": \"string\", \"enum\": [\"zoom\", \"office\", \"external\"]},\n                },\n                \"required\": [\"name\", \"date\", \"participants\", \"location\"],\n                \"additionalProperties\": False,\n            },\n        },\n    }\n    resp = client.chat.completions.create(\n        model=\"gpt-5\",\n        messages=[\n            {\"role\": \"system\", \"content\": \"Extract event details.\"},\n            {\"role\": \"user\", \"content\": text},\n        ],\n        response_format=SCHEMA,\n    )\n    import json\n    return json.loads(resp.choices[0].message.content)\n\n\nif __name__ == \"__main__\":\n    ev = extract_event(\"Sprint planning tomorrow at the office with Alice and Bob.\")\n    print(ev)\n",
+    "code": "from openai import OpenAI\nfrom pydantic import BaseModel\nfrom typing import Literal\n\n\nclass CalendarEvent(BaseModel):\n    name: str\n    date: str\n    participants: list[str]\n    location: Literal['zoom', 'office', 'external']\n\n\ncompletion = OpenAI().chat.completions.parse(\n    model='gpt-5',\n    messages=[{'role': 'user', 'content': 'Sprint planning tomorrow at office with Alice, Bob.'}],\n    response_format=CalendarEvent,\n)\nprint(completion.choices[0].message.parsed)\n",
+    "dependencies": [
+      "openai",
+      "pydantic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "openai",
+        "version": ">=1.50.0",
+        "purpose": "OpenAI SDK with .parse() helper."
+      },
+      {
+        "name": "pydantic",
+        "version": ">=2.9.0",
+        "purpose": "Schema definitions."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI API key."
+      }
+    ],
+    "setup_steps": [
+      "`pip install openai>=1.50.0 pydantic>=2.9.0`",
+      "Export OPENAI_API_KEY.",
+      "Define your Pydantic model (or raw JSON schema with strict: True).",
+      "Use `.chat.completions.parse()` for typed Pydantic responses OR `.create()` with response_format dict for raw.",
+      "All required fields MUST be in `required` array - strict mode requires no optional top-level fields.",
+      "No `additionalProperties: true` allowed - strict mode is closed-schema only."
+    ],
+    "variations": [
+      {
+        "label": "Tool calling with strict schemas",
+        "description": "Same strict mode for function calling.",
+        "code_snippet": "from openai.types.chat import ChatCompletionToolParam\n# Define tool with strict=True\ntools = [{'type': 'function', 'function': {'name': 'get_weather', 'parameters': WeatherInput.model_json_schema(), 'strict': True}}]"
+      },
+      {
+        "label": "Refusals handling",
+        "description": "GPT-5 may refuse on policy - check the refusal field.",
+        "code_snippet": "if completion.choices[0].message.refusal:\n    print(f'Refused: {completion.choices[0].message.refusal}')\nelse:\n    obj = completion.choices[0].message.parsed"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "BadRequestError: 'strict' is true; schema must have additionalProperties: false",
+        "cause": "Schema is open by default.",
+        "fix_snippet": "# Pydantic: model_config = ConfigDict(extra='forbid') ensures closed schema\n# Raw schema: add 'additionalProperties': False on every object level"
+      },
+      {
+        "error_text": "TypeError: model 'gpt-3.5-turbo' does not support response_format",
+        "cause": "Strict json_schema requires gpt-4o-2024-08-06 or later.",
+        "fix_snippet": "model='gpt-5'  # or gpt-4o-mini"
+      },
+      {
+        "error_text": "completion.parsed is None",
+        "cause": "Model refused OR validation failed at OpenAI's end.",
+        "fix_snippet": "# Always check refusal first:\nmsg = completion.choices[0].message\nif msg.refusal:\n    handle_refusal(msg.refusal)\nelif msg.parsed:\n    use(msg.parsed)"
+      }
+    ],
+    "production_checklist": [
+      "Always check the refusal field before .parsed - GPT-5 surfaces policy refusals there.",
+      "Use Pydantic's `model_config = ConfigDict(extra='forbid')` to enforce closed schemas.",
+      "Avoid Optional fields at the top level - strict mode requires them all in `required`.",
+      "Test with edge inputs (empty strings, unicode, very long) before shipping.",
+      "Pin openai SDK version - the .parse() helper has been refined across 1.40+ releases.",
+      "For multi-turn tool use, use the strict mode on tools too - guarantees valid tool args.",
+      "Combine with Instructor for cross-provider portability when you need it."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-5",
+        "gpt-4o-2024-08-06",
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "openai==1.55.0",
+        "pydantic==2.9.2"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "openai",
+      "pydantic",
+      "instructor"
+    ],
+    "related_glossary_slugs": [
+      "json-schema",
+      "structured-output",
+      "constrained-decoding",
+      "strict-mode"
+    ],
+    "related_learn_slugs": [
+      "structured-outputs-101"
+    ],
+    "faq": [
+      {
+        "question": "Strict mode vs Anthropic tool use vs JSON mode?",
+        "answer": "OpenAI strict json_schema: 100% schema-conformant via constrained decoding at OpenAI's end. Anthropic tool use: similar guarantee via Claude's tool_use blocks - no separate 'strict' flag needed. Legacy OpenAI json_mode (without schema): produces valid JSON but no schema validation. Pick strict json_schema on OpenAI, tool use on Anthropic - both give 100% compliance."
+      },
+      {
+        "question": "Does strict mode reduce quality?",
+        "answer": "Minimally - GPT-5 is trained for it. The bigger quality risk is over-constrained schemas (too many Literals, too many required fields). Loose schemas perform near identically to unconstrained generation."
+      }
+    ],
+    "meta_title": "OpenAI Strict JSON Mode (response_format) | OSS AI Hub",
+    "meta_description": "Production OpenAI strict json_schema: 100% schema-conformant output, Pydantic .parse() helper, refusal handling. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "anthropic-tool-use-parallel",
+    "title": "Anthropic Parallel Tool Calling with Claude 4",
+    "tldr": "Claude 4 parallel tool use: model emits N tool_use blocks per turn, you execute them concurrently, return all results in one user turn.",
+    "description": "Production Claude tool-use loop with parallel execution: define tools, loop until stop_reason='end_turn', execute tool_use blocks in parallel via asyncio.gather.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "anthropic",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "anthropic",
+      "tool-use",
+      "parallel",
+      "claude"
+    ],
+    "best_for_tags": [
+      "parallel-tools",
+      "claude",
+      "agent"
+    ],
+    "featured": true,
+    "when_to_use": "Agents using Claude 4 (Sonnet 4.5 or Opus 4.x) that need to call multiple tools per turn. Claude emits all tool calls in one block when independent - executing them in parallel saves 2-5x latency vs sequential.",
+    "when_not_to_use": "Skip parallel execution when (1) tools have side effects + ordering matters; (2) you're on a model older than Claude 3 - parallel tool use is a Claude 3+ feature; (3) tools share state.",
+    "quick_start": "1) `pip install anthropic`  2) Define tools  3) Loop: call -> execute tool_use blocks in parallel -> append results -> repeat until end_turn.",
+    "full_code": "\"\"\"Claude 4 parallel tool use with asyncio.gather.\"\"\"\nfrom __future__ import annotations\n\nimport asyncio\nimport json\nimport os\nfrom typing import Any\n\nfrom anthropic import AsyncAnthropic\n\n\nTOOLS = [\n    {\n        \"name\": \"get_weather\",\n        \"description\": \"Return current weather for a city.\",\n        \"input_schema\": {\n            \"type\": \"object\",\n            \"required\": [\"city\"],\n            \"properties\": {\"city\": {\"type\": \"string\"}, \"unit\": {\"type\": \"string\", \"enum\": [\"celsius\", \"fahrenheit\"], \"default\": \"celsius\"}},\n        },\n    },\n    {\n        \"name\": \"get_time\",\n        \"description\": \"Return current local time in a city.\",\n        \"input_schema\": {\n            \"type\": \"object\",\n            \"required\": [\"city\"],\n            \"properties\": {\"city\": {\"type\": \"string\"}},\n        },\n    },\n]\n\n\n# --- Tool implementations (your real code goes here) ---\nasync def get_weather(city: str, unit: str = \"celsius\") -> dict:\n    await asyncio.sleep(0.5)  # simulate API call\n    return {\"city\": city, \"temp\": 18, \"condition\": \"cloudy\", \"unit\": unit}\n\n\nasync def get_time(city: str) -> dict:\n    await asyncio.sleep(0.3)\n    return {\"city\": city, \"time\": \"14:23:00\", \"timezone\": \"UTC+1\"}\n\n\nTOOL_FUNCS = {\"get_weather\": get_weather, \"get_time\": get_time}\n\n\nasync def execute_tool(block) -> dict:\n    \"\"\"Execute a single tool_use block + format as tool_result.\"\"\"\n    name = block.name\n    args = block.input\n    try:\n        result = await TOOL_FUNCS[name](**args)\n        return {\"type\": \"tool_result\", \"tool_use_id\": block.id, \"content\": json.dumps(result)}\n    except Exception as e:\n        return {\"type\": \"tool_result\", \"tool_use_id\": block.id, \"content\": f\"ERROR: {e}\", \"is_error\": True}\n\n\nasync def agent_loop(user_msg: str, max_iter: int = 5) -> str:\n    client = AsyncAnthropic()\n    messages = [{\"role\": \"user\", \"content\": user_msg}]\n\n    for i in range(max_iter):\n        resp = await client.messages.create(\n            model=\"claude-sonnet-4-5\",\n            max_tokens=1024,\n            tools=TOOLS,\n            messages=messages,\n        )\n        # Append the assistant turn (contains the tool_use blocks)\n        messages.append({\"role\": \"assistant\", \"content\": resp.content})\n\n        if resp.stop_reason == \"end_turn\":\n            return \"\".join(b.text for b in resp.content if b.type == \"text\")\n\n        if resp.stop_reason == \"tool_use\":\n            # PARALLEL execution of all tool_use blocks in this turn\n            tool_blocks = [b for b in resp.content if b.type == \"tool_use\"]\n            results = await asyncio.gather(*[execute_tool(b) for b in tool_blocks])\n            # Single user turn with all results\n            messages.append({\"role\": \"user\", \"content\": results})\n            continue\n\n        return f\"unexpected stop_reason={resp.stop_reason}\"\n    return \"max iterations reached\"\n\n\nif __name__ == \"__main__\":\n    out = asyncio.run(agent_loop(\"What's the weather AND time in Tokyo and Paris?\"))\n    print(out)\n",
+    "code": "import asyncio, json\nfrom anthropic import AsyncAnthropic\n\nTOOLS = [{'name': 'get_weather', 'description': 'Weather for a city.', 'input_schema': {'type': 'object', 'properties': {'city': {'type': 'string'}}, 'required': ['city']}}]\n\nasync def get_weather(city: str): return {'temp': 18, 'city': city}\n\nasync def agent(user_msg):\n    client = AsyncAnthropic()\n    msgs = [{'role': 'user', 'content': user_msg}]\n    for _ in range(5):\n        r = await client.messages.create(model='claude-sonnet-4-5', max_tokens=1024, tools=TOOLS, messages=msgs)\n        msgs.append({'role': 'assistant', 'content': r.content})\n        if r.stop_reason == 'end_turn':\n            return ''.join(b.text for b in r.content if b.type == 'text')\n        if r.stop_reason == 'tool_use':\n            tools = [b for b in r.content if b.type == 'tool_use']\n            results = await asyncio.gather(*[get_weather(**b.input) for b in tools])\n            msgs.append({'role': 'user', 'content': [{'type': 'tool_result', 'tool_use_id': b.id, 'content': json.dumps(r)} for b, r in zip(tools, results)]})\n\nprint(asyncio.run(agent('Weather in Tokyo and Paris?')))\n",
+    "dependencies": [
+      "anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "anthropic",
+        "version": ">=0.40.0",
+        "purpose": "Anthropic SDK with async tool use."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Claude API key."
+      }
+    ],
+    "setup_steps": [
+      "`pip install anthropic>=0.40.0`",
+      "Export ANTHROPIC_API_KEY.",
+      "Define tools array with name + description + input_schema (OpenAPI 3.0 subset).",
+      "Implement async tool functions; keep them small + idempotent.",
+      "Save the full_code as `claude_tools.py`.",
+      "Run - notice all weather/time calls execute in parallel via asyncio.gather.",
+      "Wire into your app's async handler (FastAPI, Starlette) directly."
+    ],
+    "variations": [
+      {
+        "label": "Sync version (asyncio not available)",
+        "description": "Sequential execution; still works.",
+        "code_snippet": "from anthropic import Anthropic\nclient = Anthropic()\nfor block in resp.content:\n    if block.type == 'tool_use':\n        result = SYNC_TOOL_FUNCS[block.name](**block.input)\n        # build single tool_result message"
+      },
+      {
+        "label": "Streaming with tools",
+        "description": "Show partial assistant turns + tool_use blocks as they emit.",
+        "code_snippet": "with client.messages.stream(model='claude-sonnet-4-5', tools=TOOLS, messages=msgs) as stream:\n    for event in stream:\n        if event.type == 'content_block_delta' and event.delta.type == 'text_delta':\n            print(event.delta.text, end='', flush=True)"
+      },
+      {
+        "label": "Tool use with structured output (best of both)",
+        "description": "Force final answer through a 'submit_answer' tool with strict schema.",
+        "code_snippet": "TOOLS.append({\n  'name': 'submit_answer',\n  'description': 'Submit final structured answer.',\n  'input_schema': AnswerSchema  # your Pydantic schema as JSON\n})"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "BadRequestError: tool_use_id not found in previous message",
+        "cause": "Skipped appending the assistant turn before user tool_result.",
+        "fix_snippet": "# ALWAYS append the assistant.content (which contains tool_use) before the user tool_result.\nmessages.append({'role': 'assistant', 'content': resp.content})"
+      },
+      {
+        "error_text": "Model loops calling the same tool repeatedly",
+        "cause": "Tool returns same result each time + no progress signal.",
+        "fix_snippet": "# Cap iterations + log the inputs:\nfor i in range(MAX_ITER):\n    ...\n# AND include feedback in tool_result: 'Already tried with these args - try different ones.'"
+      },
+      {
+        "error_text": "Parallel execution accidentally serialized",
+        "cause": "Forgot asyncio.gather; iterated awaits sequentially.",
+        "fix_snippet": "# WRONG (sequential):\nresults = [await execute_tool(b) for b in tool_blocks]\n# RIGHT (parallel):\nresults = await asyncio.gather(*[execute_tool(b) for b in tool_blocks])"
+      }
+    ],
+    "production_checklist": [
+      "Always cap max_iter (5-10) - runaway loops eat tokens.",
+      "Wrap each tool in try/except + return is_error=True - the model handles errors gracefully.",
+      "Use asyncio.gather for tool execution - sequential is a hidden 2-5x latency penalty.",
+      "Log every tool_use call (name + args + result) to Langfuse for audit.",
+      "Set a per-tool timeout (asyncio.wait_for) - one slow tool stalls the whole turn.",
+      "Idempotent tool functions only - the agent may retry.",
+      "Pin anthropic SDK version - the content block schema has refined."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "claude-opus-4-1"
+      ],
+      "library_versions": [
+        "anthropic==0.40.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "anthropic",
+      "instructor"
+    ],
+    "related_glossary_slugs": [
+      "tool-use",
+      "function-calling",
+      "parallel-execution",
+      "claude"
+    ],
+    "related_learn_slugs": [
+      "tool-use-101",
+      "agent-architecture-101"
+    ],
+    "faq": [
+      {
+        "question": "Does Claude do parallel tool calls automatically?",
+        "answer": "Yes - Claude 3+ models emit multiple tool_use blocks in one response when the tools are independent. The harness has to execute them in parallel (asyncio.gather) to actually benefit. Sequential execution of parallel tool calls is the #1 hidden latency tax in Claude agents."
+      },
+      {
+        "question": "How does this differ from OpenAI function calling?",
+        "answer": "Conceptually identical, but Claude's tool_use blocks are inline content (not a separate field) and you pass results as a list of tool_result blocks in a single user turn. OpenAI uses tool_calls in assistant message + a tool_call_id-tagged tool message per call. Both support parallel."
+      }
+    ],
+    "meta_title": "Anthropic Parallel Tool Calling with Claude 4 | OSS AI Hub",
+    "meta_description": "Production Claude 4 parallel tool use: asyncio.gather execution, error handling, structured loop, observability. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "pydantic-function-schema",
+    "title": "Pydantic-to-Function-Schema Generator",
+    "tldr": "Generate OpenAI/Anthropic function-call schemas directly from Pydantic models. Recursive schema flattening + type-mapping.",
+    "description": "Single source of truth: define tools as Pydantic models, get OpenAI tools format + Anthropic input_schema format auto-generated.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "pydantic",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "pydantic",
+      "schema-generation",
+      "tool-schemas"
+    ],
+    "best_for_tags": [
+      "tool-schemas",
+      "pydantic",
+      "multi-provider"
+    ],
+    "when_to_use": "You define tools in Python and want to call OpenAI + Anthropic + Gemini from the same code without maintaining three JSON schemas by hand. Pydantic's `.model_json_schema()` gives you 90% of what each provider wants; this recipe handles the last 10%.",
+    "when_not_to_use": "Skip when (1) you only use one provider - just use their native format; (2) Instructor / LiteLLM already handle this for you; (3) you have non-Python tools and schemas live elsewhere.",
+    "quick_start": "1) `pip install pydantic`  2) Define your tool as a Pydantic model  3) `tool_to_openai(MyTool)` and `tool_to_anthropic(MyTool)`.",
+    "full_code": "\"\"\"Pydantic -> provider-specific tool schemas (OpenAI + Anthropic + Gemini).\"\"\"\nfrom __future__ import annotations\n\nfrom typing import Any, Type\nfrom pydantic import BaseModel, Field\n\n\ndef _strip_titles(schema: dict) -> dict:\n    \"\"\"Pydantic adds 'title' fields that confuse some providers; strip them.\"\"\"\n    if isinstance(schema, dict):\n        return {k: _strip_titles(v) for k, v in schema.items() if k != \"title\"}\n    if isinstance(schema, list):\n        return [_strip_titles(v) for v in schema]\n    return schema\n\n\ndef _inline_defs(schema: dict) -> dict:\n    \"\"\"Inline $defs nested $refs - OpenAI/Anthropic prefer flat schemas.\"\"\"\n    defs = schema.pop(\"$defs\", {})\n\n    def walk(node):\n        if isinstance(node, dict):\n            if \"$ref\" in node:\n                ref = node[\"$ref\"].rsplit(\"/\", 1)[-1]\n                return walk(defs[ref])\n            return {k: walk(v) for k, v in node.items()}\n        if isinstance(node, list):\n            return [walk(v) for v in node]\n        return node\n\n    return walk(schema)\n\n\ndef tool_to_openai(model: Type[BaseModel], description: str | None = None) -> dict:\n    \"\"\"OpenAI tools format with strict mode.\"\"\"\n    schema = _strip_titles(_inline_defs(model.model_json_schema()))\n    # Strict mode requires every field in required + additionalProperties: false\n    schema.setdefault(\"additionalProperties\", False)\n    schema[\"required\"] = list(schema.get(\"properties\", {}).keys())\n    return {\n        \"type\": \"function\",\n        \"function\": {\n            \"name\": model.__name__.lower(),\n            \"description\": description or (model.__doc__ or \"\").strip() or model.__name__,\n            \"parameters\": schema,\n            \"strict\": True,\n        },\n    }\n\n\ndef tool_to_anthropic(model: Type[BaseModel], description: str | None = None) -> dict:\n    \"\"\"Anthropic tool_use format.\"\"\"\n    schema = _strip_titles(_inline_defs(model.model_json_schema()))\n    return {\n        \"name\": model.__name__.lower(),\n        \"description\": description or (model.__doc__ or \"\").strip() or model.__name__,\n        \"input_schema\": schema,\n    }\n\n\ndef tool_to_gemini(model: Type[BaseModel], description: str | None = None) -> dict:\n    \"\"\"Gemini function declaration format.\"\"\"\n    schema = _strip_titles(_inline_defs(model.model_json_schema()))\n    return {\"name\": model.__name__.lower(), \"description\": description or (model.__doc__ or \"\").strip(), \"parameters\": schema}\n\n\n# --- Example tool definitions ---\nclass Address(BaseModel):\n    \"\"\"A physical address.\"\"\"\n    line1: str\n    city: str\n    country: str = Field(description=\"ISO 3166-1 alpha-2 country code\")\n\n\nclass CreateOrder(BaseModel):\n    \"\"\"Create an order for a customer.\"\"\"\n    customer_email: str = Field(description=\"Customer's email address.\")\n    items: list[str]\n    shipping: Address\n    notes: str | None = None\n\n\nif __name__ == \"__main__\":\n    import json\n    print(\"--- OpenAI ---\")\n    print(json.dumps(tool_to_openai(CreateOrder), indent=2)[:500])\n    print(\"\\n--- Anthropic ---\")\n    print(json.dumps(tool_to_anthropic(CreateOrder), indent=2)[:500])\n",
+    "code": "from pydantic import BaseModel\n\n\ndef tool_to_openai(model):\n    schema = model.model_json_schema()\n    return {'type': 'function', 'function': {\n        'name': model.__name__.lower(),\n        'description': model.__doc__ or model.__name__,\n        'parameters': schema, 'strict': True,\n    }}\n\n\ndef tool_to_anthropic(model):\n    return {'name': model.__name__.lower(),\n        'description': model.__doc__ or model.__name__,\n        'input_schema': model.model_json_schema()}\n",
+    "dependencies": [
+      "pydantic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "pydantic",
+        "version": ">=2.9.0",
+        "purpose": "Schema generation."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "`pip install pydantic>=2.9.0`",
+      "Define your tool inputs as Pydantic models with docstrings + Field(description=...).",
+      "Save the helpers as `tool_schemas.py`.",
+      "Import and use: `tool_to_openai(YourTool)` returns ready-to-pass tool dict.",
+      "Verify with `print(json.dumps(tool_to_openai(YourTool), indent=2))` against your provider's expected format.",
+      "Hook into your agent loop: `client.chat.completions.create(tools=[tool_to_openai(MyTool)], ...)`."
+    ],
+    "variations": [
+      {
+        "label": "Add a registry that auto-discovers tools",
+        "description": "Decorate Pydantic models with @tool; collect into a registry.",
+        "code_snippet": "REGISTRY: dict[str, type[BaseModel]] = {}\ndef tool(cls):\n    REGISTRY[cls.__name__.lower()] = cls\n    return cls\n@tool\nclass CreateOrder(BaseModel): ...\n# Then: openai_tools = [tool_to_openai(m) for m in REGISTRY.values()]"
+      },
+      {
+        "label": "Reject nested objects deeper than 3 levels",
+        "description": "Deep nesting confuses weak models.",
+        "code_snippet": "def max_depth(schema, depth=0):\n    if depth > 3: raise ValueError('too deep')\n    if 'properties' in schema:\n        for v in schema['properties'].values(): max_depth(v, depth+1)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "OpenAI BadRequestError: parameter X has unsupported type",
+        "cause": "Pydantic emitted a JSON-Schema type OpenAI doesn't accept.",
+        "fix_snippet": "# Inline $defs (already done in tool_to_openai). Also: drop 'title' fields, drop 'default' for required.\n# For datetime, switch to str with format='date-time'."
+      },
+      {
+        "error_text": "Anthropic ignores my Field(description=...)",
+        "cause": "Pydantic puts description in nested object, Anthropic expects it inline.",
+        "fix_snippet": "# Field descriptions DO flow through model_json_schema() properly.\n# If not surfaced in the model's reasoning, you may need to boost via docstring on the parent."
+      },
+      {
+        "error_text": "Schema differs between Pydantic v1 + v2",
+        "cause": "v1 uses .schema(), v2 uses .model_json_schema().",
+        "fix_snippet": "# Pin pydantic>=2.0.0 and use model_json_schema everywhere.\n# Migrate any leftover v1 .schema() calls."
+      }
+    ],
+    "production_checklist": [
+      "Always strip $defs / titles before sending to providers - they choke on Pydantic's nesting.",
+      "Use strict=True on OpenAI tools - guarantees the agent emits valid arguments.",
+      "Field descriptions matter more than parameter names - invest in them.",
+      "Test schemas against all target providers in CI - silent drift breaks production.",
+      "Pin pydantic to a minor version - schema serialization changes subtly across releases.",
+      "For large schemas, split into multiple smaller tools - one fat tool is brittle.",
+      "Cache generated schemas at startup - regenerating per-request is wasteful."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "gpt-5"
+      ],
+      "library_versions": [
+        "pydantic==2.9.2"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "pydantic",
+      "openai",
+      "anthropic"
+    ],
+    "related_glossary_slugs": [
+      "pydantic",
+      "json-schema",
+      "tool-schemas",
+      "function-calling"
+    ],
+    "related_learn_slugs": [
+      "tool-use-101"
+    ],
+    "faq": [
+      {
+        "question": "Why not just use Instructor / LiteLLM?",
+        "answer": "Instructor: solves the response side (validated outputs). This recipe solves the request side (tool schemas). LiteLLM has helpers too but they're hidden in their internals. Roll your own when you want explicit control + a registry pattern; reach for higher-level libs when you don't."
+      },
+      {
+        "question": "How does this handle datetime / decimal / UUID?",
+        "answer": "Pydantic emits these as `string` with `format: date-time` / `format: uuid` etc. OpenAI + Anthropic ignore the format string but the model usually infers the right shape from context. For strict typing, add Field(description='ISO 8601 datetime') for safety."
+      }
+    ],
+    "meta_title": "Pydantic-to-Function-Schema Generator | OSS AI Hub",
+    "meta_description": "One Pydantic model -> OpenAI + Anthropic + Gemini tool schemas. Strict mode, $defs flattening, registry pattern. MIT."
   }
 ]
