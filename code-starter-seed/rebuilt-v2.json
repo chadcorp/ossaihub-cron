@@ -2323,6 +2323,140 @@
     "meta_description": "Local CPU embeddings via FastEmbed ONNX: no API key, sentence-transformers quality, batched + cached. Drop-in for OpenAI embeddings."
   },
   {
+    "slug": "cohere-multilingual-embed-rerank",
+    "title": "Cohere Multilingual Embed + Rerank",
+    "tldr": "Cohere's embed-multilingual-v3 + rerank-multilingual-v3 \u2014 strongest off-the-shelf option for multilingual RAG (100+ languages). Drop-in alternative to OpenAI for non-English content.",
+    "category": "embeddings",
+    "language": "python",
+    "framework": "Cohere SDK",
+    "tags": [
+      "cohere",
+      "multilingual",
+      "embedding",
+      "reranker"
+    ],
+    "best_for_tags": [
+      "multilingual-rag",
+      "non-english",
+      "production-rag"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "When your RAG content includes non-English languages and OpenAI embeddings underperform. Cohere's multilingual models are SOTA for mixed-language corpora.",
+    "when_not_to_use": "Skip for English-only when OpenAI / fastembed work fine. Skip when you're already deep in Voyage / OpenAI ecosystem and the multilingual gains aren't critical.",
+    "quick_start": "pip install cohere && COHERE_API_KEY=... python multilingual.py",
+    "full_code": "\"\"\"Cohere multilingual embeddings + reranker.\n\nPattern:\n  1. Embed docs in any of 100+ languages with embed-multilingual-v3.0\n  2. Query in any language; retrieve.\n  3. Rerank with rerank-multilingual-v3.0 for highest precision.\n\"\"\"\nfrom __future__ import annotations\n\nimport os\n\nimport cohere\n\nco = cohere.ClientV2(os.environ[\"COHERE_API_KEY\"])\n\n\ndef embed_docs(texts: list[str]) -> list[list[float]]:\n    \"\"\"Embed documents. input_type='search_document' is required for asymmetric models.\"\"\"\n    resp = co.embed(\n        model=\"embed-multilingual-v3.0\",\n        texts=texts,\n        input_type=\"search_document\",\n        embedding_types=[\"float\"],\n    )\n    return resp.embeddings.float_\n\n\ndef embed_query(query: str) -> list[float]:\n    \"\"\"Embed query. input_type='search_query' (different from doc!).\"\"\"\n    resp = co.embed(\n        model=\"embed-multilingual-v3.0\",\n        texts=[query],\n        input_type=\"search_query\",\n        embedding_types=[\"float\"],\n    )\n    return resp.embeddings.float_[0]\n\n\ndef rerank(query: str, docs: list[str], *, top_n: int = 5) -> list[dict]:\n    \"\"\"Rerank docs by relevance to query. Works cross-lingually.\"\"\"\n    resp = co.rerank(\n        model=\"rerank-multilingual-v3.0\",\n        query=query,\n        documents=docs,\n        top_n=top_n,\n    )\n    return [{\"index\": r.index, \"score\": r.relevance_score, \"text\": docs[r.index]} for r in resp.results]\n\n\ndef full_pipeline(query: str, doc_corpus: list[str], *, k_dense: int = 20, k_rerank: int = 5) -> list[dict]:\n    \"\"\"Dense retrieval \u2192 rerank \u2192 final top-K.\"\"\"\n    import numpy as np\n\n    doc_vecs = embed_docs(doc_corpus)\n    q_vec = embed_query(query)\n\n    # Cosine sim\n    doc_arr = np.array(doc_vecs)\n    q_arr = np.array(q_vec)\n    scores = doc_arr @ q_arr / (np.linalg.norm(doc_arr, axis=1) * np.linalg.norm(q_arr))\n    top_indices = np.argsort(scores)[::-1][:k_dense]\n\n    # Rerank the top-k_dense\n    candidates = [doc_corpus[i] for i in top_indices]\n    reranked = rerank(query, candidates, top_n=k_rerank)\n    # Re-map indices to original corpus\n    for r in reranked:\n        r[\"original_index\"] = int(top_indices[r[\"index\"]])\n    return reranked\n\n\nif __name__ == \"__main__\":\n    docs = [\n        \"Reciprocal Rank Fusion combines multiple ranked lists.\",\n        \"La R\u00e9ciproque Rank Fusion combine plusieurs listes class\u00e9es.\",        # FR\n        \"Reciprocal Rank Fusion \u662f\u4e00\u79cd\u5408\u5e76\u6392\u5e8f\u5217\u8868\u7684\u65b9\u6cd5\u3002\",                # ZH\n        \"Vector databases store embeddings for similarity search.\",\n        \"Las bases de datos vectoriales almacenan embeddings.\",               # ES\n    ]\n    # Query in French; should still retrieve EN content\n    results = full_pipeline(\"Comment fusionner des r\u00e9sultats de plusieurs moteurs de recherche?\", docs)\n    for r in results:\n        print(f\"[{r['score']:.3f}] {r['text']}\")\n",
+    "dependencies": [
+      {
+        "name": "cohere",
+        "version": ">=5.11",
+        "purpose": "Cohere SDK v2"
+      },
+      {
+        "name": "numpy",
+        "version": ">=1.26",
+        "purpose": "Cosine similarity"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "COHERE_API_KEY",
+        "required": true,
+        "description": "Cohere API key",
+        "example": "..."
+      }
+    ],
+    "setup_steps": [
+      "Sign up at cohere.com; generate API key.",
+      "pip install cohere numpy",
+      "export COHERE_API_KEY=...",
+      "python multilingual.py"
+    ],
+    "variations": [
+      {
+        "label": "Embed with dimensions config",
+        "description": "Reduce dimension for storage.",
+        "code_snippet": "# Cohere embed supports compressed embeddings; pass output_dimension=256 or 512 for smaller vectors"
+      },
+      {
+        "label": "Use the English-only models",
+        "description": "If multilingual not needed.",
+        "code_snippet": "model='embed-english-v3.0'  # smaller, faster, equal quality on English"
+      },
+      {
+        "label": "Bedrock-hosted Cohere",
+        "description": "AWS deployment.",
+        "code_snippet": "# Use AWS Bedrock for Cohere; same models, AWS-hosted, BAA-eligible"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "TooManyRequestsError",
+        "cause": "Cohere rate limits.",
+        "fix_snippet": "Implement exponential retry; batch embeddings (up to 96 inputs per call)."
+      },
+      {
+        "error_text": "Wrong input_type produces poor retrieval",
+        "cause": "Asymmetric models \u2014 query and doc need different input_type.",
+        "fix_snippet": "ALWAYS use input_type='search_query' for queries, 'search_document' for docs at index time."
+      },
+      {
+        "error_text": "Empty embedding array",
+        "cause": "Old SDK or response format change.",
+        "fix_snippet": "ClientV2 returns resp.embeddings.float_ (note trailing underscore). Older SDK had different shape."
+      },
+      {
+        "error_text": "Rerank scores all close to 0",
+        "cause": "Query and docs unrelated; normal.",
+        "fix_snippet": "Rerank returns relative ranks; absolute scores often low when nothing's a good match. Use rank order, not threshold on score."
+      }
+    ],
+    "production_checklist": [
+      "Cache embeddings; Cohere bills per character.",
+      "Batch embed calls (up to 96 inputs).",
+      "Use rerank as a final precision boost, not for initial retrieval.",
+      "Monitor cost by token; multilingual content has different cost profile.",
+      "For high-volume, consider Bedrock-hosted Cohere (different pricing tier)."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "embed-multilingual-v3.0",
+        "rerank-multilingual-v3.0"
+      ],
+      "library_versions": [
+        "cohere==5.11.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "cohere"
+    ],
+    "related_glossary_slugs": [
+      "multilingual-embedding",
+      "reranker"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Cohere vs OpenAI for multilingual?",
+        "answer": "Cohere wins on multilingual retrieval evals (especially Asian languages). OpenAI text-embedding-3 is competitive on European; weaker on others."
+      },
+      {
+        "question": "Always rerank?",
+        "answer": "Rerank gives 10-25% precision boost over pure dense. Cost: ~$1 per 1k reranks. Worth it for search/RAG; skip for autocomplete-style latency-critical paths."
+      },
+      {
+        "question": "Voyage vs Cohere?",
+        "answer": "Voyage: top quality for English, financial/legal specialty models. Cohere: top multilingual, mature SDK. Both excellent; pick by language mix."
+      }
+    ],
+    "github_url": "https://github.com/cohere-ai/cohere-python",
+    "meta_title": "Cohere Multilingual Embed + Rerank \u2014 Starter",
+    "meta_description": "Multilingual RAG with Cohere: embed-multilingual-v3 + rerank-multilingual-v3. Cross-lingual retrieval (query EN, find FR/ZH content)."
+  },
+  {
     "slug": "llm-as-judge-pairwise",
     "title": "LLM-as-Judge Pairwise Evaluator With Position Bias Mitigation",
     "tldr": "Pairwise LLM judge for comparing two model outputs against the same prompt. Mitigates position bias by running both orderings and detecting flips. Includes rubric-based scoring.",
