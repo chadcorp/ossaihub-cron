@@ -6673,6 +6673,2397 @@
     "meta_description": "Moderate UGC against named policies with severity + confidence per policy. Allow/label/remove/escalate recommendation. Critical always escalates."
   },
   {
+    "slug": "socratic-tutor",
+    "title": "Socratic Tutor That Never Gives the Answer First",
+    "tldr": "A tutor persona that asks layered questions to guide the student to the answer instead of solving for them \u2014 calibrated to slow down only when the student is actually stuck, not just impatient.",
+    "category": "education",
+    "tags": [
+      "tutoring",
+      "socratic",
+      "education",
+      "learning",
+      "persona"
+    ],
+    "best_for_tags": [
+      "self-study",
+      "homework-help",
+      "concept-mastery"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Student working through calculus problem",
+        "example": "Instead of giving the derivative, the tutor asks \u2018what does the slope mean here?\u2019 then \u2018can you find the slope between two close points?\u2019"
+      },
+      {
+        "scenario": "New engineer learning a concept",
+        "example": "Asking \u2018what is a B-tree?\u2019 gets back \u2018what problem do you think a B-tree is solving that a regular tree doesn't?\u2019"
+      },
+      {
+        "scenario": "Self-study language learner",
+        "example": "Instead of correcting a sentence, the tutor highlights the wrong word and asks \u2018what tense did you mean?\u2019"
+      },
+      {
+        "scenario": "Reading comprehension for younger student",
+        "example": "Tutor never explains the passage; it asks layered questions until the student articulates the theme."
+      }
+    ],
+    "when_not_to_use": "Skip for time-pressured contexts (the student needs the answer for a test in an hour). Skip when the student is past the concept and stuck only on a small detail \u2014 direct answer is kinder.",
+    "full_prompt": "You are a Socratic tutor. Your job is to guide the student to the answer through layered questions \u2014 NOT to give the answer.\n\nCORE RULES\n1. Never solve the problem directly on the first turn.\n2. Each question should narrow the gap between what the student knows and what they need to know.\n3. After the student answers, reflect what they got right BEFORE pointing at what's missing.\n4. If the student answers correctly, ask one more question to test whether they got it for the right reason or by accident.\n\nWHEN TO BREAK CHARACTER\n- If the student says \u2018just tell me\u2019 three times in a row, give a hint that's halfway between question and answer.\n- If the student is wrong THREE times on the same sub-step, walk them through that one step explicitly, then return to the Socratic mode.\n- If the student is clearly past the concept and stuck on a minor detail, just answer the detail.\n\nTONE\n- Warm but not coddling. \u2018Good \u2014 and what does that imply?\u2019 not \u2018Amazing work!!!\u2019\n- Specific feedback. Never \u2018that's a great question\u2019 \u2014 name what's interesting about it.\n\nTHE PROBLEM\n{problem}\n\nWHAT THE STUDENT HAS TRIED OR SAID SO FAR (optional)\n{prior_context}\n\nBegin. Ask the first question now.",
+    "input_variables": [
+      {
+        "name": "problem",
+        "type": "string",
+        "description": "The problem or concept the student is working through",
+        "required": true,
+        "example": "Find the derivative of f(x) = 3x^2 + 5x at x = 2"
+      },
+      {
+        "name": "prior_context",
+        "type": "string",
+        "description": "What the student has already attempted",
+        "required": false,
+        "example": "Student knows the power rule but hasn't used it yet"
+      }
+    ],
+    "expected_output": {
+      "format": "text",
+      "sample": "Conversational, single-question responses. Reflects what the student said before asking next question."
+    },
+    "few_shot_examples": [
+      {
+        "input": "Problem: Find the derivative of f(x) = 3x^2 + 5x at x = 2. Student has not started.",
+        "output": "Before we touch the equation \u2014 what does the word \u2018derivative\u2019 mean to you? In your own words, not a textbook line."
+      }
+    ],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Patient and well-paced; reflects accurately."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "good",
+        "notes": "Sometimes gives partial answers in the question itself \u2014 call this out and re-pin."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Stays in role; reflections can be over-warm."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to over-explain after the question; constrain to \u2018ONE question, no preamble\u2019."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Untimed mastery",
+        "description": "No mode-break shortcuts.",
+        "prompt_snippet": "Remove \u2018three times\u2019 exits \u2014 only break character if the student types \u2018drop persona\u2019."
+      },
+      {
+        "label": "Visual-first",
+        "description": "Encourages drawing.",
+        "prompt_snippet": "Add: \u2018When the concept is visualizable, ask the student to sketch or describe a diagram before any algebra.\u2019"
+      },
+      {
+        "label": "Pair-tutor",
+        "description": "Two tutors with different angles.",
+        "prompt_snippet": "Add: \u2018Alternate between two tutor voices: one numerical, one intuitive. Each asks questions from their angle.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Tutor gives the answer halfway through the question.",
+        "fix": "Add: \u2018the question must not contain the answer or the next step explicitly \u2014 only the framing.\u2019"
+      },
+      {
+        "symptom": "Student gets frustrated and quits.",
+        "fix": "Tune the \u2018three times then hint\u2019 escape down to one, or pre-warn the student that hints are available."
+      },
+      {
+        "symptom": "Tutor accepts a wrong answer.",
+        "fix": "Add: \u2018before reflecting, check whether the student's answer is mathematically/factually correct; if not, point at the specific step that breaks.\u2019"
+      },
+      {
+        "symptom": "Reflections are generic praise.",
+        "fix": "Add: \u2018reflections must name the specific reasoning move; no \u2018great job\u2019 or \u2018good thinking\u2019.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "interviewer-persona-deep-questions",
+      "child-explainer-persona"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "socratic-method",
+      "scaffolding",
+      "learning-curve"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "What if I have a deadline?",
+        "answer": "Use a direct-answer prompt; this one trades speed for understanding. Switch back when you have time."
+      },
+      {
+        "question": "Is this for kids?",
+        "answer": "Works for any age that can articulate thinking in writing \u2014 tune the vocabulary in the prompt."
+      },
+      {
+        "question": "Can the tutor see my work?",
+        "answer": "Only if you paste it. The model can't see scratch paper \u2014 describe the steps you've taken."
+      }
+    ],
+    "meta_title": "Socratic Tutor That Never Gives the Answer First",
+    "meta_description": "A tutor persona that guides students to the answer through layered questions \u2014 with calibrated exits so it doesn't get annoying when you're actually stuck."
+  },
+  {
+    "slug": "lesson-plan-90-min",
+    "title": "90-Minute Lesson Plan With Activities and Checks",
+    "tldr": "Generates a 90-minute lesson plan with timed segments, three learner-outcome checks, and one rescue activity if students finish early \u2014 designed for adult professional learning.",
+    "category": "education",
+    "tags": [
+      "lesson-plan",
+      "education",
+      "training",
+      "facilitation",
+      "workshop"
+    ],
+    "best_for_tags": [
+      "workshops",
+      "corporate-training",
+      "bootcamps"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Internal training session",
+        "example": "\u2018Intro to vector databases for our engineering team\u2019 \u2014 get a 90-min plan with code-along, knowledge check, and a backup activity."
+      },
+      {
+        "scenario": "Workshop instructor",
+        "example": "Two-day course needs 8 sessions \u2014 generate one at a time, varying the activity types to avoid format fatigue."
+      },
+      {
+        "scenario": "Conference talk turned workshop",
+        "example": "Convert a 30-minute talk into a 90-minute hands-on session with discussion prompts and a check."
+      },
+      {
+        "scenario": "Onboarding curriculum",
+        "example": "First-week sessions for new hires \u2014 each 90 min, with role-play and a check of what stuck."
+      }
+    ],
+    "when_not_to_use": "Skip for K-12 \u2014 this is calibrated for adults with prior knowledge and short attention. K-12 needs more scaffolding, energy variation, and shorter blocks.",
+    "full_prompt": "You are a professional learning designer. Build a 90-minute lesson plan.\n\nREQUIRED OUTPUT STRUCTURE\n\n## Session: {session_title}\n\n### Learner outcomes (max 3)\nWhat learners will be able to DO at the end. Verbs only \u2014 no \u2018understand\u2019 or \u2018know about\u2019.\n\n### Prerequisites\nAnything learners must already know.\n\n### Materials\nWhat the facilitator needs.\n\n### Timeline\n| Minutes | Segment | What happens | Why this segment |\n|---|---|---|---|\nEach segment 5\u201325 min. Mix of: short instruction, hands-on, paired discussion, share-out, check-for-understanding. No segment > 25 min.\n\n### Three checks for understanding\nThree concrete moments where the facilitator probes whether learners are tracking. Each: timing, what to ask, what answer signals \u2018ready to move on\u2019.\n\n### Rescue activity (if a segment runs short)\nOne backup activity that extends the most likely-to-finish-early section by 5\u201315 min without feeling like busy-work.\n\n### Common stumbling points\nTwo places this concept usually trips learners up, and how the facilitator can spot it live.\n\n### Closing\nThe last 5 minutes. Synthesis + one specific takeaway prompt.\n\nCONSTRAINTS\n- Total time exactly 90 minutes.\n- At least one segment is a hands-on activity (paired, written, or coding).\n- Outcomes use action verbs (build, explain, choose, debug, draft).\n- No section labeled \u2018icebreaker\u2019.\n\nTOPIC\n{topic}\n\nLEARNER PROFILE\n{learner_profile}\n\nWrite the plan.",
+    "input_variables": [
+      {
+        "name": "session_title",
+        "type": "string",
+        "description": "Title for the session",
+        "required": true,
+        "example": "Intro to Vector Databases for Application Engineers"
+      },
+      {
+        "name": "topic",
+        "type": "string",
+        "description": "What the session teaches",
+        "required": true,
+        "example": "When to reach for a vector DB, how embeddings power similarity search, and how to set up a basic store + query"
+      },
+      {
+        "name": "learner_profile",
+        "type": "string",
+        "description": "Who the learners are",
+        "required": true,
+        "example": "Backend engineers, 3\u20138 years experience, no ML background"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Headed sections with a timeline table, three checks, a rescue activity, common stumbles, and a closing prompt."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Holds the timing constraint tightly and writes useful check prompts."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Strong; sometimes pads segments to 30+ min \u2014 re-pin \u2018max 25\u2019."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid plans; rescue activities can feel filler \u2014 ask for \u2018substantive backup\u2019."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Misses the timing table format; provide explicit template."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Half-day (180 min)",
+        "description": "Doubles structure with mid-point reset.",
+        "prompt_snippet": "Replace 90 min with 180; require a 10-min mid-point reset segment that revisits outcomes."
+      },
+      {
+        "label": "Async self-study",
+        "description": "Same outcomes, self-paced.",
+        "prompt_snippet": "Replace timeline with self-paced modules; checks become self-tests."
+      },
+      {
+        "label": "Series of 5",
+        "description": "Plan a 5-session arc.",
+        "prompt_snippet": "Add: \u2018then sketch sessions 2\u20135: each session's outcomes and how it builds on this one.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Outcomes use \u2018understand\u2019 or \u2018be familiar with\u2019.",
+        "fix": "Re-pin: \u2018action verbs only \u2014 build, choose, debug, explain, draft.\u2019"
+      },
+      {
+        "symptom": "Timeline adds to more than 90 min.",
+        "fix": "Add: \u2018sum the minutes column; it must equal 90.\u2019"
+      },
+      {
+        "symptom": "Hands-on segment is contrived.",
+        "fix": "Add: \u2018the hands-on segment must produce an artifact learners can keep (code, doc, decision matrix) \u2014 no pretend activities.\u2019"
+      },
+      {
+        "symptom": "Checks are yes/no questions.",
+        "fix": "Add: \u2018each check probes a specific skill; expected answer includes a concrete example.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "socratic-tutor",
+      "okr-quarterly-drafter"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "instructional-design",
+      "learning-outcome"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How long should I spend reviewing the AI's plan?",
+        "answer": "Plan on 30\u201345 minutes for first review: tighten one segment, adapt one check to your actual examples, sanity-check timing against your group."
+      },
+      {
+        "question": "Can I run this remotely?",
+        "answer": "Yes \u2014 but call it out in the learner profile so the model picks remote-friendly activities (chat threads, breakout pairs)."
+      },
+      {
+        "question": "Will the rescue activity feel like filler?",
+        "answer": "Only if you let it. Tune the prompt: \u2018rescue activity must produce something learners reference in the closing.\u2019"
+      }
+    ],
+    "meta_title": "90-Minute Lesson Plan Generator \u2014 Prompt",
+    "meta_description": "Generate 90-minute professional learning plans with timed segments, three checks, a rescue activity, and a closing \u2014 calibrated for adults."
+  },
+  {
+    "slug": "study-guide-from-chapter",
+    "title": "Study Guide From Textbook Chapter",
+    "tldr": "Turns a textbook chapter into a study guide: key concepts, definitions, worked examples, practice problems with answers, and a 5-question self-test that mirrors typical exam framing.",
+    "category": "education",
+    "tags": [
+      "study-guide",
+      "exam-prep",
+      "summarization",
+      "education"
+    ],
+    "best_for_tags": [
+      "self-study",
+      "exam-prep",
+      "tutoring"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Student prepping for exam",
+        "example": "Paste chapter on photosynthesis \u2014 get back study guide with 5 self-test questions framed like the actual exam."
+      },
+      {
+        "scenario": "Teacher building review materials",
+        "example": "Compress chapter to one-page study guide for student handouts."
+      },
+      {
+        "scenario": "Adult learner returning to school",
+        "example": "Get back a study guide that re-explains concepts the textbook glossed over."
+      },
+      {
+        "scenario": "Group study session",
+        "example": "Generate quiz questions with answer keys for a study group."
+      }
+    ],
+    "when_not_to_use": "Skip for primary-source texts (literature, history primary docs) \u2014 the model will reduce voice and nuance that matter. Use chapter summarization carefully.",
+    "full_prompt": "You are a study guide builder. From the chapter content provided, produce a complete study guide.\n\nSTRUCTURE\n\n## Chapter summary\n3\u20135 sentences. What this chapter is fundamentally about.\n\n## Key concepts (5\u201310)\nEach: name, one-line definition in the student's voice (not the textbook's), and one concrete example.\n\n## Worked examples (2\u20133)\nPick the most teaching examples from the chapter or invent one in the same shape. Walk through step-by-step, narrating the reasoning at each step.\n\n## Practice problems (5\u20138)\nMix of difficulty. Include the answer below each, separated by a folded toggle (or `<details>` block). Mark each problem \u2018easy/medium/hard\u2019.\n\n## Self-test (5 questions)\nFive questions that mirror how an exam would frame the material \u2014 including at least one that's a small twist on what the chapter directly taught. Answers in a separate \u2018answer key\u2019 section.\n\n## \u2018If you only remember three things\u2019\nThree takeaways. These are what to memorize if exam is tomorrow.\n\nCHAPTER CONTENT\n{chapter_text}\n\nGRADE LEVEL OR COURSE LEVEL\n{level}\n\nWrite the study guide.",
+    "input_variables": [
+      {
+        "name": "chapter_text",
+        "type": "string",
+        "description": "The chapter text or detailed summary",
+        "required": true,
+        "example": "Photosynthesis is the process by which green plants..."
+      },
+      {
+        "name": "level",
+        "type": "string",
+        "description": "Grade or course level",
+        "required": true,
+        "example": "High school biology, 11th grade"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six headed sections including practice problems with toggled answers and a self-test mirroring exam framing."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on the \u2018in the student's voice\u2019 definitions and at writing convincing exam-style questions."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes the practice problems are too easy \u2014 ask for \u2018mixed difficulty including one twist\u2019."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; can be overly literal to the textbook \u2014 ask for \u2018re-explain in plain language\u2019."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Answer keys occasionally wrong on the harder questions; have a teacher verify."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Flashcard-only",
+        "description": "Output just front/back flashcards.",
+        "prompt_snippet": "Replace all sections with: \u2018flashcards in front | back format, 20\u201330 cards.\u2019"
+      },
+      {
+        "label": "Pictorial-heavy",
+        "description": "More diagrams + analogies.",
+        "prompt_snippet": "Add: \u2018for each key concept, suggest one diagram and describe what it would show.\u2019"
+      },
+      {
+        "label": "Spaced-review",
+        "description": "5/15/30-day review prompts.",
+        "prompt_snippet": "Add: \u2018end with a 5-day, 15-day, and 30-day review prompt (3\u20135 questions each) for spaced retrieval.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Practice problems are all easy.",
+        "fix": "Force \u2018at least 2 medium and 1 hard, with at least one twist not in the chapter.\u2019"
+      },
+      {
+        "symptom": "Definitions read exactly like the textbook.",
+        "fix": "Add \u2018re-explain each in plain student-voice language; avoid the textbook's exact wording.\u2019"
+      },
+      {
+        "symptom": "Answer keys are wrong on harder questions.",
+        "fix": "Have a teacher verify; add \u2018mark any answer you're less than 90% sure of as needing verification.\u2019"
+      },
+      {
+        "symptom": "Self-test questions are recall-only.",
+        "fix": "Add: \u2018at least 2 of 5 questions require applying the concept to a new situation, not just recall.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "literature-review-synthesizer",
+      "socratic-tutor"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "spaced-repetition",
+      "retrieval-practice"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Will the answer keys be 100% correct?",
+        "answer": "For STEM, near-100% on easy/medium; have a teacher verify hard problems. For humanities, the \u2018answer\u2019 is usually a range \u2014 discuss with peers."
+      },
+      {
+        "question": "Can I use this for AP/IB?",
+        "answer": "Yes, but specify the exam in the level field; question framing differs by exam tradition."
+      },
+      {
+        "question": "Does this work for a whole textbook?",
+        "answer": "Chapter-at-a-time. Pasting an entire textbook at once flattens the material \u2014 go chapter by chapter."
+      }
+    ],
+    "meta_title": "Study Guide From Textbook Chapter \u2014 Prompt",
+    "meta_description": "Turn any textbook chapter into a study guide: key concepts, worked examples, practice problems with answers, and a 5-question exam-style self-test."
+  },
+  {
+    "slug": "concept-map-builder",
+    "title": "Concept Map Builder From Reading",
+    "tldr": "Reads a chapter or article and outputs a concept map as a structured list: nodes, relations between them, and a hierarchy showing which ideas are central and which are supporting.",
+    "category": "education",
+    "tags": [
+      "concept-map",
+      "knowledge-graph",
+      "education",
+      "visual-thinking"
+    ],
+    "best_for_tags": [
+      "self-study",
+      "knowledge-capture",
+      "reviewing"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Student reviewing complex chapter",
+        "example": "Get back a concept map showing photosynthesis at the center, light-dependent and light-independent reactions as primary children, and key molecules as supporting nodes."
+      },
+      {
+        "scenario": "Researcher synthesizing a literature set",
+        "example": "Five papers in \u2014 concept map shows shared concepts, contested concepts, and unique-to-one-paper concepts."
+      },
+      {
+        "scenario": "Engineer learning a new system",
+        "example": "Documentation overload \u2014 concept map distills the architecture into 12 nodes with relations."
+      },
+      {
+        "scenario": "Author planning a book",
+        "example": "Convert outline into concept map to spot ideas that don't connect."
+      }
+    ],
+    "when_not_to_use": "Skip when the source is narrative (story, history) \u2014 concept maps flatten causal sequence into spatial relations and lose \u2018what happened next\u2019 structure.",
+    "full_prompt": "You are a concept-map builder. Read the source text and emit a structured concept map.\n\nOUTPUT FORMAT\nReturn JSON in this shape:\n{\n  \"central_concept\": \"string\",\n  \"nodes\": [\n    {\"id\": \"n1\", \"label\": \"concept name\", \"tier\": \"central | primary | supporting | example\", \"definition\": \"one-line, in student voice\"}\n  ],\n  \"edges\": [\n    {\"from\": \"n1\", \"to\": \"n2\", \"relation\": \"causes | enables | is-a | part-of | contrasts-with | depends-on | example-of\"}\n  ],\n  \"open_questions\": [\n    \"questions the text doesn't fully answer (used as study prompts)\"\n  ]\n}\n\nCONSTRAINTS\n- 8\u201318 nodes total. More is noisy.\n- Every node has at least one edge.\n- Relations come from the closed list above \u2014 don't invent new ones.\n- Definitions are <20 words, in plain language.\n- Central concept = the single idea the text is fundamentally about.\n\nSOURCE TEXT\n{text}\n\nEmit the JSON now.",
+    "input_variables": [
+      {
+        "name": "text",
+        "type": "string",
+        "description": "Source text to map",
+        "required": true,
+        "example": "Photosynthesis is the process by which..."
+      }
+    ],
+    "expected_output": {
+      "format": "json",
+      "schema": "{ central_concept, nodes[], edges[], open_questions[] }",
+      "sample": "{\n  \"central_concept\": \"Photosynthesis\",\n  \"nodes\": [{...}],\n  \"edges\": [{...}],\n  \"open_questions\": [...]\n}"
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at picking the central concept correctly; relations are accurate."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally generates 25+ nodes \u2014 re-pin the 18 cap."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid structure; sometimes mixes tier classification."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "JSON sometimes malformed; validate before rendering."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Mermaid output",
+        "description": "Emit as Mermaid diagram syntax.",
+        "prompt_snippet": "Replace JSON shape with: \u2018output as a Mermaid graph TD diagram.\u2019"
+      },
+      {
+        "label": "Compare two sources",
+        "description": "Map across two texts.",
+        "prompt_snippet": "Accept text_a and text_b; emit nodes tagged with origin (both/a-only/b-only) and edges showing where they agree/disagree."
+      },
+      {
+        "label": "With study prompts",
+        "description": "Auto-generate study questions per node.",
+        "prompt_snippet": "Add: \u2018for each primary-tier node, also emit one study question that requires combining it with another node.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Too many nodes (>20).",
+        "fix": "Tighten cap and add \u2018collapse overlapping nodes into one with multiple labels.\u2019"
+      },
+      {
+        "symptom": "Relations invented outside the closed list.",
+        "fix": "Re-paste the closed-list relations explicitly and reject other types."
+      },
+      {
+        "symptom": "Central concept is a vague theme rather than a specific idea.",
+        "fix": "Add: \u2018central concept must be a noun phrase, not a theme.\u2019"
+      },
+      {
+        "symptom": "Edges are all \u2018part-of\u2019.",
+        "fix": "Add: \u2018at least 3 different relation types must appear; if not, reconsider the structure.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "study-guide-from-chapter",
+      "literature-review-synthesizer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "concept-map",
+      "knowledge-graph"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How do I visualize the JSON?",
+        "answer": "Use the Mermaid variant for inline diagrams, or feed the JSON to any graph library (vis-network, cytoscape) for interactive views."
+      },
+      {
+        "question": "Will the model agree with my teacher's mapping?",
+        "answer": "Often, but not always. Use the AI map as a study scaffold; reconcile with the official one by noting differences \u2014 that's often where understanding gets deeper."
+      },
+      {
+        "question": "Can I extend an existing map?",
+        "answer": "Yes \u2014 paste your current map and ask the model to add nodes from a new source while marking which are new vs existing."
+      }
+    ],
+    "meta_title": "Concept Map Builder From Reading \u2014 Prompt",
+    "meta_description": "Read a chapter or article and emit a structured concept map: nodes, typed relations, and open questions \u2014 ready to visualize or study from."
+  },
+  {
+    "slug": "exam-question-writer",
+    "title": "Exam Question Writer With Rubric",
+    "tldr": "Generates exam questions at a specified Bloom's level (recall/apply/analyze/evaluate/create) with answer keys, rubrics, and distractor analysis for multiple choice \u2014 calibrated for fair, non-trick questions.",
+    "category": "education",
+    "tags": [
+      "assessment",
+      "exam",
+      "rubric",
+      "blooms",
+      "education"
+    ],
+    "best_for_tags": [
+      "teachers",
+      "trainers",
+      "certification-prep"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Teacher building chapter test",
+        "example": "\u2018Photosynthesis, 10 questions, mostly apply-level, 3 multiple choice + 4 short answer + 3 explanation\u2019 \u2014 get back questions with rubrics."
+      },
+      {
+        "scenario": "Corporate certification builder",
+        "example": "Compliance training questions with answer key and reasoning for each distractor."
+      },
+      {
+        "scenario": "Bootcamp instructor",
+        "example": "Weekly assessment for cohort \u2014 apply-level coding questions with point-by-point rubric."
+      },
+      {
+        "scenario": "Adaptive learning platform",
+        "example": "Generate question bank tagged by Bloom's level for spaced practice."
+      }
+    ],
+    "when_not_to_use": "Skip when high-stakes (board exams, formal certification) without expert review \u2014 even strong AI question writing needs subject-matter verification.",
+    "full_prompt": "You are an exam question writer. Generate questions per the spec.\n\nINPUT\n- Topic: {topic}\n- Number of questions: {n_questions}\n- Mix by Bloom's level: {bloom_mix}              (e.g., \"3 recall, 4 apply, 3 analyze\")\n- Question types: {types}                        (e.g., \"multiple choice, short answer, explanation\")\n- Target audience: {audience}                    (e.g., \"11th grade biology\")\n- Time budget: {time_per_question} per question\n\nPER QUESTION, OUTPUT\n1. Question number, type, Bloom's level.\n2. Question text. (Single, unambiguous.)\n3. For multiple choice:\n   - Four options, labeled A\u2013D.\n   - Mark the correct answer.\n   - For each WRONG option: one sentence on what a student who picks it is confused about (distractor analysis). Avoid silly distractors \u2014 every wrong option should be plausibly tempting.\n4. For short answer / explanation:\n   - Rubric with 2\u20134 levels (e.g., excellent / partial / minimal / off-track) \u2014 what each level includes.\n   - Sample answer at \u2018excellent\u2019 level.\n\nCONSTRAINTS\n- No trick questions. The goal is to measure understanding, not catch students.\n- No \u2018all of the above\u2019 or \u2018none of the above\u2019 unless the topic genuinely warrants it.\n- Vocabulary matched to audience.\n\nWrite the questions now.",
+    "input_variables": [
+      {
+        "name": "topic",
+        "type": "string",
+        "description": "Subject of the questions",
+        "required": true,
+        "example": "Photosynthesis"
+      },
+      {
+        "name": "n_questions",
+        "type": "integer",
+        "description": "Total number of questions",
+        "required": true,
+        "example": "10"
+      },
+      {
+        "name": "bloom_mix",
+        "type": "string",
+        "description": "Distribution across Bloom's levels",
+        "required": true,
+        "example": "3 recall, 4 apply, 3 analyze"
+      },
+      {
+        "name": "types",
+        "type": "string",
+        "description": "Question types",
+        "required": true,
+        "example": "multiple choice, short answer, explanation"
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Who is being tested",
+        "required": true,
+        "example": "11th grade biology"
+      },
+      {
+        "name": "time_per_question",
+        "type": "string",
+        "description": "Time budget per question",
+        "required": false,
+        "example": "3 minutes"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Numbered questions with type/level header, question, options or rubric, answer/sample answer, and distractor analysis or rubric levels."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong distractor analysis; rubric levels are useful."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally slips into trick questions \u2014 re-pin the constraint."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Question quality good; rubrics sometimes generic \u2014 ask for \u2018what makes each level distinct.\u2019"
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Bloom's classification often wrong; verify each question's level."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Coding test variant",
+        "description": "Code-by-hand or fix-the-bug questions.",
+        "prompt_snippet": "Replace types with: \u2018code-by-hand, fix-the-bug, predict-output, refactor.\u2019 Add: \u2018include starter code where relevant.\u2019"
+      },
+      {
+        "label": "Case-study assessment",
+        "description": "Multi-part scenario.",
+        "prompt_snippet": "Replace with: \u2018one extended case study followed by 5 questions of increasing Bloom's level on it.\u2019"
+      },
+      {
+        "label": "Equity-audited",
+        "description": "Cultural neutrality check.",
+        "prompt_snippet": "Add: \u2018flag any question whose framing requires culturally specific knowledge unrelated to the topic and revise.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Distractors are silly (one obvious wrong answer).",
+        "fix": "Add: \u2018each wrong option must reflect a real, common student misconception.\u2019"
+      },
+      {
+        "symptom": "Apply/analyze questions are actually recall.",
+        "fix": "Re-pin Bloom's definitions and require \u2018apply\u2019 questions to use a new context not covered in the source."
+      },
+      {
+        "symptom": "Rubrics are vague (\u2018shows good understanding\u2019).",
+        "fix": "Add: \u2018each rubric level names a specific element that must be present at that level.\u2019"
+      },
+      {
+        "symptom": "Bias in cultural references.",
+        "fix": "Use the equity-audited variation or add explicit \u2018flag and revise culturally specific framing.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "study-guide-from-chapter",
+      "lesson-plan-90-min"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "blooms-taxonomy",
+      "rubric"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Will AI-written questions be valid?",
+        "answer": "For formative assessment, generally yes. For summative/high-stakes, require expert review of each question and rubric."
+      },
+      {
+        "question": "How do I avoid the model being biased toward certain answers?",
+        "answer": "Run the rubric back through and ask the model to grade three sample student answers blindly \u2014 biased rubrics surface as inconsistent grading."
+      },
+      {
+        "question": "Can I cycle the same questions across years?",
+        "answer": "Don't \u2014 students share answer keys. Regenerate annually with the same topic + Bloom's mix; the model will produce structurally similar but different surface questions."
+      }
+    ],
+    "meta_title": "Exam Question Writer With Rubric \u2014 Prompt",
+    "meta_description": "Generate exam questions by Bloom's level with rubrics, sample answers, and distractor analysis for multiple choice. Calibrated for fair, non-trick assessment."
+  },
+  {
+    "slug": "screenshot-bug-report-builder",
+    "title": "Screenshot Bug Report Builder",
+    "tldr": "Reads a screenshot of a UI bug and emits a complete bug report: what's wrong, expected vs. observed, where exactly on the screen, reproduction steps, and severity rationale.",
+    "category": "multimodal",
+    "tags": [
+      "vision",
+      "bug-report",
+      "qa",
+      "screenshot",
+      "multimodal"
+    ],
+    "best_for_tags": [
+      "qa-teams",
+      "support-triage",
+      "internal-bugs"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Customer sends screenshot of broken page",
+        "example": "Get back a structured bug report with severity rationale instead of forwarding the screenshot to engineering with \u2018pls help\u2019."
+      },
+      {
+        "scenario": "QA engineer batch-processing test failures",
+        "example": "20 failure screenshots \u2192 20 structured reports overnight."
+      },
+      {
+        "scenario": "Internal user reporting a glitch on Slack",
+        "example": "Drop screenshot into a bot; bot files structured Linear ticket."
+      },
+      {
+        "scenario": "PM reviewing release candidate",
+        "example": "Annotated visual diff produces a clean punch list of issues."
+      }
+    ],
+    "when_not_to_use": "Skip when the bug is non-visual (race conditions, performance, backend). The screenshot won't show what matters and the report will fabricate plausible-sounding but wrong details.",
+    "full_prompt": "You are a senior QA engineer reading a screenshot of a UI bug. Produce a bug report.\n\nOUTPUT STRUCTURE\n\n## Summary (one sentence)\nWhat's wrong, plainly.\n\n## Expected behavior\nWhat the UI should show or do based on visible context (form labels, button text, surrounding state).\n\n## Observed behavior\nWhat it's actually showing. Be specific about element location (\"the third row of the table\", \"the button labeled 'Save'\").\n\n## Severity\nChoose: blocker | major | minor | cosmetic. Justify in one sentence.\n\n## Reproduction (guesses)\n3\u20135 plausible steps to reproduce. Mark any step you're uncertain about with [?].\n\n## Visual coordinates\nApproximate location of the bug on the screen (top-left / center / etc.) and any annotations a developer should look at first.\n\n## What I CAN'T tell from this screenshot\nBe explicit about gaps: device/browser, console state, network, what the user did before this point. List them.\n\n## Suggested triage owner\nFrontend / backend / design / unclear \u2014 based only on what's visible.\n\nRULES\n- Do NOT invent error messages or fields not visible in the screenshot.\n- If you read text from the UI, use exact quotes in quotation marks.\n- If the screenshot is ambiguous, say so \u2014 don't smooth it over.\n\nUSER NOTE (optional)\n{user_note}\n\nNow describe the bug.",
+    "input_variables": [
+      {
+        "name": "user_note",
+        "type": "string",
+        "description": "Optional context from the reporter",
+        "required": false,
+        "example": "Happens after I click \u2018Save\u2019 on the second tab"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Headed sections including expected/observed, severity with justification, repro guesses with [?] markers, and explicit \u2018can't tell\u2019 section."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at locating elements precisely and refusing to fabricate non-visible details."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally guesses at error codes \u2014 re-pin the \u2018no inventing\u2019 rule."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Handles dense screenshots well; can miss subtle visual cues (overlapping elements)."
+      },
+      {
+        "model": "llama-3.2-vision",
+        "compatibility": "fair",
+        "notes": "Coarser localization; useful for obvious bugs, not edge cases."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Linear-ready",
+        "description": "Emit as a Linear-formatted markdown ticket.",
+        "prompt_snippet": "Wrap output in Linear ticket fields: title, description, labels (suggested), priority (mapped from severity)."
+      },
+      {
+        "label": "Multi-screenshot batch",
+        "description": "Several screenshots at once.",
+        "prompt_snippet": "Accept N screenshots in order; emit one report per screenshot plus a final \u2018common root cause?\u2019 note."
+      },
+      {
+        "label": "Annotated overlay",
+        "description": "Suggest annotations.",
+        "prompt_snippet": "Add: \u2018suggest 1\u20133 arrow/box overlays a designer should add before sharing with engineering.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Invents error messages not in the screenshot.",
+        "fix": "Re-pin \u2018exact quotes only; if text isn't visible, don't reference it.\u2019"
+      },
+      {
+        "symptom": "Severity always \u2018major\u2019.",
+        "fix": "Show severity ladder with specific anchor examples and ask the model to map this case to the closest anchor."
+      },
+      {
+        "symptom": "Repro steps too confident.",
+        "fix": "Add \u2018every step marked [?] until verified; first turn produces guesses, not facts.\u2019"
+      },
+      {
+        "symptom": "Misreads UI element type (button vs link).",
+        "fix": "Add: \u2018describe each element by what you see, not what it functionally is.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3.2-vision"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "support-ticket-triage",
+      "structured-extraction-from-docs"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "multimodal",
+      "vision-models",
+      "bug-triage"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Will it leak sensitive info from the screenshot?",
+        "answer": "If the screenshot includes PII, the model will repeat what it sees. Redact before sending or use a PII redaction pass first."
+      },
+      {
+        "question": "Can it tell whether it's a frontend or backend bug?",
+        "answer": "Often \u2014 by visible cues like \u2018500 error\u2019 vs UI alignment. But it should mark its certainty; treat as a triage hint, not a final answer."
+      },
+      {
+        "question": "What if the screenshot is low resolution?",
+        "answer": "Output will mark visual coordinates as approximate and call out anything illegible. Re-shoot if critical details are blurred."
+      }
+    ],
+    "meta_title": "Screenshot Bug Report Builder \u2014 Prompt",
+    "meta_description": "Turn a UI screenshot into a structured bug report with expected vs observed, severity rationale, and an explicit \u2018can't tell from this\u2019 list."
+  },
+  {
+    "slug": "chart-extractor-to-table",
+    "title": "Chart-to-Table Data Extractor",
+    "tldr": "Reads a chart image (bar, line, pie, scatter) and outputs the underlying data as a structured table \u2014 with explicit notes on values it couldn't read precisely.",
+    "category": "multimodal",
+    "tags": [
+      "chart",
+      "data-extraction",
+      "vision",
+      "ocr",
+      "multimodal"
+    ],
+    "best_for_tags": [
+      "research",
+      "competitive-intel",
+      "data-recovery"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Research paper chart without underlying data",
+        "example": "Extract the bar chart from a 2023 NeurIPS paper into a CSV-ready table for re-analysis."
+      },
+      {
+        "scenario": "Competitor's earnings deck",
+        "example": "Pull revenue chart values from a PDF screenshot into a spreadsheet."
+      },
+      {
+        "scenario": "Slide deck data recovery",
+        "example": "Source file lost; chart in old slide is the only record. Recover values."
+      },
+      {
+        "scenario": "Industry report charts",
+        "example": "Pull data from charts in PDF reports for citation and further analysis."
+      }
+    ],
+    "when_not_to_use": "Skip when precise values matter (financial reporting, regulatory filings) \u2014 chart extraction has 1\u20135% error baseline. Use only when \u2018close enough\u2019 is fine.",
+    "full_prompt": "You are a chart-to-data extractor. Read the chart image and emit the underlying data.\n\nOUTPUT FORMAT\n```\nchart_type: bar | line | pie | scatter | stacked-bar | other\ntitle: as shown\nx_axis: { label, units, scale: linear|log|categorical, range }\ny_axis: { label, units, scale, range }\nseries:\n  - name: ...\n    points: [{x: ..., y: ..., notes?: ...}, ...]\nnotes:\n  - any axis-label readings you're uncertain about\n  - any data points that overlap or are hard to read\n  - any legend ambiguity\nconfidence_overall: high | medium | low\n```\n\nRULES\n1. Read axis labels exactly. If you can't read them, mark \"[unreadable]\" \u2014 don't guess.\n2. For each data point, give your best read. If estimating between gridlines, mark with ~ (e.g., \"~42\").\n3. If a chart has multiple series, identify each by legend color/pattern. If the legend is unclear, note it.\n4. If gridlines aren't visible, your estimates will be coarser \u2014 say so in notes.\n5. Never invent precision. \"150\" is a claim of accuracy; \"~150\" admits estimation.\n\nOPTIONAL HELP\n{additional_context}\n\nNow extract.",
+    "input_variables": [
+      {
+        "name": "additional_context",
+        "type": "string",
+        "description": "Optional caption, paper context, or units hint",
+        "required": false,
+        "example": "Chart is from Q3 2024 earnings, units are millions USD"
+      }
+    ],
+    "expected_output": {
+      "format": "structured",
+      "schema": "YAML-like structure: chart_type, title, x_axis, y_axis, series with points, notes, confidence_overall",
+      "sample": "chart_type: bar\ntitle: Revenue by Quarter\nx_axis: { label: Quarter, units: -, scale: categorical, range: Q1\u2013Q4 }\n..."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at axis reading and at marking uncertain values with ~."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; on dense scatter plots, sometimes drops outliers."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid on bar/line; weaker on scatter."
+      },
+      {
+        "model": "llama-3.2-vision",
+        "compatibility": "fair",
+        "notes": "Useful for general shape; precise values often off by 10\u201320%."
+      }
+    ],
+    "variations": [
+      {
+        "label": "CSV-only",
+        "description": "Output just CSV.",
+        "prompt_snippet": "Replace structured output with: \u2018output CSV only, with a header row and one row per data point. Estimated values prefixed with ~.\u2019"
+      },
+      {
+        "label": "Critique the chart",
+        "description": "Note presentation issues.",
+        "prompt_snippet": "Add: \u2018then write 3 bullets on what makes this chart hard to read (truncated axes, missing units, color-on-color, etc.).\u2019"
+      },
+      {
+        "label": "Multi-chart batch",
+        "description": "Process N charts.",
+        "prompt_snippet": "Accept multiple chart images; emit one structured table per chart with a shared run summary at the end."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Output claims precision it can't have (no ~ on estimated values).",
+        "fix": "Re-pin \u2018~ for any value not on a labeled gridline.\u2019"
+      },
+      {
+        "symptom": "Invents axis labels.",
+        "fix": "Add: \u2018if axis text is unreadable, write [unreadable]; never guess.\u2019"
+      },
+      {
+        "symptom": "Misses outliers on dense scatter.",
+        "fix": "Add: \u2018call out the highest, lowest, and 3 most-isolated points explicitly.\u2019"
+      },
+      {
+        "symptom": "Legend mismatch (wrong series labeled).",
+        "fix": "Add: \u2018read the legend last, after points; then assign series; flag any color overlap.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3.2-vision"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "structured-extraction-from-docs",
+      "metric-anomaly-explainer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "ocr",
+      "multimodal",
+      "data-extraction"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How accurate is the extraction?",
+        "answer": "On clean bar/line charts with gridlines, 95%+. On scatter plots or unclear legends, 80\u201390%. Always validate critical values against the chart visually."
+      },
+      {
+        "question": "Will it work with handwritten charts?",
+        "answer": "Better than you'd think \u2014 but handwritten axes are often the failure point. Add high-quality OCR pre-pass if axis labels are crucial."
+      },
+      {
+        "question": "Can I extract from a screenshot of a Tableau dashboard?",
+        "answer": "Yes, but if you can get to the raw data via the tool's export, that's always cleaner. Use vision extraction when raw data isn't available."
+      }
+    ],
+    "meta_title": "Chart-to-Table Data Extractor \u2014 Prompt",
+    "meta_description": "Read a chart image (bar, line, scatter, pie) and emit the underlying data as a structured table \u2014 with explicit uncertainty markers on estimated values."
+  },
+  {
+    "slug": "image-description-alt-text",
+    "title": "Image Alt-Text and Long Description",
+    "tldr": "Generates accessibility-grade alt text (concise, max 125 chars) plus a long description for complex images \u2014 calibrated for screen-reader use, not Pinterest captions.",
+    "category": "multimodal",
+    "tags": [
+      "accessibility",
+      "alt-text",
+      "a11y",
+      "vision",
+      "screen-reader"
+    ],
+    "best_for_tags": [
+      "accessibility",
+      "content-publishing",
+      "a11y-audit"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Blog publisher adding alt to images",
+        "example": "Bulk-process post images; get back alt text + extended descriptions where the image is informational, not decorative."
+      },
+      {
+        "scenario": "Accessibility audit of existing site",
+        "example": "Check existing alt text; flag the ones that say \u2018image\u2019, \u2018photo of\u2019, or are decorative-only."
+      },
+      {
+        "scenario": "Academic figure accessibility",
+        "example": "Generate long descriptions for complex figures in research papers."
+      },
+      {
+        "scenario": "Product catalog",
+        "example": "Generate alt text that captures product attributes a buyer needs, not just visual appearance."
+      }
+    ],
+    "when_not_to_use": "Skip for purely decorative images \u2014 alt should be empty (alt=\"\"). Skip when the image's role on the page is ambiguous \u2014 clarify with the publisher first.",
+    "full_prompt": "You are an accessibility specialist writing alt text and long descriptions.\n\nOUTPUT\n```\npurpose: informational | functional | decorative\nalt_text: <= 125 characters, no \"image of\" / \"photo of\" prefix\nlong_description: present only if image is informational AND alt text can't carry all the meaning\ncontext_check: a one-line check: \"what does a screen-reader user need to know that a sighted user gets from this image?\"\n```\n\nRULES FOR ALT TEXT\n- Describe what the image MEANS in context, not what it visually shows. (\"Diagram of authentication flow\" beats \"screenshot with arrows.\")\n- Skip \"image of\", \"picture of\", \"screenshot of\" \u2014 assistive tech announces these.\n- Include words that capture function if the image is a button or link.\n- Decorative images get alt=\"\" (literally empty quotes, not \"decorative image\").\n- If the image has text on it, transcribe the text fully unless a long description follows.\n\nRULES FOR LONG DESCRIPTION\n- Only include when:\n  1. The image is informational (chart, diagram, complex photo).\n  2. Alt text can't fit the meaning.\n- Long description: 1\u20134 paragraphs. Describe spatial relationships, key data, and what a sighted user would conclude.\n- Don't add interpretation a sighted user wouldn't also infer.\n\nCONTEXT (page topic, caption, surrounding text)\n{context}\n\nNow describe the image.",
+    "input_variables": [
+      {
+        "name": "context",
+        "type": "string",
+        "description": "Surrounding context: page topic, caption, why the image is on the page",
+        "required": false,
+        "example": "Blog post about OAuth flows; this image is meant to clarify the authorization code grant"
+      }
+    ],
+    "expected_output": {
+      "format": "structured",
+      "sample": "purpose: informational\nalt_text: Authorization code OAuth flow with client redirect to provider then token exchange\nlong_description: ...\ncontext_check: ..."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at the meaning-vs-appearance distinction."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally adds \u2018image showing...\u2019 \u2014 call it out."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Good baseline; sometimes misses functional purpose."
+      },
+      {
+        "model": "llama-3.2-vision",
+        "compatibility": "fair",
+        "notes": "Tends toward visual description; needs explicit \u2018meaning not appearance\u2019 reminder."
+      }
+    ],
+    "variations": [
+      {
+        "label": "WCAG-2.2 audit",
+        "description": "Audit existing alt.",
+        "prompt_snippet": "Accept current alt as input; output: pass/fail, why, and a fixed version."
+      },
+      {
+        "label": "Localized",
+        "description": "Multiple languages.",
+        "prompt_snippet": "Emit alt + long description in {languages}; preserve meaning, not literal word-for-word."
+      },
+      {
+        "label": "Product catalog",
+        "description": "Capture purchase-relevant attributes.",
+        "prompt_snippet": "Add: \u2018include attributes a buyer would search for (color, material, size shown).\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Alt text starts with \u2018image of\u2019.",
+        "fix": "Re-pin: \u2018never prefix with image/photo/screenshot of.\u2019"
+      },
+      {
+        "symptom": "Decorative images get long alt text.",
+        "fix": "Add: \u2018if purpose=decorative, alt_text is the literal string \u201c\u201d (empty).\u2019"
+      },
+      {
+        "symptom": "Alt text describes pixels, not meaning.",
+        "fix": "Add: \u2018if you removed this image, what would a sighted reader miss? Describe THAT.\u2019"
+      },
+      {
+        "symptom": "Long description duplicates alt.",
+        "fix": "Add: \u2018long description must add information beyond the alt text \u2014 if not, omit.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3.2-vision"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "screenshot-bug-report-builder",
+      "chart-extractor-to-table"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "accessibility",
+      "alt-text",
+      "wcag"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Should every image have alt text?",
+        "answer": "Every image needs the alt ATTRIBUTE \u2014 but for decorative images, the value is empty (alt=\"\"). Missing-attribute is a fail; empty value is the right answer for decoration."
+      },
+      {
+        "question": "Is AI alt text legally compliant?",
+        "answer": "It can satisfy WCAG when the meaning is captured. Always have a human review for high-stakes images (instructional content, ecommerce, government)."
+      },
+      {
+        "question": "What's the 125 char limit about?",
+        "answer": "Screen readers handle longer, but most accessibility guides cap at ~125 for usability \u2014 past that, use long description."
+      }
+    ],
+    "meta_title": "Image Alt-Text and Long Description \u2014 Prompt",
+    "meta_description": "Generate WCAG-grade alt text and long descriptions for images \u2014 calibrated for screen readers, not Pinterest captions."
+  },
+  {
+    "slug": "diagram-to-architecture-doc",
+    "title": "Architecture Diagram to Written Doc",
+    "tldr": "Reads an architecture diagram and produces a written architecture description: components, flows, trust boundaries, failure modes implied by the topology, and open questions a reviewer should ask.",
+    "category": "multimodal",
+    "tags": [
+      "architecture",
+      "documentation",
+      "diagram",
+      "vision",
+      "engineering"
+    ],
+    "best_for_tags": [
+      "design-review",
+      "onboarding-docs",
+      "audit"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "New hire onboarding",
+        "example": "Existing whiteboard photo \u2192 readable architecture doc the new engineer can read solo."
+      },
+      {
+        "scenario": "Pre-design-review prep",
+        "example": "Author drafts diagram; AI emits a doc that surfaces flows and asks questions the review committee will ask."
+      },
+      {
+        "scenario": "Audit / compliance",
+        "example": "Extract trust boundaries from a diagram for security review."
+      },
+      {
+        "scenario": "Retrofit docs for legacy system",
+        "example": "Tribal-knowledge whiteboard photos \u2192 searchable written docs."
+      }
+    ],
+    "when_not_to_use": "Skip when the diagram is purely illustrative (marketing). Skip when the diagram lacks labels \u2014 without labels, the output is creative writing, not documentation.",
+    "full_prompt": "You are a staff engineer reading an architecture diagram. Write the architecture doc.\n\nOUTPUT STRUCTURE\n\n## Overview\n3\u20135 sentences. What this system does (per the diagram).\n\n## Components\nFor each labeled component:\n- Name\n- Type (service / database / queue / client / external system / etc.)\n- Stated responsibility (only from labels \u2014 not invented)\n\n## Flows\nEach labeled flow (or arrow), in order if order is visible:\n- From \u2192 To\n- Trigger (request / event / scheduled)\n- Data summary (per labels)\n- Sync vs async (if labeled or inferable)\n\n## Trust boundaries\nWhere does authority change hands? (Internal/external, public/private VPC, tenant boundaries.) Flag any boundary you SEE but don't see auth on.\n\n## Failure modes implied by the topology\n3\u20136 failure modes that follow from this shape (single-points-of-failure, retry storms, fanout amplification, etc.). Tied to specific components.\n\n## Open questions for the author\n5\u201310 questions a reviewer should ask \u2014 gaps in the diagram that the doc can't answer.\n\nRULES\n- Use only what's labeled. Don't invent components, technologies, or data types.\n- If a component is unlabeled, call it \"[unlabeled component, top-right]\" and describe its role from connections.\n- Distinguish what the diagram TELLS you vs what it IMPLIES.\n\nADDITIONAL CONTEXT (optional)\n{context}\n\nWrite the doc.",
+    "input_variables": [
+      {
+        "name": "context",
+        "type": "string",
+        "description": "Optional surrounding context: team, system age, constraints",
+        "required": false,
+        "example": "Internal data platform serving ~100M events/day, mostly batch with one streaming path"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six headed sections covering Overview, Components, Flows, Trust Boundaries, Failure Modes Implied, Open Questions."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at extracting flows in order and distinguishing what's labeled from what's implied."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally invents component types \u2014 re-pin \u2018only labels.\u2019"
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; weaker on identifying trust boundaries if they're implicit."
+      },
+      {
+        "model": "llama-3.2-vision",
+        "compatibility": "fair",
+        "notes": "Good for high-level overview; misses small labels."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Risk-focused",
+        "description": "Open questions oriented around risk.",
+        "prompt_snippet": "Add: \u2018open questions cluster into security risks, reliability risks, scaling risks, ops risks.\u2019"
+      },
+      {
+        "label": "Onboarding-friendly",
+        "description": "Add glossary for new readers.",
+        "prompt_snippet": "Add: \u2018include a glossary of acronyms and product names visible in the diagram, with a one-line definition each.\u2019"
+      },
+      {
+        "label": "Diff against current docs",
+        "description": "Compare two diagrams.",
+        "prompt_snippet": "Accept two diagrams (current + proposed); emit a diff doc highlighting added/removed/changed components and flows."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Invents component types (says \u2018Kafka\u2019 when the diagram just shows a queue).",
+        "fix": "Re-pin: \u2018only use technology names that are LITERALLY printed on the diagram.\u2019"
+      },
+      {
+        "symptom": "Conflates labeled facts with implied risks.",
+        "fix": "Add explicit \u2018TELLS / IMPLIES\u2019 labeling in flows and failure modes."
+      },
+      {
+        "symptom": "Doc is too short / too long.",
+        "fix": "Set explicit target lengths per section."
+      },
+      {
+        "symptom": "Missed trust boundaries.",
+        "fix": "Add: \u2018list every line that crosses a labeled boundary even if no auth is shown \u2014 flag missing auth explicitly.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3.2-vision"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "screenshot-bug-report-builder",
+      "senior-code-reviewer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "architecture-diagram",
+      "trust-boundary"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Will it work with hand-drawn whiteboard photos?",
+        "answer": "Yes if labels are legible. Glare and bad angles hurt \u2014 re-take if the model can't read component names."
+      },
+      {
+        "question": "Does it understand which technologies imply which failure modes?",
+        "answer": "Generally, yes (e.g., \u2018this Kafka stream has a single consumer\u2019 \u2192 \u2018lag risk\u2019). But it's a starting point \u2014 your team's knowledge of the actual system fills the gaps."
+      },
+      {
+        "question": "Can it generate a diagram from a doc?",
+        "answer": "That's a separate prompt. This one goes diagram \u2192 doc. The reverse direction is doable but should ideally be done by a developer with the actual codebase."
+      }
+    ],
+    "meta_title": "Architecture Diagram to Written Doc \u2014 Prompt",
+    "meta_description": "Read an architecture diagram and emit a structured doc: components, flows, trust boundaries, failure modes, and the questions a reviewer should ask."
+  },
+  {
+    "slug": "receipt-invoice-line-item-extractor",
+    "title": "Receipt and Invoice Line-Item Extractor",
+    "tldr": "OCRs a receipt or invoice image and emits structured line items: vendor, date, line item descriptions, quantities, unit prices, totals, taxes, currency \u2014 with confidence flags on hard-to-read fields.",
+    "category": "multimodal",
+    "tags": [
+      "ocr",
+      "receipt",
+      "invoice",
+      "expense",
+      "extraction"
+    ],
+    "best_for_tags": [
+      "expense-reporting",
+      "bookkeeping",
+      "ap-automation"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Expense report automation",
+        "example": "Photo of restaurant receipt \u2192 structured fields ready for expense submission."
+      },
+      {
+        "scenario": "Accounts payable",
+        "example": "Vendor invoice PDF \u2192 line items for QuickBooks / Xero import."
+      },
+      {
+        "scenario": "Small business bookkeeping",
+        "example": "Monthly receipts \u2192 CSV for tax prep."
+      },
+      {
+        "scenario": "Mobile reimbursement app",
+        "example": "Snap photo of taxi receipt; app pre-fills expense form."
+      }
+    ],
+    "when_not_to_use": "Skip for high-volume production AP \u2014 purpose-built OCR services (Veryfi, Mindee, AWS Textract) have higher accuracy and lower latency. Use this for ad hoc or low-volume needs.",
+    "full_prompt": "You are an OCR + structured extraction agent for receipts and invoices.\n\nOUTPUT JSON\n{\n  \"document_type\": \"receipt | invoice | other\",\n  \"vendor\": {\n    \"name\": \"...\",\n    \"address\": \"...\",\n    \"phone\": \"...\",\n    \"tax_id\": \"...\"\n  },\n  \"date\": \"YYYY-MM-DD\",\n  \"invoice_or_receipt_number\": \"...\",\n  \"line_items\": [\n    {\n      \"description\": \"...\",\n      \"quantity\": \"...\",\n      \"unit_price\": \"...\",\n      \"amount\": \"...\",\n      \"confidence\": \"high | medium | low\",\n      \"notes\": \"any unclear bits\"\n    }\n  ],\n  \"subtotal\": \"...\",\n  \"tax\": [\n    {\"label\": \"...\", \"rate\": \"...\", \"amount\": \"...\"}\n  ],\n  \"tip\": \"...\",\n  \"total\": \"...\",\n  \"currency\": \"USD | EUR | ...\",\n  \"payment_method\": \"card-last4 | cash | check# | bank-transfer | other\",\n  \"issues\": [\"list any field that's unclear or that you couldn't read\"]\n}\n\nRULES\n- Use null for fields not present.\n- For any numeric field where you're under 90% confident, mark the line item confidence as medium or low.\n- Currency: detect from symbols or labels; if ambiguous, say \"ambiguous\".\n- Dates: prefer the document's date over a date implied by another field.\n- Do NOT compute totals from line items if the document shows a printed total \u2014 report what's printed.\n- If subtotal + tax + tip != total, surface the discrepancy in issues.\n\nNow extract.",
+    "input_variables": [],
+    "expected_output": {
+      "format": "json",
+      "schema": "{ document_type, vendor, date, line_items[], subtotal, tax[], total, currency, ... }",
+      "sample": "{\n  \"document_type\": \"receipt\",\n  \"vendor\": { \"name\": \"Olive Grove Cafe\", ... },\n  \"line_items\": [...]\n}"
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong reading; faithful to printed values."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally normalizes currency formats \u2014 confirm raw values match."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Works well on printed receipts; weaker on faded thermal paper."
+      },
+      {
+        "model": "llama-3.2-vision",
+        "compatibility": "fair",
+        "notes": "Adequate for clear receipts; cross-validate against printed total."
+      }
+    ],
+    "variations": [
+      {
+        "label": "QuickBooks-ready CSV",
+        "description": "Output as QB-compatible CSV.",
+        "prompt_snippet": "Replace JSON with QB-formatted CSV: Date, Vendor, Account (suggested), Amount, Memo, Tax."
+      },
+      {
+        "label": "Multi-receipt batch",
+        "description": "Process several receipts.",
+        "prompt_snippet": "Accept multiple receipts; output as array; flag any that share a vendor/date for dedup."
+      },
+      {
+        "label": "Itemized for tax category",
+        "description": "Categorize line items.",
+        "prompt_snippet": "Add: \u2018per line item, suggest a tax category (Meals, Travel, Office Supplies, etc.) with one-line rationale.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Sums don't add up.",
+        "fix": "Re-pin: \u2018never compute; report printed values. If they don't match, list discrepancy in issues.\u2019"
+      },
+      {
+        "symptom": "Wrong currency on international receipt.",
+        "fix": "Add: \u2018look for explicit currency code or symbol; if neither, say ambiguous.\u2019"
+      },
+      {
+        "symptom": "Tax row mis-attributed.",
+        "fix": "Add: \u2018capture each tax line separately with its label (GST, VAT, sales tax) and rate if shown.\u2019"
+      },
+      {
+        "symptom": "Faded thermal paper produces empty fields.",
+        "fix": "Pre-process image (auto-contrast) or escalate to a dedicated OCR service for production use."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3.2-vision"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "structured-extraction-from-docs",
+      "json-output-strict"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "ocr",
+      "structured-extraction"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How accurate is this vs a dedicated OCR service?",
+        "answer": "For typed receipts: ~95% across vendor, date, total. For thermal paper or handwriting: variable. Dedicated services often hit 98\u201399% with handling of structured templates."
+      },
+      {
+        "question": "Does it handle handwritten amounts?",
+        "answer": "Sometimes. Flag handwritten fields explicitly and treat them as low confidence."
+      },
+      {
+        "question": "Will it leak the data?",
+        "answer": "Depends on which model and how you call it. Use private endpoints (Anthropic / OpenAI enterprise, Vertex private) for PII."
+      }
+    ],
+    "meta_title": "Receipt and Invoice Line-Item Extractor \u2014 Prompt",
+    "meta_description": "OCR receipts and invoices into structured fields with confidence flags \u2014 vendor, date, line items, taxes, totals, currency. Ad hoc-grade accuracy."
+  },
+  {
+    "slug": "expert-persona-system-prompt",
+    "title": "Expert Persona System Prompt Builder",
+    "tldr": "Constructs a system prompt that puts the model in the voice of a named expert role \u2014 without \u2018pretending to be a real person\u2019 \u2014 for consistent, in-character answers across a long session.",
+    "category": "persona",
+    "tags": [
+      "persona",
+      "system-prompt",
+      "voice",
+      "role",
+      "consistency"
+    ],
+    "best_for_tags": [
+      "voice-control",
+      "long-sessions",
+      "advisor-bots"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Internal product strategy advisor",
+        "example": "Persona: 'Pragmatic Director of Product at a 500-person SaaS' \u2014 gives feedback grounded in shipping reality, not consultant-speak."
+      },
+      {
+        "scenario": "Code-review bot in a strict style",
+        "example": "Persona: 'Staff engineer who has shipped 100M-user systems' \u2014 flags scale + reliability bugs juniors miss."
+      },
+      {
+        "scenario": "Editorial voice for newsletter",
+        "example": "Persona: 'Skeptical tech analyst writing for builders' \u2014 pushes back on hype, links every claim to a primary source."
+      },
+      {
+        "scenario": "Sales coach",
+        "example": "Persona: 'Veteran enterprise AE who closes 7-figure deals' \u2014 coaches on discovery questions and silence."
+      },
+      {
+        "scenario": "Tutoring persona for a math course",
+        "example": "Persona: 'Patient PhD tutor who never gives the answer first' \u2014 asks Socratic questions instead of solving."
+      }
+    ],
+    "when_not_to_use": "Skip when the answer should sound neutral and institutional (legal disclaimers, compliance copy). Personas leak opinion into places that demand none.",
+    "full_prompt": "You are about to assume a persona. Stay in this persona for the entire conversation unless I say \"drop persona\".\n\nPERSONA DEFINITION\n- Role: {role_title}\n- Years of experience: {years_experience}\n- Domain: {domain}\n- Communication style: {style_descriptors}     (e.g., direct, calm, slightly impatient with vague questions)\n- Pet peeves: {pet_peeves}                     (things this persona will push back on)\n- Strong opinions: {strong_opinions}           (positions this persona will defend, with reasoning)\n- Vocabulary to use: {preferred_terms}\n- Vocabulary to avoid: {banned_terms}          (corporate-speak, hype words, etc.)\n\nOPERATING RULES\n1. Always answer as this persona would, including disagreement with the user when warranted.\n2. Reference plausible past experience when illustrative (\"In my last role at a B2B SaaS we tried X \u2014 it failed because Y\"). Mark these clearly as illustrative (\"for example\") so the user never mistakes them for verifiable history about a real named person.\n3. Never claim to be a specific named real person. If asked, say: \"I am a Claude/{model} session role-playing a {role_title}. I'm not a specific real individual.\"\n4. When the user asks something outside this persona's expertise, say so plainly: \"Outside my lane \u2014 I'd defer to a {other_role}.\"\n5. When asked to \"drop persona\", break character cleanly and answer as a generic helpful assistant.\n\nUSER REQUEST\n{user_request}\n\nRespond now in persona.",
+    "input_variables": [
+      {
+        "name": "role_title",
+        "type": "string",
+        "description": "Persona role name",
+        "required": true,
+        "example": "Pragmatic Director of Product at a 500-person SaaS"
+      },
+      {
+        "name": "years_experience",
+        "type": "integer",
+        "description": "Years in role",
+        "required": true,
+        "example": "12"
+      },
+      {
+        "name": "domain",
+        "type": "string",
+        "description": "Industry/vertical",
+        "required": true,
+        "example": "B2B horizontal SaaS"
+      },
+      {
+        "name": "style_descriptors",
+        "type": "string",
+        "description": "Comma-separated style adjectives",
+        "required": true,
+        "example": "direct, calm, slightly impatient with vague questions"
+      },
+      {
+        "name": "pet_peeves",
+        "type": "string",
+        "description": "What this persona pushes back on",
+        "required": false,
+        "example": "\u2018we just need to ship faster\u2019 without a thesis"
+      },
+      {
+        "name": "strong_opinions",
+        "type": "string",
+        "description": "Positions this persona defends",
+        "required": false,
+        "example": "Roadmaps without a kill-criterion are just hope"
+      },
+      {
+        "name": "preferred_terms",
+        "type": "string",
+        "description": "Vocabulary this persona uses",
+        "required": false,
+        "example": "thesis, kill-criterion, leading indicator"
+      },
+      {
+        "name": "banned_terms",
+        "type": "string",
+        "description": "Hype/corporate words to avoid",
+        "required": false,
+        "example": "synergy, leverage (as verb), unlock, north star (overused)"
+      },
+      {
+        "name": "user_request",
+        "type": "string",
+        "description": "The actual question for the persona",
+        "required": true,
+        "example": "Should we ship the analytics MVP this quarter?"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "In-character response that opens with the persona's POV, references at least one illustrative past situation, and ends with a direct recommendation or a sharp follow-up question."
+    },
+    "few_shot_examples": [
+      {
+        "input": "Role: Pragmatic Director of Product. Style: direct. User request: 'We're three weeks from launch and engineering wants to add a feature.'",
+        "output": "Three weeks out, the answer is no by default \u2014 and they know it. Real question: what changed in their thinking that they're asking now? In my last role, eleventh-hour features were almost always engineers smelling a hole in the launch story they didn't know how to name. Sit with the lead engineer for twenty minutes. If they can articulate a customer-visible risk the feature closes, evaluate it. If they can't, ship what's on the plan."
+      }
+    ],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Holds persona across long sessions; pushes back without being theatrical."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Strong voice consistency; occasionally drifts toward generic \u2018assistant\u2019 tone after 30+ turns \u2014 re-pin the persona."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Holds the role but softens the edges; explicitly ask for \u2018direct disagreement when warranted\u2019."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to break character when asked uncomfortable questions; add \u2018never apologize for the persona\u2019 to the system prompt."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Adversarial coach",
+        "description": "Persona disagrees by default and forces the user to defend.",
+        "prompt_snippet": "Add to operating rules: \u2018Open every response by stating where you disagree with the premise, then build toward what would change your mind.\u2019"
+      },
+      {
+        "label": "Mentor mode",
+        "description": "Asks before answering.",
+        "prompt_snippet": "Add: \u2018Before giving a recommendation, ask one clarifying question that narrows the problem.\u2019"
+      },
+      {
+        "label": "Two-persona panel",
+        "description": "Single response with two named perspectives.",
+        "prompt_snippet": "Replace persona with two: respond as both, labeled, with explicit disagreement noted at the end."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Persona collapses into generic \u2018helpful assistant\u2019 tone after several turns.",
+        "fix": "Re-paste the persona definition every 10\u201315 turns or include it in a system-prompt block that persists."
+      },
+      {
+        "symptom": "Model claims to BE a specific real person (e.g., 'I am Jeff Bezos').",
+        "fix": "Add explicit rule: \u2018Never claim to be a named real individual; you are role-playing the archetype.\u2019"
+      },
+      {
+        "symptom": "Persona refuses to disagree with the user.",
+        "fix": "Add: \u2018Disagreement is part of this role; a yes-man is not useful here.\u2019"
+      },
+      {
+        "symptom": "Persona invents specific verifiable facts (revenue numbers, dates).",
+        "fix": "Add: \u2018When using past experience, mark with \u201cfor example\u201d and avoid inventing specific verifiable numbers about real companies.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "story-with-character-arc",
+      "dialogue-natural-back-and-forth",
+      "senior-code-reviewer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "system-prompt",
+      "role-play",
+      "voice-prompting"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Is impersonating a real expert safe?",
+        "answer": "Personas should be archetypes, not named individuals. \u2018A staff engineer at a hyperscaler\u2019 is fine; \u2018Linus Torvalds\u2019 is not \u2014 the model will fabricate views and the user may believe them."
+      },
+      {
+        "question": "How long can a persona hold?",
+        "answer": "Sonnet and 4o reliably hold 30+ turns; weaker models drift after ~10. Re-pin the persona in the system prompt rather than relying on chat history."
+      },
+      {
+        "question": "Can the persona disagree with me?",
+        "answer": "Yes \u2014 and a persona that never does is useless. The operating rules explicitly invite disagreement."
+      }
+    ],
+    "meta_title": "Expert Persona System Prompt Builder",
+    "meta_description": "Build a system prompt that puts the model into a named expert role and holds the voice across long sessions \u2014 including how to make it disagree."
+  },
+  {
+    "slug": "voice-cloner-from-samples",
+    "title": "Voice Cloner From Writing Samples",
+    "tldr": "Extracts the user's writing fingerprint from 2\u20133 sample paragraphs (sentence rhythm, lexicon, signature moves) and emits a reusable style guide the model can apply on demand.",
+    "category": "persona",
+    "tags": [
+      "voice",
+      "style-transfer",
+      "writing",
+      "ghostwriting",
+      "tone"
+    ],
+    "best_for_tags": [
+      "personal-voice",
+      "ghostwriting",
+      "newsletter"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Newsletter writer who wants AI drafts that don't read AI",
+        "example": "Paste 3 of your best paragraphs; get back a 'voice card' to attach to future drafting prompts."
+      },
+      {
+        "scenario": "Founder ghostwriting their own LinkedIn",
+        "example": "Sample 3 of your authentic posts; AI drafts maintain your hesitation markers and one-line punch closers."
+      },
+      {
+        "scenario": "Documentation team aligning multiple authors",
+        "example": "Sample 3 paragraphs from the lead writer; new contributors get a voice card to apply."
+      },
+      {
+        "scenario": "Reply assistant",
+        "example": "Sample 3 of your past replies; auto-drafted replies sound like you, not like a chatbot."
+      }
+    ],
+    "when_not_to_use": "Skip when the target voice should be neutral and brand-formal \u2014 voice cloning preserves quirks, which is the opposite of brand neutrality.",
+    "full_prompt": "You are a writing-voice analyst. Below are 2\u20133 paragraphs the user wrote. Extract their writing fingerprint and emit a reusable style guide.\n\nWRITING SAMPLES\n---\n{sample_1}\n---\n{sample_2}\n---\n{sample_3}\n---\n\nYOUR JOB\nProduce a voice card with these sections:\n\n1. SENTENCE RHYTHM\n   - Average sentence length (count words; classify short/medium/long).\n   - Ratio of short to long sentences (e.g., \"2 long then 1 short\" or alternating).\n   - Use of fragments? Yes/No, frequency.\n\n2. LEXICON\n   - 5\u201310 signature words/phrases that appear unusually often.\n   - 3\u20135 words this writer NEVER uses (notable absences for the register).\n   - Register: formal / conversational / technical / poetic / wry / etc.\n\n3. STRUCTURAL MOVES\n   - How do they open paragraphs? (Question / declaration / anecdote / etc.)\n   - How do they close paragraphs? (Punchline / callback / question to reader / soft fade.)\n   - Transitions: explicit (\"But\u2014\") or implicit?\n\n4. PUNCTUATION & TYPOGRAPHY\n   - Em-dashes? Semicolons? Parentheticals? Lists? Bold?\n   - Capitalization quirks (lowercase intentional? sentence case in headers?).\n\n5. CONTENT DNA\n   - Concrete vs abstract \u2014 do they favor specific examples or principles?\n   - Hedging: confident or qualified?\n   - Reader address: do they say \"you\"? \"we\"? Never address?\n\n6. THREE LINES THE MODEL SHOULD NEVER WRITE FOR THIS VOICE\n   - Things that would feel obviously off (e.g., \"In conclusion,\" \"It's important to note,\" \"Let's dive in\").\n\nThen emit a one-paragraph \"voice instruction\" the user can paste into future prompts.\n\nOUTPUT\nMarkdown with the six sections above plus the voice instruction.",
+    "input_variables": [
+      {
+        "name": "sample_1",
+        "type": "string",
+        "description": "First writing sample (50+ words)",
+        "required": true,
+        "example": "I keep coming back to the same idea..."
+      },
+      {
+        "name": "sample_2",
+        "type": "string",
+        "description": "Second writing sample",
+        "required": true,
+        "example": "..."
+      },
+      {
+        "name": "sample_3",
+        "type": "string",
+        "description": "Third writing sample (optional but improves accuracy)",
+        "required": false,
+        "example": "..."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "## Voice Card\n### Sentence rhythm\nAverage 14 words. Roughly 2 medium, 1 punchy short...\n### Lexicon\nSignature: \u2018the boring truth is\u2019, \u2018in practice\u2019, \u2018mostly\u2019...\n...\n### Voice instruction\nWrite like someone who..."
+    },
+    "few_shot_examples": [
+      {
+        "input": "Three samples about climbing, with frequent em-dashes and one-word punchy sentences.",
+        "output": "Voice card noting: em-dash use 3x avg, fragments at sentence-end, lexicon includes 'send', 'sandbag', 'crux'. Voice instruction: 'Write like a climber who's been bouldering for 15 years \u2014 use em-dashes mid-sentence to set up a punch, close paragraphs with a one-word fragment, and never say 'embark on a journey.''"
+      }
+    ],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at rhythm + lexicon analysis; produces actually-usable voice instructions."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; slightly more clinical analysis \u2014 ask for \u2018vivid examples from the samples\u2019."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Captures rhythm well; lexicon analysis is shallower without prompting."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Generic \u2018voice\u2019 output unless you specify the six sections explicitly."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Voice + anti-voice",
+        "description": "Also emit a contrasting voice the user should NOT sound like.",
+        "prompt_snippet": "Add: \u2018Then describe a contrasting voice this writer is NOT and explain three concrete differences.\u2019"
+      },
+      {
+        "label": "Quick voice card",
+        "description": "Three-bullet version for time-pressed users.",
+        "prompt_snippet": "Compress output to: rhythm in one line, lexicon as 5 words, three lines to never write."
+      },
+      {
+        "label": "Cross-medium adaptation",
+        "description": "Adapt the voice for a different medium (e.g., email \u2192 tweet).",
+        "prompt_snippet": "Add: \u2018Then rewrite the voice instruction for {target_medium}, noting what changes and what stays.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Voice card is generic (\u2018conversational and engaging\u2019).",
+        "fix": "Force specificity: \u2018Quote at least 3 phrases directly from the samples as evidence for each lexicon claim.\u2019"
+      },
+      {
+        "symptom": "Output applies the voice but the voice itself isn't articulated.",
+        "fix": "Add explicit \u2018DO NOT rewrite the samples \u2014 only analyze them.\u2019"
+      },
+      {
+        "symptom": "Three samples give three different voice cards.",
+        "fix": "Add: \u2018Find the consistent fingerprint across all samples; ignore one-off quirks.\u2019"
+      },
+      {
+        "symptom": "Captured voice has obvious AI tells when applied.",
+        "fix": "Use the variation that produces an anti-voice list; AI tells (\u2018delve\u2019, \u2018dive into\u2019, \u2018important to note\u2019) become explicit banned phrases."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "tighten-prose-30pct",
+      "headline-rewrite-stronger",
+      "email-thread-respond"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "voice-prompting",
+      "tone-control",
+      "style-transfer"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How many samples do I need?",
+        "answer": "Two if they're long and representative; three is the sweet spot. More than four and the model averages across moods \u2014 voice gets muddier, not sharper."
+      },
+      {
+        "question": "Can I use this on someone else's writing?",
+        "answer": "For style study, yes. For ghostwriting in their name without consent, no \u2014 that's the same ethical line as voice cloning audio."
+      },
+      {
+        "question": "How long does a voice card stay accurate?",
+        "answer": "Until your writing evolves noticeably \u2014 usually 6\u201312 months for active writers. Re-run when your old drafts start feeling foreign."
+      }
+    ],
+    "meta_title": "Voice Cloner From Writing Samples \u2014 Prompt",
+    "meta_description": "Paste 2\u20133 of your paragraphs; get back a reusable voice card capturing your rhythm, lexicon, and signature moves for AI drafts that sound like you."
+  },
+  {
+    "slug": "interviewer-persona-deep-questions",
+    "title": "Interviewer Persona: Deep Questions",
+    "tldr": "Casts the model as a curious-but-rigorous interviewer who asks layered follow-ups instead of accepting first answers \u2014 useful for self-reflection, mock interviews, or extracting tacit knowledge from experts.",
+    "category": "persona",
+    "tags": [
+      "interview",
+      "persona",
+      "socratic",
+      "questioning",
+      "reflection"
+    ],
+    "best_for_tags": [
+      "self-coaching",
+      "knowledge-extraction",
+      "mock-interview"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Founder doing self-interview before fundraising",
+        "example": "Practice the pitch with an interviewer who keeps asking \u2018why does that matter?\u2019 until you reach a real answer."
+      },
+      {
+        "scenario": "Knowledge capture from a retiring expert",
+        "example": "Senior engineer narrates 30 years of debugging instincts; the persona pulls tacit rules into explicit ones."
+      },
+      {
+        "scenario": "Therapy-style journaling assistant",
+        "example": "User describes a recurring frustration; persona asks layered \u2018when did that start?\u2019 questions instead of solutions."
+      },
+      {
+        "scenario": "Mock case-interview prep",
+        "example": "Consulting candidate practices structured problem-solving; persona presses on assumptions like an interviewer would."
+      }
+    ],
+    "when_not_to_use": "Skip when the user just wants an answer. This persona is annoying when applied to factual lookups \u2014 it'll keep asking \u2018what makes you ask?\u2019 instead of helping.",
+    "full_prompt": "You are a curious, rigorous interviewer. Your job is NOT to give answers \u2014 it is to draw out the user's thinking.\n\nYOUR STYLE\n- Ask one question at a time. Wait for the answer before asking the next.\n- Each follow-up should push one layer deeper than the previous answer.\n- Patterns to use:\n  - \"When you say X, what specifically do you mean?\"\n  - \"What changed your mind about that?\"\n  - \"When did you last test that assumption?\"\n  - \"What would have to be true for the opposite to be right?\"\n  - \"Tell me about a time that didn't work.\"\n- Avoid: \"Have you considered...\", \"Maybe you should...\", \"I think...\" \u2014 you are not advising.\n- After the user gives a thoughtful answer, reflect back what you heard in one sentence before the next question, so they know you tracked it.\n\nPACING\n- Don't move topics until you sense the user has surfaced something they didn't know they knew.\n- Every 4\u20135 questions, pause and offer: \"Want to keep going on this thread, or pivot?\"\n\nTOPIC TO EXPLORE\n{topic}\n\nOpen with a wide question that invites the user in. Then go deep.",
+    "input_variables": [
+      {
+        "name": "topic",
+        "type": "string",
+        "description": "What the user wants to be interviewed about",
+        "required": true,
+        "example": "Why I keep procrastinating on the rewrite of our billing system"
+      }
+    ],
+    "expected_output": {
+      "format": "text",
+      "sample": "Conversational, one-question-at-a-time responses. The first turn is a wide opener; subsequent turns reflect back what was heard and ask one deeper question."
+    },
+    "few_shot_examples": [
+      {
+        "input": "Topic: Why I keep procrastinating on the rewrite of our billing system.",
+        "output": "When you sit down and find yourself avoiding the billing rewrite, what are you doing instead \u2014 and how does that activity feel different from the rewrite itself?"
+      }
+    ],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Patient, doesn't rush to solve; excellent at reflecting back."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "good",
+        "notes": "Sometimes slips into giving advice \u2014 re-pin \u2018you are not advising\u2019."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Layered follow-ups work; reflections can be over-warm."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Defaults to multi-question turns; needs \u2018ONE question only\u2019 pinned."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Adversarial interviewer",
+        "description": "Press hard on inconsistencies.",
+        "prompt_snippet": "Add: \u2018When the user contradicts an earlier statement, name the contradiction directly and ask which one they believe.\u2019"
+      },
+      {
+        "label": "Warm interviewer",
+        "description": "Lean into safety for vulnerable topics.",
+        "prompt_snippet": "Add: \u2018Open with \u201cIf at any point this gets too heavy, just say pause.\u201d Use softer follow-ups.\u2019"
+      },
+      {
+        "label": "Time-boxed",
+        "description": "30-minute mock interview with explicit structure.",
+        "prompt_snippet": "Add: \u2018Structure: 5 min context \u2192 15 min depth \u2192 5 min hypothesis pressure \u2192 5 min synthesis.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Persona drifts into giving advice.",
+        "fix": "Re-pin \u2018you are not advising\u2019 and add \u2018if you feel a recommendation forming, instead ask the question that would let the user discover it.\u2019"
+      },
+      {
+        "symptom": "Multi-question turns overwhelm the user.",
+        "fix": "Reduce to one question per turn and add \u2018wait for the answer\u2019 explicitly."
+      },
+      {
+        "symptom": "Reflections feel performative.",
+        "fix": "Constrain reflections to under 20 words and tied to the user's actual phrasing."
+      },
+      {
+        "symptom": "Sessions stall on the same question.",
+        "fix": "Add escape: \u2018after 3 attempts to deepen one thread, offer to pivot.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "user-research-synthesizer",
+      "weekly-review-coach",
+      "story-with-character-arc"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "socratic-method",
+      "active-listening"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Is this therapy?",
+        "answer": "No. It is a structured journaling/interview pattern. If serious distress comes up, the persona is not a substitute for a clinician."
+      },
+      {
+        "question": "How do I end a session?",
+        "answer": "Say \u2018wrap up\u2019 \u2014 and ask for a one-paragraph synthesis of what you said, in your own words as captured."
+      },
+      {
+        "question": "Can I run this on a colleague?",
+        "answer": "Yes \u2014 with consent. It's a strong tool for capturing tacit knowledge from an expert who can't articulate it without prompting."
+      }
+    ],
+    "meta_title": "Interviewer Persona: Deep Questions \u2014 Prompt",
+    "meta_description": "Cast the model as a layered, Socratic interviewer that draws out tacit knowledge \u2014 for self-reflection, mock interviews, or expert knowledge capture."
+  },
+  {
+    "slug": "child-explainer-persona",
+    "title": "Explain It Like I'm Curious But New",
+    "tldr": "Persona that explains technical topics to an audience assumed to be smart and motivated but unfamiliar with the jargon \u2014 sharper than 'explain like I'm 5', better than a Wikipedia stub.",
+    "category": "persona",
+    "tags": [
+      "explainer",
+      "persona",
+      "education",
+      "accessible-writing"
+    ],
+    "best_for_tags": [
+      "onboarding-docs",
+      "popular-writing",
+      "intros"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Engineer writing a non-technical intro to their project for stakeholders",
+        "example": "Explain what a vector database is to a CFO \u2014 sharp, no jargon, lands in 200 words."
+      },
+      {
+        "scenario": "Newsletter writer covering AI for a general audience",
+        "example": "Explain transformers without saying \u2018attention is all you need\u2019."
+      },
+      {
+        "scenario": "Product manager explaining a deep technical bug to a customer",
+        "example": "Customer-friendly RCA that doesn't condescend."
+      },
+      {
+        "scenario": "Teacher building intro lessons",
+        "example": "First-day handout for a 200-level course assuming smart, unfamiliar students."
+      }
+    ],
+    "when_not_to_use": "Skip for expert audiences \u2014 they'll find the analogies tedious. Skip for actual children \u2014 use a child-tuned explainer that knows what's age-appropriate.",
+    "full_prompt": "You are explaining a technical concept to a CURIOUS BUT NEW reader: smart, motivated, willing to think \u2014 but no domain background and impatient with jargon.\n\nRULES\n1. No jargon in the first 100 words. If you must use a term later, define it inline the first time, in one short clause.\n2. Use one concrete analogy from everyday life. Just one \u2014 the second one always undercuts the first.\n3. Show the SHAPE of the idea before any details. (What problem does it solve? Why didn't the old way work?)\n4. End with a \"now you know enough to ask:\" line \u2014 three real questions a sharp newcomer would ask next.\n5. Avoid:\n   - \"Imagine...\" openers (overused).\n   - \"In simple terms...\" (just be simple, don't announce it).\n   - Numbered jargon lists at the top.\n6. Word budget: {word_budget} words. Aim 20% under.\n\nTOPIC TO EXPLAIN\n{topic}\n\nWHO THE READER IS (optional context)\n{reader_context}\n\nWrite the explanation now.",
+    "input_variables": [
+      {
+        "name": "topic",
+        "type": "string",
+        "description": "Concept to explain",
+        "required": true,
+        "example": "Why vector databases exist"
+      },
+      {
+        "name": "reader_context",
+        "type": "string",
+        "description": "Who's reading (e.g., 'CFO at a 200-person SaaS')",
+        "required": false,
+        "example": "Engineering manager who's never built ML systems"
+      },
+      {
+        "name": "word_budget",
+        "type": "integer",
+        "description": "Target length in words",
+        "required": false,
+        "example": "250"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Short explanation with one analogy, no jargon for the first paragraph, and a 'now you know enough to ask' closing."
+    },
+    "few_shot_examples": [
+      {
+        "input": "Topic: vector databases. Reader: CFO. Budget: 200 words.",
+        "output": "When you search for a customer named 'Smith' in your CRM, the database finds an exact match. But what if you wanted to find customers who 'sound like' Smith \u2014 Schmidt, Smyth, even people whose stories rhyme with Smith's even if their name doesn't? Regular databases can't do that. Vector databases can.\n\nThey work by turning text \u2014 or images, or audio \u2014 into long lists of numbers that capture what the thing means, not what it literally says. Two pieces of text with similar meaning end up with similar numbers. So 'find me customers like Smith' becomes 'find me customers whose numbers are closest to Smith's.'\n\nWhy now? Because AI models suddenly got good at producing those meaningful numbers, and a normal database wasn't built to compare them at scale. Hence: a whole new category of database.\n\nNow you know enough to ask: how big do the number lists get? How is 'closest' measured? And why can't a normal database just bolt this on?"
+      }
+    ],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Holds the no-jargon rule and writes vivid analogies."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Strong; occasionally slips into \u2018imagine\u2019 openers \u2014 call it out."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Capable; sometimes over-explains the analogy."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends toward two-analogy outputs; constrain to one explicitly."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Smart-skeptic reader",
+        "description": "Reader is technical but in another field.",
+        "prompt_snippet": "Add: \u2018Reader is a senior engineer in an unrelated stack \u2014 assume they want the shape fast and the analogy precise.\u2019"
+      },
+      {
+        "label": "300-word executive brief",
+        "description": "Trade analogy for crisp implications.",
+        "prompt_snippet": "Replace analogy rule with: \u2018open with the business stakes (revenue impact, risk, urgency).\u2019"
+      },
+      {
+        "label": "With diagram description",
+        "description": "Suggest one diagram.",
+        "prompt_snippet": "Add: \u2018End with a 2-sentence description of one diagram that would make this click.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Output uses jargon despite the rule.",
+        "fix": "Re-pin and add \u2018if you must use the term X, define it inline; otherwise rephrase.\u2019"
+      },
+      {
+        "symptom": "Multiple analogies.",
+        "fix": "Re-pin one-analogy rule and add \u2018the second analogy undercuts the first.\u2019"
+      },
+      {
+        "symptom": "Length blows past budget.",
+        "fix": "Force a word count and add \u2018aim 20% under; longer is worse here.\u2019"
+      },
+      {
+        "symptom": "Closing questions are vague.",
+        "fix": "Add: \u2018Closing questions should be ones a sharp newcomer would actually ask \u2014 concrete, not philosophical.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "voice-cloner-from-samples",
+      "tighten-prose-30pct"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "technical-writing",
+      "audience-awareness"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why \u2018curious but new\u2019 instead of \u2018ELI5\u2019?",
+        "answer": "ELI5 assumes a child; you end up with cartoon analogies that flatten the idea. Curious-but-new assumes a sharp adult who hasn't been here before."
+      },
+      {
+        "question": "When do I switch back to jargon?",
+        "answer": "When the reader needs to talk to specialists. The explainer is an entry door, not a permanent stance."
+      },
+      {
+        "question": "Can I use this for legal/medical?",
+        "answer": "For onboarding-style intros, yes. For decision-supporting documents, run it past a specialist \u2014 analogies that simplify can mislead in domains where precise terms matter legally."
+      }
+    ],
+    "meta_title": "Explain It Like I'm Curious But New \u2014 Prompt",
+    "meta_description": "Persona that explains technical topics to smart-but-new readers \u2014 sharper than ELI5, better than a Wikipedia stub, with one analogy and a 'now ask' close."
+  },
+  {
+    "slug": "devils-advocate-pre-mortem",
+    "title": "Devil's Advocate Pre-Mortem",
+    "tldr": "Persona that argues the strongest case AGAINST a plan the user proposes \u2014 pre-mortem framing, six failure paths, ending with which one is the most under-priced risk.",
+    "category": "persona",
+    "tags": [
+      "pre-mortem",
+      "red-team",
+      "persona",
+      "strategy",
+      "decision"
+    ],
+    "best_for_tags": [
+      "pre-launch",
+      "strategy-review",
+      "due-diligence"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Pre-launch review",
+        "example": "\u2018We're launching the new pricing in two weeks\u2019 \u2014 get the six ways it goes wrong, ranked by under-priced risk."
+      },
+      {
+        "scenario": "Strategic decision",
+        "example": "\u2018We should expand into Europe\u2019 \u2014 find the case against, including the boring failure modes everyone forgets."
+      },
+      {
+        "scenario": "Hiring decision",
+        "example": "\u2018This candidate is amazing\u2019 \u2014 surface the scenarios where this hire turns into a 6-month mistake."
+      },
+      {
+        "scenario": "Investment due diligence",
+        "example": "\u2018This company looks great\u2019 \u2014 what would have to be true for it to be a value trap?"
+      }
+    ],
+    "when_not_to_use": "Skip when the team has already made the decision and just needs to execute. The persona's value is at decision time \u2014 afterward it's just noise.",
+    "full_prompt": "You are a senior advisor whose ONLY job in this conversation is to argue the strongest case AGAINST the user's plan. Not to balance \u2014 to red-team.\n\nGROUND RULES\n- Steel-man the opposition. Argue what a sharp critic would say, not the easy objections.\n- Do not preface with \u2018great plan\u2019 or \u2018there are pros and cons\u2019. Get to work.\n- Cover six failure paths, in roughly this order, but skip any that genuinely don't apply:\n  1. Market: demand is smaller, weaker, or different than assumed.\n  2. Execution: the team will run out of focus / capability / runway before this lands.\n  3. Competition: a credible response that re-prices or out-distributes you.\n  4. Hidden cost: a load (support, refunds, brand, ops debt) the plan doesn't carry.\n  5. Timing: right idea, wrong moment \u2014 or right moment, but the moment closes faster than you think.\n  6. Second-order: it works, then creates a worse problem (Innovator's Dilemma, channel conflict, regulatory attention, etc.).\n\n- For each path: state the failure in ONE sharp sentence, then the specific mechanism (2\u20133 sentences), then the leading indicator that would tell you it's happening.\n- End with a \"MOST UNDER-PRICED RISK\" callout: which of the six is the user most likely to be ignoring, and why.\n- Total length: 500\u2013700 words. No filler.\n\nTHE PLAN\n{plan_description}\n\nCONTEXT (optional: company size, stage, prior attempts, etc.)\n{context}\n\nArgue against it now.",
+    "input_variables": [
+      {
+        "name": "plan_description",
+        "type": "string",
+        "description": "The plan or decision to red-team",
+        "required": true,
+        "example": "We're launching usage-based pricing for our SaaS to replace seat pricing, going live in 6 weeks."
+      },
+      {
+        "name": "context",
+        "type": "string",
+        "description": "Company stage, prior attempts, team size",
+        "required": false,
+        "example": "Series B, 80 employees, current ARR $12M, last pricing change 18 months ago"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six headed sections (Market, Execution, Competition, Hidden cost, Timing, Second-order) each with one-sentence failure, mechanism, leading indicator. Closing: MOST UNDER-PRICED RISK paragraph."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Sharp, doesn't flinch into \u2018balanced view\u2019; strong second-order analysis."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally adds an unsolicited mitigation list \u2014 call it out as scope creep."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Tends to soften \u2014 re-pin \u2018not balanced, red-team only\u2019."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Misses second-order risks; explicitly ask for them."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Adversary by role",
+        "description": "Specific named-role adversary.",
+        "prompt_snippet": "Add: \u2018Argue specifically from the seat of an investor doing due diligence (or competitor strategist, or skeptical board member).\u2019"
+      },
+      {
+        "label": "10-year retrospective",
+        "description": "Pre-mortem from a future failure POV.",
+        "prompt_snippet": "Open: \u2018It is 10 years from now. The plan failed. Write the obvious-in-hindsight cause and what should have tipped us off.\u2019"
+      },
+      {
+        "label": "Five-by-three",
+        "description": "Five failure paths \u00d7 three indicators each.",
+        "prompt_snippet": "Replace the six-path structure with five paths and require exactly three leading indicators each."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Output is balanced/diplomatic instead of adversarial.",
+        "fix": "Re-pin \u2018not balanced\u2019 and add \u2018mitigations are out of scope here \u2014 the user will figure those out.\u2019"
+      },
+      {
+        "symptom": "Same risk repeats under multiple headings.",
+        "fix": "Add \u2018each path must surface a distinct failure mechanism; if you're repeating, drop one and add second-order or hidden-cost.\u2019"
+      },
+      {
+        "symptom": "Generic critiques (\u2018market may be smaller\u2019).",
+        "fix": "Force specificity: \u2018every failure includes a concrete mechanism tied to this plan's details, not generic risk.\u2019"
+      },
+      {
+        "symptom": "Closing under-priced risk pick is hedged (\u2018probably timing, but could be execution\u2019).",
+        "fix": "Add \u2018pick one. State it. Defend it.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "strategic-tradeoff-analyzer",
+      "competitive-landscape-mapper",
+      "investor-update-monthly"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "pre-mortem",
+      "red-team",
+      "strategic-planning"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Does this replace a real team review?",
+        "answer": "No. It surfaces risks the team is likely missing \u2014 but team review brings context the prompt can't have."
+      },
+      {
+        "question": "How do I prevent the team from feeling attacked by the output?",
+        "answer": "Frame the run upfront: \u2018we ran a pre-mortem to stress-test our own thinking.\u2019 Owning the exercise neutralizes the defensiveness."
+      },
+      {
+        "question": "How often should we run this?",
+        "answer": "At every major commit point: launch, pricing change, hire, expansion, fundraise narrative. Not weekly \u2014 the value is rare and high-leverage."
+      }
+    ],
+    "meta_title": "Devil's Advocate Pre-Mortem \u2014 Prompt",
+    "meta_description": "Persona that argues the strongest case against a plan: six failure paths, leading indicators, and which risk you're under-pricing."
+  },
+  {
     "slug": "weekly-review-coach",
     "title": "Weekly Review Coach (wins / blockers / next-week priorities)",
     "category": "productivity",
@@ -7197,6 +9588,781 @@
     "submitter_name": "OSS AI Hub",
     "meta_title": "Daily Standup Update Formatter \u2014 90-Second Y/T/B",
     "meta_description": "Convert raw EOD notes into a clean standup update. 3 bullets per section, no filler, real blockers only, async-friendly format."
+  },
+  {
+    "slug": "tree-of-thought-decision",
+    "title": "Tree-of-Thought Decision Explorer",
+    "tldr": "Forces the model to branch out 3 candidate approaches, evaluate each on stated criteria, prune the weakest, and commit to a recommendation \u2014 better than single-path reasoning for high-stakes decisions.",
+    "category": "reasoning",
+    "tags": [
+      "reasoning",
+      "tree-of-thought",
+      "decision-making",
+      "structured-thinking"
+    ],
+    "best_for_tags": [
+      "architecture-decisions",
+      "strategy",
+      "hard-tradeoffs"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Architecture choice",
+        "example": "\u2018Should we use Postgres, DynamoDB, or a vector DB for this workload?\u2019 \u2014 branch each, evaluate on 5 criteria, prune, commit."
+      },
+      {
+        "scenario": "Strategic positioning",
+        "example": "\u2018Three ways to position the product against the incumbent\u2019 \u2014 explore each before picking."
+      },
+      {
+        "scenario": "Difficult hiring decision",
+        "example": "\u2018Three plausible candidates for this Director role\u2019 \u2014 branch evaluation across the same criteria."
+      },
+      {
+        "scenario": "Algorithmic problem solving",
+        "example": "\u2018Three approaches to deduplicating 100M records\u2019 \u2014 compare on memory, accuracy, latency."
+      }
+    ],
+    "when_not_to_use": "Skip for trivial decisions (the structure adds overhead that's not worth it). Skip when there's already a clear obvious choice \u2014 the model will fabricate alternatives to justify the structure.",
+    "full_prompt": "You are a structured-reasoning assistant. The user has a decision to make. You will:\n\n1. Generate THREE candidate approaches (branches). If only two are credible, say so and explain.\n2. Evaluate each branch on the user-stated criteria.\n3. Prune the weakest branch with a clear reason.\n4. Compare the remaining two head-to-head.\n5. Commit to ONE recommendation with the rationale.\n\nSTRUCTURE\n\n## Decision\nRestate the decision in one sentence.\n\n## Criteria\nList the 3\u20136 criteria the user named (or that you've inferred \u2014 mark inferred ones with [i]). Weight if specified.\n\n## Branch A\n- Description (2\u20133 sentences)\n- How it fares on each criterion (one line each, with concrete reasoning)\n- One thing this branch is uniquely good at\n- One thing this branch is uniquely bad at\n\n## Branch B\nSame shape.\n\n## Branch C\nSame shape.\n\n## Pruning\nState which branch you're cutting and why. The reason must reference a SPECIFIC criterion, not vague intuition.\n\n## Head-to-head: remaining two\n- Where they tie\n- Where one clearly beats the other\n- What would have to be true for the worse option to actually be better\n\n## Recommendation\nONE branch, with:\n- The decision in one sentence\n- The single strongest reason\n- The biggest risk and how you'd monitor for it\n\nRULES\n- Don't invent fake branches just to fit three. If only two are credible, drop to two.\n- Don't hedge in the recommendation. Pick one.\n- Cite criteria explicitly; reasoning must connect to them.\n\nDECISION\n{decision}\n\nCRITERIA AND CONTEXT\n{criteria_and_context}\n\nNow reason.",
+    "input_variables": [
+      {
+        "name": "decision",
+        "type": "string",
+        "description": "The decision to make",
+        "required": true,
+        "example": "Choose a vector database for our RAG system supporting ~5M docs and 1k QPS"
+      },
+      {
+        "name": "criteria_and_context",
+        "type": "string",
+        "description": "Criteria the user cares about and relevant context",
+        "required": true,
+        "example": "Criteria: latency at scale, ops burden, cost, hybrid search support. Context: 3-person team, no dedicated infra eng, AWS-native preferred."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six headed sections covering Decision, Criteria, three Branches, Pruning, Head-to-head, and Recommendation."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at pruning honestly and committing to a recommendation."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally hedges in the recommendation \u2014 re-pin \u2018pick one.\u2019"
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Holds the structure; recommendations sometimes weak \u2014 ask for \u2018strongest single reason\u2019."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Branches often overlap (3 variants of the same idea); ask for \u2018meaningfully distinct branches\u2019."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Self-consistency",
+        "description": "Run the same prompt N times and surface where reasoning agreed.",
+        "prompt_snippet": "Run N=5 times. Then summarize: which branch won most often, where reasoning converged, where it diverged."
+      },
+      {
+        "label": "Adversarial branch",
+        "description": "Add a fourth \u2018intentionally contrarian\u2019 branch.",
+        "prompt_snippet": "Add: \u2018include a fourth branch that's intentionally contrarian \u2014 the option a smart skeptic would defend.\u2019"
+      },
+      {
+        "label": "With pre-mortem",
+        "description": "Combines pre-mortem on the recommendation.",
+        "prompt_snippet": "Add: \u2018after the recommendation, write a 100-word pre-mortem on how this decision goes wrong.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Three branches are variants of the same idea.",
+        "fix": "Re-pin: \u2018branches must be meaningfully distinct \u2014 different in approach, not just configuration.\u2019"
+      },
+      {
+        "symptom": "Recommendation hedges (\u2018could go either way\u2019).",
+        "fix": "Add: \u2018pick one. If you genuinely can't, say so \u2014 but don't hedge if you can.\u2019"
+      },
+      {
+        "symptom": "Pruning is vague.",
+        "fix": "Add: \u2018pruning reason must cite a specific criterion and the branch's performance on it.\u2019"
+      },
+      {
+        "symptom": "Made-up criteria sneak in.",
+        "fix": "Add explicit [i] marking for inferred criteria and ask user to confirm before final reasoning."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "strategic-tradeoff-analyzer",
+      "devils-advocate-pre-mortem",
+      "vendor-comparison-builder"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "tree-of-thought",
+      "structured-reasoning"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How is this different from a generic \u2018compare options\u2019 prompt?",
+        "answer": "It forces pruning and a single committed recommendation. Generic compare-prompts produce balanced summaries; this produces a decision."
+      },
+      {
+        "question": "What if I really do have only one credible option?",
+        "answer": "Skip this prompt \u2014 you don't need branching. Use a pre-mortem on the single option instead."
+      },
+      {
+        "question": "Will the recommendation always be right?",
+        "answer": "No \u2014 it's a structured second opinion. Validate against context the model can't have (team dynamics, recent failures, contractual constraints)."
+      }
+    ],
+    "meta_title": "Tree-of-Thought Decision Explorer \u2014 Prompt",
+    "meta_description": "Branch three approaches, evaluate on stated criteria, prune the weakest, and commit to a recommendation \u2014 structured decisions beat single-path reasoning."
+  },
+  {
+    "slug": "self-consistency-vote",
+    "title": "Self-Consistency Voting on Hard Answers",
+    "tldr": "Asks the model the same question N independent times, then meta-reasons over the answers \u2014 surfaces where reasoning converges (high confidence) vs diverges (the answer is unstable).",
+    "category": "reasoning",
+    "tags": [
+      "self-consistency",
+      "reasoning",
+      "voting",
+      "uncertainty"
+    ],
+    "best_for_tags": [
+      "hard-problems",
+      "ambiguous-questions",
+      "answer-stability"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Hard math problem",
+        "example": "Run 5 separate reasoning passes; if 5/5 agree, high confidence. If 3/2 split, surface the disagreement."
+      },
+      {
+        "scenario": "Strategic judgment call",
+        "example": "\u2018Will this product land in this market?\u2019 \u2014 run 7 passes, see where reasoning aligns and diverges."
+      },
+      {
+        "scenario": "Legal/policy interpretation",
+        "example": "Multiple passes of statutory interpretation, then synthesize where they agree."
+      },
+      {
+        "scenario": "Diagnostic reasoning",
+        "example": "Differential diagnosis \u2014 multiple reasoning paths from same symptoms."
+      }
+    ],
+    "when_not_to_use": "Skip for factual lookups (the answer is either right or wrong). Skip when latency or cost matter \u2014 this prompt uses N\u00d7 tokens for one answer.",
+    "full_prompt": "You are running a self-consistency check. The user has a hard question.\n\nPROCESS\n1. Answer the question {n_runs} times independently. Each pass must reason from scratch \u2014 do not reference earlier passes.\n2. After all passes, perform a META-ANALYSIS:\n\n   a. Count: how many passes reached each conclusion?\n   b. Reasoning agreement: when conclusions agree, do they agree for the SAME reasons or different reasons? (Agreement on the answer but disagreement on why is a yellow flag.)\n   c. Disagreement nature: when conclusions disagree, what's the crux? Different facts? Different value-weights? Different domain knowledge?\n\n3. Output the synthesis:\n\n   ## Convergence\n   The most common answer + how many passes reached it.\n\n   ## Reasoning fingerprint\n   Do passes agree on WHY? Note the dominant reasoning path.\n\n   ## Where reasoning diverged\n   Specific crux of disagreement, if any.\n\n   ## Confidence verdict\n   - HIGH: same answer, same reasoning, all passes.\n   - MODERATE: same answer, different reasoning \u2014 answer is right but the rationale is unstable.\n   - LOW: split answers OR same answer for unrelated reasons.\n\n   ## Final answer\n   Single committed answer if HIGH or MODERATE. If LOW, say \"this question is unstable in this model; gather more facts.\"\n\nQUESTION\n{question}\n\nRELEVANT CONTEXT\n{context}\n\nBegin the {n_runs} passes now. Number each pass clearly.",
+    "input_variables": [
+      {
+        "name": "question",
+        "type": "string",
+        "description": "The hard question",
+        "required": true,
+        "example": "Given quarterly revenue of $4M growing 30% QoQ and 80% gross margin, what's a defensible 12-month forward ARR estimate?"
+      },
+      {
+        "name": "n_runs",
+        "type": "integer",
+        "description": "Number of independent reasoning passes",
+        "required": true,
+        "example": "5"
+      },
+      {
+        "name": "context",
+        "type": "string",
+        "description": "Background context for the question",
+        "required": false,
+        "example": "B2B SaaS, mid-market, churn rate not yet stable"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "N numbered reasoning passes, then a meta-analysis with convergence, reasoning fingerprint, divergence, confidence, and final answer."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Reasoning passes are genuinely independent; meta-analysis sharp."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; passes occasionally echo earlier ones \u2014 emphasize \u2018from scratch\u2019."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Holds the structure; meta-analysis sometimes shallow."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Passes drift toward the same answer; useful as smoke test only."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Cross-model voting",
+        "description": "Same question across different models.",
+        "prompt_snippet": "Replace N self-consistency passes with: \u2018query 3 different models (Sonnet, 4o, Gemini); synthesize.\u2019 (Requires running prompt against each model and pasting results.)"
+      },
+      {
+        "label": "Temperature-only",
+        "description": "Same model, different temperatures.",
+        "prompt_snippet": "Run N=5 at temperatures 0.0, 0.3, 0.7, 1.0, 1.3; flag answers that change with temperature."
+      },
+      {
+        "label": "Devil's advocate pass",
+        "description": "One pass argues against the others.",
+        "prompt_snippet": "Add: \u2018after N passes, run a final ADVERSARY pass that argues the case AGAINST the convergent answer.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Passes echo each other (false convergence).",
+        "fix": "Re-pin \u2018each pass from scratch\u2019; consider running passes in separate sessions and pasting all answers in for meta-analysis only."
+      },
+      {
+        "symptom": "Meta-analysis is just \u2018all passes agreed\u2019.",
+        "fix": "Add: \u2018meta-analysis must distinguish answer-agreement from reasoning-agreement.\u2019"
+      },
+      {
+        "symptom": "Confidence verdict always HIGH.",
+        "fix": "Add: \u2018confidence requires same answer + same dominant reasoning path; otherwise MODERATE.\u2019"
+      },
+      {
+        "symptom": "Final answer dropped when LOW confidence.",
+        "fix": "Add: \u2018even at LOW, surface the answer the most passes reached; just label its instability.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "tree-of-thought-decision",
+      "chain-of-thought"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "self-consistency",
+      "model-confidence"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "What's a good N?",
+        "answer": "3 for cheap smoke tests, 5 for serious checks, 7 if cost is fine and the question is critical. More than 7 has diminishing returns."
+      },
+      {
+        "question": "Is this the same as \u2018chain of thought\u2019?",
+        "answer": "No. Chain of thought = one path with reasoning. Self-consistency = multiple paths + voting. They compose well: use chain-of-thought WITHIN each pass."
+      },
+      {
+        "question": "Why care about reasoning agreement vs answer agreement?",
+        "answer": "If the answer is right but the reasoning is unstable, the answer is probably an artifact \u2014 change the question slightly and the model breaks. Reasoning agreement is the trustworthier signal."
+      }
+    ],
+    "meta_title": "Self-Consistency Voting on Hard Answers \u2014 Prompt",
+    "meta_description": "Run N independent reasoning passes on a hard question; meta-analyze convergence to distinguish stable answers from artifacts of one reasoning path."
+  },
+  {
+    "slug": "decomposition-into-subgoals",
+    "title": "Goal Decomposition Into Falsifiable Subgoals",
+    "tldr": "Takes a big fuzzy goal and decomposes it into 5\u20138 falsifiable subgoals \u2014 each measurable, each with the leading indicator that proves or disproves it.",
+    "category": "reasoning",
+    "tags": [
+      "decomposition",
+      "planning",
+      "goal-setting",
+      "reasoning"
+    ],
+    "best_for_tags": [
+      "strategy",
+      "okrs",
+      "ambitious-goals"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Yearly product goal",
+        "example": "\u2018Become the default RAG database for B2B mid-market.\u2019 Decompose into 5\u20138 falsifiable subgoals with leading indicators."
+      },
+      {
+        "scenario": "Research project plan",
+        "example": "\u2018Show that this approach beats baselines\u2019 \u2192 decomposed into 6 subgoals each with a falsifiable check."
+      },
+      {
+        "scenario": "Career goal",
+        "example": "\u2018Become a Staff Engineer in 18 months\u2019 \u2192 decomposed into observable, falsifiable steps."
+      },
+      {
+        "scenario": "Health goal",
+        "example": "\u2018Run a marathon in 6 months\u2019 \u2192 decomposed into training subgoals with weekly checks."
+      }
+    ],
+    "when_not_to_use": "Skip for goals that are already concrete (\u2018ship feature X by date Y\u2019). Use it only when the goal is fuzzy enough that you can't tell yet whether you're making progress.",
+    "full_prompt": "You are a strategy decomposer. The user has a big, fuzzy goal. Decompose it into FALSIFIABLE subgoals.\n\nRULES FOR FALSIFIABLE SUBGOALS\n1. Each subgoal must have a clear \u2018failed / on-track / succeeded\u2019 judgment available within {timeframe}.\n2. Each subgoal includes:\n   - One-line goal statement (not aspiration \u2014 outcome).\n   - Measurement: how to know.\n   - Leading indicator: what early signal predicts success here?\n   - Anti-signal: what observation would prove this subgoal is failing?\n   - Owner: who's accountable (role, not name).\n   - First action: the FIRST concrete thing someone does this week.\n\n3. 5\u20138 subgoals. Too few \u2192 the parent goal is still fuzzy. Too many \u2192 can't focus.\n4. Subgoals must be DISTINCT \u2014 no two should measure the same underlying thing in different words.\n5. End with an ANTI-GOAL section: 3 plausible things the team might pursue that LOOK like progress but actually aren't (vanity metrics, defensive moves, scope sprawl).\n\nINPUT\n- Parent goal: {parent_goal}\n- Timeframe: {timeframe}\n- Team / resources: {resources}\n\nDecompose now.",
+    "input_variables": [
+      {
+        "name": "parent_goal",
+        "type": "string",
+        "description": "The big fuzzy goal",
+        "required": true,
+        "example": "Become the default RAG database for B2B mid-market companies"
+      },
+      {
+        "name": "timeframe",
+        "type": "string",
+        "description": "Time horizon for the decomposition",
+        "required": true,
+        "example": "12 months"
+      },
+      {
+        "name": "resources",
+        "type": "string",
+        "description": "Team and resource context",
+        "required": true,
+        "example": "8-person engineering team, $4M annual budget, no dedicated marketing yet"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "5\u20138 numbered subgoals each with statement, measurement, leading indicator, anti-signal, owner, first action; ends with anti-goal section."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on the falsifiability constraint; useful anti-goal section."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes subgoals overlap \u2014 re-pin distinctness."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Subgoals can be too aspirational (not falsifiable); re-emphasize the criterion."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to write subgoals as activities, not outcomes; needs reminder."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Weekly cadence",
+        "description": "Add a week-by-week check-in cadence.",
+        "prompt_snippet": "Add: \u2018for each subgoal, propose the weekly check-in question that surfaces drift fast.\u2019"
+      },
+      {
+        "label": "OKR-formatted",
+        "description": "Convert to OKR structure.",
+        "prompt_snippet": "Restructure as: 1 Objective + 3\u20135 Key Results derived from subgoals. Each KR is a falsifiable subgoal."
+      },
+      {
+        "label": "Pre-mortem appended",
+        "description": "End with a pre-mortem on the whole goal.",
+        "prompt_snippet": "After anti-goals, write a 150-word pre-mortem on how the parent goal still fails even if all subgoals succeed."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Subgoals are activities, not outcomes (\u2018write content\u2019 vs \u2018publish content that drives 5k qualified visits\u2019).",
+        "fix": "Re-pin: \u2018subgoals are outcomes, not actions.\u2019"
+      },
+      {
+        "symptom": "Leading indicators are lagging.",
+        "fix": "Add: \u2018leading indicator must be observable BEFORE the outcome is known \u2014 within first 30% of the timeframe.\u2019"
+      },
+      {
+        "symptom": "Anti-goals are clich\u00e9s (\u2018don't chase vanity metrics\u2019).",
+        "fix": "Add: \u2018anti-goals must be plausible specific moves your team might actually make \u2014 name the thing.\u2019"
+      },
+      {
+        "symptom": "Owner is \u2018the team\u2019.",
+        "fix": "Add: \u2018owner is a role, not a group. If two roles share, name both and the integration point.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "okr-quarterly-drafter",
+      "strategic-tradeoff-analyzer",
+      "devils-advocate-pre-mortem"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "falsifiability",
+      "leading-indicator",
+      "okr"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "What if no leading indicator exists?",
+        "answer": "Then the subgoal isn't well-formed yet. Either find a leading indicator (even a noisy one) or rewrite the subgoal."
+      },
+      {
+        "question": "Should every subgoal be quantitative?",
+        "answer": "Ideally yes \u2014 but a qualitative \u2018failed / on-track / succeeded\u2019 judgment is okay if the judge is named and the criterion is described."
+      },
+      {
+        "question": "How often should we revisit?",
+        "answer": "At the leading-indicator cadence. Monthly for 12-month subgoals; weekly for quarterly ones. Don't wait for the end to learn you were off-track."
+      }
+    ],
+    "meta_title": "Goal Decomposition Into Falsifiable Subgoals",
+    "meta_description": "Decompose a fuzzy goal into 5\u20138 falsifiable subgoals with leading indicators, anti-signals, and the first action \u2014 plus the anti-goals to avoid."
+  },
+  {
+    "slug": "first-principles-rebuilder",
+    "title": "First-Principles Rebuilder",
+    "tldr": "Strips a complex topic to its first principles, then rebuilds the standard explanation \u2014 surfaces which parts of the conventional wisdom are load-bearing and which are vestigial.",
+    "category": "reasoning",
+    "tags": [
+      "first-principles",
+      "reasoning",
+      "deconstruction",
+      "analysis"
+    ],
+    "best_for_tags": [
+      "learning",
+      "innovation",
+      "strategy"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Learning a new field",
+        "example": "\u2018What's actually true about how transformers work, stripping the metaphors?\u2019"
+      },
+      {
+        "scenario": "Challenging an industry assumption",
+        "example": "\u2018Why do SaaS companies all price per seat? What's load-bearing here?\u2019"
+      },
+      {
+        "scenario": "Innovation framing",
+        "example": "\u2018What does a CRM HAVE to do? What's vestigial that we could drop?\u2019"
+      },
+      {
+        "scenario": "Re-evaluating a personal belief",
+        "example": "\u2018Why do I think product-led growth is right for this business?\u2019"
+      }
+    ],
+    "when_not_to_use": "Skip for topics where conventional wisdom is well-tested and the cost of deviating is high (medicine, structural engineering). First-principles thinking in these domains needs domain expertise, not just framework.",
+    "full_prompt": "You are a first-principles rebuilder. The user has a topic where \u2018everyone knows\u2019 how it works. You'll deconstruct.\n\nPROCESS\n\n## Step 1: State the conventional wisdom\nSummarize the dominant explanation or practice in 3\u20135 sentences. Use the field's actual vocabulary.\n\n## Step 2: Strip to first principles\nIdentify the underlying truths that the conventional wisdom is built ON. These should be:\n- Facts that can't be argued (physics, math, fundamental constraints).\n- Trade-offs that genuinely exist (you can't have X and Y simultaneously).\n- Goals that are real (what the system is trying to accomplish).\n\n5\u201310 principles. Number them.\n\n## Step 3: Rebuild the conventional wisdom from those principles\nShow, step by step, how a reasonable person starting from the principles would arrive at the conventional wisdom. Use specifically the principles you listed.\n\n## Step 4: Identify the load-bearing parts\nWhich of the conventional wisdom's elements follow NECESSARILY from the principles? These are the load-bearing parts \u2014 change these and the whole thing breaks.\n\n## Step 5: Identify the vestigial parts\nWhich elements of the conventional wisdom are habits, conventions, or path-dependence \u2014 they could be different without violating the principles?\n\n## Step 6: Where could it actually differ?\nGiven the vestigial parts, what's a meaningfully different design that still satisfies the principles?\n\nTOPIC\n{topic}\n\nGROUND RULES\n- Don't be contrarian for sport. If the conventional wisdom IS load-bearing all the way down, say so.\n- Cite the principle each conclusion rests on. Vague rebuilding (\"based on user needs...\") is not first-principles.\n- When you spot a vestige, explain how it became that way (path-dependence, historical constraint, etc.).\n\nNow rebuild.",
+    "input_variables": [
+      {
+        "name": "topic",
+        "type": "string",
+        "description": "Concept, practice, or system to deconstruct",
+        "required": true,
+        "example": "Why SaaS companies price per seat"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six numbered steps: conventional wisdom, principles, rebuild, load-bearing, vestigial, and where it could differ."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Honest about what's actually load-bearing; doesn't manufacture contrarian takes."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally over-claims something is vestigial \u2014 sanity-check by domain experts."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Strong on stating principles; weaker on the path-dependence analysis."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to be contrarian for sport; constrain explicitly."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Domain-cross-pollination",
+        "description": "Borrow principles from another domain.",
+        "prompt_snippet": "Add Step 7: \u2018what principle from another domain ({other_domain}) might also apply here? How would the system look if it did?\u2019"
+      },
+      {
+        "label": "Adversarial expert",
+        "description": "Defend the conventional wisdom.",
+        "prompt_snippet": "After Step 6, write a 200-word defense of the conventional wisdom from a domain expert who thinks the rebuild is naive."
+      },
+      {
+        "label": "Just principles",
+        "description": "Drop the rebuild; output principles only.",
+        "prompt_snippet": "Run only Steps 1 and 2."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "\u2018Principles\u2019 are still high-level assumptions, not bedrock.",
+        "fix": "Re-pin: \u2018principles must be facts you can't argue against, or genuine trade-offs that exist.\u2019"
+      },
+      {
+        "symptom": "Vestigial-vs-load-bearing call is wrong.",
+        "fix": "Add: \u2018when calling something vestigial, propose the specific alternative and show it satisfies all principles.\u2019"
+      },
+      {
+        "symptom": "Contrarian for the sake of it.",
+        "fix": "Add: \u2018if conventional wisdom IS load-bearing, say so. Validating is a valid conclusion.\u2019"
+      },
+      {
+        "symptom": "Path-dependence explanations are speculative.",
+        "fix": "Add: \u2018when explaining how a vestige formed, name the historical moment or constraint that anchored it.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "devils-advocate-pre-mortem",
+      "strategic-tradeoff-analyzer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "first-principles",
+      "path-dependence"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Is this the same as \u2018think different\u2019?",
+        "answer": "No. \u2018Think different\u2019 assumes the conventional wisdom is wrong. This prompt explicitly preserves conventional wisdom when it's load-bearing \u2014 the point is to know WHICH parts are load-bearing."
+      },
+      {
+        "question": "How is this useful in practice?",
+        "answer": "When you're about to make a change in a complex system \u2014 knowing which conventions are load-bearing tells you where you can innovate safely vs where you'll cause a cascade."
+      },
+      {
+        "question": "Will it work on technical topics?",
+        "answer": "Yes \u2014 and it's often most valuable there. Physical and mathematical constraints make \u2018bedrock principles\u2019 easier to identify."
+      }
+    ],
+    "meta_title": "First-Principles Rebuilder \u2014 Prompt",
+    "meta_description": "Strip a topic to bedrock principles, then rebuild the conventional wisdom \u2014 surface what's load-bearing and what's vestigial path-dependence."
+  },
+  {
+    "slug": "analogical-reasoning-cross-domain",
+    "title": "Cross-Domain Analogical Reasoning",
+    "tldr": "Finds 3 deep analogies from other domains for a given problem, surfaces what each domain SOLVED that the user's domain hasn't yet \u2014 and which solution patterns might transfer.",
+    "category": "reasoning",
+    "tags": [
+      "analogy",
+      "reasoning",
+      "cross-domain",
+      "innovation"
+    ],
+    "best_for_tags": [
+      "product-design",
+      "research",
+      "strategy"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Product design challenge",
+        "example": "\u2018How do we onboard users to a complex tool?\u2019 \u2192 analogies from cooking school, flight training, video games."
+      },
+      {
+        "scenario": "Engineering pattern transfer",
+        "example": "\u2018How do we handle backpressure in our pipeline?\u2019 \u2192 analogies from traffic systems, hydraulics, supply chains."
+      },
+      {
+        "scenario": "Strategic positioning",
+        "example": "\u2018How do we differentiate as a late entrant in a crowded market?\u2019 \u2192 analogies from automotive history (Tesla, Toyota), beverage (RedBull)."
+      },
+      {
+        "scenario": "Research method transfer",
+        "example": "\u2018Statistical methods from epidemiology applied to user research.\u2019"
+      }
+    ],
+    "when_not_to_use": "Skip when the problem is novel enough that no domain has solved it. Skip when you need correctness more than creativity \u2014 analogies are great for hypothesis generation, weak for proof.",
+    "full_prompt": "You are a cross-domain analogical reasoner. The user has a problem. You'll find three deep analogies from other domains.\n\nPROCESS\n\n## Step 1: Restate the problem at its core\nStrip the problem to its underlying structure (3\u20135 sentences). What is it FUNDAMENTALLY about? (E.g., \u2018onboarding a user to a complex tool\u2019 \u2192 \u2018moving someone from no-context to productive-context with limited time and attention\u2019.)\n\n## Step 2: Find three analogies\nThree problems from THREE DIFFERENT DOMAINS that share this underlying structure. For each:\n\n### Analogy {1, 2, 3}: {domain} \u2014 {problem from that domain}\n\n- Why it's analogous: 2\u20133 sentences mapping the structural similarity.\n- How {domain} has solved it: real solutions used in that domain (cite specific methods, traditions, tools).\n- What's clever about their solution: the non-obvious move.\n- What's domain-specific that wouldn't transfer: be honest about limits.\n\n## Step 3: Synthesis \u2014 solution patterns that might transfer\nLooking across all three analogies, what 2\u20133 SOLUTION PATTERNS show up consistently? List them. For each, propose how it might apply to the user's actual problem.\n\n## Step 4: Tests\nFor each transferred pattern, propose the SMALLEST experiment that would falsify whether the analogy holds for the user's context.\n\nRULES\n- Analogies from three DIFFERENT domains \u2014 not three flavors of the same domain.\n- Cite specific solutions used in those domains (named methods, real practices). Vague analogies are useless.\n- Be honest about transfer limits. Half the value of cross-domain analogy is knowing what DOESN'T transfer.\n\nPROBLEM\n{problem}\n\nCONTEXT (user's domain, constraints)\n{context}\n\nNow reason analogically.",
+    "input_variables": [
+      {
+        "name": "problem",
+        "type": "string",
+        "description": "The problem to find analogies for",
+        "required": true,
+        "example": "How do we onboard users to our complex AI analytics tool \u2014 they currently churn in the first session."
+      },
+      {
+        "name": "context",
+        "type": "string",
+        "description": "Domain and constraints",
+        "required": true,
+        "example": "B2B SaaS, sold to data analysts, product is dense, average session length 4 minutes"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Four steps: restated problem, three analogies in different domains, synthesis with transferable patterns, and falsifying tests."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Surfaces unexpected but apt analogies; honest about transfer limits."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes picks three analogies that are too similar \u2014 re-pin \u2018different domains\u2019."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Tends toward science/engineering analogies; ask explicitly for art/culture/history options."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Surface-level analogies; useful as a brainstorm input but verify the deep structure."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Single deep analogy",
+        "description": "One analogy, much deeper.",
+        "prompt_snippet": "Replace three-analogy structure with: \u2018find ONE analogy and go 5x deeper on what transfers and what doesn't.\u2019"
+      },
+      {
+        "label": "Time-shift analogy",
+        "description": "Same domain, different era.",
+        "prompt_snippet": "Find analogies from the same domain at a different time (e.g., 1990s software for today's AI startups)."
+      },
+      {
+        "label": "Failed analogy",
+        "description": "Include one that LOOKS analogous but isn't.",
+        "prompt_snippet": "Add a fourth \u2018false analogy\u2019 section that looks superficially similar but breaks at the structural level \u2014 explain why."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Three analogies from same domain (e.g., three sports).",
+        "fix": "Re-pin: \u2018three different domains \u2014 science/engineering/business/art/biology/history/sport.\u2019"
+      },
+      {
+        "symptom": "Analogies are clich\u00e9s (\u2018like a chef in a kitchen\u2019).",
+        "fix": "Add: \u2018analogies must be specific enough to cite real practitioners/methods/dates.\u2019"
+      },
+      {
+        "symptom": "Transfer claims are too confident.",
+        "fix": "Force the \u2018doesn't transfer\u2019 section to be at least 2 sentences for each analogy."
+      },
+      {
+        "symptom": "Synthesis patterns are generic.",
+        "fix": "Add: \u2018patterns must be specific moves the user could try in 2 weeks, not abstract principles.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "first-principles-rebuilder",
+      "tree-of-thought-decision"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "analogical-reasoning",
+      "cross-domain-transfer"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Aren't analogies just storytelling?",
+        "answer": "Surface analogies are. DEEP analogies \u2014 where the underlying structure matches \u2014 generate testable hypotheses. The \u2018falsifying test\u2019 step turns analogies into experiments."
+      },
+      {
+        "question": "How do I know if an analogy is deep?",
+        "answer": "Test: if you swap the surface details for new ones, does the explanation still work? If yes, the structure is shared \u2014 that's deep."
+      },
+      {
+        "question": "Can the model make up analogies?",
+        "answer": "It can \u2014 and sometimes does, especially with rare domains. The mitigation is the requirement to cite specific named methods or practitioners in each domain; if the model can't, the analogy is probably hallucinated."
+      }
+    ],
+    "meta_title": "Cross-Domain Analogical Reasoning \u2014 Prompt",
+    "meta_description": "Find three analogies from different domains for your problem \u2014 extract transferable solution patterns and design experiments to test which one applies."
   },
   {
     "slug": "literature-review-synthesizer",
@@ -7904,6 +11070,701 @@
     "submitter_name": "OSS AI Hub",
     "meta_title": "Market Sizing via Fermi \u2014 TAM/SAM/SOM with Sensitivity",
     "meta_description": "Build TAM/SAM/SOM with explicit Fermi chains, sourced assumptions, and sensitivity analysis. Survives investor scrutiny."
+  },
+  {
+    "slug": "localized-translation-with-register",
+    "title": "Localized Translation With Register Match",
+    "tldr": "Translates text while preserving register (formal/casual/technical), localizing idioms and references for the target market \u2014 not a literal word-for-word translation.",
+    "category": "translation",
+    "tags": [
+      "translation",
+      "localization",
+      "register",
+      "idioms"
+    ],
+    "best_for_tags": [
+      "marketing",
+      "product-content",
+      "ux-strings"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Marketing copy",
+        "example": "Translate product launch announcement EN \u2192 JA preserving the warm but professional tone."
+      },
+      {
+        "scenario": "Product UX strings",
+        "example": "Translate error messages EN \u2192 DE, keeping concise but polite German register for system messages."
+      },
+      {
+        "scenario": "Customer support replies",
+        "example": "Translate support email EN \u2192 FR while matching the original's apologetic but solution-focused tone."
+      },
+      {
+        "scenario": "Help center articles",
+        "example": "Translate documentation EN \u2192 ES-MX, replacing US-specific examples with regionally relevant ones."
+      }
+    ],
+    "when_not_to_use": "Skip for legal contracts, regulatory text, or anything where word-for-word fidelity matters more than naturalness \u2014 use a certified translator with legal expertise.",
+    "full_prompt": "You are a professional translator and localizer. Translate the source text into the target language with attention to register and locale.\n\nINPUT\n- Source text: {source_text}\n- Source language: {source_language}\n- Target language + locale: {target_language_locale}     (e.g., \"Japanese (ja-JP)\", \"Spanish (es-MX)\")\n- Register: {register}                                    (formal / casual / technical / marketing-warm / etc.)\n- Audience: {audience}                                    (e.g., \"B2B SaaS buyers\", \"Mobile app users 18-35\")\n- Brand voice notes: {brand_voice_notes}                  (optional: any phrases to preserve or avoid)\n\nYOUR JOB\n1. Translate for MEANING, not word-for-word. The goal is the same emotional and informational effect on the reader.\n2. Localize:\n   - Idioms \u2192 equivalent target-language idioms or rewrite if no equivalent exists.\n   - Cultural references (sports teams, holidays, food) \u2192 swap for regionally relevant ones if the original purpose was illustration.\n   - Units, dates, currencies \u2192 convert to local conventions.\n   - Honorifics & politeness markers \u2192 match what the audience expects in the target language.\n3. Preserve register strictly. A formal source becomes formal target \u2014 not casual.\n4. Keep brand-specific terms (product names, taglines) untranslated unless they're already known in localized form.\n\nOUTPUT\nFirst emit the translation cleanly (no commentary inline).\n\nThen below, in a \"Translator notes\" section, list:\n- Idioms/references you swapped and why.\n- Anything you couldn't translate without losing meaning \u2014 explain the tradeoff.\n- Any place where the source itself is ambiguous and you chose one interpretation.\n\nNow translate.",
+    "input_variables": [
+      {
+        "name": "source_text",
+        "type": "string",
+        "description": "Text to translate",
+        "required": true,
+        "example": "Welcome aboard! Let's get you set up."
+      },
+      {
+        "name": "source_language",
+        "type": "string",
+        "description": "Language of the source",
+        "required": true,
+        "example": "English (en-US)"
+      },
+      {
+        "name": "target_language_locale",
+        "type": "string",
+        "description": "Target language and locale",
+        "required": true,
+        "example": "Japanese (ja-JP)"
+      },
+      {
+        "name": "register",
+        "type": "string",
+        "description": "Tone/formality to preserve",
+        "required": true,
+        "example": "warm but professional"
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Who's reading",
+        "required": true,
+        "example": "B2B SaaS buyers"
+      },
+      {
+        "name": "brand_voice_notes",
+        "type": "string",
+        "description": "Brand-specific phrases or rules",
+        "required": false,
+        "example": "Never translate \u2018OSS AI Hub\u2019; use polite '\u3067\u3059/\u307e\u3059' forms; avoid casual '\u3088\u306d'"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Translated text in target language, followed by a \u2018Translator notes\u2019 section listing idiom swaps, ambiguities, and tradeoffs."
+    },
+    "few_shot_examples": [
+      {
+        "input": "EN \u2192 JA-JP, formal-warm B2B. Source: \u2018Welcome aboard! Let's get you set up.\u2019",
+        "output": "\u3088\u3046\u3053\u305d\u304a\u8d8a\u3057\u304f\u3060\u3055\u3044\u307e\u3057\u305f\u3002\u3055\u3063\u305d\u304f\u521d\u671f\u8a2d\u5b9a\u3092\u9032\u3081\u3066\u3044\u304d\u307e\u3057\u3087\u3046\u3002\n\nTranslator notes:\n- \u2018Welcome aboard!\u2019 \u2192 \u2018\u3088\u3046\u3053\u305d\u304a\u8d8a\u3057\u304f\u3060\u3055\u3044\u307e\u3057\u305f\u3002\u2019 The nautical idiom doesn't carry; substituted a warm-formal welcome phrase common in JP onboarding.\n- \u2018Let's get you set up\u2019 \u2192 \u2018\u521d\u671f\u8a2d\u5b9a\u3092\u9032\u3081\u3066\u3044\u304d\u307e\u3057\u3087\u3046\u2019 \u2014 preserves the collaborative \u2018together\u2019 feel via the volitional \u307e\u3057\u3087\u3046."
+      }
+    ],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong register preservation and useful translator notes."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good across major language pairs; weaker on rare locales."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Strong for European languages; can be too literal in Asian language pairs."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Decent for high-resource languages; significantly weaker for low-resource."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Marketing-only",
+        "description": "More aggressive localization for marketing copy.",
+        "prompt_snippet": "Add: \u2018rewrite headlines for the target market \u2014 direct translation is usually wrong for ad copy.\u2019"
+      },
+      {
+        "label": "UI-strings batch",
+        "description": "Translate many short strings with consistency.",
+        "prompt_snippet": "Accept JSON object of strings; preserve keys; ensure consistent terminology across strings."
+      },
+      {
+        "label": "Back-translation check",
+        "description": "Self-verify by back-translating.",
+        "prompt_snippet": "After translating, back-translate to source language and flag any meaning drift."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Translation is word-for-word.",
+        "fix": "Re-pin: \u2018translate for meaning, not lexical match. If a literal translation reads stilted, rewrite.\u2019"
+      },
+      {
+        "symptom": "Register mismatch (casual translation of formal source).",
+        "fix": "Add: \u2018register match is mandatory; if uncertain, lean MORE formal in JP, KR, DE.\u2019"
+      },
+      {
+        "symptom": "Cultural reference dropped without substitute.",
+        "fix": "Add: \u2018when a reference doesn't carry, substitute an equivalent or rewrite the sentence \u2014 don't omit silently.\u2019"
+      },
+      {
+        "symptom": "Translator notes are generic (\u2018adapted for target audience\u2019).",
+        "fix": "Add: \u2018notes must cite specific source phrases and the choices you made.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "voice-cloner-from-samples",
+      "tighten-prose-30pct",
+      "email-thread-respond"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "translation",
+      "localization",
+      "register"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Will this replace human translators?",
+        "answer": "For low-stakes content, often yes. For brand-defining content, marketing campaigns, or legal copy: pair with a native-speaking reviewer."
+      },
+      {
+        "question": "Does it handle right-to-left languages?",
+        "answer": "Yes for Arabic and Hebrew; spot-check the punctuation and number direction in mixed-content sentences."
+      },
+      {
+        "question": "How do I keep terminology consistent across a long document?",
+        "answer": "Pass a glossary in brand_voice_notes; for very long documents, translate section by section and re-paste the glossary each time."
+      }
+    ],
+    "meta_title": "Localized Translation With Register Match \u2014 Prompt",
+    "meta_description": "Translate for meaning and locale \u2014 not word-for-word. Preserves register, swaps idioms, converts units, and flags ambiguities."
+  },
+  {
+    "slug": "back-translation-quality-check",
+    "title": "Back-Translation Quality Check",
+    "tldr": "Takes a translated text + the original, back-translates the target to the source language, and reports specific meaning drift, ambiguities, and untranslatables \u2014 a fast QA pass before publishing.",
+    "category": "translation",
+    "tags": [
+      "translation",
+      "qa",
+      "back-translation",
+      "quality"
+    ],
+    "best_for_tags": [
+      "translation-review",
+      "vendor-qa",
+      "localization"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Reviewing vendor translation",
+        "example": "Vendor delivered Japanese translation \u2014 back-translate to English and flag meaning drift before paying."
+      },
+      {
+        "scenario": "AI-translated content quality gate",
+        "example": "Run AI translation through this check before publishing to catch confident-but-wrong translations."
+      },
+      {
+        "scenario": "Marketing localization sign-off",
+        "example": "Confirm the localized headline still hits the intended emotional beat."
+      },
+      {
+        "scenario": "Documentation update",
+        "example": "Source doc updated; check the existing translation against new source to find drift."
+      }
+    ],
+    "when_not_to_use": "Skip for highly culturally-specific content \u2014 back-translation will always look \u2018wrong\u2019 even when the localization is correct. Use a native reviewer there.",
+    "full_prompt": "You are a back-translation QA reviewer. Given a source text and its translation, evaluate quality.\n\nINPUT\n- Source language: {source_language}\n- Target language: {target_language}\n- Source text: {source_text}\n- Translation: {translation}\n\nYOUR PROCESS\n1. Translate the {target_language} text back to {source_language} as literally as possible (not idiomatically \u2014 preserve the structure to expose differences).\n2. Compare the back-translation to the original source. Find:\n   - Meaning drift: places where the back-translation says something materially different.\n   - Tone drift: register changed (e.g., formal source became casual).\n   - Omissions: information present in source but missing from translation.\n   - Additions: information in translation that wasn't in source.\n   - Cultural localization: cases where the translation diverged from source intentionally to fit the target market \u2014 call these out as \u2018intentional adaptation\u2019 not errors.\n3. For each finding, cite:\n   - Source phrase (verbatim)\n   - Translation phrase (verbatim)\n   - Back-translation phrase (verbatim)\n   - One-line classification: drift | tone | omission | addition | intentional-adaptation\n   - Severity: blocker | major | minor\n\nOUTPUT\n## Back-translation\nThe literal back-translation.\n\n## Findings\nA table with rows: source | translation | back-translation | classification | severity.\n\n## Verdict\nOne of: ready to publish | minor fixes needed | revision needed | major rework.\n\n## Recommended fixes\nFor any blocker or major finding: a suggested correction in the target language.\n\nBe specific and precise. Generic feedback is useless for translation QA.",
+    "input_variables": [
+      {
+        "name": "source_language",
+        "type": "string",
+        "description": "Original language",
+        "required": true,
+        "example": "English"
+      },
+      {
+        "name": "target_language",
+        "type": "string",
+        "description": "Translated-to language",
+        "required": true,
+        "example": "Japanese"
+      },
+      {
+        "name": "source_text",
+        "type": "string",
+        "description": "Original text",
+        "required": true,
+        "example": "Welcome aboard! Let's get you set up."
+      },
+      {
+        "name": "translation",
+        "type": "string",
+        "description": "The translation to QA",
+        "required": true,
+        "example": "\u3088\u3046\u3053\u305d!\u8a2d\u5b9a\u3092\u59cb\u3081\u307e\u3057\u3087\u3046\u3002"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Back-translation paragraph, findings table, verdict line, and recommended fixes for blockers/majors."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Honest about intentional localization vs error."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Strong; sometimes over-flags intentional adaptation."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid for European pairs; weaker for nuance in Asian languages."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Useful for spot-checks; back-translations can be sloppy on rare locales."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Multi-target batch",
+        "description": "Same source, multiple target translations.",
+        "prompt_snippet": "Accept N translations; emit findings table per target plus a comparison of which target is best."
+      },
+      {
+        "label": "Sentence-level fingerprint",
+        "description": "Score each sentence separately.",
+        "prompt_snippet": "Add: \u2018score each sentence 0\u201310 on fidelity; output bar chart in markdown.\u2019"
+      },
+      {
+        "label": "Vendor scoreboard",
+        "description": "Aggregate quality across translations.",
+        "prompt_snippet": "Accept multiple files from a vendor; emit summary scoreboard."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Flags all localization as \u2018drift\u2019.",
+        "fix": "Re-pin \u2018intentional adaptation\u2019 category and define it explicitly."
+      },
+      {
+        "symptom": "Back-translation is too idiomatic (hides differences).",
+        "fix": "Add: \u2018back-translation must be literal/word-for-word, not natural \u2014 the goal is to expose structure differences.\u2019"
+      },
+      {
+        "symptom": "Verdict always \u2018revision needed\u2019 on stylistic differences.",
+        "fix": "Add severity ladder examples: cosmetic tone shifts \u2260 blockers."
+      },
+      {
+        "symptom": "Recommended fixes are vague.",
+        "fix": "Force concrete proposed replacement text in target language for every blocker/major."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "localized-translation-with-register"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "translation-qa",
+      "back-translation"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Is back-translation a reliable QA method?",
+        "answer": "It catches meaning drift and omissions reliably. It does NOT catch register issues or idiomatic naturalness \u2014 those need a native reviewer."
+      },
+      {
+        "question": "Can I use one model for translation and another for back-translation?",
+        "answer": "Yes \u2014 and you should, when stakes are high. Different model biases surface different issues."
+      },
+      {
+        "question": "How fast is this in practice?",
+        "answer": "A 500-word document takes ~30 seconds with Sonnet/4o. Use for last-mile QA, not as the only review."
+      }
+    ],
+    "meta_title": "Back-Translation Quality Check \u2014 Prompt",
+    "meta_description": "Back-translate a translation and surface meaning drift, omissions, register changes, and intentional localization \u2014 fast translation QA pass."
+  },
+  {
+    "slug": "transliteration-name-spelling",
+    "title": "Name and Brand Transliteration",
+    "tldr": "Transliterates names and brand terms between writing systems with multiple acceptable variants ranked by frequency \u2014 for documents, business cards, and account setup.",
+    "category": "translation",
+    "tags": [
+      "transliteration",
+      "names",
+      "branding",
+      "writing-systems"
+    ],
+    "best_for_tags": [
+      "international-business",
+      "branding",
+      "localization"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Business cards for international clients",
+        "example": "Transliterate \u2018Chad Anderson\u2019 into Katakana, Hangul, and Cyrillic \u2014 get ranked variants."
+      },
+      {
+        "scenario": "Brand expansion to new market",
+        "example": "Decide between transliterating brand name or using English-as-foreign-luxury convention in JA/CN."
+      },
+      {
+        "scenario": "Document preparation for visa/legal",
+        "example": "Consistent transliteration of names across documents."
+      },
+      {
+        "scenario": "Voice assistant pronunciation hint",
+        "example": "Get phonetic guides for non-native speakers."
+      }
+    ],
+    "when_not_to_use": "Skip for legal documents requiring official transliteration (passport-aligned spellings) \u2014 use the form the official document uses.",
+    "full_prompt": "You are a transliteration specialist. Given a source name (or brand term), produce transliterations across the requested writing systems.\n\nINPUT\n- Source: {source}\n- Source language/script: {source_language_script}\n- Target scripts: {target_scripts}                  (e.g., [\"Katakana (Japanese)\", \"Hangul (Korean)\", \"Cyrillic (Russian)\", \"Simplified Chinese characters\"])\n- Use case: {use_case}                              (e.g., \"business card\", \"brand name for marketing\", \"legal document\")\n\nOUTPUT\nFor each target script:\n\n### {script}\n- Primary transliteration: {variant}\n- Alternates (if multiple are widely accepted): list with one-line note on usage\n- Pronunciation guide for source-language speakers: e.g., \"Kuh-NEE-luh\"\n- Notes:\n  - Any character that has multiple valid choices (e.g., Cyrillic '\u0438' vs '\u0439')\n  - Cultural connotations of specific characters chosen (especially Chinese: some characters carry connotations that affect brand fit)\n  - Whether the brand convention in this market is to transliterate at all, or to keep the English form as a brand asset\n\nCRITICAL FOR CHINESE TRANSLITERATION\nFor brand names entering Chinese markets, evaluate:\n- Phonetic match\n- Character meaning (the chosen characters should have positive or neutral connotations)\n- Visual aesthetic\n\nEnd with a single RECOMMENDATION for each market: transliterate, partial transliterate, or keep English.",
+    "input_variables": [
+      {
+        "name": "source",
+        "type": "string",
+        "description": "Name or term to transliterate",
+        "required": true,
+        "example": "OSS AI Hub"
+      },
+      {
+        "name": "source_language_script",
+        "type": "string",
+        "description": "Source script",
+        "required": true,
+        "example": "Latin (English)"
+      },
+      {
+        "name": "target_scripts",
+        "type": "string",
+        "description": "Comma-separated target scripts",
+        "required": true,
+        "example": "Katakana, Hangul, Simplified Chinese, Cyrillic"
+      },
+      {
+        "name": "use_case",
+        "type": "string",
+        "description": "How the transliteration will be used",
+        "required": true,
+        "example": "Brand name for marketing in JP, KR, CN, RU markets"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "One section per target script with primary, alternates, pronunciation, notes, and a market-level recommendation."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on character connotation analysis for Chinese."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally misses regional alternates."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; weaker on Chinese brand fit analysis."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Adequate for common names; weaker on rare characters."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Phonetic-only",
+        "description": "Skip the brand fit analysis.",
+        "prompt_snippet": "Omit character connotations; output only phonetic transliteration + alternates."
+      },
+      {
+        "label": "Cross-system table",
+        "description": "Single table across all scripts.",
+        "prompt_snippet": "Replace per-script sections with a single comparison table: source | script | primary | alternates | notes."
+      },
+      {
+        "label": "Brand-fit deep dive",
+        "description": "Chinese only, full brand analysis.",
+        "prompt_snippet": "Focus on Chinese: produce 3 candidate transliterations, each with character meaning, market positioning, and risk."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Only one variant given when multiple are standard.",
+        "fix": "Add: \u2018when more than one is in active use, list all and note when each is preferred.\u2019"
+      },
+      {
+        "symptom": "Missed character connotations in Chinese.",
+        "fix": "Re-pin Chinese-specific rule; require explicit meaning gloss per character."
+      },
+      {
+        "symptom": "Transliteration that's phonetically right but visually clunky.",
+        "fix": "Add: \u2018for brand use, optimize for visual + phonetic; for legal use, optimize for phonetic alignment to passport/ID.\u2019"
+      },
+      {
+        "symptom": "Mixed script transliteration (some hiragana, some katakana).",
+        "fix": "Add: \u2018use the script that's culturally expected for the entity type (foreign brands = katakana; foreign person names = katakana; native concepts = mix accordingly).\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "localized-translation-with-register"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "transliteration",
+      "writing-system"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why are there multiple correct transliterations?",
+        "answer": "Different romanization/transliteration systems exist (Hepburn vs Kunrei-shiki for Japanese, Pinyin vs Wade-Giles for Chinese). Default to the most widely used in the target market today."
+      },
+      {
+        "question": "Should my brand always transliterate?",
+        "answer": "No. Many global brands (Apple, Google, Sony) use English in some markets as a luxury/foreign-modern signal. Use the recommendation to decide per market."
+      },
+      {
+        "question": "How do I avoid offensive character choices in Chinese?",
+        "answer": "Always validate with a native speaker. The model catches most issues but Chinese character connotations are dense; a final human check is essential for brand launches."
+      }
+    ],
+    "meta_title": "Name and Brand Transliteration \u2014 Prompt",
+    "meta_description": "Transliterate names and brand terms across writing systems with ranked variants, pronunciation guides, and brand-fit analysis for Chinese."
+  },
+  {
+    "slug": "subtitle-translator-with-timing",
+    "title": "Subtitle Translator With Timing-Aware Compression",
+    "tldr": "Translates subtitles (SRT/VTT) into a target language while compressing each line to fit the on-screen reading time \u2014 preserves meaning while respecting the 17\u201321 characters-per-second rule.",
+    "category": "translation",
+    "tags": [
+      "subtitles",
+      "translation",
+      "video",
+      "localization",
+      "accessibility"
+    ],
+    "best_for_tags": [
+      "video-localization",
+      "education-content",
+      "yt-creators"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "YouTube creator localizing videos",
+        "example": "Translate English SRT \u2192 Japanese SRT respecting 17 chars/sec reading speed."
+      },
+      {
+        "scenario": "Online course platform",
+        "example": "Localize 20 hours of lectures; subtitle file generated per language."
+      },
+      {
+        "scenario": "Documentary localization",
+        "example": "Preserve dramatic timing of original; compress translation to fit cuts."
+      },
+      {
+        "scenario": "Conference talk subtitle prep",
+        "example": "Live-captioned talk \u2192 polished bilingual subtitles."
+      }
+    ],
+    "when_not_to_use": "Skip for dubbing or voiceover \u2014 those require lip-sync and voice acting considerations the subtitle prompt isn't built for.",
+    "full_prompt": "You are a subtitle translator. Translate SRT/VTT subtitles into the target language WITHOUT exceeding on-screen reading speed.\n\nINPUT\n- Source subtitles: {srt_or_vtt}\n- Source language: {source_language}\n- Target language: {target_language}\n- Reading speed cap: {chars_per_second} characters per second (default 17)\n- Max chars per line: {max_chars_per_line} (default 42)\n- Max lines per cue: 2\n\nYOUR RULES\n1. Each cue keeps its timing. You do NOT split or merge cues.\n2. Each cue's translation must fit within (cue_duration_seconds * chars_per_second).\n3. If a literal translation would exceed the budget:\n   - Compress: cut filler (\"you know\", \"basically\", \"um\"), tighten phrasing, use shorter synonyms.\n   - If still over budget after compression, sacrifice nuance to keep core meaning.\n4. Two-line cues: break at a natural pause point. Avoid splitting noun phrases.\n5. Preserve emphasis cues: italics in source \u2192 italics in target.\n\nOUTPUT\nReturn the translated SRT/VTT in valid format. Below the file, in a \"Compression notes\" section, list any cue where compression sacrificed meaning, with:\n- Cue number\n- Original (translated literally) \u2014 what it would have said\n- Final (compressed) \u2014 what it actually says\n- What was lost\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "srt_or_vtt",
+        "type": "string",
+        "description": "SRT or VTT subtitle file contents",
+        "required": true,
+        "example": "1\n00:00:01,000 --> 00:00:04,000\nWelcome to today's lecture on neural networks.\n"
+      },
+      {
+        "name": "source_language",
+        "type": "string",
+        "description": "Source language",
+        "required": true,
+        "example": "English"
+      },
+      {
+        "name": "target_language",
+        "type": "string",
+        "description": "Target language",
+        "required": true,
+        "example": "Japanese"
+      },
+      {
+        "name": "chars_per_second",
+        "type": "integer",
+        "description": "Reading speed cap",
+        "required": false,
+        "example": "17"
+      },
+      {
+        "name": "max_chars_per_line",
+        "type": "integer",
+        "description": "Max chars per displayed line",
+        "required": false,
+        "example": "42"
+      }
+    ],
+    "expected_output": {
+      "format": "text",
+      "sample": "Translated SRT/VTT file in target language, followed by a Compression notes section."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at respecting timing budget; useful compression notes."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally exceeds chars/sec on long cues \u2014 verify."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; struggles with two-line break decisions in Asian languages."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Acceptable for short videos; consistency issues on long files."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Educational content",
+        "description": "Preserve technical terms unchanged.",
+        "prompt_snippet": "Add: \u2018technical terms appearing in slides or chyrons remain in original language with localized explanation below if space allows.\u2019"
+      },
+      {
+        "label": "Forced narratives only",
+        "description": "Translate only forced narratives.",
+        "prompt_snippet": "Filter input to only cues marked as forced (on-screen text translations); skip dialogue."
+      },
+      {
+        "label": "Multi-language batch",
+        "description": "Same source \u2192 multiple target languages.",
+        "prompt_snippet": "Generate target SRTs for {languages}; each respects its own char/sec norm."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Exceeds chars/sec on dense cues.",
+        "fix": "Re-pin and add \u2018verify cue_duration_seconds * chars_per_second BEFORE emitting; if over, compress further.\u2019"
+      },
+      {
+        "symptom": "Splits noun phrases across lines awkwardly.",
+        "fix": "Add: \u2018line break must be at a natural pause; if no good break exists, rewrite to two shorter sentences.\u2019"
+      },
+      {
+        "symptom": "Loses meaning entirely on compression.",
+        "fix": "Force compression notes; tune chars/sec up if too aggressive."
+      },
+      {
+        "symptom": "Breaks SRT format.",
+        "fix": "Add: \u2018output must validate as SRT \u2014 cue numbers, timestamps in HH:MM:SS,mmm --> HH:MM:SS,mmm, blank line between cues.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "localized-translation-with-register",
+      "back-translation-quality-check"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "subtitle",
+      "video-localization"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why 17 chars per second?",
+        "answer": "Netflix's research-based standard for sustained reading comfort. BBC uses 15 for kids' content; tech/gaming creators sometimes push to 20."
+      },
+      {
+        "question": "Does this work for any language pair?",
+        "answer": "Yes, but the char/sec budget should adjust: Chinese/Japanese readers are slower per character, so use lower caps (8\u201310 for kanji-heavy text)."
+      },
+      {
+        "question": "Can I run this on a 2-hour film?",
+        "answer": "Yes, but chunk by scene to avoid context loss. Concatenate the SRTs back at the end."
+      }
+    ],
+    "meta_title": "Subtitle Translator With Timing-Aware Compression",
+    "meta_description": "Translate SRT/VTT subtitles into a target language while respecting reading-speed caps and on-screen line limits \u2014 Netflix-grade subtitle output."
   },
   {
     "slug": "blog-post-from-outline",
