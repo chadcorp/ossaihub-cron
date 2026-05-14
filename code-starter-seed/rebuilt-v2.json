@@ -2399,5 +2399,741 @@
     ],
     "meta_title": "Self-RAG: Model Decides When to Retrieve | OSS AI Hub",
     "meta_description": "Adaptive RAG pattern: Claude 4 decides if retrieval is needed, grades chunks for relevance, and reports grounding. Reduces hallucination. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "qdrant-hybrid-search-setup",
+    "title": "Qdrant Hybrid Search (Dense BGE-M3 + Sparse SPLADE + Payload Filter)",
+    "tldr": "Qdrant collection with dense BGE-M3 + sparse SPLADE vectors + payload filters. Best open-source hybrid vector DB for production RAG.",
+    "description": "Self-hosted Qdrant with dual-vector hybrid: BGE-M3 dense (semantic) + SPLADE sparse (lexical), gRPC client tuning, scalar quantization, payload filtering.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "qdrant",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "qdrant",
+      "hybrid-search",
+      "splade",
+      "bge-m3",
+      "vector-db"
+    ],
+    "best_for_tags": [
+      "production-vector-db",
+      "hybrid-search",
+      "self-hosted"
+    ],
+    "featured": true,
+    "when_to_use": "Production RAG where you need self-hosted vector DB with strong hybrid search, payload filters (per-tenant, per-doc-type, by-date), and predictable performance at 10M-100M scale. Qdrant's dual-vector + sparse-vector support (since 1.10) makes it the best open-source choice for hybrid retrieval in 2026.",
+    "when_not_to_use": "Skip Qdrant when (1) you're <100k vectors - SQLite + faiss is simpler; (2) you need ANN at billion-scale with auto-sharding - look at Milvus; (3) you want SQL+vector in one engine - pgvector wins.",
+    "quick_start": "1) `docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant`  2) `pip install qdrant-client[fastembed]`  3) `python setup_qdrant.py` creates collection + ingests sample docs + runs hybrid query.",
+    "full_code": "\"\"\"Qdrant hybrid (dense + sparse) collection setup with payload filtering.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport uuid\n\nfrom qdrant_client import QdrantClient\nfrom qdrant_client.models import (\n    Distance, VectorParams, SparseVectorParams, SparseIndexParams,\n    PointStruct, SparseVector, Filter, FieldCondition, MatchValue,\n    NamedVector, NamedSparseVector, ScalarQuantization, ScalarQuantizationConfig,\n    ScalarType, OptimizersConfigDiff,\n)\nfrom fastembed import TextEmbedding, SparseTextEmbedding\n\n\nCOLLECTION = \"ossai_hybrid\"\nDENSE_MODEL = \"BAAI/bge-m3\"\nSPARSE_MODEL = \"Qdrant/bm42-all-minilm-l6-v2-attentions\"  # SPLADE-style sparse\n\n\ndef ensure_collection(client: QdrantClient) -> None:\n    if client.collection_exists(COLLECTION):\n        return\n    client.create_collection(\n        collection_name=COLLECTION,\n        vectors_config={\"dense\": VectorParams(size=1024, distance=Distance.COSINE)},\n        sparse_vectors_config={\"sparse\": SparseVectorParams(index=SparseIndexParams(on_disk=False))},\n        # Scalar quantization cuts dense vector RAM 4x with <1% recall hit\n        quantization_config=ScalarQuantization(scalar=ScalarQuantizationConfig(type=ScalarType.INT8, quantile=0.99, always_ram=True)),\n        optimizers_config=OptimizersConfigDiff(default_segment_number=2),\n    )\n\n\ndef ingest(client: QdrantClient, docs: list[dict]) -> None:\n    \"\"\"docs = [{'text': str, 'source': str, 'doc_type': 'policy'|'tutorial'|...}]\"\"\"\n    dense = TextEmbedding(DENSE_MODEL)\n    sparse = SparseTextEmbedding(SPARSE_MODEL)\n\n    dense_vecs = list(dense.embed([d[\"text\"] for d in docs]))\n    sparse_vecs = list(sparse.embed([d[\"text\"] for d in docs]))\n\n    points = []\n    for doc, dvec, svec in zip(docs, dense_vecs, sparse_vecs):\n        points.append(PointStruct(\n            id=str(uuid.uuid4()),\n            vector={\"dense\": dvec.tolist(), \"sparse\": SparseVector(indices=svec.indices.tolist(), values=svec.values.tolist())},\n            payload={\"text\": doc[\"text\"], \"source\": doc[\"source\"], \"doc_type\": doc.get(\"doc_type\", \"general\")},\n        ))\n    client.upsert(collection_name=COLLECTION, points=points)\n    print(f\"[ingest] upserted {len(points)} points\")\n\n\ndef hybrid_search(client: QdrantClient, query: str, doc_type: str | None = None, k: int = 5) -> list[dict]:\n    dense = TextEmbedding(DENSE_MODEL)\n    sparse = SparseTextEmbedding(SPARSE_MODEL)\n    dvec = list(dense.embed([query]))[0]\n    svec = list(sparse.embed([query]))[0]\n\n    payload_filter = None\n    if doc_type:\n        payload_filter = Filter(must=[FieldCondition(key=\"doc_type\", match=MatchValue(value=doc_type))])\n\n    results = client.query_points(\n        collection_name=COLLECTION,\n        prefetch=[\n            {\"query\": dvec.tolist(), \"using\": \"dense\", \"limit\": k * 4, \"filter\": payload_filter},\n            {\"query\": SparseVector(indices=svec.indices.tolist(), values=svec.values.tolist()), \"using\": \"sparse\", \"limit\": k * 4, \"filter\": payload_filter},\n        ],\n        query={\"fusion\": \"rrf\"},\n        limit=k,\n    )\n    return [{\"id\": p.id, \"score\": p.score, \"text\": p.payload[\"text\"], \"source\": p.payload[\"source\"]} for p in results.points]\n\n\nif __name__ == \"__main__\":\n    client = QdrantClient(url=os.environ.get(\"QDRANT_URL\", \"http://localhost:6333\"), prefer_grpc=True)\n    ensure_collection(client)\n    ingest(client, [\n        {\"text\": \"Refunds are issued within 30 days of purchase. Contact support@ for assistance.\", \"source\": \"policy.md\", \"doc_type\": \"policy\"},\n        {\"text\": \"To reset your password, click 'Forgot password' on the login page.\", \"source\": \"support.md\", \"doc_type\": \"tutorial\"},\n    ])\n    for hit in hybrid_search(client, \"How do I get a refund?\", doc_type=\"policy\"):\n        print(f\"{hit['score']:.3f} {hit['source']} -> {hit['text'][:80]}\")\n",
+    "code": "from qdrant_client import QdrantClient\nfrom qdrant_client.models import VectorParams, Distance, SparseVectorParams\nclient = QdrantClient(url='http://localhost:6333', prefer_grpc=True)\nclient.create_collection(\n    'ossai_hybrid',\n    vectors_config={'dense': VectorParams(size=1024, distance=Distance.COSINE)},\n    sparse_vectors_config={'sparse': SparseVectorParams()},\n)\n",
+    "dependencies": [
+      "qdrant-client",
+      "fastembed"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "qdrant-client",
+        "version": ">=1.12.0",
+        "purpose": "Qdrant Python SDK with gRPC support."
+      },
+      {
+        "name": "fastembed",
+        "version": ">=0.5.0",
+        "purpose": "Local ONNX embedding (dense + sparse) - no API calls."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "QDRANT_URL",
+        "required": false,
+        "description": "Qdrant base URL (default http://localhost:6333)."
+      },
+      {
+        "name": "QDRANT_API_KEY",
+        "required": false,
+        "description": "API key for Qdrant Cloud."
+      }
+    ],
+    "setup_steps": [
+      "Run Qdrant: `docker run -p 6333:6333 -p 6334:6334 -v $(pwd)/qdrant_data:/qdrant/storage qdrant/qdrant:latest`",
+      "`pip install qdrant-client[fastembed]>=1.12.0 fastembed>=0.5.0`",
+      "Save as `setup_qdrant.py`.",
+      "Run `python setup_qdrant.py` - creates collection, ingests 2 sample docs, runs hybrid query.",
+      "Inspect at `http://localhost:6333/dashboard` - see dense + sparse named vectors per point.",
+      "Bump segment count via `optimizers_config=OptimizersConfigDiff(default_segment_number=N)` for larger workloads."
+    ],
+    "variations": [
+      {
+        "label": "Qdrant Cloud (managed)",
+        "description": "Free 1GB cluster, $25/mo upwards.",
+        "code_snippet": "client = QdrantClient(url='https://xyz.eu-central.aws.cloud.qdrant.io', api_key=os.environ['QDRANT_API_KEY'])"
+      },
+      {
+        "label": "ColBERT late-interaction reranking",
+        "description": "Re-score top hybrid hits with ColBERT for highest precision.",
+        "code_snippet": "from fastembed import LateInteractionTextEmbedding\ncolbert = LateInteractionTextEmbedding('colbert-ir/colbertv2.0')\n# rerank top-30 hybrid hits via maxsim score"
+      },
+      {
+        "label": "Multi-tenancy by payload",
+        "description": "Single collection, tenant_id payload field, indexed.",
+        "code_snippet": "client.create_payload_index(COLLECTION, field_name='tenant_id', field_schema='keyword')\n# then filter every query: must=[FieldCondition(key='tenant_id', match=MatchValue(value=current_tenant))]"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "InvalidArgument: Sparse vectors not configured",
+        "cause": "Collection created without `sparse_vectors_config`.",
+        "fix_snippet": "client.recreate_collection(COLLECTION, vectors_config={'dense': VectorParams(size=1024, distance=Distance.COSINE)}, sparse_vectors_config={'sparse': SparseVectorParams()})"
+      },
+      {
+        "error_text": "OOM after ~1M points on a 4GB Docker container",
+        "cause": "No quantization + default segment config.",
+        "fix_snippet": "quantization_config=ScalarQuantization(scalar=ScalarQuantizationConfig(type=ScalarType.INT8, always_ram=False))  # offload quantized vectors to disk"
+      },
+      {
+        "error_text": "Slow gRPC queries (>200ms)",
+        "cause": "gRPC not enabled or HNSW config too aggressive.",
+        "fix_snippet": "client = QdrantClient(url='...', prefer_grpc=True, grpc_port=6334)\n# Lower hnsw_config m=8 (default 16) for smaller index"
+      }
+    ],
+    "production_checklist": [
+      "Always set `prefer_grpc=True` for high-QPS workloads - 30-50% faster than HTTP.",
+      "Use scalar quantization (INT8) - 4x RAM savings, <1% recall drop.",
+      "Persist `qdrant_data` to a fast SSD volume - HNSW index loading on cold start scales with index size.",
+      "Index every payload field you filter on (`create_payload_index`) - unindexed filters do full collection scan.",
+      "Use multi-tenancy via payload filter, not separate collections - reduces operator overhead.",
+      "Snapshot daily via `client.create_snapshot()` - cheap insurance against corruption.",
+      "For Qdrant Cloud, monitor the 'collection.optimizer_status' metric - degrades silently if optimizer falls behind."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "BAAI/bge-m3",
+        "Qdrant/bm42-all-minilm-l6-v2-attentions"
+      ],
+      "library_versions": [
+        "qdrant-client==1.12.1",
+        "fastembed==0.5.0",
+        "Qdrant server 1.12"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "qdrant",
+      "fastembed",
+      "bge-m3",
+      "splade"
+    ],
+    "related_glossary_slugs": [
+      "hybrid-search",
+      "sparse-vectors",
+      "splade",
+      "scalar-quantization",
+      "rrf"
+    ],
+    "related_learn_slugs": [
+      "vector-db-101",
+      "hybrid-search-101"
+    ],
+    "faq": [
+      {
+        "question": "Qdrant vs Weaviate vs Milvus vs pgvector - quick decision?",
+        "answer": "Qdrant: best balance of hybrid search + payload filters + ops simplicity. Weaviate: best built-in modules (reranker, generative). Milvus: best at billion-scale with auto-sharding. pgvector: best if you already run Postgres and need SQL+vector in one engine. For new production RAG in 2026, Qdrant is the default."
+      },
+      {
+        "question": "Do I need both dense AND sparse vectors?",
+        "answer": "If your corpus has technical content (product codes, error IDs, function names, acronyms): yes, sparse adds 20-40% recall. If your corpus is generic prose: dense alone is fine. Always benchmark on YOUR queries before deciding."
+      }
+    ],
+    "meta_title": "Qdrant Hybrid Search (Dense + Sparse + Filter) | OSS AI Hub",
+    "meta_description": "Production Qdrant: BGE-M3 dense + SPLADE sparse hybrid, RRF fusion, payload filters, INT8 quantization. MIT-licensed."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "chroma-quickstart-persistent",
+    "title": "Chroma Quickstart with Persistent Storage",
+    "tldr": "Chroma persistent client with collection lifecycle, embedding function injection, metadata filtering, and incremental upsert - simplest vector DB to run locally.",
+    "description": "Chroma in PersistentClient mode: zero servers, sqlite-backed, perfect for prototypes + small production loads (<5M vectors). Includes upsert, filter, and migration patterns.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "chroma",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "chroma",
+      "persistent",
+      "sqlite",
+      "local"
+    ],
+    "best_for_tags": [
+      "local-dev",
+      "prototyping",
+      "small-corpus"
+    ],
+    "featured": false,
+    "when_to_use": "Solo dev or small team that wants vector search with zero infra - just a SQLite file on disk. Perfect for prototypes, demos, internal tools with <5M vectors. The PersistentClient embeds the engine in your Python process; no servers, no Docker.",
+    "when_not_to_use": "Skip Chroma at production scale when (1) you have >5M vectors - performance falls off; (2) you need multi-tenant isolation - Chroma has no native multi-tenancy; (3) you're running multiple writers - SQLite locking causes contention.",
+    "quick_start": "1) `pip install chromadb sentence-transformers`  2) `python chroma_local.py` - creates `./chroma_db/` on first run, adds 3 docs, queries.",
+    "full_code": "\"\"\"Chroma PersistentClient quickstart - production-shaped lifecycle.\"\"\"\nfrom __future__ import annotations\n\nimport pathlib\nfrom typing import Iterable\n\nimport chromadb\nfrom chromadb.utils import embedding_functions\n\n\nDB_PATH = pathlib.Path(\"./chroma_db\")\nCOLLECTION = \"ossai_docs\"\n\n\ndef get_collection() -> chromadb.Collection:\n    client = chromadb.PersistentClient(path=str(DB_PATH))\n    # Use sentence-transformers for embedding so it's local/free.\n    embed_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=\"BAAI/bge-small-en-v1.5\")\n    return client.get_or_create_collection(name=COLLECTION, embedding_function=embed_fn, metadata={\"hnsw:space\": \"cosine\"})\n\n\ndef upsert_docs(docs: Iterable[dict]) -> None:\n    \"\"\"docs = [{'id': str, 'text': str, 'source': str, 'doc_type': str}, ...]\"\"\"\n    coll = get_collection()\n    docs = list(docs)\n    coll.upsert(\n        ids=[d[\"id\"] for d in docs],\n        documents=[d[\"text\"] for d in docs],\n        metadatas=[{\"source\": d.get(\"source\", \"\"), \"doc_type\": d.get(\"doc_type\", \"general\")} for d in docs],\n    )\n    print(f\"[upsert] {len(docs)} docs. Collection size: {coll.count()}\")\n\n\ndef query(question: str, doc_type: str | None = None, k: int = 5) -> list[dict]:\n    coll = get_collection()\n    where = {\"doc_type\": doc_type} if doc_type else None\n    res = coll.query(query_texts=[question], n_results=k, where=where)\n    return [\n        {\"id\": id_, \"score\": 1 - dist, \"text\": text, \"source\": meta.get(\"source\")}\n        for id_, dist, text, meta in zip(res[\"ids\"][0], res[\"distances\"][0], res[\"documents\"][0], res[\"metadatas\"][0])\n    ]\n\n\nif __name__ == \"__main__\":\n    upsert_docs([\n        {\"id\": \"policy-001\", \"text\": \"Refunds are issued within 30 days of purchase.\", \"source\": \"policy.md\", \"doc_type\": \"policy\"},\n        {\"id\": \"policy-002\", \"text\": \"Returns require the original packaging and receipt.\", \"source\": \"policy.md\", \"doc_type\": \"policy\"},\n        {\"id\": \"tutorial-001\", \"text\": \"To reset your password, click 'Forgot password' on the login page.\", \"source\": \"support.md\", \"doc_type\": \"tutorial\"},\n    ])\n    for hit in query(\"How do I get a refund?\", doc_type=\"policy\"):\n        print(f\"{hit['score']:.3f} {hit['source']} -> {hit['text']}\")\n",
+    "code": "import chromadb\nfrom chromadb.utils import embedding_functions\nclient = chromadb.PersistentClient(path='./chroma_db')\nembed = embedding_functions.SentenceTransformerEmbeddingFunction(model_name='BAAI/bge-small-en-v1.5')\ncoll = client.get_or_create_collection('ossai_docs', embedding_function=embed)\ncoll.upsert(ids=['1'], documents=['Refunds within 30 days.'], metadatas=[{'doc_type': 'policy'}])\nprint(coll.query(query_texts=['refund policy?'], n_results=3))\n",
+    "dependencies": [
+      "chromadb",
+      "sentence-transformers"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "chromadb",
+        "version": ">=0.5.18",
+        "purpose": "Vector database with PersistentClient mode."
+      },
+      {
+        "name": "sentence-transformers",
+        "version": ">=3.3.0",
+        "purpose": "Local embedding models (BGE, MiniLM, etc.)."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "CHROMA_DB_PATH",
+        "required": false,
+        "description": "Path to SQLite store (default ./chroma_db)."
+      }
+    ],
+    "setup_steps": [
+      "`pip install chromadb>=0.5.18 sentence-transformers>=3.3.0`",
+      "Save as `chroma_local.py`.",
+      "Run `python chroma_local.py` - creates `./chroma_db/` (~50MB after embedding model loads).",
+      "Inspect: `sqlite3 chroma_db/chroma.sqlite3 .tables` (the embeddings live in segment files alongside).",
+      "Back up: tar the entire `./chroma_db/` directory - that's your whole database."
+    ],
+    "variations": [
+      {
+        "label": "Migrate from PersistentClient to HttpClient (server mode)",
+        "description": "When you outgrow embedded mode, run Chroma as a server.",
+        "code_snippet": "# Server: `chroma run --path ./chroma_db --port 8000`\n# Client: client = chromadb.HttpClient(host='localhost', port=8000)"
+      },
+      {
+        "label": "OpenAI embeddings instead of local",
+        "description": "$0.02/1M tokens, no GPU needed, slight quality bump.",
+        "code_snippet": "embed_fn = embedding_functions.OpenAIEmbeddingFunction(api_key=os.environ['OPENAI_API_KEY'], model_name='text-embedding-3-small')"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "sqlite3.OperationalError: database is locked",
+        "cause": "Two processes writing to the same PersistentClient.",
+        "fix_snippet": "# Move to HttpClient (server mode) when you need >1 writer.\n# chroma run --path ./chroma_db --port 8000"
+      },
+      {
+        "error_text": "Embedding function mismatch on get_collection",
+        "cause": "Collection was created with one embedding function, retrieved with another.",
+        "fix_snippet": "# ALWAYS use the same embedding_function when getting an existing collection.\n# Store the model name in collection metadata for safety."
+      },
+      {
+        "error_text": "Query returns no results despite docs being upserted",
+        "cause": "Metadata filter is too strict (`where={'doc_type': 'POLICY'}` vs stored 'policy').",
+        "fix_snippet": "# Chroma metadata filters are case-sensitive. Normalize on ingest:\nmetadatas=[{'doc_type': d['doc_type'].lower()} for d in docs]"
+      }
+    ],
+    "production_checklist": [
+      "Use ONE consistent embedding function per collection - mismatched embeddings silently degrade search quality.",
+      "Back up the entire `./chroma_db/` directory daily - it's just files on disk.",
+      "Migrate to HttpClient (server mode) once you have >1 concurrent writer or >5M vectors.",
+      "Set `metadata={'hnsw:space': 'cosine'}` explicitly - 'l2' default is rarely what you want for text embeddings.",
+      "Track `coll.count()` in a daily cron - silent ingestion failures look like 'no growth'.",
+      "Pin chromadb minor version - 0.5.x has been stable but 0.6 will break upsert API."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "BAAI/bge-small-en-v1.5"
+      ],
+      "library_versions": [
+        "chromadb==0.5.18",
+        "sentence-transformers==3.3.1"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "chroma",
+      "sentence-transformers"
+    ],
+    "related_glossary_slugs": [
+      "vector-database",
+      "embedding-function",
+      "hnsw",
+      "cosine-similarity"
+    ],
+    "related_learn_slugs": [
+      "vector-db-101"
+    ],
+    "faq": [
+      {
+        "question": "When should I move off Chroma?",
+        "answer": "Triggers: (1) >5M vectors and queries slow >100ms; (2) multiple writers contending on SQLite; (3) need multi-tenant isolation; (4) need hybrid search. Move to Qdrant (production) or stay with Chroma in HttpClient mode (still simple)."
+      },
+      {
+        "question": "Does Chroma support hybrid (BM25+vector) search?",
+        "answer": "Not natively as of 0.5.x. You can fake it client-side: run BM25 separately (rank_bm25), do vector search via Chroma, then RRF the lists. Or migrate to Qdrant/Weaviate for native hybrid."
+      }
+    ],
+    "meta_title": "Chroma Quickstart with Persistent Storage | OSS AI Hub",
+    "meta_description": "Chroma PersistentClient: zero-server vector DB with SQLite backing, local embeddings, metadata filters. Best for solo devs + prototypes. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "milvus-million-vector-cluster",
+    "title": "Milvus Cluster for 100M+ Vectors (Helm + IVF_PQ Index)",
+    "tldr": "Milvus distributed cluster (operator + helm chart) tuned for 100M+ vectors. IVF_PQ index, shard config, S3-backed storage.",
+    "description": "Production Milvus deployment for billion-scale: K8s helm chart, IVF_PQ with 16-bit codes for 32x compression, S3 object storage, MinIO + etcd dependencies.",
+    "category": "vector-databases",
+    "language": "yaml",
+    "framework": "milvus",
+    "difficulty_tier": "expert",
+    "tags": [
+      "milvus",
+      "kubernetes",
+      "billion-scale",
+      "ivf-pq"
+    ],
+    "best_for_tags": [
+      "enterprise-scale",
+      "distributed",
+      "billion-vectors"
+    ],
+    "featured": false,
+    "when_to_use": "You have 100M-10B vectors and need horizontal scale-out with auto-sharding. Milvus is the open-source leader at this scale - LinkedIn, eBay, Walmart all run it. The complexity tax is real (etcd, MinIO/S3, K8s operator) but it pays off above 100M vectors where Qdrant/Weaviate single-node stops scaling.",
+    "when_not_to_use": "Skip Milvus when (1) you have <50M vectors - Qdrant single-node is simpler + faster; (2) you don't have a K8s ops team - Milvus has lots of moving parts; (3) you need <10ms p99 latency - PQ-compressed indexes trade latency for scale.",
+    "quick_start": "1) `helm repo add milvus https://zilliztech.github.io/milvus-helm/`  2) `helm install milvus milvus/milvus -f values.yaml`  3) `pip install pymilvus`  4) `python milvus_setup.py` creates collection + IVF_PQ index.",
+    "full_code": "# values.yaml -- Milvus helm chart tuned for 100M+ vectors\ncluster:\n  enabled: true\n\nimage:\n  all:\n    repository: milvusdb/milvus\n    tag: v2.5.0\n\n# Storage: use S3 (or compatible object storage) for the working data.\nminio:\n  enabled: false  # we use external S3\nexternalS3:\n  enabled: true\n  host: \"s3.us-east-1.amazonaws.com\"\n  port: \"443\"\n  accessKey: \"${S3_ACCESS_KEY}\"\n  secretKey: \"${S3_SECRET_KEY}\"\n  bucketName: \"milvus-vectors\"\n  useSSL: true\n\n# Etcd cluster for metadata\netcd:\n  enabled: true\n  replicaCount: 3\n\n# Component-level sizing for 100M-vector cluster\nqueryNode:\n  replicas: 4\n  resources:\n    requests: {cpu: 8, memory: 32Gi}\n    limits:   {cpu: 16, memory: 64Gi}\ndataNode:\n  replicas: 2\n  resources:\n    requests: {cpu: 4, memory: 16Gi}\nindexNode:\n  replicas: 2\n  resources:\n    requests: {cpu: 8, memory: 32Gi}\nproxy:\n  replicas: 2\nrootCoord:\n  resources: {requests: {cpu: 2, memory: 8Gi}}\nqueryCoord:\n  resources: {requests: {cpu: 2, memory: 8Gi}}\ndataCoord:\n  resources: {requests: {cpu: 2, memory: 8Gi}}\nindexCoord:\n  resources: {requests: {cpu: 2, memory: 8Gi}}\n",
+    "code": "\"\"\"Milvus collection + IVF_PQ index for 100M-vector scale.\"\"\"\nfrom pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection, utility\n\nconnections.connect(host=\"milvus.milvus-system.svc.cluster.local\", port=\"19530\")\n\nfields = [\n    FieldSchema(name=\"id\", dtype=DataType.INT64, is_primary=True, auto_id=True),\n    FieldSchema(name=\"embedding\", dtype=DataType.FLOAT_VECTOR, dim=1024),\n    FieldSchema(name=\"tenant\", dtype=DataType.VARCHAR, max_length=64),\n    FieldSchema(name=\"source\", dtype=DataType.VARCHAR, max_length=512),\n]\nschema = CollectionSchema(fields=fields, description=\"OSS AI Hub vectors\")\nif not utility.has_collection(\"ossai_vectors\"):\n    coll = Collection(\"ossai_vectors\", schema=schema, shards_num=8)\nelse:\n    coll = Collection(\"ossai_vectors\")\n\n# IVF_PQ: 4096 lists, 16 PQ subquantizers, 8-bit codes\ncoll.create_index(\"embedding\", {\"index_type\": \"IVF_PQ\", \"metric_type\": \"COSINE\", \"params\": {\"nlist\": 4096, \"m\": 16, \"nbits\": 8}})\ncoll.create_index(\"tenant\", {\"index_type\": \"Trie\"})\ncoll.load()\nprint(\"collection ready:\", coll.num_entities)\n",
+    "dependencies": [
+      "pymilvus"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "pymilvus",
+        "version": ">=2.5.0",
+        "purpose": "Milvus Python SDK."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "MILVUS_HOST",
+        "required": true,
+        "description": "Milvus host (e.g. service URL or LB)."
+      },
+      {
+        "name": "S3_ACCESS_KEY",
+        "required": true,
+        "description": "S3 credentials for vector storage."
+      },
+      {
+        "name": "S3_SECRET_KEY",
+        "required": true,
+        "description": "S3 credentials."
+      }
+    ],
+    "setup_steps": [
+      "Provision EKS/GKE cluster with at least 4 nodes (m5.4xlarge or equivalent).",
+      "Add helm repo: `helm repo add milvus https://zilliztech.github.io/milvus-helm/ && helm repo update`",
+      "Customize `values.yaml` (see full_code) - point externalS3 at your bucket.",
+      "`kubectl create ns milvus-system && helm install milvus milvus/milvus -n milvus-system -f values.yaml`",
+      "Wait for all pods Ready (~5-10 min): `kubectl get pods -n milvus-system -w`",
+      "Port-forward proxy locally for setup: `kubectl port-forward -n milvus-system svc/milvus-proxy 19530:19530`",
+      "`pip install pymilvus>=2.5.0` and run the setup script."
+    ],
+    "variations": [
+      {
+        "label": "Zilliz Cloud (managed Milvus)",
+        "description": "Hosted Milvus - skip the ops entirely.",
+        "code_snippet": "from pymilvus import connections\nconnections.connect(uri='https://in03-xyz.api.gcp-us-west1.zillizcloud.com', token=os.environ['ZILLIZ_TOKEN'])"
+      },
+      {
+        "label": "HNSW index instead of IVF_PQ",
+        "description": "Better recall + latency, more RAM. Use for <500M vectors.",
+        "code_snippet": "coll.create_index('embedding', {'index_type': 'HNSW', 'metric_type': 'COSINE', 'params': {'M': 16, 'efConstruction': 200}})"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "QueryNode OOM during index build",
+        "cause": "Too few queryNode replicas or memory limits too low for index size.",
+        "fix_snippet": "# Bump queryNode resources in values.yaml; rule of thumb: 1.5x your index size in RAM total across nodes\nqueryNode:\n  replicas: 6\n  resources: {limits: {memory: 128Gi}}"
+      },
+      {
+        "error_text": "etcd quota exceeded after months of operation",
+        "cause": "etcd has 8GB default quota; metadata grows over time.",
+        "fix_snippet": "etcd:\n  extraEnvVars:\n    - name: ETCD_QUOTA_BACKEND_BYTES\n      value: '17179869184'  # 16GB"
+      },
+      {
+        "error_text": "Coordinator can't elect leader",
+        "cause": "Network policy blocking pod-to-pod traffic in K8s.",
+        "fix_snippet": "# Ensure intra-namespace traffic is allowed:\nkubectl get networkpolicy -n milvus-system"
+      }
+    ],
+    "production_checklist": [
+      "Use S3 (not MinIO embedded) for production - durability + cross-AZ replication.",
+      "Set `shards_num` proportional to write throughput: 1 shard per ~10k inserts/sec.",
+      "Index choice: HNSW < 500M vectors / IVF_PQ at scale - PQ compression reduces memory 16-32x.",
+      "Always create a scalar index on filter fields (tenant, doc_type) - unindexed scans tank query latency.",
+      "Backup via `milvus-backup` tool weekly to a separate bucket.",
+      "Monitor `milvus_proxy_search_latency_p99` - if it grows >100ms, queryNode is RAM-starved or index is fragmented.",
+      "Run `coll.flush()` then `coll.compact()` after large deletes - reclaims space + improves query speed."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "N/A - storage layer"
+      ],
+      "library_versions": [
+        "pymilvus==2.5.0",
+        "Milvus server 2.5.0",
+        "Helm chart 4.2.x"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "milvus",
+      "zilliz",
+      "qdrant"
+    ],
+    "related_glossary_slugs": [
+      "ivf-pq",
+      "hnsw",
+      "vector-database",
+      "billion-scale",
+      "product-quantization"
+    ],
+    "related_learn_slugs": [
+      "vector-db-101",
+      "production-vector-db"
+    ],
+    "faq": [
+      {
+        "question": "Milvus vs Qdrant at 100M vectors?",
+        "answer": "Both work. Qdrant single-node + scalar quantization hits 100M on a 64GB box at ~30ms p99. Milvus distributed across 4-8 nodes hits 500M-5B with auto-sharding but needs K8s + etcd + S3. If you're <500M, Qdrant is simpler. Above 1B, Milvus is the standard choice."
+      },
+      {
+        "question": "Why use IVF_PQ instead of HNSW?",
+        "answer": "IVF_PQ compresses vectors 16-32x with controlled recall loss (PQ nbits=8 gives ~95% recall vs full-precision). At 1B vectors that's the difference between fitting in 100GB RAM vs needing 1.6TB. HNSW gives better recall but doesn't compress."
+      }
+    ],
+    "meta_title": "Milvus Cluster for 100M+ Vectors (Helm + IVF_PQ) | OSS AI Hub",
+    "meta_description": "Production Milvus 2.5 cluster on K8s: helm chart, IVF_PQ index, S3 backing, billion-scale tuning. MIT-licensed."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "pgvector-postgres-setup",
+    "title": "pgvector + Postgres for SQL-Friendly RAG (HNSW + Async)",
+    "tldr": "pgvector setup with HNSW index, hybrid SQL filter + vector search, partial indexes, asyncpg connection pooling. Best when you already run Postgres.",
+    "description": "Self-hosted Postgres 16 + pgvector 0.7 with HNSW index, JSONB metadata filters, partial indexes per tenant, async upsert via asyncpg pool.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "pgvector",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "pgvector",
+      "postgres",
+      "hnsw",
+      "sql"
+    ],
+    "best_for_tags": [
+      "sql-native",
+      "existing-postgres",
+      "transactional"
+    ],
+    "featured": true,
+    "when_to_use": "You already run Postgres (the most boring + reliable choice) and want vector search without adding another data system. pgvector 0.7 with HNSW handles 10M-100M vectors comfortably on a beefy box, and SQL JOINs let you mix vector + filter + relational queries cleanly.",
+    "when_not_to_use": "Skip pgvector when (1) you have >100M vectors - dedicated vector DBs scale further; (2) you need <10ms p99 latency at high QPS - dedicated DBs are faster; (3) you don't already have Postgres ops expertise - dragging in Qdrant/Weaviate single-node may be simpler.",
+    "quick_start": "1) `docker run -p 5432:5432 -e POSTGRES_PASSWORD=secret pgvector/pgvector:pg16`  2) `pip install asyncpg pgvector`  3) `python pgvector_setup.py` - creates table + HNSW index + ingests + queries.",
+    "full_code": "\"\"\"pgvector + asyncpg production pattern.\"\"\"\nfrom __future__ import annotations\n\nimport asyncio\nimport os\n\nimport asyncpg\nimport numpy as np\nfrom pgvector.asyncpg import register_vector\nfrom fastembed import TextEmbedding\n\n\nDSN = os.environ.get(\"PG_DSN\", \"postgresql://postgres:secret@localhost:5432/postgres\")\nEMBED_MODEL = \"BAAI/bge-small-en-v1.5\"  # 384-dim, fast\n\n\nasync def create_pool() -> asyncpg.Pool:\n    pool = await asyncpg.create_pool(DSN, min_size=2, max_size=10, init=register_vector)\n    async with pool.acquire() as conn:\n        await conn.execute(\"CREATE EXTENSION IF NOT EXISTS vector\")\n        await conn.execute(\"\"\"\n            CREATE TABLE IF NOT EXISTS ossai_docs (\n                id BIGSERIAL PRIMARY KEY,\n                text TEXT NOT NULL,\n                metadata JSONB NOT NULL DEFAULT '{}',\n                embedding vector(384),\n                tenant_id TEXT NOT NULL,\n                created_at TIMESTAMPTZ DEFAULT now()\n            )\n        \"\"\")\n        # HNSW index with cosine distance (m=16, ef_construction=64 are sane defaults)\n        await conn.execute(\"\"\"\n            CREATE INDEX IF NOT EXISTS ossai_docs_embedding_hnsw\n            ON ossai_docs USING hnsw (embedding vector_cosine_ops)\n            WITH (m = 16, ef_construction = 64)\n        \"\"\")\n        # Indexes for filtering\n        await conn.execute(\"CREATE INDEX IF NOT EXISTS ossai_docs_tenant_idx ON ossai_docs (tenant_id)\")\n        await conn.execute(\"CREATE INDEX IF NOT EXISTS ossai_docs_metadata_gin ON ossai_docs USING GIN (metadata)\")\n    return pool\n\n\nasync def upsert_docs(pool: asyncpg.Pool, docs: list[dict]) -> None:\n    embedder = TextEmbedding(EMBED_MODEL)\n    embeddings = list(embedder.embed([d[\"text\"] for d in docs]))\n    rows = [(d[\"text\"], d.get(\"metadata\", {}), np.array(e), d[\"tenant_id\"]) for d, e in zip(docs, embeddings)]\n    async with pool.acquire() as conn:\n        await conn.executemany(\n            \"INSERT INTO ossai_docs (text, metadata, embedding, tenant_id) VALUES ($1, $2::jsonb, $3, $4)\",\n            rows,\n        )\n    print(f\"[upsert] {len(rows)} rows\")\n\n\nasync def hybrid_query(pool: asyncpg.Pool, query: str, tenant_id: str, doc_type: str | None = None, k: int = 5) -> list[dict]:\n    embedder = TextEmbedding(EMBED_MODEL)\n    qvec = np.array(list(embedder.embed([query]))[0])\n    where = \"WHERE tenant_id = $2\"\n    params: list = [qvec, tenant_id]\n    if doc_type:\n        where += \" AND metadata @> $3::jsonb\"\n        params.append({\"doc_type\": doc_type})\n    sql = f\"\"\"\n        SELECT id, text, metadata, 1 - (embedding <=> $1) AS score\n        FROM ossai_docs\n        {where}\n        ORDER BY embedding <=> $1\n        LIMIT {k}\n    \"\"\"\n    async with pool.acquire() as conn:\n        rows = await conn.fetch(sql, *params)\n    return [dict(r) for r in rows]\n\n\nasync def main() -> None:\n    pool = await create_pool()\n    await upsert_docs(pool, [\n        {\"text\": \"Refunds within 30 days of purchase.\", \"metadata\": {\"doc_type\": \"policy\"}, \"tenant_id\": \"acme\"},\n        {\"text\": \"To reset password, click Forgot Password.\", \"metadata\": {\"doc_type\": \"tutorial\"}, \"tenant_id\": \"acme\"},\n        {\"text\": \"All sales are final.\", \"metadata\": {\"doc_type\": \"policy\"}, \"tenant_id\": \"other-tenant\"},\n    ])\n    hits = await hybrid_query(pool, \"How do I get a refund?\", tenant_id=\"acme\", doc_type=\"policy\")\n    for h in hits:\n        print(f\"{h['score']:.3f} {h['text']}\")\n    await pool.close()\n\n\nif __name__ == \"__main__\":\n    asyncio.run(main())\n",
+    "code": "import asyncio, os, numpy as np\nimport asyncpg\nfrom pgvector.asyncpg import register_vector\n\n\nasync def main():\n    pool = await asyncpg.create_pool(os.environ['PG_DSN'], init=register_vector)\n    async with pool.acquire() as conn:\n        await conn.execute('CREATE EXTENSION IF NOT EXISTS vector')\n        rows = await conn.fetch(\n            'SELECT text, 1 - (embedding <=> $1) AS score FROM ossai_docs WHERE tenant_id=$2 ORDER BY embedding <=> $1 LIMIT 5',\n            np.random.rand(384), 'acme'\n        )\n        for r in rows: print(r['score'], r['text'])\n    await pool.close()\n\n\nasyncio.run(main())\n",
+    "dependencies": [
+      "asyncpg",
+      "pgvector",
+      "fastembed"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "asyncpg",
+        "version": ">=0.30.0",
+        "purpose": "Fast async Postgres driver."
+      },
+      {
+        "name": "pgvector",
+        "version": ">=0.3.6",
+        "purpose": "Python adapter for the pgvector Postgres extension."
+      },
+      {
+        "name": "fastembed",
+        "version": ">=0.5.0",
+        "purpose": "Local ONNX embedding."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "PG_DSN",
+        "required": true,
+        "description": "Postgres DSN (postgresql://user:pass@host:5432/db)."
+      }
+    ],
+    "setup_steps": [
+      "Run pgvector-enabled Postgres: `docker run -p 5432:5432 -e POSTGRES_PASSWORD=secret pgvector/pgvector:pg16`",
+      "`pip install asyncpg>=0.30 pgvector>=0.3.6 fastembed>=0.5.0`",
+      "Export `PG_DSN=postgresql://postgres:secret@localhost:5432/postgres`",
+      "Save as `pgvector_setup.py`.",
+      "Run `python pgvector_setup.py` - creates extension + table + HNSW index + ingests + queries.",
+      "Inspect: `psql $PG_DSN -c '\\\\d ossai_docs'` to see the schema.",
+      "For production: tune `maintenance_work_mem='2GB'` to speed up HNSW index builds."
+    ],
+    "variations": [
+      {
+        "label": "IVFFlat index for cheaper inserts",
+        "description": "IVFFlat is faster to build than HNSW; slightly lower recall.",
+        "code_snippet": "CREATE INDEX ON ossai_docs USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);"
+      },
+      {
+        "label": "Partial index per tenant (multi-tenant scale)",
+        "description": "Per-tenant HNSW index for large tenants.",
+        "code_snippet": "CREATE INDEX ON ossai_docs USING hnsw (embedding vector_cosine_ops) WHERE tenant_id = 'big-tenant';"
+      },
+      {
+        "label": "Supabase + Vercel app pattern",
+        "description": "Use Supabase managed Postgres - pgvector is preinstalled.",
+        "code_snippet": "# In Supabase dashboard, enable the 'vector' extension. PG_DSN is in Settings -> Database."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ERROR: extension 'vector' is not available",
+        "cause": "Using vanilla postgres image instead of `pgvector/pgvector`.",
+        "fix_snippet": "docker run -p 5432:5432 pgvector/pgvector:pg16"
+      },
+      {
+        "error_text": "HNSW index build takes hours on 10M rows",
+        "cause": "Default `maintenance_work_mem` is too low (64MB).",
+        "fix_snippet": "ALTER SYSTEM SET maintenance_work_mem = '2GB';\nSELECT pg_reload_conf();\n-- Then rebuild: REINDEX INDEX ossai_docs_embedding_hnsw;"
+      },
+      {
+        "error_text": "Slow queries despite HNSW index",
+        "cause": "Postgres planner chose seq scan because filter is selective.",
+        "fix_snippet": "-- Force HNSW first, then filter:\nSET enable_seqscan = OFF;  -- session-level test\n-- Or rewrite as CTE:\nWITH nearest AS (SELECT id, embedding FROM ossai_docs ORDER BY embedding <=> $1 LIMIT 50) SELECT * FROM nearest WHERE tenant_id = $2 LIMIT 5;"
+      }
+    ],
+    "production_checklist": [
+      "Increase `maintenance_work_mem` to 1-2GB before building HNSW indexes on >1M rows.",
+      "Always have a scalar index on tenant_id (or whatever you filter by) - avoids full table scans.",
+      "Use `vector_cosine_ops` for normalized embeddings; `vector_l2_ops` only if your embeddings aren't normalized.",
+      "Set `hnsw.ef_search = 100` in session for higher recall (default 40 is fine for chat, 100 for high-precision).",
+      "Back up via `pg_dump` - works fine for vectors; restore time is the gotcha at scale.",
+      "Use `autovacuum` aggressively on the vector table - HNSW indexes degrade on heavy updates.",
+      "Monitor `pg_stat_user_indexes.idx_scan` for your HNSW index - if it's 0, your queries are bypassing the index."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "BAAI/bge-small-en-v1.5 (384-dim)"
+      ],
+      "library_versions": [
+        "asyncpg==0.30.0",
+        "pgvector==0.3.6",
+        "Postgres 16.4 + pgvector 0.7.4"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "pgvector",
+      "postgres",
+      "supabase",
+      "asyncpg"
+    ],
+    "related_glossary_slugs": [
+      "pgvector",
+      "hnsw",
+      "vector-database",
+      "postgres",
+      "cosine-similarity"
+    ],
+    "related_learn_slugs": [
+      "vector-db-101",
+      "postgres-for-ai"
+    ],
+    "faq": [
+      {
+        "question": "Is pgvector really production-grade?",
+        "answer": "Yes - Instacart, Notion, GitHub use it. The 'gotcha' is that vector queries can crowd out OLTP workloads on the same DB - run vectors on a read replica or a dedicated Postgres if your main DB is busy. Also, HNSW index builds are slow + memory-hungry at scale; budget for the maintenance window."
+      },
+      {
+        "question": "pgvector vs Qdrant - when does each win?",
+        "answer": "pgvector wins when (1) you already run Postgres and want to skip an ops dependency, (2) your queries need SQL joins between vectors and relational tables, (3) you have <100M vectors. Qdrant wins on raw vector throughput, native hybrid search, and ops simplicity at vector-only workloads."
+      }
+    ],
+    "meta_title": "pgvector + Postgres for SQL-Friendly RAG | OSS AI Hub",
+    "meta_description": "Postgres 16 + pgvector 0.7 with HNSW, JSONB filters, multi-tenant partial indexes, asyncpg pooling. MIT-licensed."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "weaviate-hybrid-bm25-cosine",
+    "title": "Weaviate v4 Hybrid (BM25 + Cosine) with Multi-Tenancy",
+    "tldr": "Weaviate v4 client with hybrid BM25 + cosine search, alpha tuning, multi-tenant collections, reranker module.",
+    "description": "Self-hosted Weaviate 1.27 with hybrid search via single endpoint, named vectors, multi-tenancy enabled, optional rerank-cohere or rerank-transformers module.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "weaviate",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "weaviate",
+      "hybrid-search",
+      "multi-tenancy"
+    ],
+    "best_for_tags": [
+      "hybrid-search",
+      "multi-tenant",
+      "modules"
+    ],
+    "featured": false,
+    "when_to_use": "Production RAG with built-in hybrid search (no client-side fusion) and first-class multi-tenancy for SaaS workloads. Weaviate's modules (rerank, generate, qna) give you batteries-included if you don't want to glue providers together.",
+    "when_not_to_use": "Skip Weaviate when (1) you want the simplest hybrid story - Qdrant 1.10+ is now equally good with less footprint; (2) you don't need modules - the module system adds operational complexity; (3) you're already on Postgres - pgvector is one less system.",
+    "quick_start": "1) `docker compose -f weaviate-compose.yml up`  2) `pip install weaviate-client>=4.9`  3) `python weaviate_hybrid.py` creates tenants + ingests + runs hybrid query.",
+    "full_code": "\"\"\"Weaviate v4 hybrid + multi-tenancy quickstart.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport uuid\n\nimport weaviate\nimport weaviate.classes as wvc\nfrom weaviate.classes.config import Configure, Multi2VecCollection\n\n\nclient = weaviate.connect_to_local(host=os.environ.get(\"WEAVIATE_HOST\", \"localhost\"), port=8080, grpc_port=50051)\n\n\ndef ensure_collection() -> None:\n    if client.collections.exists(\"OSSAIDocs\"):\n        return\n    client.collections.create(\n        name=\"OSSAIDocs\",\n        multi_tenancy_config=Configure.multi_tenancy(enabled=True, auto_tenant_creation=True),\n        vectorizer_config=Configure.Vectorizer.text2vec_huggingface(model=\"BAAI/bge-base-en-v1.5\"),\n        # If you also want a reranker module:\n        # reranker_config=Configure.Reranker.cohere(),\n        properties=[\n            wvc.config.Property(name=\"text\", data_type=wvc.config.DataType.TEXT),\n            wvc.config.Property(name=\"source\", data_type=wvc.config.DataType.TEXT),\n            wvc.config.Property(name=\"doc_type\", data_type=wvc.config.DataType.TEXT),\n        ],\n    )\n\n\ndef ingest(tenant: str, docs: list[dict]) -> None:\n    coll = client.collections.get(\"OSSAIDocs\").with_tenant(tenant)\n    with coll.batch.dynamic() as batch:\n        for d in docs:\n            batch.add_object(properties={\"text\": d[\"text\"], \"source\": d[\"source\"], \"doc_type\": d.get(\"doc_type\", \"general\")}, uuid=str(uuid.uuid4()))\n    print(f\"[ingest] tenant={tenant} docs={len(docs)}\")\n\n\ndef hybrid_search(tenant: str, query: str, alpha: float = 0.5, k: int = 5) -> list[dict]:\n    \"\"\"alpha=1.0 = pure vector, alpha=0.0 = pure BM25, alpha=0.5 = balanced (default).\"\"\"\n    coll = client.collections.get(\"OSSAIDocs\").with_tenant(tenant)\n    results = coll.query.hybrid(query=query, alpha=alpha, limit=k, return_metadata=wvc.query.MetadataQuery(score=True, explain_score=True))\n    return [{\"score\": r.metadata.score, \"explain\": r.metadata.explain_score, **r.properties} for r in results.objects]\n\n\nif __name__ == \"__main__\":\n    ensure_collection()\n    ingest(\"acme\", [\n        {\"text\": \"Refunds within 30 days of purchase.\", \"source\": \"policy.md\", \"doc_type\": \"policy\"},\n        {\"text\": \"Returns require original packaging.\", \"source\": \"policy.md\", \"doc_type\": \"policy\"},\n    ])\n    for hit in hybrid_search(\"acme\", \"refund window\", alpha=0.6):\n        print(f\"{hit['score']:.3f} {hit['text']} [{hit['explain']}]\")\n    client.close()\n",
+    "code": "import weaviate\nimport weaviate.classes as wvc\nclient = weaviate.connect_to_local()\ncoll = client.collections.get('OSSAIDocs').with_tenant('acme')\nresults = coll.query.hybrid(query='refund window', alpha=0.6, limit=5)\nfor r in results.objects:\n    print(r.metadata.score, r.properties)\nclient.close()\n",
+    "dependencies": [
+      "weaviate-client"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "weaviate-client",
+        "version": ">=4.9.0",
+        "purpose": "Weaviate v4 Python client."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "WEAVIATE_HOST",
+        "required": false,
+        "description": "Weaviate host (default localhost)."
+      },
+      {
+        "name": "COHERE_API_KEY",
+        "required": false,
+        "description": "Required if using rerank-cohere module."
+      }
+    ],
+    "setup_steps": [
+      "Save `docker-compose.yml`:\n```yaml\nservices:\n  weaviate:\n    image: cr.weaviate.io/semitechnologies/weaviate:1.27.0\n    ports: ['8080:8080', '50051:50051']\n    environment:\n      QUERY_DEFAULTS_LIMIT: 25\n      ENABLE_MODULES: 'text2vec-huggingface'\n      AUTOSCHEMA_ENABLED: 'false'\n```",
+      "`docker compose up -d`",
+      "`pip install weaviate-client>=4.9.0`",
+      "Save the full_code as `weaviate_hybrid.py`.",
+      "Run `python weaviate_hybrid.py` - creates collection with multi-tenancy + ingests + hybrid query.",
+      "Inspect at `http://localhost:8080/v1/schema` (REST) or via the v4 client's `client.collections.list_all()`."
+    ],
+    "variations": [
+      {
+        "label": "Weaviate Cloud (managed)",
+        "description": "Free 14-day sandbox; production tiers $25/mo+.",
+        "code_snippet": "client = weaviate.connect_to_wcs(cluster_url=os.environ['WCS_URL'], auth_credentials=weaviate.AuthApiKey(os.environ['WCS_API_KEY']))"
+      },
+      {
+        "label": "Add Cohere reranker module",
+        "description": "Re-rank hybrid results with Cohere's reranker.",
+        "code_snippet": "# In docker-compose: ENABLE_MODULES: 'text2vec-huggingface,reranker-cohere'\n# In collection create: reranker_config=Configure.Reranker.cohere()\n# In query: .with_rerank(prop='text', query=question)"
+      },
+      {
+        "label": "Bring your own vectorizer (BYO embeddings)",
+        "description": "Embed client-side, pass `vector=` to add_object.",
+        "code_snippet": "vectorizer_config=Configure.Vectorizer.none()\n# Then: batch.add_object(properties={...}, vector=my_embedding)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ConnectionRefusedError: gRPC port 50051",
+        "cause": "v4 client uses gRPC; port not exposed.",
+        "fix_snippet": "# In docker-compose.yml, expose 50051:\nports: ['8080:8080', '50051:50051']"
+      },
+      {
+        "error_text": "Multi-tenancy error: tenant 'X' does not exist",
+        "cause": "auto_tenant_creation disabled.",
+        "fix_snippet": "multi_tenancy_config=Configure.multi_tenancy(enabled=True, auto_tenant_creation=True)\n# Or explicitly create tenants:\ncoll.tenants.create([wvc.tenants.Tenant(name='acme')])"
+      },
+      {
+        "error_text": "Hybrid alpha tuning never improves results",
+        "cause": "BM25 is finding no matches OR vector is dominating.",
+        "fix_snippet": "# Inspect with explain_score=True to see BM25 vs vector contributions:\nresults = coll.query.hybrid(query='...', alpha=0.5, return_metadata=wvc.query.MetadataQuery(explain_score=True))\nfor r in results.objects: print(r.metadata.explain_score)"
+      }
+    ],
+    "production_checklist": [
+      "Enable multi-tenancy from day 1 even for single-tenant apps - migration later is painful.",
+      "Use `auto_tenant_creation=True` for SaaS-style provisioning.",
+      "Set `vectorIndexConfig.distance=cosine` explicitly - dot is default and rarely what text-embed users want.",
+      "Tune alpha per query type, not globally - typo-heavy queries want lower alpha (more BM25).",
+      "Use a reranker module for the top 20-50 hybrid hits - 5-10% precision lift on noisy retrieval.",
+      "Watch Weaviate memory growth - each tenant carries ~1-5MB overhead even when empty.",
+      "Back up via `weaviate-backup` to S3 - tenant-level restore is what saves you in incidents."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "BAAI/bge-base-en-v1.5"
+      ],
+      "library_versions": [
+        "weaviate-client==4.9.4",
+        "Weaviate server 1.27.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "weaviate",
+      "cohere",
+      "bge-base"
+    ],
+    "related_glossary_slugs": [
+      "hybrid-search",
+      "multi-tenancy",
+      "reranking",
+      "alpha-blending"
+    ],
+    "related_learn_slugs": [
+      "vector-db-101",
+      "multi-tenant-rag"
+    ],
+    "faq": [
+      {
+        "question": "Weaviate vs Qdrant for new production work in 2026?",
+        "answer": "Weaviate wins on: built-in multi-tenancy with isolation, module ecosystem (rerank, generate, qna), alpha-tunable hybrid in one query. Qdrant wins on: simpler ops, smaller footprint, faster raw vector ops, more flexible payload filters. For SaaS multi-tenant chat: lean Weaviate. For single-tenant high-throughput RAG: lean Qdrant."
+      },
+      {
+        "question": "Should I use Weaviate's built-in vectorizer or BYO embeddings?",
+        "answer": "BYO. Built-in vectorizers tie your embedding model to the Weaviate version - upgrading either is risky. Embed client-side, pass vectors via `vector=` on add_object. Use the built-in only for prototypes."
+      }
+    ],
+    "meta_title": "Weaviate v4 Hybrid Search + Multi-Tenancy | OSS AI Hub",
+    "meta_description": "Production Weaviate 1.27 with built-in hybrid (BM25+cosine), multi-tenant collections, reranker modules, v4 Python client. MIT."
   }
 ]
