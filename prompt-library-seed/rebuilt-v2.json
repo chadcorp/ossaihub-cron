@@ -20058,6 +20058,687 @@
     "meta_description": "Re-version content for a new audience: same argument, different vocabulary/examples/stakes. Plus a \u2018what's lost\u2019 list to capture compression tradeoffs."
   },
   {
+    "slug": "press-release-from-bullet-points",
+    "title": "Press Release From Bullet Points",
+    "tldr": "Convert bullet-list internal notes into an AP-style press release: headline, dateline, lead, supporting paragraphs, quotes, boilerplate \u2014 with a quote-attribution rule that prevents fabrication.",
+    "category": "writing-editing",
+    "tags": [
+      "press-release",
+      "pr",
+      "media",
+      "writing"
+    ],
+    "best_for_tags": [
+      "pr-comms",
+      "product-launches",
+      "founder-comms"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Product launch announcement",
+        "example": "Bullet points about launch features \u2192 wire-ready release with quotes from named execs."
+      },
+      {
+        "scenario": "Funding round",
+        "example": "Round size, lead investor, use-of-funds bullets \u2192 standard funding press release."
+      },
+      {
+        "scenario": "Partnership announcement",
+        "example": "Co-branded release pulled from internal partnership memo."
+      },
+      {
+        "scenario": "Milestone (10k users, etc.)",
+        "example": "Quick distribution-ready release from a single key metric."
+      }
+    ],
+    "when_not_to_use": "Skip for very narrow trade announcements (better to skip release and do direct outreach). Skip when you're not ready to commit to quote attributions \u2014 fabricated quotes are a real risk with AI.",
+    "full_prompt": "You are a senior comms professional writing an AP-style press release from internal notes.\n\nINPUT\n- Bullet-point notes from the team: {bullets}\n- Quotes available (with attribution): {quote_bank}\n- Embargo date or \"FOR IMMEDIATE RELEASE\": {embargo}\n- Company boilerplate: {boilerplate}\n- Contact info: {contact}\n- AP-style or company-style: {style_mode}\n\nOUTPUT \u2014 press release in standard format\n\n```\n[FOR IMMEDIATE RELEASE | EMBARGOED UNTIL ...]\n\n[HEADLINE \u2014 punchy, specific, under 90 chars]\n\n[Subhead \u2014 optional, fleshes out the headline]\n\n[CITY, State \u2014 Month Day, Year] \u2014 [Lead paragraph: who, what, when, where, why in 2-3 sentences. Most newsworthy first.]\n\n[Second paragraph: substance. Specifics. Numbers if available.]\n\n\"[Verbatim quote from quote_bank, attributed properly],\" said [Name], [Title] of [Company].\n\n[Third paragraph: more context. Customer, market, industry framing.]\n\n[Optional second quote \u2014 different speaker, different angle.]\n\n[Final paragraph: forward-looking but not over-promising.]\n\nAbout [Company]\n[Boilerplate from input]\n\nContact:\n[Contact info from input]\n\n###\n```\n\nRULES\n1. NO FABRICATED QUOTES. Quotes MUST come from quote_bank. If the input has no quotes, write the release WITHOUT quotes and flag in a note at the bottom: \"Quote pending from [Role]\".\n2. SPECIFIC NUMBERS earn the headline. If you have one, use it. (\"ACME raises $25M\" beats \"ACME raises significant Series B\".)\n3. NO BUZZWORDS in the lead. Save \"industry-leading\", \"transformative\", etc. for quotes if you must.\n4. INVERTED PYRAMID: most important fact in lead, supporting in body, color at the bottom.\n5. DATELINE format: CITY in all caps, comma, state abbreviation, em-dash, date.\n6. END with ### (three hashes) \u2014 wire convention.\n\nNOTES TO COMPOSE FROM\n{bullets}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "bullets",
+        "type": "string",
+        "description": "Bullet-point notes",
+        "required": true,
+        "example": "- Acme launching Pro plan, $49/mo\\n- Adds team features\\n- Available May 14\\n- Founder excited"
+      },
+      {
+        "name": "quote_bank",
+        "type": "string",
+        "description": "Available quotes WITH attribution",
+        "required": true,
+        "example": "Jane Doe (CEO): \u2018We built this for teams that outgrew our solo plan but aren't ready for enterprise.\u2019"
+      },
+      {
+        "name": "embargo",
+        "type": "string",
+        "description": "Embargo / for immediate release",
+        "required": true,
+        "example": "FOR IMMEDIATE RELEASE"
+      },
+      {
+        "name": "boilerplate",
+        "type": "string",
+        "description": "Company About paragraph",
+        "required": true,
+        "example": "Acme is a B2B SaaS company founded in 2022..."
+      },
+      {
+        "name": "contact",
+        "type": "string",
+        "description": "Press contact info",
+        "required": true,
+        "example": "Press: press@acme.com, Jane Smith (Comms Lead)"
+      },
+      {
+        "name": "style_mode",
+        "type": "string",
+        "description": "Style preference",
+        "required": false,
+        "example": "AP-style"
+      }
+    ],
+    "expected_output": {
+      "format": "text",
+      "sample": "Wire-format press release with headline, dateline, lead, body, quotes from quote_bank, boilerplate, contact, ###."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Won't fabricate quotes when reminded; tight leads."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally drifts into corporate-speak \u2014 re-pin specificity."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; can over-elaborate on metaphors."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Sometimes invents quotes \u2014 re-pin no-fabrication rule."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Short-form (300 words)",
+        "description": "Cap length for wire services.",
+        "prompt_snippet": "Add: \u2018total length 300 words or less; ruthlessly cut.\u2019"
+      },
+      {
+        "label": "Translated variants",
+        "description": "Multi-language releases.",
+        "prompt_snippet": "Add: \u2018also produce the release in {target_languages} \u2014 preserving quotes verbatim, adapting only the framing.\u2019"
+      },
+      {
+        "label": "Embargoed announce kit",
+        "description": "Bundle release + FAQ + boilerplate.",
+        "prompt_snippet": "Add Section: \u2018also produce a 5-question reporter FAQ anticipating common journalist asks.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Quotes fabricated.",
+        "fix": "Re-pin: \u2018NEVER write quotes not in quote_bank. If missing, write [Quote pending from Role].\u2019"
+      },
+      {
+        "symptom": "Lead buries the news.",
+        "fix": "Add: \u2018the lead's first sentence contains the most newsworthy fact; no wind-up.\u2019"
+      },
+      {
+        "symptom": "Buzzword-heavy.",
+        "fix": "Add banned word list: revolutionary, transformative, game-changing, unprecedented, paradigm-shifting."
+      },
+      {
+        "symptom": "Missing dateline / hashes.",
+        "fix": "Re-pin format; checklist at end of prompt."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "investor-update-monthly",
+      "executive-summary-1-page"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "press-release",
+      "ap-style"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why never fabricate quotes?",
+        "answer": "Quotes are attributed to real people. Inventing them is misrepresentation \u2014 legal and ethical exposure. Always flag missing quotes; the CEO can supply later."
+      },
+      {
+        "question": "AP style mandatory?",
+        "answer": "Most US press release distributors expect AP. For internal blog announcements, you can relax. Wire services (PR Newswire, Business Wire): AP."
+      }
+    ],
+    "meta_title": "Press Release From Bullet Points \u2014 Prompt",
+    "meta_description": "Convert internal bullet notes into AP-style press releases. Strict no-fabricated-quotes rule, dateline format, inverted pyramid."
+  },
+  {
+    "slug": "research-summary-for-non-experts",
+    "title": "Research Paper Summary For Non-Experts",
+    "tldr": "Summarize a research paper for a smart but non-specialist audience: the question, the method (without jargon), the finding, why it matters, and what's NOT in the paper that a non-expert might think is.",
+    "category": "writing-editing",
+    "tags": [
+      "research-summary",
+      "explainer",
+      "academic-translation",
+      "writing"
+    ],
+    "best_for_tags": [
+      "popular-science",
+      "newsletters",
+      "stakeholder-comms"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Engineer reading ML paper for the team",
+        "example": "GPT-4 architecture paper \u2192 500-word summary for product manager."
+      },
+      {
+        "scenario": "Newsletter writer covering science",
+        "example": "JAMA study on a treatment \u2192 reader-friendly summary with appropriate caveats."
+      },
+      {
+        "scenario": "Policymaker brief",
+        "example": "Climate science paper \u2192 policy implications drawn out without overclaiming."
+      },
+      {
+        "scenario": "Internal share with leadership",
+        "example": "Technical paper relevant to product \u2192 exec summary."
+      }
+    ],
+    "when_not_to_use": "Skip when the audience IS expert (use a technical summary). Skip for papers you haven't read \u2014 the prompt can hallucinate a plausible summary of a fictional paper.",
+    "full_prompt": "You are summarizing a research paper for a smart, curious, non-specialist reader.\n\nINPUT\n- Paper (full text or detailed extract): {paper}\n- Target audience: {audience}\n- Length budget: {word_budget} words\n- Specific stakeholder questions to address: {stakeholder_questions}\n\nOUTPUT\n\n## 1. The question\nWhat did the paper try to answer? In 1-2 sentences, in plain language. Avoid framing in field-specific jargon.\n\n## 2. The method (lay version)\nHow did they investigate? Strip the jargon. Don't say \"we ran a regression\"; say \"we looked at how X varies with Y across N cases\".\n- Sample size or data scale (orders of magnitude is fine)\n- Specific comparison or baseline\n- Any major caveats about HOW the study was done\n\n## 3. The finding\nWhat they actually found, with the relevant number. Distinguish:\n- What they claim\n- What the data supports (the conservative reading)\n- What's ambiguous\n\n## 4. Why it matters\nSpecifically WHO this affects and HOW. Avoid \"this could revolutionize\" abstractions.\n\n## 5. What this paper is NOT\nCritical for non-experts. Address 2-3 things a non-expert reader might assume that the paper does not actually establish:\n- Causality vs correlation\n- Generalizability to other populations\n- Practical effect size vs statistical significance\n- Long-term vs short-term effects\n\n## 6. Three follow-up questions\nWhat a thoughtful reader should ask next \u2014 questions the paper opens but doesn't close.\n\n## 7. Honest confidence\n- HIGH: Robust methodology, large sample, replicated literature.\n- MEDIUM: Strong study, single-paper, awaiting replication.\n- LOW: Preliminary / unusual claim / small sample.\n\nRULES\n- Don't oversell. Researchers themselves usually hedge \u2014 preserve those hedges.\n- Numbers without units are useless. Always include \"per X\" or comparison anchor.\n- If the paper itself is unclear, say so; don't paper over.\n- Three banned phrases: \"revolutionary\", \"groundbreaking\", \"could change everything\".\n\nPAPER\n{paper}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "paper",
+        "type": "string",
+        "description": "Paper text or detailed extract",
+        "required": true,
+        "example": "[full paper text]"
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Who's reading",
+        "required": true,
+        "example": "Product manager with technical background but not ML"
+      },
+      {
+        "name": "word_budget",
+        "type": "integer",
+        "description": "Target length",
+        "required": true,
+        "example": "500"
+      },
+      {
+        "name": "stakeholder_questions",
+        "type": "string",
+        "description": "Specific things audience wants to know",
+        "required": false,
+        "example": "Should we use this method in our product?"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Seven sections: question, method, finding, why-it-matters, what-this-is-not, follow-up questions, honest confidence rating."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on preserving hedges + honest confidence."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can over-promise \u2014 re-pin hedges."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; \u2018what this is NOT\u2019 section sometimes thin."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends toward oversell; needs explicit constraint."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Multi-paper synthesis",
+        "description": "Across 3-5 papers.",
+        "prompt_snippet": "Accept multiple papers; produce a meta-summary identifying consensus, contested, and gaps."
+      },
+      {
+        "label": "Policy-implication focused",
+        "description": "Translate findings into specific policy recommendations.",
+        "prompt_snippet": "Add Section 8: \u2018direct policy implications IF the paper holds up under replication \u2014 concrete actions stakeholders could take.\u2019"
+      },
+      {
+        "label": "Visual companion",
+        "description": "Suggest a chart.",
+        "prompt_snippet": "Add: \u2018suggest one chart from the paper to reproduce (or one to create) that captures the main finding visually.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Strips important hedges.",
+        "fix": "Re-pin: \u2018when the paper hedges, the summary hedges too. Confidence comes from the paper's own language.\u2019"
+      },
+      {
+        "symptom": "Causality overclaimed from correlational data.",
+        "fix": "Section 5 must address this explicitly when the method was correlational."
+      },
+      {
+        "symptom": "Buzzwords sneak in.",
+        "fix": "Banned word list active; flag and remove."
+      },
+      {
+        "symptom": "Reader can't tell what's robust vs preliminary.",
+        "fix": "Confidence rating mandatory; high/medium/low with anchor reasoning."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "literature-review-synthesizer",
+      "literature-review-by-position",
+      "child-explainer-persona"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "academic-paper",
+      "science-communication"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why include \u2018what this paper is NOT\u2019?",
+        "answer": "Non-experts routinely over-interpret papers. Explicitly listing what the paper doesn't establish (causality, generalization, long-term) prevents misuse downstream."
+      },
+      {
+        "question": "How short is too short?",
+        "answer": "Below 300 words and you've lost the nuance. 500-800 is the sweet spot for a single paper for a non-expert audience."
+      }
+    ],
+    "meta_title": "Research Paper Summary For Non-Experts \u2014 Prompt",
+    "meta_description": "Translate research papers for non-specialists: the question, method, finding, what it ISN'T, follow-ups, honest confidence. No oversell."
+  },
+  {
+    "slug": "blog-comment-thread-summarizer",
+    "title": "Comment Thread Summarizer",
+    "tldr": "Summarizes a long comment thread (HN, Reddit, blog) into structured takeaways: the dominant positions, the surprising minority view, sources cited by commenters, and what the OP/author didn't address.",
+    "category": "writing-editing",
+    "tags": [
+      "summarization",
+      "comments",
+      "discussion",
+      "synthesis"
+    ],
+    "best_for_tags": [
+      "community-management",
+      "research-prep",
+      "newsletter"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "200-comment HN thread",
+        "example": "Long discussion \u2192 5 positions + surprising minority view + cited sources."
+      },
+      {
+        "scenario": "Reddit AMA recap",
+        "example": "Big AMA \u2192 what audience cared about most + what host evaded."
+      },
+      {
+        "scenario": "Blog post engagement review",
+        "example": "Author wants to see what landed; comment thread distilled to themes."
+      },
+      {
+        "scenario": "Pre-discussion research",
+        "example": "Before joining a debate, get the lay of the existing discussion."
+      }
+    ],
+    "when_not_to_use": "Skip for tiny threads (just read them). Skip when individual comments matter more than themes (legal, medical specific cases).",
+    "full_prompt": "You are summarizing a comment thread. Extract structure from the chaos.\n\nINPUT\n- Source: {source}                              (HN, Reddit, blog, etc.)\n- Comment thread (verbatim or detailed): {thread}\n- The post being commented on: {original_post}\n\nOUTPUT\n\n## 1. The original post in one sentence\nWhat's the OP arguing or asking?\n\n## 2. Dominant positions (3-5)\nThe main camps that show up. For each:\n- Position in one sentence\n- Roughly what % of substantive comments hold this view (rough \u2014 don't over-precision)\n- Strongest argument for it (quote a representative comment if vivid)\n- One illustrative example\n\n## 3. The surprising minority view\nA position held by few commenters but worth surfacing \u2014 either:\n- An expert weighing in with niche knowledge\n- A perspective that catches things the majority missed\n- A reasoned dissent worth steel-manning\n\n## 4. Sources cited\n3-7 specific external links / papers / books cited by commenters. With:\n- Source\n- What it was cited to support\n\n## 5. What the OP/author didn't address\n2-4 things commenters asked or pushed back on that the original post didn't anticipate.\n\n## 6. Tone observations\n- Civil / heated / mixed?\n- Any patterns in who's commenting (engineers, academics, general audience)?\n- Off-topic drift?\n\n## 7. If I joined this discussion\nWhat's the most valuable thing a fresh commenter could add \u2014 a perspective or fact missing from the existing thread?\n\nRULES\n- Quote rules: short verbatim quotes (under 20 words) with attribution to \"a commenter\".\n- Don't identify usernames by name (privacy + risk).\n- Don't summarize troll content or low-effort posts; treat threads as the substantive subset.\n- Be honest about your sample \u2014 if the input is partial, say so.\n\nORIGINAL POST: {original_post}\n\nTHREAD: {thread}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "source",
+        "type": "string",
+        "description": "Where the thread is hosted",
+        "required": true,
+        "example": "Hacker News"
+      },
+      {
+        "name": "thread",
+        "type": "string",
+        "description": "Comment thread text",
+        "required": true,
+        "example": "[comments concatenated or summarized]"
+      },
+      {
+        "name": "original_post",
+        "type": "string",
+        "description": "The post being discussed",
+        "required": true,
+        "example": "Why is software so bloated?"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Seven sections covering OP, dominant positions, minority view, cited sources, what OP didn't address, tone, what to add."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at surfacing minority views."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; rough percentage estimates can be too confident."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; \u2018what OP didn't address\u2019 sometimes shallow."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to flatten distinct positions; specify minimum 3."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Multi-thread",
+        "description": "Same topic across HN + Reddit + Twitter.",
+        "prompt_snippet": "Add: \u2018inputs are threads from multiple platforms; compare how the conversation differs by platform.\u2019"
+      },
+      {
+        "label": "Argument map",
+        "description": "Output as argument structure.",
+        "prompt_snippet": "Replace positions with argument tree: claim \u2192 reasons \u2192 counter-reasons \u2192 counter-counters."
+      },
+      {
+        "label": "Toxicity audit",
+        "description": "Flag if thread is mostly heat, not light.",
+        "prompt_snippet": "Add Section 8: \u2018rate productive-discussion ratio 1-10; if low, summarize is mostly bickering, not insight.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Manufactures consensus that isn't there.",
+        "fix": "Re-pin: \u2018if positions are spread thin or contradictory, say so. \u2018No clear consensus\u2019 is valid.\u2019"
+      },
+      {
+        "symptom": "Identifies usernames.",
+        "fix": "Re-pin: \u2018never use specific usernames; always \u2018a commenter\u2019 or \u2018an engineer commented\u2019.\u2019"
+      },
+      {
+        "symptom": "Sample bias \u2014 over-quotes top comments.",
+        "fix": "Add: \u2018also consider middle-tier and late-thread comments where minority views often live.\u2019"
+      },
+      {
+        "symptom": "\u2018What to add\u2019 is generic.",
+        "fix": "Force: \u2018what to add must be specific \u2014 name a fact, source, or perspective not present.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "user-research-synthesizer",
+      "thematic-coding-from-transcripts"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "discussion-synthesis"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How long a thread can it summarize?",
+        "answer": "Practical: 200-500 comments fits modern long-context models. Beyond that, sample top + random selection and acknowledge."
+      },
+      {
+        "question": "Will the percentages be accurate?",
+        "answer": "Rough estimates only. They're directional, not statistical. Treat as \u2018about a quarter of substantive comments\u2019 vs precise percent."
+      }
+    ],
+    "meta_title": "Comment Thread Summarizer \u2014 Prompt",
+    "meta_description": "Distill long comment threads into positions, minority view, cited sources, OP gaps, and what a fresh commenter could add."
+  },
+  {
+    "slug": "internal-memo-from-decision",
+    "title": "Internal Memo From a Decision",
+    "tldr": "Drafts an internal team memo announcing a decision: context, decision, reasoning, what changes for whom, what's NOT changing, and how people can push back. Anti-\u2018email blast\u2019 format.",
+    "category": "writing-editing",
+    "tags": [
+      "internal-comms",
+      "memo",
+      "decisions",
+      "leadership"
+    ],
+    "best_for_tags": [
+      "leadership",
+      "change-management",
+      "team-comms"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Reorg announcement",
+        "example": "\u2018We're consolidating teams\u2019 \u2192 memo with context, rationale, what changes for whom."
+      },
+      {
+        "scenario": "Policy change",
+        "example": "\u2018Remote work policy is shifting\u2019 \u2192 memo with reasoning + dissent path."
+      },
+      {
+        "scenario": "Strategic pivot",
+        "example": "\u2018We're sunsetting product X\u2019 \u2192 memo explaining why + customer impact + team plan."
+      },
+      {
+        "scenario": "Hire / org change",
+        "example": "\u2018New VP starting\u2019 \u2192 context + reporting changes + onboarding plan."
+      }
+    ],
+    "when_not_to_use": "Skip for routine ops messages (those go in Slack/standup, not memo). Skip when the decision affects only one person \u2014 talk to them directly.",
+    "full_prompt": "You are drafting an internal memo from a leader. The decision is made; the memo announces and contextualizes.\n\nINPUT\n- Decision: {decision}\n- Why this decision (the real reason, not the polished one): {reasoning}\n- Audience: {audience}                          (whole company / engineering / specific team)\n- What's changing operationally: {changes}\n- What's NOT changing (important to call out): {non_changes}\n- Effective date: {effective_date}\n- Who can answer questions / hear concerns: {contact}\n\nOUTPUT \u2014 memo, 300-500 words\n\n## Structure\n\n1. SUBJECT LINE \u2014 specific, not \"Important Update\".\n\n2. OPENING (1-2 sentences). State the decision plainly. No buildup, no \"I want to share some news\".\n\n3. WHY (1 paragraph). The real reasoning. People can tell when reasoning is pretextual; respect them by being direct. Cite specific drivers if appropriate.\n\n4. WHAT'S CHANGING (bullets or short paragraphs). For each: who's affected, what the change is, effective when.\n\n5. WHAT'S NOT CHANGING (1 paragraph). Anchor the unchanged things explicitly. Reduces anxiety. (\"Your role, your manager, and your project assignments remain the same.\")\n\n6. WHAT YOU CAN DO (1 short section). 2-3 specific things:\n   - Where to ask questions\n   - When the next team discussion happens (date, time, channel)\n   - How to push back if you disagree\n\n7. CLOSE (1-2 sentences). Honest acknowledgement, no platitudes. (\"I know this isn't what some of you would have chosen; I'm available to discuss.\" beats \"Excited about this journey!\")\n\nRULES\n- Tone: direct, calm, acknowledging. Not corporate, not chummy.\n- Be honest about why. Pretextual reasoning (\"for strategic alignment\") erodes trust.\n- Don't ask for \"buy-in\" performatively. Either you've decided (announce it) or you're consulting (frame as consultation).\n- BANNED phrases: \"exciting opportunity\", \"going forward\", \"moving the needle\", \"synergies\".\n\nNow write the memo.",
+    "input_variables": [
+      {
+        "name": "decision",
+        "type": "string",
+        "description": "The decision being announced",
+        "required": true,
+        "example": "Sunsetting the consumer product to focus on B2B"
+      },
+      {
+        "name": "reasoning",
+        "type": "string",
+        "description": "Real reasoning (not polished)",
+        "required": true,
+        "example": "B2B revenue is 4x consumer and growing 3x faster. Consumer eats engineering time without proportional return."
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Who receives the memo",
+        "required": true,
+        "example": "Whole company (40 people)"
+      },
+      {
+        "name": "changes",
+        "type": "string",
+        "description": "Operational changes",
+        "required": true,
+        "example": "Consumer engineering team (4 people) shifts to B2B effective June 1. Consumer support continues for current users through end of year then sunsets."
+      },
+      {
+        "name": "non_changes",
+        "type": "string",
+        "description": "What stays the same",
+        "required": true,
+        "example": "No layoffs. Compensation unchanged. Reporting structure unchanged."
+      },
+      {
+        "name": "effective_date",
+        "type": "string",
+        "description": "Effective when",
+        "required": true,
+        "example": "June 1, 2026"
+      },
+      {
+        "name": "contact",
+        "type": "string",
+        "description": "Who hears questions/dissent",
+        "required": true,
+        "example": "CEO direct: 30-min slots Friday afternoon. Or DM with #consumer-pivot channel."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Memo with subject line, opening, why, what's changing, what's not, what you can do, close. 300-500 words."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Direct without corporate fluff."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes adds \u2018exciting\u2019 \u2014 banned word list helps."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Tends to over-warmth; re-pin direct tone."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Corporate-speak default; needs strong banned word enforcement."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Bad-news variant",
+        "description": "Layoffs / harder messages.",
+        "prompt_snippet": "Add: \u2018this is hard news. Lead with the impact on people. Be specific about support (severance, references, transition). Don't sugar-coat.\u2019"
+      },
+      {
+        "label": "All-hands followup",
+        "description": "After verbal announcement.",
+        "prompt_snippet": "Add: \u2018this memo follows the all-hands; assume people heard the headline. Focus on details + next steps + where to ask.\u2019"
+      },
+      {
+        "label": "Public version",
+        "description": "If the decision goes external.",
+        "prompt_snippet": "Add: \u2018also produce an external version (customer-facing) that preserves transparency about WHAT changes while protecting internal-specific details.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Sounds corporate.",
+        "fix": "Banned word list aggressive; rewrite \u2018moving forward\u2019 as \u2018starting June 1\u2019."
+      },
+      {
+        "symptom": "Buries the lead.",
+        "fix": "Re-pin: \u2018opening = decision in 1-2 sentences. No buildup.\u2019"
+      },
+      {
+        "symptom": "Asks for \u2018buy-in\u2019 performatively.",
+        "fix": "Add: \u2018either the decision is announced (don't pretend it's open) OR the memo is a consultation (frame explicitly).\u2019"
+      },
+      {
+        "symptom": "\u2018What's NOT changing\u2019 skipped.",
+        "fix": "This section is non-negotiable; reduces anxiety even when changes are major."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "executive-summary-1-page",
+      "meeting-decision-recorder",
+      "investor-update-monthly"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "internal-memo",
+      "change-management"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why include a dissent path?",
+        "answer": "People dissent regardless; making the path explicit means dissent comes to you (where you can engage) instead of into private channels (where it festers). Trust is built by inviting pushback."
+      },
+      {
+        "question": "Is 300-500 words enough?",
+        "answer": "For most decisions, yes. Longer memos go unread. If the decision needs more, layer: 500-word memo + linked deep-dive doc."
+      }
+    ],
+    "meta_title": "Internal Memo From a Decision \u2014 Prompt",
+    "meta_description": "Draft a 300-500 word internal memo: decision, real reasoning, what changes, what doesn't, how to push back. Direct, no corporate fluff."
+  },
+  {
     "slug": "blog-post-from-outline",
     "title": "Blog Post from Outline (voice-matched + sourced)",
     "category": "writing-editing",
