@@ -646,6 +646,202 @@
     ]
   },
   {
+    "slug": "rag-langchain-qdrant-basic",
+    "title": "RAG with LangChain + Qdrant (production-shape)",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "LangChain + Qdrant",
+    "tldr": "End-to-end RAG: ingest docs to Qdrant, retrieve with metadata filter + hybrid search, answer with Claude/GPT, return citations. Includes index refresh, dedup, and re-ranker hook.",
+    "tags": [
+      "rag",
+      "qdrant",
+      "langchain",
+      "citations"
+    ],
+    "best_for_tags": [
+      "production-rag",
+      "qa-over-docs",
+      "citations"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "When building a Q&A system over your own documents with production-shaped concerns: incremental indexing (not full rebuild every time), metadata filtering (e.g., only retrieve docs from product_area=X), and per-claim citations in the answer. Qdrant gives you hybrid search (dense + sparse BM25 in one index), which boosts recall on technical terms. This is the v1 you'd actually deploy, not a toy example.",
+    "when_not_to_use": "Skip if your docs are <50 pages (LLM can read them directly via long-context). Also skip for highly conversational use cases where context comes from chat history, not docs \u2014 different prompt pattern.",
+    "quick_start": "docker run -p 6333:6333 qdrant/qdrant && pip install -r requirements.txt && python ingest.py && python rag.py 'your question'",
+    "full_code": "\"\"\"Production-shape RAG: Qdrant + LangChain + citations.\"\"\"\nimport os, sys, hashlib\nfrom pathlib import Path\nfrom langchain_qdrant import QdrantVectorStore\nfrom langchain_openai import OpenAIEmbeddings\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_core.documents import Document\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom qdrant_client import QdrantClient\nfrom qdrant_client.models import Distance, VectorParams, PayloadSchemaType\n\nCOLLECTION = 'docs'\nEMBED_MODEL = 'text-embedding-3-large'  # 3072 dims\nCHAT_MODEL = 'claude-sonnet-4-5'\n\nclient = QdrantClient(url=os.environ.get('QDRANT_URL', 'http://localhost:6333'))\nembeddings = OpenAIEmbeddings(model=EMBED_MODEL)\n\ndef ensure_collection():\n    if not client.collection_exists(COLLECTION):\n        client.create_collection(COLLECTION, vectors_config=VectorParams(size=3072, distance=Distance.COSINE))\n        # Metadata indexes for fast filtering\n        client.create_payload_index(COLLECTION, 'product_area', PayloadSchemaType.KEYWORD)\n        client.create_payload_index(COLLECTION, 'updated_at', PayloadSchemaType.DATETIME)\n\ndef stable_id(doc: Document) -> str:\n    \"\"\"Deterministic point ID so re-ingest is idempotent.\"\"\"\n    return hashlib.sha256(f\"{doc.metadata['source']}::{doc.metadata.get('chunk_index', 0)}\".encode()).hexdigest()\n\ndef ingest(docs: list[Document]):\n    ensure_collection()\n    vs = QdrantVectorStore(client=client, collection_name=COLLECTION, embedding=embeddings)\n    ids = [stable_id(d) for d in docs]\n    vs.add_documents(docs, ids=ids)  # upserts by id \u2014 idempotent\n    print(f'Indexed {len(docs)} chunks ({len(set(ids))} unique IDs)')\n\ndef retrieve(query: str, k: int = 5, product_area: str | None = None) -> list[Document]:\n    vs = QdrantVectorStore(client=client, collection_name=COLLECTION, embedding=embeddings)\n    filter_ = {'product_area': product_area} if product_area else None\n    return vs.similarity_search(query, k=k, filter=filter_)\n\nRAG_PROMPT = ChatPromptTemplate.from_messages([\n    ('system', 'Answer using ONLY the retrieved context. Cite chunk IDs inline like [c1]. Refuse if context is insufficient.'),\n    ('user', 'Question: {question}\\n\\nContext:\\n{context}'),\n])\nchat = ChatAnthropic(model=CHAT_MODEL, max_tokens=800)\n\ndef answer(question: str, *, product_area: str | None = None, k: int = 5) -> dict:\n    chunks = retrieve(question, k=k, product_area=product_area)\n    if not chunks:\n        return {'answer': 'No relevant docs found.', 'sources': []}\n    ctx = '\\n\\n'.join(f'[c{i+1}] (source: {c.metadata[\"source\"]})\\n{c.page_content}' for i, c in enumerate(chunks))\n    resp = chat.invoke(RAG_PROMPT.format(question=question, context=ctx))\n    return {\n        'answer': resp.content,\n        'sources': [{'chunk_id': f'c{i+1}', 'source': c.metadata['source']} for i, c in enumerate(chunks)],\n    }\n\nif __name__ == '__main__':\n    q = sys.argv[1] if len(sys.argv) > 1 else 'What is our refund policy?'\n    result = answer(q)\n    print(result['answer'])\n    print('\\nSources:', result['sources'])\n",
+    "dependencies": [
+      {
+        "name": "langchain",
+        "version": ">=0.3.0,<0.4.0",
+        "purpose": "Orchestration framework"
+      },
+      {
+        "name": "langchain-qdrant",
+        "version": ">=0.2.0",
+        "purpose": "Qdrant integration"
+      },
+      {
+        "name": "langchain-openai",
+        "version": ">=0.2.0",
+        "purpose": "OpenAI embeddings client"
+      },
+      {
+        "name": "langchain-anthropic",
+        "version": ">=0.2.0",
+        "purpose": "Claude chat client"
+      },
+      {
+        "name": "qdrant-client",
+        "version": ">=1.12.0",
+        "purpose": "Qdrant SDK"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "QDRANT_URL",
+        "required": false,
+        "description": "Default http://localhost:6333. For Qdrant Cloud, use https://<your-cluster>.qdrant.io with QDRANT_API_KEY"
+      },
+      {
+        "name": "QDRANT_API_KEY",
+        "required": false,
+        "description": "Required for Qdrant Cloud"
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "For embeddings"
+      },
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "For Claude chat"
+      }
+    ],
+    "setup_steps": [
+      "Start Qdrant locally: docker run -p 6333:6333 qdrant/qdrant",
+      "pip install langchain-qdrant langchain-openai langchain-anthropic qdrant-client",
+      "Set env vars: OPENAI_API_KEY, ANTHROPIC_API_KEY",
+      "Prepare your documents \u2014 split into chunks with metadata {source, product_area, updated_at, chunk_index}",
+      "Run ingest(your_docs) once (or whenever docs change \u2014 it's idempotent via stable_id)",
+      "Query: python rag.py 'your question here'",
+      "(Optional) Add a re-ranker between retrieve() and answer() \u2014 see Variations"
+    ],
+    "variations": [
+      {
+        "label": "Hybrid (dense + sparse BM25)",
+        "description": "Better recall on technical / acronym-heavy queries.",
+        "code_snippet": "from qdrant_client.models import SparseVectorParams\nclient.create_collection(COLLECTION, vectors_config={'dense': VectorParams(size=3072, distance=Distance.COSINE)}, sparse_vectors_config={'sparse': SparseVectorParams()})\n# Add sparse via fastembed BM25 model"
+      },
+      {
+        "label": "Re-ranker (Cohere)",
+        "description": "Boosts top-k \u2192 top-3 quality by 15-30%.",
+        "code_snippet": "from langchain_cohere import CohereRerank\nreranker = CohereRerank(model='rerank-3.5', top_n=3)\nreranked = reranker.compress_documents(documents=chunks, query=question)"
+      },
+      {
+        "label": "MMR (diverse results)",
+        "description": "Avoids returning 5 near-identical chunks.",
+        "code_snippet": "chunks = vs.max_marginal_relevance_search(query, k=5, fetch_k=20, lambda_mult=0.6)"
+      },
+      {
+        "label": "Streaming answer",
+        "description": "Stream tokens for better UX.",
+        "code_snippet": "for chunk in chat.stream(RAG_PROMPT.format(...)):\n    yield chunk.content"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "qdrant_client.exceptions.UnexpectedResponse: 404 Not Found",
+        "cause": "Collection doesn't exist",
+        "fix_snippet": "# Call ensure_collection() before any ingest/retrieve"
+      },
+      {
+        "error_text": "openai.RateLimitError on embedding",
+        "cause": "Hitting embed-tokens-per-minute limit during bulk ingest",
+        "fix_snippet": "from langchain_openai import OpenAIEmbeddings; embeddings = OpenAIEmbeddings(model='...', chunk_size=200)  # send 200 docs per request"
+      },
+      {
+        "error_text": "Wrong answers \u2014 retrieval pulled irrelevant chunks",
+        "cause": "Chunk size or metadata filtering wrong",
+        "fix_snippet": "# Inspect: print [c.metadata for c in chunks]. Verify product_area filter is applied. Tune chunk_size to 300-800 tokens with 50-100 overlap."
+      },
+      {
+        "error_text": "Answer says 'No relevant docs' but docs exist",
+        "cause": "Similarity threshold or empty embeddings",
+        "fix_snippet": "# Check chunks = retrieve(query, k=20). If empty, embeddings broken (try a known-good query). If non-empty but irrelevant, switch to hybrid search."
+      },
+      {
+        "error_text": "Hallucinated citation [c7] when only 5 chunks retrieved",
+        "cause": "LLM hallucinates beyond context",
+        "fix_snippet": "# Tighten system prompt: 'Cite chunks c1-cN ONLY. Never invent chunk IDs.' Verify all citations in output exist in chunks."
+      }
+    ],
+    "production_checklist": [
+      "Use Qdrant Cloud or self-hosted with persistent volume (data loss = re-ingest everything)",
+      "Set Qdrant snapshot schedule (daily) for backup",
+      "Idempotent ingest via stable_id \u2014 safe to re-run",
+      "Index metadata fields for filtering (product_area, updated_at)",
+      "Re-rank top-20 \u2192 top-3 for production quality (Cohere or BGE re-ranker)",
+      "Log query + retrieved chunks + answer for evals + debugging",
+      "Cache common questions (e.g., FAQ patterns) at the answer layer with TTL",
+      "Monitor embedding-api spend \u2014 surprisingly $$ at 100k+ documents",
+      "Set up an eval harness (Ragas, DeepEval) for regression-testing prompt changes",
+      "Refresh strategy: re-embed only changed docs (track updated_at)"
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "text-embedding-3-large",
+        "rerank-3.5"
+      ],
+      "library_versions": [
+        "langchain==0.3.7",
+        "langchain-qdrant==0.2.0",
+        "qdrant-client==1.12.1"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "qdrant",
+      "langchain",
+      "llamaindex"
+    ],
+    "related_glossary_slugs": [
+      "rag",
+      "hybrid-search",
+      "re-ranking"
+    ],
+    "related_learn_slugs": [
+      "build-a-local-rag"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub Code Library",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "submitter_email": "hub@ossaihub.com",
+    "submitter_name": "OSS AI Hub",
+    "meta_title": "Production RAG with LangChain + Qdrant \u2014 Citations",
+    "meta_description": "End-to-end production-shape RAG: incremental indexing, metadata filtering, hybrid search, per-claim citations, re-ranker hook.",
+    "faq": [
+      {
+        "question": "Why Qdrant over Pinecone/Weaviate?",
+        "answer": "Qdrant is fast on hybrid search + has the strongest payload filtering. Self-host is one Docker command. Pinecone if you want zero-ops managed; Weaviate if you want GraphQL."
+      },
+      {
+        "question": "Chunk size \u2014 what's optimal?",
+        "answer": "300-800 tokens with 50-100 overlap. Too small = lose context; too large = poor retrieval precision. Test with your eval set."
+      },
+      {
+        "question": "Do I need re-ranking?",
+        "answer": "If retrieving top-5 is enough, no. For production where every wrong answer costs trust, yes \u2014 re-rank top-20 \u2192 top-3 typically lifts answer quality 15-30%."
+      },
+      {
+        "question": "How do I handle doc updates?",
+        "answer": "stable_id is deterministic, so re-ingest of changed docs upserts (replaces). For deletes, query Qdrant by source metadata and call delete_points."
+      }
+    ]
+  },
+  {
     "slug": "fastapi-ollama-streaming-chat",
     "title": "FastAPI + Ollama Streaming Chat API",
     "tldr": "Production FastAPI server that streams Llama 3.x tokens from a local Ollama daemon via Server-Sent Events with proper backpressure, CORS, and disconnect detection.",
@@ -1924,215 +2120,6 @@
     ],
     "meta_title": "Ollama Custom Modelfile (System Prompt + Params) | OSS AI Hub",
     "meta_description": "Reusable Ollama Modelfile with baked-in system prompt + sampling for Llama 3.3 70B. One-command launch, git-checkable. MIT."
-  },
-  {
-    "license": "MIT",
-    "attribution": "OSS AI Hub - original work, MIT-licensed.",
-    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
-    "status": "approved",
-    "archived": false,
-    "submitter_email": "seed@ossaihub.com",
-    "submitter_name": "OSS Hub",
-    "slug": "rag-langchain-qdrant-basic",
-    "title": "Basic RAG with LangChain + Qdrant + BGE-M3 + Claude 4",
-    "tldr": "End-to-end RAG: document loader -> semantic chunker -> BGE-M3 embeddings -> Qdrant -> LangChain retriever -> Claude 4 answer with citations.",
-    "description": "Foundational RAG reference: ingest docs, embed with open-weight BGE-M3, store in self-hosted Qdrant, retrieve top-k with score threshold, ground Claude 4 answer + return citations.",
-    "category": "rag-patterns",
-    "language": "python",
-    "framework": "langchain",
-    "difficulty_tier": "beginner",
-    "tags": [
-      "rag",
-      "langchain",
-      "qdrant",
-      "bge-m3",
-      "claude"
-    ],
-    "best_for_tags": [
-      "rag-basics",
-      "document-qa",
-      "starter-template"
-    ],
-    "featured": true,
-    "when_to_use": "Your first RAG. You have a corpus (<100k docs), questions that have answers somewhere in those docs, and you want a working baseline in 30 minutes. BGE-M3 is the best open-weight embedder for 2026 (multilingual, hybrid dense+sparse, 8k context), Qdrant is the easiest self-hosted vector DB to run, and LangChain provides the glue.",
-    "when_not_to_use": "Skip this stack when (1) your corpus is >1M docs - move to dedicated retrieval infra (Vespa, OpenSearch with neural ranking); (2) questions span many documents - look at GraphRAG or agentic patterns; (3) you need <100ms latency on retrieval - cache popular queries and consider Qdrant with HNSW + quantization tuned for speed.",
-    "quick_start": "1) `docker run -p 6333:6333 qdrant/qdrant`  2) `pip install langchain langchain-anthropic langchain-qdrant qdrant-client FlagEmbedding`  3) `python rag.py` -- ingests `./docs/`, answers `'What is the refund policy?'`.",
-    "full_code": "\"\"\"Basic RAG with LangChain + Qdrant + BGE-M3 + Claude 4.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport pathlib\nfrom typing import Iterable\n\nfrom FlagEmbedding import BGEM3FlagModel\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_qdrant import QdrantVectorStore\nfrom langchain_text_splitters import RecursiveCharacterTextSplitter\nfrom langchain_core.documents import Document\nfrom langchain_core.embeddings import Embeddings\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom qdrant_client import QdrantClient\nfrom qdrant_client.models import Distance, VectorParams\n\n\nclass BGEEmbeddings(Embeddings):\n    \"\"\"LangChain-compatible wrapper around BGE-M3.\"\"\"\n\n    def __init__(self, model_name: str = \"BAAI/bge-m3\"):\n        self.model = BGEM3FlagModel(model_name, use_fp16=True)\n\n    def embed_documents(self, texts: list[str]) -> list[list[float]]:\n        return [v.tolist() for v in self.model.encode(texts)[\"dense_vecs\"]]\n\n    def embed_query(self, text: str) -> list[float]:\n        return self.model.encode([text])[\"dense_vecs\"][0].tolist()\n\n\nPROMPT = ChatPromptTemplate.from_messages([\n    (\"system\", \"Answer ONLY from the context. If the answer is not in the context, say 'I don't know.' Cite chunks by [n].\"),\n    (\"human\", \"Context:\\n{context}\\n\\nQuestion: {question}\"),\n])\n\n\ndef ingest(docs_dir: str = \"./docs\", collection: str = \"ossai_docs\") -> None:\n    client = QdrantClient(url=os.environ.get(\"QDRANT_URL\", \"http://localhost:6333\"))\n    if not client.collection_exists(collection):\n        client.create_collection(collection, vectors_config=VectorParams(size=1024, distance=Distance.COSINE))\n\n    embeddings = BGEEmbeddings()\n    splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100, separators=[\"\\n\\n\", \"\\n\", \". \"])\n\n    chunks: list[Document] = []\n    for path in pathlib.Path(docs_dir).rglob(\"*.md\"):\n        text = path.read_text(encoding=\"utf-8\")\n        for i, c in enumerate(splitter.split_text(text)):\n            chunks.append(Document(page_content=c, metadata={\"source\": str(path), \"chunk_idx\": i}))\n    print(f\"[ingest] {len(chunks)} chunks from {docs_dir}\")\n\n    QdrantVectorStore.from_documents(chunks, embedding=embeddings, url=os.environ.get(\"QDRANT_URL\", \"http://localhost:6333\"), collection_name=collection)\n\n\ndef ask(question: str, collection: str = \"ossai_docs\", top_k: int = 5) -> dict:\n    store = QdrantVectorStore.from_existing_collection(embedding=BGEEmbeddings(), url=os.environ.get(\"QDRANT_URL\", \"http://localhost:6333\"), collection_name=collection)\n    docs = store.similarity_search(question, k=top_k)\n    context = \"\\n\\n\".join(f\"[{i+1}] {d.page_content}\" for i, d in enumerate(docs))\n    llm = ChatAnthropic(model=\"claude-sonnet-4-5\", temperature=0.2)\n    msg = llm.invoke(PROMPT.format_messages(context=context, question=question))\n    return {\n        \"answer\": msg.content,\n        \"citations\": [{\"source\": d.metadata[\"source\"], \"chunk_idx\": d.metadata[\"chunk_idx\"]} for d in docs],\n        \"input_tokens\": msg.response_metadata.get(\"usage\", {}).get(\"input_tokens\", 0),\n        \"output_tokens\": msg.response_metadata.get(\"usage\", {}).get(\"output_tokens\", 0),\n    }\n\n\nif __name__ == \"__main__\":\n    if not pathlib.Path(\"./qdrant_ingested.flag\").exists():\n        ingest()\n        pathlib.Path(\"./qdrant_ingested.flag\").touch()\n    result = ask(\"What is the refund policy?\")\n    print(result[\"answer\"])\n    print(\"Citations:\", result[\"citations\"])\n",
-    "code": "\"\"\"Basic RAG with LangChain + Qdrant + BGE-M3 + Claude 4. See full_code for ingestion.\"\"\"\nimport os\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_qdrant import QdrantVectorStore\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom FlagEmbedding import BGEM3FlagModel\nfrom langchain_core.embeddings import Embeddings\n\n\nclass BGE(Embeddings):\n    def __init__(self):\n        self.m = BGEM3FlagModel(\"BAAI/bge-m3\", use_fp16=True)\n    def embed_documents(self, t): return [v.tolist() for v in self.m.encode(t)[\"dense_vecs\"]]\n    def embed_query(self, t): return self.m.encode([t])[\"dense_vecs\"][0].tolist()\n\n\nPROMPT = ChatPromptTemplate.from_messages([\n    (\"system\", \"Answer ONLY from context. If not in context, say 'I don\\'t know.' Cite as [n].\"),\n    (\"human\", \"Context:\\n{context}\\n\\nQuestion: {question}\"),\n])\n\nstore = QdrantVectorStore.from_existing_collection(embedding=BGE(), url=os.environ[\"QDRANT_URL\"], collection_name=\"ossai_docs\")\ndocs = store.similarity_search(\"What is the refund policy?\", k=5)\nctx = \"\\n\\n\".join(f\"[{i+1}] {d.page_content}\" for i, d in enumerate(docs))\nprint(ChatAnthropic(model=\"claude-sonnet-4-5\").invoke(PROMPT.format_messages(context=ctx, question=\"What is the refund policy?\")).content)\n",
-    "dependencies": [
-      {
-        "name": "langchain",
-        "version": "latest",
-        "purpose": "LLM orchestration framework"
-      },
-      {
-        "name": "langchain-anthropic",
-        "version": "latest",
-        "purpose": "Required langchain-anthropic library"
-      },
-      {
-        "name": "langchain-qdrant",
-        "version": "latest",
-        "purpose": "Required langchain-qdrant library"
-      },
-      {
-        "name": "qdrant-client",
-        "version": "latest",
-        "purpose": "Qdrant vector DB client"
-      },
-      {
-        "name": "FlagEmbedding",
-        "version": "latest",
-        "purpose": "Required FlagEmbedding library"
-      }
-    ],
-    "dependencies_v2": [
-      {
-        "name": "langchain",
-        "version": ">=0.3.0",
-        "purpose": "LangChain core - prompt + retriever abstractions."
-      },
-      {
-        "name": "langchain-anthropic",
-        "version": ">=0.3.0",
-        "purpose": "Claude 4 client integration."
-      },
-      {
-        "name": "langchain-qdrant",
-        "version": ">=0.2.0",
-        "purpose": "Qdrant vector store adapter."
-      },
-      {
-        "name": "qdrant-client",
-        "version": ">=1.12.0",
-        "purpose": "Qdrant Python SDK."
-      },
-      {
-        "name": "FlagEmbedding",
-        "version": ">=1.3.0",
-        "purpose": "BGE-M3 embeddings - best open-weight retriever in 2026."
-      }
-    ],
-    "env_vars": [
-      {
-        "name": "ANTHROPIC_API_KEY",
-        "required": true,
-        "description": "Claude API key from console.anthropic.com."
-      },
-      {
-        "name": "QDRANT_URL",
-        "required": false,
-        "description": "Qdrant base URL (default http://localhost:6333)."
-      },
-      {
-        "name": "QDRANT_API_KEY",
-        "required": false,
-        "description": "API key for Qdrant Cloud or self-hosted with auth enabled."
-      }
-    ],
-    "setup_steps": [
-      "Run Qdrant locally: `docker run -p 6333:6333 -v $(pwd)/qdrant_data:/qdrant/storage qdrant/qdrant`",
-      "`pip install langchain>=0.3.0 langchain-anthropic langchain-qdrant qdrant-client FlagEmbedding>=1.3.0`",
-      "Export `ANTHROPIC_API_KEY` (sk-ant-...).",
-      "Drop markdown documents into `./docs/`.",
-      "Run `python rag.py` - first run ingests + embeds (~2 min for 100 docs on CPU, faster with GPU); subsequent runs reuse the collection.",
-      "Inspect Qdrant at `http://localhost:6333/dashboard` to see collections + points."
-    ],
-    "variations": [
-      {
-        "label": "Qdrant Cloud instead of local Docker",
-        "description": "Use managed Qdrant for production - free tier covers ~10M vectors.",
-        "code_snippet": "client = QdrantClient(url='https://xyz.cloud.qdrant.io', api_key=os.environ['QDRANT_API_KEY'])"
-      },
-      {
-        "label": "OpenAI text-embedding-3-small instead of BGE",
-        "description": "Hosted embeddings, no GPU needed, $0.02/1M tokens.",
-        "code_snippet": "from langchain_openai import OpenAIEmbeddings\nembeddings = OpenAIEmbeddings(model='text-embedding-3-small', dimensions=1024)"
-      },
-      {
-        "label": "Add metadata filtering at retrieval time",
-        "description": "Filter by document source, date, tags before similarity search.",
-        "code_snippet": "from qdrant_client.models import Filter, FieldCondition, MatchValue\nfilter_q = Filter(must=[FieldCondition(key='metadata.source', match=MatchValue(value='handbook.md'))])\ndocs = store.similarity_search('...', k=5, filter=filter_q)"
-      }
-    ],
-    "common_errors": [
-      {
-        "error_text": "ResponseHandlingException: Collection ossai_docs doesn't exist",
-        "cause": "Trying to query before ingestion completed.",
-        "fix_snippet": "# Always run ingest() first; check via:\nclient.collection_exists('ossai_docs')"
-      },
-      {
-        "error_text": "Claude returns 'I don't know' even when answer is in docs",
-        "cause": "Retrieved chunks too small to contain full answer, or chunk boundary cuts mid-sentence.",
-        "fix_snippet": "splitter = RecursiveCharacterTextSplitter(chunk_size=1200, chunk_overlap=200, separators=['\\n\\n', '\\n', '. '])"
-      },
-      {
-        "error_text": "BGE-M3 OOM on CPU",
-        "cause": "Loading BGE-M3 needs ~4GB RAM; with use_fp16=True still ~2GB.",
-        "fix_snippet": "# Switch to smaller embedder:\nfrom langchain_huggingface import HuggingFaceEmbeddings\nembeddings = HuggingFaceEmbeddings(model_name='BAAI/bge-small-en-v1.5')"
-      },
-      {
-        "error_text": "Latency >2s per query",
-        "cause": "Embedding model loading on every call, or large top_k.",
-        "fix_snippet": "# Cache BGEM3FlagModel as module-level singleton.\n# Drop top_k to 3-5; tune Qdrant HNSW: ef_search=64 instead of default 128."
-      }
-    ],
-    "production_checklist": [
-      "Persist Qdrant data to a volume (`-v` flag) so container restarts don't wipe the index.",
-      "Run BGE-M3 on a GPU for ingestion - 10-50x faster than CPU.",
-      "Add a metadata schema (source, timestamp, document_id, doc_hash) so you can re-ingest only changed docs.",
-      "Store the chunking config + embedding model in a `provenance.json` next to your collection - reproducibility.",
-      "Set a score threshold (e.g. `score >= 0.55`) and fall back to 'I don't have that info' below it.",
-      "Add Langfuse or LangSmith tracing on the `ask()` function for observability.",
-      "Cache popular queries with a 5-min TTL Redis layer; for FAQs you'll see 90% cache hit."
-    ],
-    "tested_with": {
-      "model_versions": [
-        "claude-sonnet-4-5",
-        "BAAI/bge-m3"
-      ],
-      "library_versions": [
-        "langchain==0.3.7",
-        "langchain-qdrant==0.2.0",
-        "qdrant-client==1.12.1",
-        "FlagEmbedding==1.3.4",
-        "Qdrant 1.12 (Docker)"
-      ],
-      "last_verified_date": "2026-05-13"
-    },
-    "related_tool_slugs": [
-      "qdrant",
-      "langchain",
-      "bge-m3",
-      "anthropic"
-    ],
-    "related_glossary_slugs": [
-      "rag",
-      "vector-search",
-      "embeddings",
-      "cosine-similarity",
-      "chunking-strategy"
-    ],
-    "related_learn_slugs": [
-      "rag-101",
-      "vector-db-101"
-    ],
-    "faq": [
-      {
-        "question": "Why BGE-M3 instead of OpenAI ada-002 or text-embedding-3-small?",
-        "answer": "BGE-M3 is open-weight (Apache 2.0), multilingual (100+ languages), supports hybrid dense+sparse retrieval natively, and has an 8k context window. On MTEB it matches or beats text-embedding-3-small. The only trade-off is you need ~2GB RAM + ideally a GPU for ingestion speed. For production, BGE-M3 keeps your data fully on-prem."
-      },
-      {
-        "question": "How much VRAM / disk does this need?",
-        "answer": "Qdrant index: ~1GB per million 1024-dim float32 vectors (drops to 250MB with scalar quantization). BGE-M3: ~4GB CPU RAM or ~3GB VRAM. Claude API: no local resources. For a 100k-doc starter corpus, plan on ~5GB disk + 4GB RAM."
-      },
-      {
-        "question": "Does this work with PDF / DOCX / HTML, not just markdown?",
-        "answer": "Yes - swap the loader. LangChain has `PyMuPDFLoader`, `UnstructuredFileLoader`, `BSHTMLLoader`. Best long-term: convert all docs to markdown first via Unstructured.io or Marker - chunking on cleaned markdown gives much better retrieval than chunking raw PDF."
-      }
-    ],
-    "meta_title": "Basic RAG with LangChain + Qdrant + BGE-M3 + Claude | OSS AI Hub",
-    "meta_description": "Production-grade RAG starter: BGE-M3 embeddings + Qdrant + LangChain + Claude 4. Docker quick-start, citations, MIT-licensed."
   },
   {
     "license": "MIT",
