@@ -12186,5 +12186,1045 @@
     "faq": [],
     "meta_title": "HuggingFace TEI (Text Embeddings Inference Server) | OSS AI Hub",
     "meta_description": "HuggingFace TEI server for BGE / Jina / Cohere-style embedders. 30k tok/s on H100, OpenAI-compatible embeddings endpoint."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "late-chunking-jina",
+    "title": "Late Chunking with Jina Embeddings v3",
+    "tldr": "Embed the whole document then chunk the token-level outputs. Preserves cross-sentence context for retrieval. Long-context embedders.",
+    "description": "Embed the whole document then chunk the token-level outputs. Preserves cross-sentence context for retrieval. Long-context embedders.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "jina",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "late-chunking",
+      "jina",
+      "long-context"
+    ],
+    "best_for_tags": [
+      "long-document",
+      "retrieval-quality"
+    ],
+    "featured": false,
+    "when_to_use": "Long docs where cross-section context matters. Late chunking embeds the full doc first - small chunks inherit cross-chunk context naturally.",
+    "when_not_to_use": "Skip when (1) short docs; (2) embedder doesn't support long context (BGE-M3, Jina v3, voyage-3 do); (3) cost-sensitive (embedding cost ~5x).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from transformers import AutoModel, AutoTokenizer\nimport torch\n\nmodel = AutoModel.from_pretrained('jinaai/jina-embeddings-v3', trust_remote_code=True)\ntok = AutoTokenizer.from_pretrained('jinaai/jina-embeddings-v3')\n\ndef late_chunk(text, chunk_tokens=128):\n    # Tokenize full doc + embed all token positions\n    inputs = tok(text, return_tensors='pt', truncation=True, max_length=8192)\n    with torch.no_grad():\n        token_embeddings = model(**inputs)[0][0]  # [seq_len, dim]\n    # Pool over chunk windows\n    chunks = []\n    for i in range(0, len(token_embeddings), chunk_tokens):\n        chunk_emb = token_embeddings[i:i+chunk_tokens].mean(dim=0)\n        chunks.append(chunk_emb.numpy())\n    return chunks\n",
+    "dependencies": [
+      "transformers",
+      "torch"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "transformers",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "torch",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install transformers torch"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Late Chunking with Jina Embeddings v3 | OSS AI Hub",
+    "meta_description": "Embed the whole document then chunk the token-level outputs. Preserves cross-sentence context for retrieval. Long-context embedders."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "colbert-late-interaction-rag",
+    "title": "ColBERT Late-Interaction RAG (RAGatouille)",
+    "tldr": "ColBERTv2 token-level late-interaction retrieval via RAGatouille. Higher accuracy than dense single-vector at 10x storage cost.",
+    "description": "ColBERTv2 token-level late-interaction retrieval via RAGatouille. Higher accuracy than dense single-vector at 10x storage cost.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "ragatouille",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "colbert",
+      "late-interaction",
+      "rag"
+    ],
+    "best_for_tags": [
+      "retrieval-accuracy",
+      "dense-passage"
+    ],
+    "featured": false,
+    "when_to_use": "When retrieval quality matters more than storage. ColBERT's per-token embeddings + late interaction (MaxSim) beats single-vector dense on BEIR by ~5-10 points.",
+    "when_not_to_use": "Skip when (1) storage-constrained (10x size vs single-vector); (2) >10M docs (sharding gets complex); (3) you already nail it with hybrid+rerank.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from ragatouille import RAGPretrainedModel\n\nrag = RAGPretrainedModel.from_pretrained('colbert-ir/colbertv2.0')\nrag.index(\n    collection=['doc1 text...', 'doc2 text...', '...'],\n    index_name='ossai',\n    max_document_length=512,\n)\nresults = rag.search(query='What is the refund policy?', k=5)\nfor r in results:\n    print(r['score'], r['content'][:80])\n",
+    "dependencies": [
+      "ragatouille"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "ragatouille",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install ragatouille"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "ColBERT Late-Interaction RAG (RAGatouille) | OSS AI Hub",
+    "meta_description": "ColBERTv2 token-level late-interaction retrieval via RAGatouille. Higher accuracy than dense single-vector at 10x storage cost."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "rag-with-citations-grounding",
+    "title": "RAG with Inline Citations (Verifiable Grounding)",
+    "tldr": "Every sentence in the answer cites its source chunk by ID. Citation-faithfulness eval + UI rendering helpers.",
+    "description": "Every sentence in the answer cites its source chunk by ID. Citation-faithfulness eval + UI rendering helpers.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "llamaindex",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "citations",
+      "grounding",
+      "llamaindex"
+    ],
+    "best_for_tags": [
+      "trust",
+      "citations",
+      "enterprise"
+    ],
+    "featured": false,
+    "when_to_use": "Enterprise/legal/medical RAG where users must verify every claim. Inline citations turn the LLM into a research assistant rather than an oracle.",
+    "when_not_to_use": "Skip when (1) chat-style traffic where citations clutter; (2) summarization where citing every sentence is noise; (3) creative writing.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from llama_index.core import VectorStoreIndex\nfrom llama_index.core.query_engine import CitationQueryEngine\n\nindex = VectorStoreIndex.from_documents(docs)\nquery_engine = CitationQueryEngine.from_args(\n    index, similarity_top_k=5, citation_chunk_size=512,\n)\nresponse = query_engine.query('What is the refund window?')\nprint(response.response)\nfor source in response.source_nodes:\n    print(f\"[{source.node_id[:8]}] {source.node.get_content()[:80]}\")\n",
+    "dependencies": [
+      "llama-index"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "llama-index",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install llama-index"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "RAG with Inline Citations (Verifiable Grounding) | OSS AI Hub",
+    "meta_description": "Every sentence in the answer cites its source chunk by ID. Citation-faithfulness eval + UI rendering helpers."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "long-context-rag-claude-200k",
+    "title": "Long-Context RAG with Claude 200K (Skip Chunking)",
+    "tldr": "Skip chunking entirely: stuff up to 200k tokens of context into Claude. Best for medium corpora (<200k token total).",
+    "description": "Skip chunking entirely: stuff up to 200k tokens of context into Claude. Best for medium corpora (<200k token total).",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "anthropic",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "long-context",
+      "anthropic",
+      "no-chunking"
+    ],
+    "best_for_tags": [
+      "small-corpus",
+      "simplicity"
+    ],
+    "featured": true,
+    "when_to_use": "Small corpora (<200k tokens, ~500 pages). No chunking + no vector DB. Claude's 200k context just reads everything. Best retrieval quality possible.",
+    "when_not_to_use": "Skip when (1) corpus >200k tokens; (2) cost-sensitive ($0.60 per query at full context); (3) latency-sensitive (~2s minimum).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from anthropic import Anthropic\nclient = Anthropic()\n\nDOCS = '\\n\\n'.join([open(p).read() for p in ['policy.md', 'support.md', 'pricing.md']])  # <200k tokens total\n\ndef answer(question: str) -> str:\n    resp = client.messages.create(\n        model='claude-sonnet-4-5', max_tokens=500,\n        system=[{'type':'text','text':f'Answer from these docs ONLY:\\n\\n{DOCS}','cache_control':{'type':'ephemeral'}}],\n        messages=[{'role':'user','content':question}],\n    )\n    return resp.content[0].text\n",
+    "dependencies": [
+      "anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "anthropic",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install anthropic"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Long-Context RAG with Claude 200K (Skip Chunking) | OSS AI Hub",
+    "meta_description": "Skip chunking entirely: stuff up to 200k tokens of context into Claude. Best for medium corpora (<200k token total)."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "rag-evaluation-ragas",
+    "title": "RAG Evaluation with Ragas (Now Featured Twice)",
+    "tldr": "Already covered as ragas-rag-eval in evaluation category - see that record for the production recipe.",
+    "description": "Already covered as ragas-rag-eval in evaluation category - see that record for the production recipe.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "ragas",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "ragas",
+      "rag-eval"
+    ],
+    "best_for_tags": [
+      "rag-eval",
+      "production-rag"
+    ],
+    "featured": false,
+    "when_to_use": "Skip - this is a duplicate signal pointing to /code/ragas-rag-eval.",
+    "when_not_to_use": "See /code/ragas-rag-eval - same recipe.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# See /code/ragas-rag-eval\n",
+    "dependencies": [
+      "ragas"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "ragas",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install ragas"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "RAG Evaluation with Ragas (Now Featured Twice) | OSS AI Hub",
+    "meta_description": "Already covered as ragas-rag-eval in evaluation category - see that record for the production recipe."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "semantic-chunker-tiktoken",
+    "title": "Semantic Chunker with tiktoken (Boundary-Aware)",
+    "tldr": "Semantic chunker that respects sentence/paragraph boundaries via tiktoken + sentence-transformers similarity. Beats fixed-size chunking 5-15%.",
+    "description": "Semantic chunker that respects sentence/paragraph boundaries via tiktoken + sentence-transformers similarity. Beats fixed-size chunking 5-15%.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "langchain",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "chunking",
+      "semantic",
+      "tiktoken"
+    ],
+    "best_for_tags": [
+      "chunking",
+      "retrieval-quality"
+    ],
+    "featured": false,
+    "when_to_use": "You're getting weird retrieval results from naive fixed-size chunking (split mid-sentence, lost context). Semantic chunker splits at low-similarity boundaries between sentences.",
+    "when_not_to_use": "Skip when (1) parent-child already solves it; (2) very short docs; (3) latency-sensitive ingestion.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from langchain_experimental.text_splitter import SemanticChunker\nfrom langchain_huggingface import HuggingFaceEmbeddings\n\nembeddings = HuggingFaceEmbeddings(model_name='BAAI/bge-small-en-v1.5')\nchunker = SemanticChunker(\n    embeddings,\n    breakpoint_threshold_type='percentile',\n    breakpoint_threshold_amount=90,\n)\nchunks = chunker.split_text(open('long_doc.md').read())\nprint(f'{len(chunks)} semantic chunks')\n",
+    "dependencies": [
+      "langchain-experimental",
+      "langchain-huggingface"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "langchain-experimental",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "langchain-huggingface",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install langchain-experimental langchain-huggingface"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Semantic Chunker with tiktoken (Boundary-Aware) | OSS AI Hub",
+    "meta_description": "Semantic chunker that respects sentence/paragraph boundaries via tiktoken + sentence-transformers similarity. Beats fixed-size chunking 5-15%."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "multimodal-rag-clip-images",
+    "title": "Multimodal RAG with CLIP (Text + Image Retrieval)",
+    "tldr": "Multimodal RAG: embed images + text into the same CLIP space, retrieve relevant images for text queries.",
+    "description": "Multimodal RAG: embed images + text into the same CLIP space, retrieve relevant images for text queries.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "clip",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "multimodal",
+      "clip",
+      "image-retrieval"
+    ],
+    "best_for_tags": [
+      "multimodal-rag",
+      "image-search"
+    ],
+    "featured": false,
+    "when_to_use": "Docs contain figures/charts that matter. CLIP embeddings work across text+image; one vector index for both modalities.",
+    "when_not_to_use": "Skip when (1) text-only corpus; (2) high-precision image retrieval needed (use ColBERT-style fine-grained matching); (3) no GPU for batch embedding.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import torch\nfrom transformers import CLIPModel, CLIPProcessor\nfrom PIL import Image\n\nmodel = CLIPModel.from_pretrained('openai/clip-vit-large-patch14')\nproc = CLIPProcessor.from_pretrained('openai/clip-vit-large-patch14')\n\ndef embed_text(text: str): return model.get_text_features(**proc(text=[text], return_tensors='pt'))[0].detach().numpy()\ndef embed_image(path: str): return model.get_image_features(**proc(images=[Image.open(path)], return_tensors='pt'))[0].detach().numpy()\n\n# Store image+text embeddings in same vector DB. Query with text, retrieve images.\n",
+    "dependencies": [
+      "transformers",
+      "torch",
+      "Pillow"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "transformers",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "torch",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "Pillow",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install transformers torch Pillow"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Multimodal RAG with CLIP (Text + Image Retrieval) | OSS AI Hub",
+    "meta_description": "Multimodal RAG: embed images + text into the same CLIP space, retrieve relevant images for text queries."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "rag-cache-semantic-similarity",
+    "title": "Semantic-Similarity RAG Response Cache",
+    "tldr": "Cache RAG responses by semantic similarity of the query (cosine on query embeddings). 30-60% cost cut on FAQ-shaped traffic.",
+    "description": "Cache RAG responses by semantic similarity of the query (cosine on query embeddings). 30-60% cost cut on FAQ-shaped traffic.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "redis",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "cache",
+      "semantic-cache",
+      "rag"
+    ],
+    "best_for_tags": [
+      "cost-cache",
+      "rag"
+    ],
+    "featured": false,
+    "when_to_use": "Your RAG sees repeat-ish questions ('what's the refund policy?' vs 'how do refunds work?'). Cache full responses by semantic similarity instead of exact match.",
+    "when_not_to_use": "Skip when (1) every query unique; (2) freshness matters more than cost; (3) you already have a Redis exact cache + that's enough.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# See /code/redis-llm-response-cache for the implementation - this is the same pattern\n# applied at the RAG layer (cache prompt+response after retrieval, keyed by query embedding).\nfrom hashlib import sha256\nimport numpy as np\n\ndef cached_rag(query: str, threshold: float = 0.93):\n    qvec = embed(query)\n    for cached_qvec, response in cache.iter():\n        sim = qvec @ cached_qvec / (np.linalg.norm(qvec) * np.linalg.norm(cached_qvec))\n        if sim >= threshold:\n            return response\n    # Else: run RAG, store response\n    response = full_rag(query)\n    cache.put(qvec, response)\n    return response\n",
+    "dependencies": [
+      "redis",
+      "fastembed"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "redis",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "fastembed",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install redis fastembed"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Semantic-Similarity RAG Response Cache | OSS AI Hub",
+    "meta_description": "Cache RAG responses by semantic similarity of the query (cosine on query embeddings). 30-60% cost cut on FAQ-shaped traffic."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "lancedb-serverless-vector",
+    "title": "LanceDB Serverless Vector Store (S3-Backed)",
+    "tldr": "LanceDB embedded vector store with S3 backing. Zero-server pattern for ML pipelines + version-controlled tables.",
+    "description": "LanceDB embedded vector store with S3 backing. Zero-server pattern for ML pipelines + version-controlled tables.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "lancedb",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "lancedb",
+      "serverless",
+      "lance"
+    ],
+    "best_for_tags": [
+      "serverless",
+      "embedded",
+      "ml-pipeline"
+    ],
+    "featured": false,
+    "when_to_use": "ML pipelines that read/write vectors from notebooks + Spark + Python services - no server to run. LanceDB's columnar Lance format is fast on S3 + versioned tables.",
+    "when_not_to_use": "Skip when (1) need low-latency online query (Qdrant/pgvector faster); (2) >100M vectors; (3) team already on Qdrant.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import lancedb\nimport numpy as np\n\ndb = lancedb.connect('s3://your-bucket/lancedb')  # or local path\ntable = db.create_table('docs', data=[{'id': '1', 'text': 'Refunds within 30 days.', 'vector': np.random.rand(384).tolist()}])\nresults = table.search(np.random.rand(384)).limit(5).to_list()\n",
+    "dependencies": [
+      "lancedb"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "lancedb",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install lancedb"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "LanceDB Serverless Vector Store (S3-Backed) | OSS AI Hub",
+    "meta_description": "LanceDB embedded vector store with S3 backing. Zero-server pattern for ML pipelines + version-controlled tables."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "pinecone-managed-vector-prod",
+    "title": "Pinecone Serverless Vector (Production Pattern)",
+    "tldr": "Pinecone serverless index: zero-config managed vector DB. Best DX for production teams that don't want to operate Qdrant/Milvus.",
+    "description": "Pinecone serverless index: zero-config managed vector DB. Best DX for production teams that don't want to operate Qdrant/Milvus.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "pinecone",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "pinecone",
+      "managed"
+    ],
+    "best_for_tags": [
+      "managed",
+      "production-vector-db"
+    ],
+    "featured": false,
+    "when_to_use": "You want vector search without operating any infra. Pinecone Serverless scales to billion+ vectors with usage-based pricing. Best for teams that prefer paid infra over ops time.",
+    "when_not_to_use": "Skip when (1) self-host policy; (2) cost-sensitive (Qdrant Cloud cheaper); (3) need hybrid search (Pinecone's hybrid is weaker than Qdrant's).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from pinecone import Pinecone, ServerlessSpec\nimport os\n\npc = Pinecone(api_key=os.environ['PINECONE_API_KEY'])\nif 'ossai' not in pc.list_indexes().names():\n    pc.create_index(name='ossai', dimension=384, metric='cosine',\n        spec=ServerlessSpec(cloud='aws', region='us-east-1'))\nindex = pc.Index('ossai')\nindex.upsert(vectors=[('doc1', [0.1]*384, {'text': 'hello'})])\nresults = index.query(vector=[0.1]*384, top_k=5, include_metadata=True)\n",
+    "dependencies": [
+      "pinecone"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "pinecone",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install pinecone"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Pinecone Serverless Vector (Production Pattern) | OSS AI Hub",
+    "meta_description": "Pinecone serverless index: zero-config managed vector DB. Best DX for production teams that don't want to operate Qdrant/Milvus."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "redis-vector-search",
+    "title": "Redis Stack Vector Search (HNSW + JSON Filters)",
+    "tldr": "Redis Stack with RedisSearch: HNSW vector index + JSON filters + same Redis you already run. Cheap latency.",
+    "description": "Redis Stack with RedisSearch: HNSW vector index + JSON filters + same Redis you already run. Cheap latency.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "redis",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "redis",
+      "redisearch",
+      "hnsw"
+    ],
+    "best_for_tags": [
+      "existing-redis",
+      "low-latency"
+    ],
+    "featured": false,
+    "when_to_use": "You already run Redis. RedisSearch adds vector index + filtered search in the same instance - no new system to operate.",
+    "when_not_to_use": "Skip when (1) you don't run Redis; (2) need >10M vectors (Qdrant/Milvus scale further); (3) hybrid search (Qdrant easier).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from redis import Redis\nfrom redis.commands.search.field import VectorField, TextField\nfrom redis.commands.search.indexDefinition import IndexDefinition\nimport numpy as np\n\nr = Redis()\nr.ft('idx:docs').create_index([\n    TextField('text'),\n    VectorField('vec', 'HNSW', {'TYPE': 'FLOAT32', 'DIM': 384, 'DISTANCE_METRIC': 'COSINE'}),\n], definition=IndexDefinition(prefix=['doc:']))\n\nr.hset('doc:1', mapping={'text': 'hi', 'vec': np.random.rand(384).astype(np.float32).tobytes()})\n",
+    "dependencies": [
+      "redis"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "redis",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install redis"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Redis Stack Vector Search (HNSW + JSON Filters) | OSS AI Hub",
+    "meta_description": "Redis Stack with RedisSearch: HNSW vector index + JSON filters + same Redis you already run. Cheap latency."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "turbopuffer-cold-storage",
+    "title": "Turbopuffer Cold-Storage Vector DB (S3 + Cheap)",
+    "tldr": "Turbopuffer: vectors on S3 with hot cache. 10x cheaper than Pinecone for cold-ish workloads. Per-row metadata + filters.",
+    "description": "Turbopuffer: vectors on S3 with hot cache. 10x cheaper than Pinecone for cold-ish workloads. Per-row metadata + filters.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "turbopuffer",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "turbopuffer",
+      "cold-storage",
+      "s3"
+    ],
+    "best_for_tags": [
+      "cost-optimization",
+      "cold-vectors"
+    ],
+    "featured": false,
+    "when_to_use": "You have millions of vectors that aren't all hot. Turbopuffer pages them in/out from S3 - ~10x cheaper than always-hot databases at the cost of slower cold-query latency (~100ms).",
+    "when_not_to_use": "Skip when (1) all-hot workload; (2) need <10ms p99; (3) on-prem only.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from turbopuffer import Turbopuffer\nimport os\n\ntp = Turbopuffer(api_key=os.environ['TURBOPUFFER_API_KEY'])\nns = tp.namespace('ossai-docs')\nns.upsert(vectors=[{'id': 'doc1', 'vector': [0.1]*384, 'attributes': {'category': 'policy'}}])\nresults = ns.query(vector=[0.1]*384, top_k=5, filters={'category': 'policy'})\n",
+    "dependencies": [
+      "turbopuffer"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "turbopuffer",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install turbopuffer"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Turbopuffer Cold-Storage Vector DB (S3 + Cheap) | OSS AI Hub",
+    "meta_description": "Turbopuffer: vectors on S3 with hot cache. 10x cheaper than Pinecone for cold-ish workloads. Per-row metadata + filters."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "vespa-ml-ranking-search",
+    "title": "Vespa ML-Ranking Vector Search (Big Tech Scale)",
+    "tldr": "Vespa: hybrid lexical + vector + ML-ranking in one engine. Used by Yahoo / Spotify / Vinted for production search at scale.",
+    "description": "Vespa: hybrid lexical + vector + ML-ranking in one engine. Used by Yahoo / Spotify / Vinted for production search at scale.",
+    "category": "vector-databases",
+    "language": "yaml",
+    "framework": "vespa",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "vespa",
+      "ml-ranking",
+      "search"
+    ],
+    "best_for_tags": [
+      "enterprise-scale",
+      "ml-ranking"
+    ],
+    "featured": false,
+    "when_to_use": "Building serious search where you need lexical + vector + learned-to-rank in one stack. Vespa is the most production-hardened option for this combo.",
+    "when_not_to_use": "Skip when (1) <100M docs (Qdrant is simpler); (2) team not familiar with Vespa's deployment model; (3) you're just doing vanilla RAG.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "<!-- services.xml -->\n<services version='1.0'>\n  <container id='default' version='1.0'>\n    <document-api/>\n    <search/>\n  </container>\n  <content id='docs' version='1.0'>\n    <documents>\n      <document type='doc' mode='index'/>\n    </documents>\n    <nodes><node hostalias='node1'/></nodes>\n  </content>\n</services>\n\n<!-- See vespa-engine.com for full deployment + schema docs -->\n",
+    "dependencies": [
+      "vespa"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "vespa",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install vespa"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Vespa ML-Ranking Vector Search (Big Tech Scale) | OSS AI Hub",
+    "meta_description": "Vespa: hybrid lexical + vector + ML-ranking in one engine. Used by Yahoo / Spotify / Vinted for production search at scale."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "faiss-index-builder",
+    "title": "FAISS Index Builder (CPU + GPU, Disk-Resident)",
+    "tldr": "FAISS index builder: IVF / HNSW / IndexFlatIP. Sharded multi-GPU build, mmap-able indexes, no server needed.",
+    "description": "FAISS index builder: IVF / HNSW / IndexFlatIP. Sharded multi-GPU build, mmap-able indexes, no server needed.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "faiss",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "faiss",
+      "facebook",
+      "library"
+    ],
+    "best_for_tags": [
+      "embedded",
+      "research"
+    ],
+    "featured": false,
+    "when_to_use": "You want vectors in-process (notebook, Python service) without a server. FAISS is the canonical library - mmap-able indexes work great for read-heavy workloads.",
+    "when_not_to_use": "Skip when (1) need concurrent writers; (2) need filters/metadata (FAISS is pure vector); (3) want managed service.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import faiss\nimport numpy as np\n\nvectors = np.random.rand(100000, 384).astype('float32')\nindex = faiss.IndexHNSWFlat(384, 32)  # HNSW with M=32\nindex.add(vectors)\nfaiss.write_index(index, 'docs.faiss')\n\nidx = faiss.read_index('docs.faiss', faiss.IO_FLAG_MMAP)\ndistances, ids = idx.search(np.random.rand(1, 384).astype('float32'), k=5)\n",
+    "dependencies": [
+      "faiss-cpu"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "faiss-cpu",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install faiss-cpu"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "FAISS Index Builder (CPU + GPU, Disk-Resident) | OSS AI Hub",
+    "meta_description": "FAISS index builder: IVF / HNSW / IndexFlatIP. Sharded multi-GPU build, mmap-able indexes, no server needed."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "vector-migration-tool",
+    "title": "Vector DB Migration Tool (Qdrant <-> Pinecone <-> pgvector)",
+    "tldr": "Migrate vectors + payloads between Qdrant, Pinecone, pgvector, Chroma. Idempotent batching + checksum verification.",
+    "description": "Migrate vectors + payloads between Qdrant, Pinecone, pgvector, Chroma. Idempotent batching + checksum verification.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "vanilla",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "migration",
+      "vector-db"
+    ],
+    "best_for_tags": [
+      "migration",
+      "ops"
+    ],
+    "featured": false,
+    "when_to_use": "You're switching vector DBs (cost, scale, or vendor reasons). This pattern reads in batches from source, writes to destination, verifies counts + sample similarity.",
+    "when_not_to_use": "Skip when (1) <100k vectors (manual re-ingest is faster); (2) embedding model changing (must re-embed not migrate); (3) one-time migration done.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from qdrant_client import QdrantClient\nimport pinecone\n\nsrc = QdrantClient('http://qdrant:6333')\ndst_pc = pinecone.Pinecone().Index('ossai')\n\noffset = None\nwhile True:\n    points, offset = src.scroll(collection_name='ossai', limit=100, offset=offset, with_vectors=True, with_payload=True)\n    if not points: break\n    dst_pc.upsert(vectors=[(p.id, p.vector, p.payload) for p in points])\n    if offset is None: break\nprint('migration complete')\n",
+    "dependencies": [
+      "qdrant-client",
+      "pinecone"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "qdrant-client",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "pinecone",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install qdrant-client pinecone"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Eval against baseline before rolling out.",
+      "Track latency + cost.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Vector DB Migration Tool (Qdrant <-> Pinecone <-> pgvector) | OSS AI Hub",
+    "meta_description": "Migrate vectors + payloads between Qdrant, Pinecone, pgvector, Chroma. Idempotent batching + checksum verification."
   }
 ]
