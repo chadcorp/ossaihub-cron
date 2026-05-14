@@ -6,8 +6,19 @@
     "category": "llm-clients",
     "language": "python",
     "framework": "FastAPI",
-    "tags": ["ollama", "fastapi", "streaming", "llama", "sse"],
-    "best_for_tags": ["streaming", "local-llm", "chat-api", "production"],
+    "tags": [
+      "ollama",
+      "fastapi",
+      "streaming",
+      "llama",
+      "sse"
+    ],
+    "best_for_tags": [
+      "streaming",
+      "local-llm",
+      "chat-api",
+      "production"
+    ],
     "difficulty_tier": "intermediate",
     "featured": true,
     "when_to_use": "Reach for this when you need a self-hosted chat API streaming a local Llama 3.x model. Three concrete scenarios: (1) Internal company chatbot where data cannot leave your network — Ollama runs on-prem, this FastAPI server fronts it. (2) Latency-sensitive UI where you want tokens appearing as they generate (TTFT < 500ms on RTX 4090). (3) Cost-conscious prototype before committing to a managed inference vendor — Ollama costs $0 to run on a workstation you already own.",
@@ -15,13 +26,34 @@
     "quick_start": "# Install + pull model + run\nuv pip install fastapi uvicorn ollama\nollama pull llama3.1:8b\nollama serve &\nuvicorn main:app --reload",
     "full_code": "# main.py — FastAPI + Ollama streaming chat with disconnect detection\nimport asyncio\nfrom contextlib import asynccontextmanager\nfrom typing import AsyncGenerator\n\nimport ollama\nfrom fastapi import FastAPI, HTTPException, Request\nfrom fastapi.middleware.cors import CORSMiddleware\nfrom fastapi.responses import StreamingResponse\nfrom pydantic import BaseModel, Field\n\n# Ollama client — async variant for concurrency\nclient = ollama.AsyncClient(host='http://localhost:11434')\n\n\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    # Warm up the model on startup so first request isn't slow\n    try:\n        await client.generate(model='llama3.1:8b', prompt='hi', stream=False)\n        print('Model warmed up')\n    except Exception as e:\n        print(f'WARN: warmup failed (is ollama running?): {e}')\n    yield\n\n\napp = FastAPI(lifespan=lifespan)\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=['http://localhost:3000'],  # tighten for prod\n    allow_methods=['POST'],\n    allow_headers=['*'],\n)\n\n\nclass Message(BaseModel):\n    role: str = Field(pattern='^(system|user|assistant)$')\n    content: str = Field(min_length=1, max_length=32_000)\n\n\nclass ChatRequest(BaseModel):\n    messages: list[Message]\n    model: str = 'llama3.1:8b'\n    temperature: float = Field(0.7, ge=0.0, le=2.0)\n    max_tokens: int = Field(2048, ge=1, le=8192)\n\n\nasync def stream_tokens(req: ChatRequest, request: Request) -> AsyncGenerator[str, None]:\n    \"\"\"Yield SSE-formatted tokens. Detects client disconnect to free GPU memory.\"\"\"\n    try:\n        stream = await client.chat(\n            model=req.model,\n            messages=[m.model_dump() for m in req.messages],\n            options={'temperature': req.temperature, 'num_predict': req.max_tokens},\n            stream=True,\n        )\n        async for chunk in stream:\n            if await request.is_disconnected():\n                print('client disconnected — aborting generation')\n                break\n            tok = chunk['message']['content']\n            yield f'data: {tok}\\n\\n'\n        yield 'data: [DONE]\\n\\n'\n    except ollama.ResponseError as e:\n        # Model not pulled, etc.\n        yield f'data: [ERROR] {e.error}\\n\\n'\n    except Exception as e:\n        yield f'data: [ERROR] {type(e).__name__}: {e}\\n\\n'\n\n\n@app.post('/chat')\nasync def chat(req: ChatRequest, request: Request):\n    return StreamingResponse(\n        stream_tokens(req, request),\n        media_type='text/event-stream',\n        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},\n    )\n\n\n@app.get('/health')\nasync def health():\n    try:\n        await client.list()\n        return {'status': 'ok'}\n    except Exception as e:\n        raise HTTPException(503, detail=f'ollama unreachable: {e}')\n",
     "dependencies": [
-      {"name": "fastapi", "version": ">=0.115,<0.120", "purpose": "ASGI web framework"},
-      {"name": "uvicorn[standard]", "version": ">=0.32", "purpose": "ASGI server with websockets + HTTP/2"},
-      {"name": "ollama", "version": ">=0.5.1", "purpose": "Async Python client for local Ollama daemon"},
-      {"name": "pydantic", "version": ">=2.9", "purpose": "Request validation"}
+      {
+        "name": "fastapi",
+        "version": ">=0.115,<0.120",
+        "purpose": "ASGI web framework"
+      },
+      {
+        "name": "uvicorn[standard]",
+        "version": ">=0.32",
+        "purpose": "ASGI server with websockets + HTTP/2"
+      },
+      {
+        "name": "ollama",
+        "version": ">=0.5.1",
+        "purpose": "Async Python client for local Ollama daemon"
+      },
+      {
+        "name": "pydantic",
+        "version": ">=2.9",
+        "purpose": "Request validation"
+      }
     ],
     "env_vars": [
-      {"name": "OLLAMA_HOST", "required": false, "description": "Override default localhost:11434 (use for remote Ollama)", "example": "http://gpu-box.internal:11434"}
+      {
+        "name": "OLLAMA_HOST",
+        "required": false,
+        "description": "Override default localhost:11434 (use for remote Ollama)",
+        "example": "http://gpu-box.internal:11434"
+      }
     ],
     "setup_steps": [
       "Install Ollama on the host that has the GPU: curl -fsSL https://ollama.com/install.sh | sh",
@@ -85,13 +117,34 @@
       "Set Content-Security-Policy on the frontend so a malicious response can't exfiltrate cookies"
     ],
     "tested_with": {
-      "model_versions": ["llama3.1:8b", "llama3.1:70b", "llama3.3:70b"],
-      "library_versions": ["fastapi==0.115.4", "ollama==0.5.1", "uvicorn==0.32.0", "pydantic==2.9.2"],
+      "model_versions": [
+        "llama3.1:8b",
+        "llama3.1:70b",
+        "llama3.3:70b"
+      ],
+      "library_versions": [
+        "fastapi==0.115.4",
+        "ollama==0.5.1",
+        "uvicorn==0.32.0",
+        "pydantic==2.9.2"
+      ],
       "last_verified_date": "2026-05-13"
     },
-    "related_tool_slugs": ["ollama-ollama-4", "fastapi"],
-    "related_glossary_slugs": ["streaming", "kv-cache", "context-window", "ttft", "tokens-per-second"],
-    "related_learn_slugs": ["running-first-local-llm-ollama", "streaming-llm-responses-production"],
+    "related_tool_slugs": [
+      "ollama-ollama-4",
+      "fastapi"
+    ],
+    "related_glossary_slugs": [
+      "streaming",
+      "kv-cache",
+      "context-window",
+      "ttft",
+      "tokens-per-second"
+    ],
+    "related_learn_slugs": [
+      "running-first-local-llm-ollama",
+      "streaming-llm-responses-production"
+    ],
     "license": "MIT",
     "attribution": "",
     "faq": [
@@ -119,18 +172,38 @@
     "category": "llm-clients",
     "language": "python",
     "framework": "Anthropic SDK",
-    "tags": ["anthropic", "claude", "tool-use", "streaming", "function-calling"],
-    "best_for_tags": ["agent-loop", "tool-calling", "streaming", "production"],
+    "tags": [
+      "anthropic",
+      "claude",
+      "tool-use",
+      "streaming",
+      "function-calling"
+    ],
+    "best_for_tags": [
+      "agent-loop",
+      "tool-calling",
+      "streaming",
+      "production"
+    ],
     "difficulty_tier": "intermediate",
     "when_to_use": "Use this pattern when you need a Claude-powered agent that calls tools while streaming output to the user. Three scenarios: (1) Customer support agent that streams responses while looking up order data, ticket history, and KB articles in parallel. (2) Coding assistant that streams reasoning while invoking file-read / search / lint tools. (3) Research agent that streams its synthesis while fetching from search APIs. Critical: this pattern handles partial tool-use blocks during streaming correctly, which most quick-start examples get wrong.",
     "when_not_to_use": "Skip this if you're using a model without native tool use (Llama 3.x base needs Outlines or Instructor instead). Skip if you don't need streaming — the non-streaming API is simpler. Skip for very long-running agent loops (>10 minutes) — Claude's streaming connection can timeout; use a queue + webhook pattern instead.",
     "quick_start": "uv pip install anthropic\nexport ANTHROPIC_API_KEY=sk-ant-...\npython agent.py",
     "full_code": "# agent.py — Claude 4 streaming agent with parallel tool calls\nimport json\nimport os\nfrom typing import Any\n\nfrom anthropic import Anthropic\n\nclient = Anthropic()\n\n# Tool definitions — JSON Schema matching Anthropic's spec\nTOOLS = [\n    {\n        'name': 'search_docs',\n        'description': 'Search the internal documentation. Returns top 5 matching passages.',\n        'input_schema': {\n            'type': 'object',\n            'properties': {\n                'query': {'type': 'string', 'description': 'natural-language query'},\n                'limit': {'type': 'integer', 'default': 5, 'minimum': 1, 'maximum': 20},\n            },\n            'required': ['query'],\n        },\n    },\n    {\n        'name': 'get_weather',\n        'description': 'Get current weather for a city.',\n        'input_schema': {\n            'type': 'object',\n            'properties': {'city': {'type': 'string'}},\n            'required': ['city'],\n        },\n    },\n]\n\n\ndef execute_tool(name: str, args: dict[str, Any]) -> str:\n    \"\"\"Dispatch to your real tool implementations. Return string result.\"\"\"\n    if name == 'search_docs':\n        # stub — replace with real retriever\n        return json.dumps({'results': [f\"doc{i}: matches '{args['query']}'\" for i in range(args.get('limit', 3))]})\n    if name == 'get_weather':\n        return json.dumps({'city': args['city'], 'temp_c': 22, 'cond': 'partly cloudy'})\n    return json.dumps({'error': f'unknown tool {name}'})\n\n\ndef run_agent(user_message: str, max_iterations: int = 5):\n    \"\"\"Run the agent loop until Claude returns end_turn (no more tool calls).\"\"\"\n    messages = [{'role': 'user', 'content': user_message}]\n\n    for iteration in range(max_iterations):\n        print(f'\\n=== iteration {iteration + 1} ===\\n')\n\n        # Streaming with tool use — accumulate text + capture tool_use blocks\n        with client.messages.stream(\n            model='claude-sonnet-4-5-20250929',\n            max_tokens=4096,\n            tools=TOOLS,\n            messages=messages,\n        ) as stream:\n            for text in stream.text_stream:\n                print(text, end='', flush=True)\n            final = stream.get_final_message()\n\n        # Was this end_turn? Then we're done.\n        if final.stop_reason == 'end_turn':\n            messages.append({'role': 'assistant', 'content': final.content})\n            return final\n\n        # Was this tool_use? Execute all tool_use blocks in parallel-conceptually\n        # (Anthropic emits multiple tool_use blocks per turn; execute them all,\n        # then return all results in a single user turn)\n        if final.stop_reason == 'tool_use':\n            messages.append({'role': 'assistant', 'content': final.content})\n            tool_results = []\n            for block in final.content:\n                if block.type == 'tool_use':\n                    print(f'\\n→ executing {block.name}({block.input})')\n                    result = execute_tool(block.name, block.input)\n                    tool_results.append({\n                        'type': 'tool_result',\n                        'tool_use_id': block.id,\n                        'content': result,\n                    })\n            messages.append({'role': 'user', 'content': tool_results})\n            continue\n\n        # Other stop_reason — max_tokens, etc.\n        print(f'\\n[stopped: {final.stop_reason}]')\n        return final\n\n    raise RuntimeError(f'agent did not converge after {max_iterations} iterations')\n\n\nif __name__ == '__main__':\n    run_agent('What is the weather in Tokyo and Paris, and find me our docs about RAG?')\n",
     "dependencies": [
-      {"name": "anthropic", "version": ">=0.39", "purpose": "Official Anthropic Python SDK with streaming + tool use"}
+      {
+        "name": "anthropic",
+        "version": ">=0.39",
+        "purpose": "Official Anthropic Python SDK with streaming + tool use"
+      }
     ],
     "env_vars": [
-      {"name": "ANTHROPIC_API_KEY", "required": true, "description": "Your Anthropic API key", "example": "sk-ant-..."}
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Your Anthropic API key",
+        "example": "sk-ant-..."
+      }
     ],
     "setup_steps": [
       "Get an API key at https://console.anthropic.com/",
@@ -182,13 +255,30 @@
       "Set request timeout on the streaming context (Anthropic default is 60s; bump for slow tools or use thinking mode)"
     ],
     "tested_with": {
-      "model_versions": ["claude-sonnet-4-5-20250929", "claude-opus-4-20250805"],
-      "library_versions": ["anthropic==0.39.0"],
+      "model_versions": [
+        "claude-sonnet-4-5-20250929",
+        "claude-opus-4-20250805"
+      ],
+      "library_versions": [
+        "anthropic==0.39.0"
+      ],
       "last_verified_date": "2026-05-13"
     },
-    "related_tool_slugs": ["anthropic-sdk", "instructor"],
-    "related_glossary_slugs": ["tool-use", "function-calling", "streaming", "prompt-caching", "extended-thinking"],
-    "related_learn_slugs": ["tool-calling-function-calling-guide", "claude-api"],
+    "related_tool_slugs": [
+      "anthropic-sdk",
+      "instructor"
+    ],
+    "related_glossary_slugs": [
+      "tool-use",
+      "function-calling",
+      "streaming",
+      "prompt-caching",
+      "extended-thinking"
+    ],
+    "related_learn_slugs": [
+      "tool-calling-function-calling-guide",
+      "claude-api"
+    ],
     "license": "MIT",
     "attribution": "",
     "faq": [
@@ -216,22 +306,60 @@
     "category": "llm-clients",
     "language": "python",
     "framework": "OpenAI SDK",
-    "tags": ["openai", "vllm", "multi-provider", "fallback", "portability"],
-    "best_for_tags": ["provider-fallback", "cost-routing", "portability"],
+    "tags": [
+      "openai",
+      "vllm",
+      "multi-provider",
+      "fallback",
+      "portability"
+    ],
+    "best_for_tags": [
+      "provider-fallback",
+      "cost-routing",
+      "portability"
+    ],
     "difficulty_tier": "intermediate",
     "when_to_use": "Use this when you want vendor-neutral code that runs against any OpenAI-compatible endpoint. Three scenarios: (1) Dev with Ollama locally, prod with OpenAI/Anthropic — no code changes between environments. (2) Cost optimization: route cheap classification to Groq (low latency Llama 3.3), heavy reasoning to GPT-5 or Claude. (3) Reliability: when OpenAI is down, automatically fall back to Together AI or Fireworks.",
     "when_not_to_use": "Skip this for provider-specific features (Anthropic's parallel tool use, Gemini's long-context caching, OpenAI's strict JSON mode beyond function calling). For those, use the native SDK. Skip if you only ever use one provider — adding fallback complexity isn't worth it.",
     "quick_start": "uv pip install openai tenacity\nexport OPENAI_API_KEY=sk-...  # or any provider's key\npython client.py",
     "full_code": "# client.py — multi-provider OpenAI-compatible client with fallback + cost tracking\nimport os\nimport time\nfrom dataclasses import dataclass, field\nfrom typing import Iterator\n\nfrom openai import OpenAI, RateLimitError, APIConnectionError\nfrom tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type\n\n\n@dataclass\nclass Provider:\n    name: str\n    base_url: str\n    api_key_env: str\n    model: str\n    input_per_million: float  # USD per 1M input tokens\n    output_per_million: float\n\n\n# Configure your providers. Order = fallback priority.\nPROVIDERS = [\n    Provider('openai', 'https://api.openai.com/v1', 'OPENAI_API_KEY',\n             'gpt-4o', 2.50, 10.00),\n    Provider('anthropic-oai', 'https://api.anthropic.com/v1', 'ANTHROPIC_API_KEY',\n             'claude-sonnet-4-5', 3.00, 15.00),\n    Provider('groq', 'https://api.groq.com/openai/v1', 'GROQ_API_KEY',\n             'llama-3.3-70b-versatile', 0.59, 0.79),\n    Provider('together', 'https://api.together.xyz/v1', 'TOGETHER_API_KEY',\n             'meta-llama/Llama-3.3-70B-Instruct-Turbo', 0.88, 0.88),\n    Provider('ollama', 'http://localhost:11434/v1', '',\n             'llama3.1:8b', 0.0, 0.0),\n]\n\n\n@dataclass\nclass CallResult:\n    text: str\n    provider: str\n    model: str\n    input_tokens: int\n    output_tokens: int\n    cost_usd: float\n    latency_ms: int\n\n\nclass MultiProviderClient:\n    def __init__(self, providers: list[Provider] = PROVIDERS):\n        self.providers = [\n            p for p in providers\n            if not p.api_key_env or os.environ.get(p.api_key_env)\n        ]\n        if not self.providers:\n            raise RuntimeError('No providers have valid API keys configured')\n        self.clients = {\n            p.name: OpenAI(\n                base_url=p.base_url,\n                api_key=os.environ.get(p.api_key_env, 'not-needed'),\n                timeout=30.0,\n            )\n            for p in self.providers\n        }\n\n    @retry(\n        stop=stop_after_attempt(3),\n        wait=wait_exponential(multiplier=1, min=2, max=20),\n        retry=retry_if_exception_type((RateLimitError, APIConnectionError)),\n    )\n    def _call_one(self, provider: Provider, messages: list[dict], **kwargs) -> CallResult:\n        t0 = time.time()\n        client = self.clients[provider.name]\n        r = client.chat.completions.create(\n            model=provider.model,\n            messages=messages,\n            **kwargs,\n        )\n        latency_ms = int((time.time() - t0) * 1000)\n        u = r.usage\n        cost = (u.prompt_tokens * provider.input_per_million / 1_000_000\n              + u.completion_tokens * provider.output_per_million / 1_000_000)\n        return CallResult(\n            text=r.choices[0].message.content,\n            provider=provider.name,\n            model=provider.model,\n            input_tokens=u.prompt_tokens,\n            output_tokens=u.completion_tokens,\n            cost_usd=cost,\n            latency_ms=latency_ms,\n        )\n\n    def call(self, messages: list[dict], **kwargs) -> CallResult:\n        \"\"\"Try each provider in order. Returns first success.\"\"\"\n        last_err = None\n        for p in self.providers:\n            try:\n                return self._call_one(p, messages, **kwargs)\n            except Exception as e:\n                print(f'[{p.name}] failed: {type(e).__name__}: {e}. Falling over.')\n                last_err = e\n        raise RuntimeError(f'All {len(self.providers)} providers failed. Last: {last_err}')\n\n    def call_cheapest(self, messages: list[dict], **kwargs) -> CallResult:\n        \"\"\"Use the cheapest configured provider.\"\"\"\n        cheapest = min(self.providers, key=lambda p: p.input_per_million + p.output_per_million)\n        return self._call_one(cheapest, messages, **kwargs)\n\n\nif __name__ == '__main__':\n    cli = MultiProviderClient()\n    r = cli.call([{'role': 'user', 'content': 'Say hi in 5 words.'}], max_tokens=50)\n    print(f'\\n{r.provider} ({r.model}): {r.text}')\n    print(f'  tokens: {r.input_tokens} in / {r.output_tokens} out')\n    print(f'  cost: ${r.cost_usd:.6f} | latency: {r.latency_ms}ms')\n",
     "dependencies": [
-      {"name": "openai", "version": ">=1.50", "purpose": "OpenAI Python SDK (works with any OpenAI-compatible endpoint)"},
-      {"name": "tenacity", "version": ">=9.0", "purpose": "Retry logic with exponential backoff"}
+      {
+        "name": "openai",
+        "version": ">=1.50",
+        "purpose": "OpenAI Python SDK (works with any OpenAI-compatible endpoint)"
+      },
+      {
+        "name": "tenacity",
+        "version": ">=9.0",
+        "purpose": "Retry logic with exponential backoff"
+      }
     ],
     "env_vars": [
-      {"name": "OPENAI_API_KEY", "required": false, "description": "OpenAI API key (or any compatible)", "example": "sk-..."},
-      {"name": "ANTHROPIC_API_KEY", "required": false, "description": "Anthropic API key", "example": "sk-ant-..."},
-      {"name": "GROQ_API_KEY", "required": false, "description": "Groq API key", "example": "gsk_..."},
-      {"name": "TOGETHER_API_KEY", "required": false, "description": "Together AI API key", "example": "tok_..."}
+      {
+        "name": "OPENAI_API_KEY",
+        "required": false,
+        "description": "OpenAI API key (or any compatible)",
+        "example": "sk-..."
+      },
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": false,
+        "description": "Anthropic API key",
+        "example": "sk-ant-..."
+      },
+      {
+        "name": "GROQ_API_KEY",
+        "required": false,
+        "description": "Groq API key",
+        "example": "gsk_..."
+      },
+      {
+        "name": "TOGETHER_API_KEY",
+        "required": false,
+        "description": "Together AI API key",
+        "example": "tok_..."
+      }
     ],
     "setup_steps": [
       "Install: uv pip install openai tenacity",
@@ -276,13 +404,32 @@
       "Pin SDK version (openai==1.50.x) — major versions occasionally break compat"
     ],
     "tested_with": {
-      "model_versions": ["gpt-4o", "claude-sonnet-4-5", "llama-3.3-70b-versatile (Groq)", "Llama-3.3-70B-Instruct-Turbo (Together)"],
-      "library_versions": ["openai==1.50.0", "tenacity==9.0.0"],
+      "model_versions": [
+        "gpt-4o",
+        "claude-sonnet-4-5",
+        "llama-3.3-70b-versatile (Groq)",
+        "Llama-3.3-70B-Instruct-Turbo (Together)"
+      ],
+      "library_versions": [
+        "openai==1.50.0",
+        "tenacity==9.0.0"
+      ],
       "last_verified_date": "2026-05-13"
     },
-    "related_tool_slugs": ["litellm", "openrouter", "ollama-ollama-4"],
-    "related_glossary_slugs": ["llm-gateway", "model-routing", "cost-per-query", "fallback"],
-    "related_learn_slugs": ["cloud-apis-vs-local-models"],
+    "related_tool_slugs": [
+      "litellm",
+      "openrouter",
+      "ollama-ollama-4"
+    ],
+    "related_glossary_slugs": [
+      "llm-gateway",
+      "model-routing",
+      "cost-per-query",
+      "fallback"
+    ],
+    "related_learn_slugs": [
+      "cloud-apis-vs-local-models"
+    ],
     "license": "MIT",
     "attribution": "",
     "faq": [
@@ -306,25 +453,79 @@
     "category": "llm-clients",
     "language": "python",
     "framework": "LiteLLM",
-    "tags": ["litellm", "gateway", "routing", "fallback", "cost-control"],
-    "best_for_tags": ["multi-provider", "cost-control", "production", "gateway"],
+    "tags": [
+      "litellm",
+      "gateway",
+      "routing",
+      "fallback",
+      "cost-control"
+    ],
+    "best_for_tags": [
+      "multi-provider",
+      "cost-control",
+      "production",
+      "gateway"
+    ],
     "difficulty_tier": "intermediate",
     "when_to_use": "Use LiteLLM when you have 5+ teams hitting LLMs and need centralized: cost attribution per team, key rotation, rate limiting per virtual key, model fallback policies, and unified observability. Three scenarios: (1) Internal platform where backend services use LLMs via an internal /v1/chat/completions endpoint, and finance needs per-team cost reports. (2) Production app with 99.99% uptime requirement — LiteLLM handles automatic fallback when OpenAI is degraded. (3) Cost-control where you want to enforce a $50/day spending cap per project.",
     "when_not_to_use": "Skip LiteLLM for solo projects or single-team apps — the lightweight multi-provider client (openai-compatible-client-multi-provider) is simpler. Skip if you don't need centralized cost/key management. Skip if you're <10 req/min — the proxy hop adds ~50ms latency.",
     "quick_start": "uv pip install 'litellm[proxy]'\nlitellm --config config.yaml --port 4000\n# Then use any OpenAI client pointed at http://localhost:4000",
     "full_code": "# config.yaml — LiteLLM proxy with fallback, budgets, and observability\nmodel_list:\n  # Frontier models — Anthropic primary, OpenAI fallback\n  - model_name: smart-agent\n    litellm_params:\n      model: claude-sonnet-4-5-20250929\n      api_key: os.environ/ANTHROPIC_API_KEY\n      timeout: 60\n    model_info:\n      max_tokens: 8192\n      input_cost_per_token: 0.000003\n      output_cost_per_token: 0.000015\n\n  - model_name: smart-agent-fallback\n    litellm_params:\n      model: gpt-4o\n      api_key: os.environ/OPENAI_API_KEY\n\n  # Cheap classifier — Groq Llama 3.3 70B\n  - model_name: classifier\n    litellm_params:\n      model: groq/llama-3.3-70b-versatile\n      api_key: os.environ/GROQ_API_KEY\n      rpm: 30  # per-model rate limit\n\n  # Local fallback when network is down\n  - model_name: local\n    litellm_params:\n      model: ollama/llama3.1:8b\n      api_base: http://ollama:11434\n\nrouter_settings:\n  # When 'smart-agent' fails, try smart-agent-fallback, then local\n  fallbacks:\n    - smart-agent: [smart-agent-fallback, local]\n    - classifier: [smart-agent-fallback]\n  retry_policy:\n    BadRequestErrorRetries: 0\n    AuthenticationErrorRetries: 0\n    TimeoutErrorRetries: 2\n    RateLimitErrorRetries: 3\n    ContentPolicyViolationErrorRetries: 0\n  num_retries: 3\n  timeout: 60\n  routing_strategy: usage-based-routing-v2  # routes to least-utilized\n\nlitellm_settings:\n  # Per-team budgets — auto-rejects requests over budget\n  max_budget: 200.0  # USD/month default\n  budget_duration: 30d\n  drop_params: True  # silently strip unsupported params\n\n  # Hook every call into Langfuse for tracing\n  success_callback: ['langfuse']\n  failure_callback: ['langfuse']\n  langfuse_public_key: os.environ/LANGFUSE_PUBLIC_KEY\n  langfuse_secret_key: os.environ/LANGFUSE_SECRET_KEY\n\n# Virtual keys with per-team budgets\ngeneral_settings:\n  master_key: os.environ/LITELLM_MASTER_KEY\n  database_url: os.environ/DATABASE_URL  # postgres for key + budget state\n  store_model_in_db: true\n  proxy_batch_write_at: 5  # batched DB writes every 5s for perf\n\n# === Then create virtual keys via API ===\n# curl -X POST http://localhost:4000/key/generate \\\n#   -H 'Authorization: Bearer $LITELLM_MASTER_KEY' \\\n#   -H 'Content-Type: application/json' \\\n#   -d '{\n#     \"models\": [\"smart-agent\", \"classifier\"],\n#     \"team_id\": \"data-platform\",\n#     \"max_budget\": 50.0,\n#     \"budget_duration\": \"30d\",\n#     \"rpm_limit\": 100\n#   }'\n",
     "dependencies": [
-      {"name": "litellm[proxy]", "version": ">=1.50", "purpose": "LiteLLM gateway with proxy + UI + DB support"},
-      {"name": "psycopg2-binary", "version": ">=2.9", "purpose": "Postgres driver for key/budget storage"}
+      {
+        "name": "litellm[proxy]",
+        "version": ">=1.50",
+        "purpose": "LiteLLM gateway with proxy + UI + DB support"
+      },
+      {
+        "name": "psycopg2-binary",
+        "version": ">=2.9",
+        "purpose": "Postgres driver for key/budget storage"
+      }
     ],
     "env_vars": [
-      {"name": "LITELLM_MASTER_KEY", "required": true, "description": "Admin key for generating virtual keys", "example": "sk-1234..."},
-      {"name": "DATABASE_URL", "required": true, "description": "Postgres URL for keys + budget state", "example": "postgresql://user:pass@host:5432/litellm"},
-      {"name": "ANTHROPIC_API_KEY", "required": false, "description": "Anthropic provider key", "example": "sk-ant-..."},
-      {"name": "OPENAI_API_KEY", "required": false, "description": "OpenAI provider key", "example": "sk-..."},
-      {"name": "GROQ_API_KEY", "required": false, "description": "Groq provider key", "example": "gsk_..."},
-      {"name": "LANGFUSE_PUBLIC_KEY", "required": false, "description": "Langfuse observability", "example": "pk-lf-..."},
-      {"name": "LANGFUSE_SECRET_KEY", "required": false, "description": "Langfuse observability", "example": "sk-lf-..."}
+      {
+        "name": "LITELLM_MASTER_KEY",
+        "required": true,
+        "description": "Admin key for generating virtual keys",
+        "example": "sk-1234..."
+      },
+      {
+        "name": "DATABASE_URL",
+        "required": true,
+        "description": "Postgres URL for keys + budget state",
+        "example": "postgresql://user:pass@host:5432/litellm"
+      },
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": false,
+        "description": "Anthropic provider key",
+        "example": "sk-ant-..."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": false,
+        "description": "OpenAI provider key",
+        "example": "sk-..."
+      },
+      {
+        "name": "GROQ_API_KEY",
+        "required": false,
+        "description": "Groq provider key",
+        "example": "gsk_..."
+      },
+      {
+        "name": "LANGFUSE_PUBLIC_KEY",
+        "required": false,
+        "description": "Langfuse observability",
+        "example": "pk-lf-..."
+      },
+      {
+        "name": "LANGFUSE_SECRET_KEY",
+        "required": false,
+        "description": "Langfuse observability",
+        "example": "sk-lf-..."
+      }
     ],
     "setup_steps": [
       "Provision Postgres (Supabase, Neon, or self-hosted)",
@@ -374,12 +575,30 @@
       "Monitor /health/readiness for upstream provider liveness"
     ],
     "tested_with": {
-      "model_versions": ["claude-sonnet-4-5-20250929", "gpt-4o", "groq/llama-3.3-70b-versatile", "ollama/llama3.1:8b"],
-      "library_versions": ["litellm==1.50.4", "postgres==16"],
+      "model_versions": [
+        "claude-sonnet-4-5-20250929",
+        "gpt-4o",
+        "groq/llama-3.3-70b-versatile",
+        "ollama/llama3.1:8b"
+      ],
+      "library_versions": [
+        "litellm==1.50.4",
+        "postgres==16"
+      ],
       "last_verified_date": "2026-05-13"
     },
-    "related_tool_slugs": ["litellm", "langfuse", "ollama-ollama-4"],
-    "related_glossary_slugs": ["llm-gateway", "model-routing", "rate-limit", "cost-attribution", "fallback"],
+    "related_tool_slugs": [
+      "litellm",
+      "langfuse",
+      "ollama-ollama-4"
+    ],
+    "related_glossary_slugs": [
+      "llm-gateway",
+      "model-routing",
+      "rate-limit",
+      "cost-attribution",
+      "fallback"
+    ],
     "related_learn_slugs": [],
     "license": "MIT",
     "attribution": "",
@@ -408,22 +627,60 @@
     "category": "llm-clients",
     "language": "python",
     "framework": "boto3",
-    "tags": ["aws", "bedrock", "claude", "streaming", "iam"],
-    "best_for_tags": ["aws", "enterprise", "claude"],
+    "tags": [
+      "aws",
+      "bedrock",
+      "claude",
+      "streaming",
+      "iam"
+    ],
+    "best_for_tags": [
+      "aws",
+      "enterprise",
+      "claude"
+    ],
     "difficulty_tier": "intermediate",
     "when_to_use": "Use Bedrock Claude when you're already an AWS shop and: (1) data residency matters (Bedrock keeps prompts in your AWS region, no cross-border data flow), (2) IAM-based auth fits your existing security model, (3) you want consolidated AWS billing instead of a separate Anthropic invoice. Three scenarios: HIPAA-regulated healthcare app, FedRAMP environment, or any enterprise with strict 'no data leaves AWS' policy.",
     "when_not_to_use": "Skip Bedrock if you need the latest model the day it ships — Anthropic's direct API gets new Claude versions weeks before Bedrock. Skip if you don't care about regional data residency — direct Anthropic API is cheaper (~10-15% margin) and simpler. Skip for high-volume workloads with no enterprise constraints — Anthropic's batch API at 50% off is cheaper than Bedrock.",
     "quick_start": "uv pip install 'boto3>=1.35'\naws configure  # or use IAM role from EC2/ECS\npython bedrock_chat.py",
     "full_code": "# bedrock_chat.py — Production Bedrock Claude with streaming + region failover\nimport json\nimport os\nfrom typing import Iterator\n\nimport boto3\nfrom botocore.config import Config\nfrom botocore.exceptions import ClientError\n\n# Regions where Claude 4 is available, in failover order\nREGIONS = ['us-east-1', 'us-west-2', 'eu-west-1']\nMODEL_ID = 'anthropic.claude-sonnet-4-5-20250929-v1:0'  # Bedrock model ID\n\n\ndef make_client(region: str):\n    \"\"\"Create Bedrock client with retry config. Uses IAM role from env/instance.\"\"\"\n    return boto3.client(\n        'bedrock-runtime',\n        region_name=region,\n        config=Config(\n            retries={'max_attempts': 5, 'mode': 'adaptive'},\n            connect_timeout=10,\n            read_timeout=300,  # long for streaming\n        ),\n    )\n\n\ndef stream_chat(\n    messages: list[dict],\n    system: str = '',\n    max_tokens: int = 4096,\n    temperature: float = 0.7,\n    use_caching: bool = True,\n) -> Iterator[str]:\n    \"\"\"Stream tokens from Claude via Bedrock with region failover.\"\"\"\n    body = {\n        'anthropic_version': 'bedrock-2023-05-31',\n        'max_tokens': max_tokens,\n        'temperature': temperature,\n        'messages': messages,\n    }\n    if system:\n        # Add cache_control for prompt caching (90% discount on cached portion)\n        if use_caching:\n            body['system'] = [{'type': 'text', 'text': system,\n                              'cache_control': {'type': 'ephemeral'}}]\n        else:\n            body['system'] = system\n\n    last_err = None\n    for region in REGIONS:\n        try:\n            client = make_client(region)\n            response = client.invoke_model_with_response_stream(\n                modelId=MODEL_ID,\n                body=json.dumps(body),\n                contentType='application/json',\n            )\n            for event in response['body']:\n                chunk = json.loads(event['chunk']['bytes'])\n                if chunk.get('type') == 'content_block_delta':\n                    delta = chunk['delta']\n                    if delta.get('type') == 'text_delta':\n                        yield delta['text']\n                elif chunk.get('type') == 'message_stop':\n                    # Final metrics — usage is in invocation_metrics on message_stop\n                    metrics = chunk.get('amazon-bedrock-invocationMetrics', {})\n                    print(f\"\\n[{region}] input={metrics.get('inputTokenCount')} \"\n                          f\"output={metrics.get('outputTokenCount')} \"\n                          f\"cache_read={metrics.get('cacheReadInputTokenCount', 0)} \"\n                          f\"latency={metrics.get('invocationLatency')}ms\")\n            return\n        except ClientError as e:\n            code = e.response['Error']['Code']\n            if code in ('ThrottlingException', 'ServiceQuotaExceededException',\n                       'ServiceUnavailableException'):\n                print(f'[{region}] {code} — failing over to next region')\n                last_err = e\n                continue\n            raise  # other errors: re-raise\n        except Exception as e:\n            last_err = e\n            print(f'[{region}] {type(e).__name__}: {e} — failing over')\n            continue\n    raise RuntimeError(f'All regions failed. Last error: {last_err}')\n\n\nif __name__ == '__main__':\n    system = 'You are a concise assistant. Respond in under 100 words.'\n    messages = [{'role': 'user', 'content': 'What is the AWS shared responsibility model?'}]\n    for tok in stream_chat(messages, system=system):\n        print(tok, end='', flush=True)\n    print()\n",
     "dependencies": [
-      {"name": "boto3", "version": ">=1.35", "purpose": "AWS SDK with Bedrock support"},
-      {"name": "botocore", "version": ">=1.35", "purpose": "boto3 core (auto-installed)"}
+      {
+        "name": "boto3",
+        "version": ">=1.35",
+        "purpose": "AWS SDK with Bedrock support"
+      },
+      {
+        "name": "botocore",
+        "version": ">=1.35",
+        "purpose": "boto3 core (auto-installed)"
+      }
     ],
     "env_vars": [
-      {"name": "AWS_REGION", "required": false, "description": "Default region (overrides hardcoded primary)", "example": "us-east-1"},
-      {"name": "AWS_PROFILE", "required": false, "description": "Named profile from ~/.aws/credentials", "example": "production"},
-      {"name": "AWS_ACCESS_KEY_ID", "required": false, "description": "Access key (prefer IAM role)", "example": "AKIA..."},
-      {"name": "AWS_SECRET_ACCESS_KEY", "required": false, "description": "Secret (prefer IAM role)", "example": "..."}
+      {
+        "name": "AWS_REGION",
+        "required": false,
+        "description": "Default region (overrides hardcoded primary)",
+        "example": "us-east-1"
+      },
+      {
+        "name": "AWS_PROFILE",
+        "required": false,
+        "description": "Named profile from ~/.aws/credentials",
+        "example": "production"
+      },
+      {
+        "name": "AWS_ACCESS_KEY_ID",
+        "required": false,
+        "description": "Access key (prefer IAM role)",
+        "example": "AKIA..."
+      },
+      {
+        "name": "AWS_SECRET_ACCESS_KEY",
+        "required": false,
+        "description": "Secret (prefer IAM role)",
+        "example": "..."
+      }
     ],
     "setup_steps": [
       "Request access to Claude models in Bedrock console: AWS Console → Bedrock → Model access → Request access for Anthropic Claude family",
@@ -477,12 +734,24 @@
       "Tag every InvokeModel call with team/project for cost attribution"
     ],
     "tested_with": {
-      "model_versions": ["anthropic.claude-sonnet-4-5-20250929-v1:0", "anthropic.claude-opus-4-20250805-v1:0"],
-      "library_versions": ["boto3==1.35.74"],
+      "model_versions": [
+        "anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "anthropic.claude-opus-4-20250805-v1:0"
+      ],
+      "library_versions": [
+        "boto3==1.35.74"
+      ],
       "last_verified_date": "2026-05-13"
     },
-    "related_tool_slugs": ["anthropic-sdk"],
-    "related_glossary_slugs": ["streaming", "prompt-caching", "rate-limit", "iam"],
+    "related_tool_slugs": [
+      "anthropic-sdk"
+    ],
+    "related_glossary_slugs": [
+      "streaming",
+      "prompt-caching",
+      "rate-limit",
+      "iam"
+    ],
     "related_learn_slugs": [],
     "license": "MIT",
     "attribution": "",
@@ -503,5 +772,821 @@
     "github_url": "",
     "meta_title": "Bedrock Claude 4 Streaming — IAM Auth + Region Failover",
     "meta_description": "Production AWS Bedrock client for Claude 4 with streaming, prompt caching, IAM role auth, automatic region failover, and quota handling."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "vllm-batched-inference-metrics",
+    "title": "vLLM 0.7 Batched Inference Server with Prometheus Metrics",
+    "tldr": "Production-ready vLLM 0.7 launch script for Llama 3.3 70B on 4x A100 with continuous batching, prefix caching, Prometheus metrics, and graceful concurrency-limit guards.",
+    "description": "Production-ready vLLM 0.7 launch script for Llama 3.3 70B on 4x A100 with continuous batching, prefix caching, Prometheus metrics, and graceful concurrency-limit guards.",
+    "category": "llm-inference",
+    "language": "python",
+    "framework": "vllm",
+    "difficulty_tier": "advanced",
+    "tags": [
+      "vllm",
+      "llama-3.3",
+      "continuous-batching",
+      "prometheus",
+      "prefix-caching"
+    ],
+    "best_for_tags": [
+      "self-hosted-llm",
+      "high-throughput",
+      "private-deployment"
+    ],
+    "featured": true,
+    "when_to_use": "You have GPU hardware (or a cloud GPU budget) and need to serve 100+ concurrent users on Llama 3.3 70B with full data sovereignty. vLLM 0.7 with continuous batching consistently delivers 600-1200 tok/s aggregate on 4x A100 80GB, with p50 TTFT under 400ms and full Prometheus observability.",
+    "when_not_to_use": "Skip vLLM when (1) you have one GPU and <10 QPS - Ollama or llama.cpp are simpler; (2) you need sub-200ms TTFT - hosted Groq beats self-hosted on raw latency; (3) you're cost-optimizing offline batch jobs - Together's batch API is 50% cheaper than running your own GPUs idle.",
+    "quick_start": "1) `pip install vllm==0.7.0`  2) `python -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-3.3-70B-Instruct --tensor-parallel-size 4 --enable-prefix-caching --max-num-seqs 256`  3) curl localhost:8000/v1/chat/completions and scrape :8000/metrics for live throughput stats.",
+    "full_code": "\"\"\"\nvLLM 0.7 production launcher for Llama 3.3 70B on 4x A100 80GB.\n\nWhat this gives you over the bare `python -m vllm.entrypoints.openai.api_server`:\n  - Sensible defaults tuned for 4xA100 + 70B model (TP=4, gpu_mem_utilization=0.92, max_seqs=256)\n  - Prefix caching ON - huge throughput win for chat (system prompt reuse)\n  - Prometheus metrics on /metrics (auto-enabled in vLLM 0.7+)\n  - Pre-flight GPU + nvidia-driver + CUDA check so you fail fast, not 5 minutes into model load\n  - Graceful SIGTERM handling so K8s rolling deploys don't truncate in-flight requests\n\nRun:\n  python serve_vllm.py --model meta-llama/Llama-3.3-70B-Instruct --tp 4 --port 8000 --max-seqs 256\n\"\"\"\nfrom __future__ import annotations\n\nimport argparse\nimport os\nimport signal\nimport subprocess\nimport sys\n\n\ndef preflight() -> None:\n    try:\n        out = subprocess.check_output([\"nvidia-smi\", \"--query-gpu=name,memory.total,driver_version\", \"--format=csv,noheader\"]).decode()\n    except (subprocess.CalledProcessError, FileNotFoundError):\n        print(\"FATAL: nvidia-smi not available. Is this a GPU host?\", file=sys.stderr)\n        sys.exit(2)\n    gpus = [ln.strip() for ln in out.splitlines() if ln.strip()]\n    if not gpus:\n        print(\"FATAL: no GPUs detected.\", file=sys.stderr)\n        sys.exit(2)\n    print(f\"[preflight] {len(gpus)} GPUs detected:\")\n    for g in gpus:\n        print(f\"  - {g}\")\n\n\ndef main() -> None:\n    ap = argparse.ArgumentParser()\n    ap.add_argument(\"--model\", default=os.environ.get(\"VLLM_MODEL\", \"meta-llama/Llama-3.3-70B-Instruct\"))\n    ap.add_argument(\"--tp\", type=int, default=int(os.environ.get(\"VLLM_TP\", \"4\")))\n    ap.add_argument(\"--port\", type=int, default=8000)\n    ap.add_argument(\"--host\", default=\"0.0.0.0\")\n    ap.add_argument(\"--max-seqs\", type=int, default=256)\n    ap.add_argument(\"--max-model-len\", type=int, default=8192)\n    ap.add_argument(\"--gpu-mem-util\", type=float, default=0.92)\n    ap.add_argument(\"--quantization\", choices=[\"none\", \"fp8\", \"awq\", \"gptq\"], default=\"none\")\n    ap.add_argument(\"--api-key\", default=os.environ.get(\"VLLM_API_KEY\"))\n    args = ap.parse_args()\n\n    preflight()\n\n    cmd = [\n        sys.executable, \"-m\", \"vllm.entrypoints.openai.api_server\",\n        \"--model\", args.model,\n        \"--tensor-parallel-size\", str(args.tp),\n        \"--host\", args.host,\n        \"--port\", str(args.port),\n        \"--max-num-seqs\", str(args.max_seqs),\n        \"--max-model-len\", str(args.max_model_len),\n        \"--gpu-memory-utilization\", str(args.gpu_mem_util),\n        \"--enable-prefix-caching\",\n        \"--disable-log-requests\",\n    ]\n    if args.quantization != \"none\":\n        cmd += [\"--quantization\", args.quantization]\n    if args.api_key:\n        cmd += [\"--api-key\", args.api_key]\n\n    print(\"[vllm] launching:\", \" \".join(cmd), flush=True)\n    proc = subprocess.Popen(cmd)\n\n    def shutdown(sig, _frame):\n        proc.send_signal(signal.SIGTERM)\n        try:\n            proc.wait(timeout=30)\n        except subprocess.TimeoutExpired:\n            proc.kill()\n        sys.exit(proc.returncode or 0)\n\n    signal.signal(signal.SIGINT, shutdown)\n    signal.signal(signal.SIGTERM, shutdown)\n    sys.exit(proc.wait())\n\n\nif __name__ == \"__main__\":\n    main()\n",
+    "code": "\"\"\"vLLM 0.7 production launcher for Llama 3.3 70B on 4x A100 80GB.\"\"\"\nimport argparse, os, signal, subprocess, sys\n\n\ndef main():\n    ap = argparse.ArgumentParser()\n    ap.add_argument(\"--model\", default=\"meta-llama/Llama-3.3-70B-Instruct\")\n    ap.add_argument(\"--tp\", type=int, default=4)\n    ap.add_argument(\"--port\", type=int, default=8000)\n    args = ap.parse_args()\n    cmd = [sys.executable, \"-m\", \"vllm.entrypoints.openai.api_server\",\n        \"--model\", args.model, \"--tensor-parallel-size\", str(args.tp),\n        \"--port\", str(args.port), \"--enable-prefix-caching\",\n        \"--max-num-seqs\", \"256\", \"--gpu-memory-utilization\", \"0.92\"]\n    proc = subprocess.Popen(cmd)\n    signal.signal(signal.SIGTERM, lambda s, f: proc.send_signal(signal.SIGTERM))\n    sys.exit(proc.wait())\n\n\nif __name__ == \"__main__\":\n    main()\n",
+    "dependencies": [
+      "vllm",
+      "torch",
+      "transformers"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "vllm",
+        "version": "==0.7.0",
+        "purpose": "High-throughput LLM inference engine with continuous batching + paged attention."
+      },
+      {
+        "name": "torch",
+        "version": ">=2.5.0",
+        "purpose": "PyTorch - vLLM 0.7 requires 2.5+ for FP8 + CUDA 12.4 kernels."
+      },
+      {
+        "name": "transformers",
+        "version": ">=4.46.0",
+        "purpose": "HuggingFace transformers - needed for tokenizer + model loading."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "HuggingFace token with read access to meta-llama/Llama-3.3-70B-Instruct (gated repo)."
+      },
+      {
+        "name": "VLLM_API_KEY",
+        "required": false,
+        "description": "Optional bearer token to protect /v1/* routes. Strongly recommended in production."
+      }
+    ],
+    "setup_steps": [
+      "Provision a 4x A100 80GB (or 4x H100) host. CUDA 12.4+, NVIDIA driver 550+.",
+      "`pip install vllm==0.7.0 torch>=2.5.0 transformers>=4.46.0`",
+      "`huggingface-cli login` with a token that has Llama-3.3-70B access.",
+      "Save the script as `serve_vllm.py`.",
+      "`python serve_vllm.py --tp 4 --max-seqs 256` - first load takes 3-5 min.",
+      "Once `INFO: Application startup complete` appears, hit `curl localhost:8000/v1/models` to confirm.",
+      "Scrape `localhost:8000/metrics` from Prometheus; key metrics are `vllm:num_requests_running` and `vllm:time_per_output_token_seconds`."
+    ],
+    "variations": [
+      {
+        "label": "FP8 quantization for single H100",
+        "description": "Squeeze Llama 3.3 70B onto a single H100 80GB with FP8 - ~5% quality loss, ~2x throughput.",
+        "code_snippet": "python serve_vllm.py --model meta-llama/Llama-3.3-70B-Instruct --tp 1 --quantization fp8 --max-seqs 64 --gpu-mem-util 0.95"
+      },
+      {
+        "label": "Dockerfile for K8s deployment",
+        "description": "Minimal CUDA-12.4 image that launches the server.",
+        "code_snippet": "FROM nvidia/cuda:12.4.1-devel-ubuntu22.04\nRUN apt-get update && apt-get install -y python3.11 python3-pip\nRUN pip3 install vllm==0.7.0 torch>=2.5.0\nCOPY serve_vllm.py /app/serve_vllm.py\nWORKDIR /app\nEXPOSE 8000\nCMD [\"python3\", \"serve_vllm.py\", \"--tp\", \"4\"]"
+      },
+      {
+        "label": "LoRA adapter hot-swap",
+        "description": "Serve multiple fine-tuned LoRA adapters off the same base model.",
+        "code_snippet": "python -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-3.3-70B-Instruct --enable-lora --lora-modules customer-support=/adapters/cs sales-copilot=/adapters/sc --max-loras 4 --max-lora-rank 16"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "torch.cuda.OutOfMemoryError: CUDA out of memory",
+        "cause": "gpu-memory-utilization too high OR another process is holding GPU memory.",
+        "fix_snippet": "python serve_vllm.py --gpu-mem-util 0.85 --max-model-len 4096 --max-seqs 128"
+      },
+      {
+        "error_text": "ValueError: Model meta-llama/Llama-3.3-70B-Instruct not found",
+        "cause": "Llama 3.3 is a gated repo and your HF_TOKEN doesn't have access yet.",
+        "fix_snippet": "huggingface-cli login\nhuggingface-cli download meta-llama/Llama-3.3-70B-Instruct --include '*.json'"
+      },
+      {
+        "error_text": "RuntimeError: NCCL communicator was aborted",
+        "cause": "Tensor-parallel setup couldn't establish NCCL between GPUs.",
+        "fix_snippet": "NCCL_DEBUG=INFO python serve_vllm.py --tp 4\nNCCL_P2P_DISABLE=1 python serve_vllm.py --tp 4  # fallback"
+      },
+      {
+        "error_text": "Throughput is much lower than benchmarks claim",
+        "cause": "Prefix caching disabled, max-num-seqs too low, or measuring at QPS=1.",
+        "fix_snippet": "pip install vllm[bench]\npython -m vllm.entrypoints.openai.run_batch --endpoint http://localhost:8000/v1/chat/completions --num-prompts 1000 --concurrency 64"
+      }
+    ],
+    "production_checklist": [
+      "Always set --api-key in production - vLLM exposes /v1/* with no auth by default.",
+      "Scrape `/metrics` to Prometheus and alert on `vllm:num_requests_waiting > 10` for 5 min.",
+      "Run with `--disable-log-requests` and pipe stdout to a structured logger; per-request logs are noisy.",
+      "Pin model weights to a local volume (`HF_HOME=/var/cache/huggingface`) so pod restarts don't re-download 140GB.",
+      "Use --enforce-eager only for debugging - it disables CUDA graphs and tanks throughput 30-40%.",
+      "Capacity-plan with the formula `concurrent_users = (gpu_mem_util * vram_gb - model_size_gb) / kv_cache_per_seq_gb`; for 4xA100 + 70B that's ~250 concurrent at 8k ctx.",
+      "Stand up a canary with one replica before rolling 100% - vLLM minor versions occasionally change scheduling defaults."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.3-70B-Instruct",
+        "meta-llama/Llama-3.1-8B-Instruct",
+        "Qwen/Qwen2.5-72B-Instruct"
+      ],
+      "library_versions": [
+        "vllm==0.7.0",
+        "torch==2.5.1",
+        "transformers==4.46.3",
+        "CUDA==12.4"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "vllm",
+      "sglang",
+      "text-generation-inference",
+      "ray-serve"
+    ],
+    "related_glossary_slugs": [
+      "continuous-batching",
+      "paged-attention",
+      "prefix-caching",
+      "tensor-parallelism",
+      "kv-cache"
+    ],
+    "related_learn_slugs": [
+      "self-hosted-llm-101",
+      "production-llm-deployment"
+    ],
+    "faq": [
+      {
+        "question": "vLLM vs SGLang vs TGI - which should I pick in 2026?",
+        "answer": "vLLM 0.7 has the deepest community + widest model support and is the safe default for OpenAI-compatible inference. SGLang wins on constrained generation (RadixAttention + grammars) and edges vLLM by 10-20% on agent/tool-use workloads. TGI is HuggingFace-blessed but trails both on throughput. Default to vLLM unless you have a specific SGLang or TGI feature in mind."
+      },
+      {
+        "question": "Can I serve multiple models on one host?",
+        "answer": "Not in one vLLM process - it loads one model. For multi-model: (1) run multiple vLLM processes on different ports + GPUs (CUDA_VISIBLE_DEVICES), or (2) use Ray Serve + vLLM workers, or (3) for many small models, use LiteLLM as a router in front of multiple model endpoints."
+      },
+      {
+        "question": "How do I do streaming with the OpenAI-compatible endpoint?",
+        "answer": "Pass `stream=true` in the request body. vLLM emits SSE events identical to OpenAI's format - the openai Python SDK works unmodified, just point `base_url` at `http://your-vllm:8000/v1`."
+      }
+    ],
+    "meta_title": "vLLM 0.7 Batched Inference with Prometheus Metrics | OSS AI Hub",
+    "meta_description": "Production vLLM 0.7 launcher for Llama 3.3 70B on 4xA100: continuous batching, prefix caching, /metrics, FP8 + LoRA variants. MIT-licensed."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "sglang-radix-attention-server",
+    "title": "SGLang RadixAttention Server for Agent Workloads",
+    "tldr": "Launch SGLang with RadixAttention to serve Llama 3.3 70B at 1.5-2x vLLM throughput on agent workloads with heavy prefix sharing.",
+    "description": "Launch SGLang with RadixAttention to serve Llama 3.3 70B at 1.5-2x vLLM throughput on agent workloads with heavy prefix sharing.",
+    "category": "llm-inference",
+    "language": "python",
+    "framework": "sglang",
+    "difficulty_tier": "expert",
+    "tags": [
+      "sglang",
+      "radix-attention",
+      "agents",
+      "constrained-generation",
+      "llama-3.3"
+    ],
+    "best_for_tags": [
+      "agent-frameworks",
+      "tool-use",
+      "structured-output"
+    ],
+    "featured": false,
+    "when_to_use": "Agent workloads where prompts share long prefixes (system prompt + tool definitions + few-shot examples that repeat across requests). SGLang's RadixAttention caches these as a radix tree across requests - typical 1.5-2x throughput uplift vs vLLM for ReAct/function-calling traffic. Also pick SGLang when you need strict JSON-schema or regex-constrained outputs.",
+    "when_not_to_use": "Skip SGLang when (1) your workload is one-shot completions with unique prefixes - vLLM's prefix caching is equally good; (2) you need the broadest model coverage - vLLM has more model + quantization support; (3) you want a simpler ops story - vLLM has wider community + more battle-tested K8s patterns.",
+    "quick_start": "1) `pip install sglang[all]==0.4.0`  2) `python -m sglang.launch_server --model-path meta-llama/Llama-3.3-70B-Instruct --tp 4 --enable-radix-cache`  3) Hit `localhost:30000/v1/chat/completions`.",
+    "full_code": "\"\"\"\nSGLang 0.4 production launcher with RadixAttention enabled.\n\nWhy SGLang over vLLM for agents:\n  - RadixAttention shares KV cache across requests with common prefixes\n    (system prompt + tool schemas + few-shot exemplars). For ReAct-style\n    traffic this is the biggest win in the inference stack since paged attention.\n  - First-class constrained generation: grammar / JSON-schema / regex enforced\n    inside the kernel, not via rejection sampling.\n  - OpenAI-compatible REST API on :30000.\n\nRun: python serve_sglang.py --tp 4 --port 30000\n\"\"\"\nfrom __future__ import annotations\n\nimport argparse\nimport os\nimport signal\nimport subprocess\nimport sys\n\n\ndef main() -> None:\n    ap = argparse.ArgumentParser()\n    ap.add_argument(\"--model\", default=os.environ.get(\"SGLANG_MODEL\", \"meta-llama/Llama-3.3-70B-Instruct\"))\n    ap.add_argument(\"--tp\", type=int, default=4)\n    ap.add_argument(\"--port\", type=int, default=30000)\n    ap.add_argument(\"--host\", default=\"0.0.0.0\")\n    ap.add_argument(\"--mem-fraction\", type=float, default=0.85)\n    ap.add_argument(\"--max-prefill-tokens\", type=int, default=16384)\n    args = ap.parse_args()\n\n    cmd = [\n        sys.executable, \"-m\", \"sglang.launch_server\",\n        \"--model-path\", args.model,\n        \"--tp\", str(args.tp),\n        \"--port\", str(args.port),\n        \"--host\", args.host,\n        \"--mem-fraction-static\", str(args.mem_fraction),\n        \"--max-prefill-tokens\", str(args.max_prefill_tokens),\n        \"--enable-radix-cache\",\n        \"--chunked-prefill-size\", \"8192\",\n    ]\n\n    print(\"[sglang] launching:\", \" \".join(cmd), flush=True)\n    proc = subprocess.Popen(cmd)\n\n    def shutdown(sig, _frame):\n        proc.send_signal(signal.SIGTERM)\n        try:\n            proc.wait(timeout=30)\n        except subprocess.TimeoutExpired:\n            proc.kill()\n        sys.exit(proc.returncode or 0)\n\n    signal.signal(signal.SIGINT, shutdown)\n    signal.signal(signal.SIGTERM, shutdown)\n    sys.exit(proc.wait())\n\n\nif __name__ == \"__main__\":\n    main()\n",
+    "code": "\"\"\"SGLang 0.4 launcher with RadixAttention.\"\"\"\nimport argparse, os, signal, subprocess, sys\n\n\ndef main():\n    ap = argparse.ArgumentParser()\n    ap.add_argument(\"--model\", default=\"meta-llama/Llama-3.3-70B-Instruct\")\n    ap.add_argument(\"--tp\", type=int, default=4)\n    ap.add_argument(\"--port\", type=int, default=30000)\n    args = ap.parse_args()\n    cmd = [sys.executable, \"-m\", \"sglang.launch_server\",\n        \"--model-path\", args.model, \"--tp\", str(args.tp),\n        \"--port\", str(args.port), \"--mem-fraction-static\", \"0.85\",\n        \"--enable-radix-cache\"]\n    proc = subprocess.Popen(cmd)\n    signal.signal(signal.SIGTERM, lambda s, f: proc.send_signal(signal.SIGTERM))\n    sys.exit(proc.wait())\n\n\nif __name__ == \"__main__\":\n    main()\n",
+    "dependencies": [
+      "sglang",
+      "torch",
+      "flashinfer-python"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "sglang[all]",
+        "version": "==0.4.0",
+        "purpose": "Inference engine with RadixAttention + constrained generation."
+      },
+      {
+        "name": "torch",
+        "version": ">=2.5.0",
+        "purpose": "PyTorch - SGLang 0.4 requires CUDA 12.4 kernels."
+      },
+      {
+        "name": "flashinfer-python",
+        "version": ">=0.2.0",
+        "purpose": "FlashInfer kernels - SGLang's default attention backend."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "HuggingFace token with Llama-3.3-70B access."
+      }
+    ],
+    "setup_steps": [
+      "Provision 4xA100 80GB or equivalent (4xH100, 4xMI300X also tested).",
+      "`pip install \"sglang[all]\"==0.4.0` (the [all] extra pulls flashinfer + outlines).",
+      "`huggingface-cli login` with a Llama-3.3-gated token.",
+      "Save the launcher as `serve_sglang.py`.",
+      "`python serve_sglang.py --tp 4 --port 30000` - startup ~2-3 min for 70B.",
+      "Verify with `curl localhost:30000/v1/models` and `curl localhost:30000/health`.",
+      "For RadixAttention benefit, ensure your client sends a stable system prompt + tools block across requests."
+    ],
+    "variations": [
+      {
+        "label": "Constrained JSON output",
+        "description": "Force the model to emit valid JSON matching a Pydantic schema, on the kernel side.",
+        "code_snippet": "import openai\nfrom pydantic import BaseModel\n\nclass Person(BaseModel):\n    name: str\n    age: int\n    email: str\n\nclient = openai.OpenAI(base_url='http://localhost:30000/v1', api_key='dummy')\nresp = client.chat.completions.create(\n    model='meta-llama/Llama-3.3-70B-Instruct',\n    messages=[{'role': 'user', 'content': 'Make me a fake person.'}],\n    response_format={'type': 'json_schema', 'json_schema': Person.model_json_schema()},\n)\nperson = Person.model_validate_json(resp.choices[0].message.content)"
+      },
+      {
+        "label": "Tool-calling agent loop",
+        "description": "Multi-turn ReAct loop - RadixAttention shines because system prompt + tool defs are reused every turn.",
+        "code_snippet": "import json\ntools = [{'type': 'function', 'function': {'name': 'get_weather', 'parameters': {}}}]\nmessages = [{'role': 'system', 'content': 'You are a weather assistant.'}]\n\nwhile True:\n    messages.append({'role': 'user', 'content': input('> ')})\n    resp = client.chat.completions.create(model='meta-llama/Llama-3.3-70B-Instruct', messages=messages, tools=tools)\n    msg = resp.choices[0].message\n    messages.append(msg.model_dump())\n    if not msg.tool_calls:\n        print(msg.content)\n        continue\n    for tc in msg.tool_calls:\n        result = run_tool(tc.function.name, json.loads(tc.function.arguments))\n        messages.append({'role': 'tool', 'tool_call_id': tc.id, 'content': str(result)})"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ImportError: flashinfer not available; falling back to triton",
+        "cause": "flashinfer wheel missing or wrong CUDA version.",
+        "fix_snippet": "pip install flashinfer-python -i https://flashinfer.ai/whl/cu124/torch2.5/"
+      },
+      {
+        "error_text": "RuntimeError: Cannot allocate radix cache",
+        "cause": "mem-fraction-static + KV cache + model don't fit in VRAM.",
+        "fix_snippet": "python serve_sglang.py --tp 4 --mem-fraction 0.80 --max-prefill-tokens 8192"
+      },
+      {
+        "error_text": "TimeoutError: server not ready after 5 min",
+        "cause": "Weights are downloading from HF on first run (140GB).",
+        "fix_snippet": "HF_HOME=/mnt/fast-ssd/hf huggingface-cli download meta-llama/Llama-3.3-70B-Instruct"
+      }
+    ],
+    "production_checklist": [
+      "Confirm RadixAttention is paying off: `curl localhost:30000/metrics` and check `sglang:cache_hit_rate` - anything <30% means your workload doesn't share prefixes.",
+      "Use --chunked-prefill-size for large prompts (>4k tokens) - keeps TTFT predictable under bursty load.",
+      "Pin SGLang minor version - 0.4 -> 0.5 will likely change the radix cache key format and require re-warming.",
+      "Watch `nvidia-smi -l 1` for any non-SGLang process; static memory fraction means co-tenants will OOM SGLang.",
+      "Use `--show-time-cost` during load testing to identify whether you're prefill-bound or decode-bound."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.3-70B-Instruct",
+        "Qwen/Qwen2.5-72B-Instruct"
+      ],
+      "library_versions": [
+        "sglang==0.4.0",
+        "torch==2.5.1",
+        "flashinfer-python==0.2.0",
+        "CUDA==12.4"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "sglang",
+      "vllm",
+      "outlines",
+      "lmsys"
+    ],
+    "related_glossary_slugs": [
+      "radix-attention",
+      "prefix-caching",
+      "constrained-generation",
+      "kv-cache"
+    ],
+    "related_learn_slugs": [
+      "agent-architecture-101",
+      "structured-outputs-101"
+    ],
+    "faq": [
+      {
+        "question": "When is RadixAttention actually faster than vLLM's prefix cache?",
+        "answer": "Both cache prefixes, but RadixAttention shares the cache across all in-flight requests via a tree structure, while vLLM's prefix cache is per-block-hash. For chat (one system prompt, many users) the gap is small; for agent traffic (long tool schemas + few-shot examples reused on every turn) RadixAttention can be 1.5-2x faster. Measure your `cache_hit_rate` first - below 30% there's no advantage."
+      },
+      {
+        "question": "Can I use SGLang's frontend DSL without the server?",
+        "answer": "Yes - `import sglang as sgl` lets you call the engine directly in-process. Useful for batch jobs or notebooks, but for serving you almost always want the server (handles concurrency, KV pool, OpenAI compat)."
+      },
+      {
+        "question": "Does SGLang support speculative decoding?",
+        "answer": "Yes, with `--draft-model` and EAGLE/Medusa heads. Meaningful TTFT win for low-concurrency workloads but engineering overhead is real - evaluate vLLM's speculative decoding first; in 0.7 it's caught up to SGLang."
+      }
+    ],
+    "meta_title": "SGLang RadixAttention Server for Agents | OSS AI Hub",
+    "meta_description": "SGLang 0.4 launcher for Llama 3.3 70B: RadixAttention, constrained generation, OpenAI-compat. 1.5-2x faster than vLLM on agent workloads. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "llamacpp-server-quantized",
+    "title": "llama.cpp Server with GGUF Q4_K_M Quantization",
+    "tldr": "Self-host Llama 3.3 70B on a single 24GB consumer GPU using llama.cpp HTTP server with Q4_K_M - the cheapest path to fully-local production inference.",
+    "description": "Self-host Llama 3.3 70B on a single 24GB consumer GPU using llama.cpp HTTP server with Q4_K_M - the cheapest path to fully-local production inference.",
+    "category": "llm-inference",
+    "language": "bash",
+    "framework": "llama.cpp",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "llama.cpp",
+      "gguf",
+      "quantization",
+      "single-gpu",
+      "local-llm"
+    ],
+    "best_for_tags": [
+      "solo-builder",
+      "consumer-gpu",
+      "edge-deployment"
+    ],
+    "featured": true,
+    "when_to_use": "You have a single consumer GPU (RTX 4090, 3090, or even Apple Silicon) and want Llama 3.3 70B (Q4_K_M, ~42GB) or Llama 3.1 8B (Q8_0, ~8GB) running fully local with an OpenAI-compatible REST API. llama.cpp is the gold standard for quantized inference - leaner than vLLM, supports CPU + Metal + ROCm + CUDA + Vulkan, single binary.",
+    "when_not_to_use": "Skip llama.cpp when (1) you need >20 concurrent users - vLLM/SGLang scale better at scale; (2) you need full FP16 quality - even Q4_K_M is a measurable quality drop (~2% on most evals); (3) you're already on multi-GPU - vLLM tensor-parallelism is faster than llama.cpp's MPI mode.",
+    "quick_start": "1) `brew install llama.cpp` (mac) or build from source  2) `huggingface-cli download bartowski/Llama-3.3-70B-Instruct-GGUF --include 'Llama-3.3-70B-Instruct-Q4_K_M.gguf'`  3) `llama-server -m Llama-3.3-70B-Instruct-Q4_K_M.gguf -ngl 99 --host 0.0.0.0 --port 8080`",
+    "full_code": "#!/usr/bin/env bash\n# launch-llamacpp.sh - production launcher for llama.cpp server\nset -euo pipefail\n\nMODEL_PATH=\"${MODEL_PATH:-./models/Llama-3.3-70B-Instruct-Q4_K_M.gguf}\"\nPORT=\"${PORT:-8080}\"\nHOST=\"${HOST:-0.0.0.0}\"\nCTX_SIZE=\"${CTX_SIZE:-8192}\"\nPARALLEL=\"${PARALLEL:-4}\"\nAPI_KEY=\"${LLAMACPP_API_KEY:-}\"\n\nif [[ ! -f \"$MODEL_PATH\" ]]; then\n  echo \"[fatal] model not found at $MODEL_PATH\" >&2\n  exit 2\nfi\n\nNGL=0\nif command -v nvidia-smi >/dev/null 2>&1; then\n  echo \"[info] CUDA GPU detected\"\n  NGL=99\nelif [[ \"$(uname)\" == \"Darwin\" ]]; then\n  echo \"[info] Apple Silicon (Metal) backend\"\n  NGL=99\nfi\n\nARGS=(\n  -m \"$MODEL_PATH\"\n  -ngl \"$NGL\"\n  -c \"$CTX_SIZE\"\n  --parallel \"$PARALLEL\"\n  --host \"$HOST\"\n  --port \"$PORT\"\n  --metrics\n  --jinja\n)\nif [[ -n \"$API_KEY\" ]]; then\n  ARGS+=(--api-key \"$API_KEY\")\nfi\n\nexec llama-server \"${ARGS[@]}\"\n",
+    "code": "#!/usr/bin/env bash\nset -euo pipefail\nMODEL_PATH=\"${MODEL_PATH:-./models/Llama-3.3-70B-Instruct-Q4_K_M.gguf}\"\nPORT=\"${PORT:-8080}\"\nCTX_SIZE=\"${CTX_SIZE:-8192}\"\nPARALLEL=\"${PARALLEL:-4}\"\nNGL=99\n[[ -f \"$MODEL_PATH\" ]] || { echo \"model not found: $MODEL_PATH\" >&2; exit 2; }\nexec llama-server -m \"$MODEL_PATH\" -ngl \"$NGL\" -c \"$CTX_SIZE\" \\\n  --parallel \"$PARALLEL\" --host 0.0.0.0 --port \"$PORT\" \\\n  --metrics --jinja\n",
+    "dependencies": [
+      "llama.cpp",
+      "huggingface-hub"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "llama.cpp",
+        "version": ">=b4250",
+        "purpose": "C++ inference engine with GGUF + multi-backend support."
+      },
+      {
+        "name": "huggingface-hub[cli]",
+        "version": ">=0.27.0",
+        "purpose": "Python CLI for downloading GGUF files."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "MODEL_PATH",
+        "required": false,
+        "description": "Path to GGUF file."
+      },
+      {
+        "name": "LLAMACPP_API_KEY",
+        "required": false,
+        "description": "Bearer token to protect /v1/* routes."
+      }
+    ],
+    "setup_steps": [
+      "Install llama.cpp: `brew install llama.cpp` (mac) or `git clone github.com/ggerganov/llama.cpp && cd llama.cpp && make GGML_CUDA=1`.",
+      "Install HuggingFace CLI: `pip install \"huggingface-hub[cli]>=0.27.0\"`.",
+      "Download weights: `huggingface-cli download bartowski/Llama-3.3-70B-Instruct-GGUF --include 'Llama-3.3-70B-Instruct-Q4_K_M.gguf' --local-dir ./models`.",
+      "Save the launcher as `launch-llamacpp.sh` and `chmod +x launch-llamacpp.sh`.",
+      "Run: `./launch-llamacpp.sh` - startup is fast (~30s on warm SSD).",
+      "Verify: `curl localhost:8080/v1/models`.",
+      "(Optional) Run as systemd service for auto-restart on boot."
+    ],
+    "variations": [
+      {
+        "label": "Llama 3.1 8B Q8_0 for solo dev",
+        "description": "When 70B is overkill or you need long contexts on a single consumer GPU.",
+        "code_snippet": "huggingface-cli download bartowski/Meta-Llama-3.1-8B-Instruct-GGUF --include 'Meta-Llama-3.1-8B-Instruct-Q8_0.gguf' --local-dir ./models\nMODEL_PATH=./models/Meta-Llama-3.1-8B-Instruct-Q8_0.gguf CTX_SIZE=32768 PARALLEL=8 ./launch-llamacpp.sh"
+      },
+      {
+        "label": "systemd service",
+        "description": "Auto-start on boot, restart on crash.",
+        "code_snippet": "# /etc/systemd/system/llamacpp.service\n[Unit]\nDescription=llama.cpp server\nAfter=network.target\n\n[Service]\nUser=ai\nWorkingDirectory=/opt/llamacpp\nExecStart=/opt/llamacpp/launch-llamacpp.sh\nRestart=on-failure\nRestartSec=10\nStandardOutput=journal\n\n[Install]\nWantedBy=multi-user.target"
+      },
+      {
+        "label": "Apple Silicon (M3 Max) 70B Q4_K_M",
+        "description": "Native Metal backend - no extra flags.",
+        "code_snippet": "brew install llama.cpp\nhuggingface-cli download bartowski/Llama-3.3-70B-Instruct-GGUF --include 'Llama-3.3-70B-Instruct-Q4_K_M.gguf' --local-dir ./models\n./launch-llamacpp.sh\n# expect ~6-9 tok/s on M3 Max for 70B Q4_K_M"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ggml_cuda_init: failed to initialize CUDA",
+        "cause": "llama.cpp was built without CUDA (`GGML_CUDA=1`).",
+        "fix_snippet": "cd llama.cpp && make clean && make GGML_CUDA=1 -j $(nproc)"
+      },
+      {
+        "error_text": "llama_model_load: error loading model: gguf_init_from_file",
+        "cause": "Truncated GGUF download - huggingface-cli resumed silently and left a corrupted file.",
+        "fix_snippet": "huggingface-cli download bartowski/Llama-3.3-70B-Instruct-GGUF --include 'Llama-3.3-70B-Instruct-Q4_K_M.gguf' --local-dir ./models --force-download"
+      },
+      {
+        "error_text": "Out of memory: slots * ctx_size > available KV cache",
+        "cause": "PARALLEL slots * CTX_SIZE per slot exceeds remaining VRAM after model load.",
+        "fix_snippet": "PARALLEL=2 CTX_SIZE=8192 ./launch-llamacpp.sh"
+      },
+      {
+        "error_text": "Response quality is noticeably worse than the HF inference widget",
+        "cause": "Wrong chat template applied. llama.cpp required hand-formatted prompts historically; `--jinja` flag fixes this.",
+        "fix_snippet": "# ARGS+=(--jinja) in launch-llamacpp.sh"
+      }
+    ],
+    "production_checklist": [
+      "Always set LLAMACPP_API_KEY in production - the server is unauthenticated by default.",
+      "Use Q4_K_M as the default quant; Q5_K_M trades 30% more VRAM for ~0.5% eval gain (rarely worth it).",
+      "Pin to a llama.cpp build tag in your Dockerfile - the project moves fast and breaks compat across releases.",
+      "Monitor `/metrics` for `slots_idle` - if it's always 0 you're saturated.",
+      "Use `--mlock` on Linux with enough RAM to keep the model resident; avoids slow page-in on first request after idle.",
+      "Stand up a smoke-test script that pings /v1/chat/completions with a known prompt + checks the SHA of the response - catches silent template regressions.",
+      "If serving multiple models, run one llama.cpp instance per model + a LiteLLM proxy in front; llama.cpp can't hot-swap."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "Llama-3.3-70B-Instruct-Q4_K_M.gguf (bartowski)",
+        "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf (bartowski)"
+      ],
+      "library_versions": [
+        "llama.cpp b4250",
+        "CUDA 12.4 (linux)",
+        "Metal (macOS 15)"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "llama-cpp",
+      "ollama",
+      "lm-studio",
+      "jan-ai"
+    ],
+    "related_glossary_slugs": [
+      "gguf",
+      "quantization",
+      "q4-k-m",
+      "llm-inference",
+      "kv-cache"
+    ],
+    "related_learn_slugs": [
+      "self-hosted-llm-101",
+      "consumer-gpu-llm"
+    ],
+    "faq": [
+      {
+        "question": "llama.cpp vs Ollama - which should I use?",
+        "answer": "Ollama wraps llama.cpp with a model registry + Modelfile templates + simpler CLI. For solo devs and quick local prototyping, use Ollama. For production serving where you want explicit control over quant level, slots, and HTTP routing, use llama.cpp directly. Both share the same underlying engine."
+      },
+      {
+        "question": "Q4_K_M vs Q5_K_M vs Q8_0 - what's the right pick?",
+        "answer": "Q4_K_M is the sweet spot: ~3.5x smaller than FP16 with <2% quality drop on most evals. Q5_K_M is the same quality as Q4 for 30% more VRAM - skip it. Q8_0 is near-lossless and the right pick when you have VRAM to spare. Below Q4 quality degrades noticeably."
+      },
+      {
+        "question": "Can llama.cpp do continuous batching like vLLM?",
+        "answer": "Sort of - the --parallel flag enables multiple slots that share KV cache and can be served concurrently. Real win over no batching, but doesn't match vLLM's continuous batching scheduler at high concurrency. For solo-builder traffic (1-20 concurrent), llama.cpp is more than enough."
+      }
+    ],
+    "meta_title": "llama.cpp Server with GGUF Q4_K_M Quantization | OSS AI Hub",
+    "meta_description": "Self-host Llama 3.3 70B on a single consumer GPU with llama.cpp + Q4_K_M GGUF. OpenAI-compat REST, Metal/CUDA/ROCm, systemd. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "tensorrt-llm-optimized-deploy",
+    "title": "TensorRT-LLM Optimized Deploy with Triton Inference Server",
+    "tldr": "Compile Llama 3.3 70B to TensorRT-LLM engines and serve via Triton with in-flight batching for the highest throughput-per-dollar on H100/H200.",
+    "description": "Compile Llama 3.3 70B to TensorRT-LLM engines and serve via Triton with in-flight batching for the highest throughput-per-dollar on H100/H200.",
+    "category": "llm-inference",
+    "language": "bash",
+    "framework": "tensorrt-llm",
+    "difficulty_tier": "expert",
+    "tags": [
+      "tensorrt-llm",
+      "triton",
+      "h100",
+      "fp8",
+      "in-flight-batching"
+    ],
+    "best_for_tags": [
+      "max-throughput",
+      "h100-deployment",
+      "enterprise-llm"
+    ],
+    "featured": false,
+    "when_to_use": "You're running NVIDIA H100/H200 hardware at scale and need every last token/second/dollar. TensorRT-LLM compiles model graphs to fused CUDA kernels, beating vLLM by 20-40% on H100 raw throughput - especially with FP8 weights + KV cache. Pair with Triton Inference Server for K8s-native deployment.",
+    "when_not_to_use": "Skip TRT-LLM when (1) you're not on NVIDIA H100/H200/B200 - the edge mostly comes from FP8 tensor cores; (2) you need to swap models often - engine compilation takes 10-30 min; (3) your team can't absorb the operational complexity vs vLLM (compile step, multiple containers, version pinning).",
+    "quick_start": "1) `docker pull nvcr.io/nvidia/tritonserver:24.10-trtllm-python-py3`  2) `huggingface-cli download meta-llama/Llama-3.3-70B-Instruct --local-dir ./hf-model`  3) Compile engine: `trtllm-build --checkpoint_dir ./hf-model --output_dir ./engines --use_fp8`  4) Launch Triton.",
+    "full_code": "#!/usr/bin/env bash\n# build-and-serve-trtllm.sh\nset -euo pipefail\n\nMODEL_REPO=\"${MODEL_REPO:-meta-llama/Llama-3.3-70B-Instruct}\"\nHF_DIR=\"${HF_DIR:-./hf-model}\"\nTRT_CKPT=\"${TRT_CKPT:-./trt-ckpt}\"\nENGINE_DIR=\"${ENGINE_DIR:-./engines}\"\nMODEL_NAME=\"${MODEL_NAME:-llama33}\"\nTP=\"${TP:-4}\"\n\nif [[ ! -d \"$HF_DIR/.cached\" ]]; then\n  echo \"[1/4] downloading $MODEL_REPO ...\"\n  huggingface-cli download \"$MODEL_REPO\" --local-dir \"$HF_DIR\"\n  touch \"$HF_DIR/.cached\"\nfi\n\nif [[ ! -d \"$TRT_CKPT/.done\" ]]; then\n  echo \"[2/4] converting to TRT-LLM FP8 checkpoint ...\"\n  python /app/tensorrt_llm/examples/llama/convert_checkpoint.py \\\n    --model_dir \"$HF_DIR\" --output_dir \"$TRT_CKPT\" \\\n    --dtype float16 --use_fp8 --fp8_kv_cache --tp_size \"$TP\"\n  touch \"$TRT_CKPT/.done\"\nfi\n\nif [[ ! -d \"$ENGINE_DIR/.done\" ]]; then\n  echo \"[3/4] building TRT engine ...\"\n  trtllm-build --checkpoint_dir \"$TRT_CKPT\" --output_dir \"$ENGINE_DIR\" \\\n    --gemm_plugin float16 --max_batch_size 128 \\\n    --max_input_len 4096 --max_output_len 2048 \\\n    --use_paged_context_fmha enable --use_fp8_context_fmha enable\n  touch \"$ENGINE_DIR/.done\"\nfi\n\nREPO=./triton-repo\nmkdir -p \"$REPO/$MODEL_NAME/1\" \"$REPO/${MODEL_NAME}_tokenizer/1\"\ncp -r \"$ENGINE_DIR\"/* \"$REPO/$MODEL_NAME/1/\"\ncp \"$HF_DIR\"/tokenizer* \"$REPO/${MODEL_NAME}_tokenizer/1/\"\n\necho \"[4/4] launching Triton ...\"\nexec mpirun -n \"$TP\" --allow-run-as-root tritonserver \\\n    --model-repository=\"$REPO\" \\\n    --grpc-port=8001 --http-port=8000 --metrics-port=8002 \\\n    --backend-config=tensorrtllm,enable_in_flight_batching=true\n",
+    "code": "#!/usr/bin/env bash\nset -euo pipefail\nMODEL_REPO=\"${MODEL_REPO:-meta-llama/Llama-3.3-70B-Instruct}\"\nHF_DIR=./hf-model\nTRT_CKPT=./trt-ckpt\nENGINE_DIR=./engines\nTP=4\n\nhuggingface-cli download \"$MODEL_REPO\" --local-dir \"$HF_DIR\"\npython /app/tensorrt_llm/examples/llama/convert_checkpoint.py \\\n  --model_dir \"$HF_DIR\" --output_dir \"$TRT_CKPT\" \\\n  --dtype float16 --use_fp8 --fp8_kv_cache --tp_size \"$TP\"\n\ntrtllm-build --checkpoint_dir \"$TRT_CKPT\" --output_dir \"$ENGINE_DIR\" \\\n  --gemm_plugin float16 --max_batch_size 128\n\nmpirun -n \"$TP\" --allow-run-as-root tritonserver \\\n  --model-repository=./triton-repo \\\n  --backend-config=tensorrtllm,enable_in_flight_batching=true\n",
+    "dependencies": [
+      "tensorrt_llm",
+      "tritonclient",
+      "huggingface-hub"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "tensorrt_llm",
+        "version": "==0.13.0",
+        "purpose": "NVIDIA's TRT-LLM compiler + runtime."
+      },
+      {
+        "name": "tritonclient[all]",
+        "version": ">=2.50.0",
+        "purpose": "Python client for Triton Inference Server."
+      },
+      {
+        "name": "huggingface-hub[cli]",
+        "version": ">=0.27.0",
+        "purpose": "Download Llama 3.3 70B weights."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Llama 3.3 access token."
+      },
+      {
+        "name": "MODEL_REPO",
+        "required": false,
+        "description": "HF repo to compile. Default: meta-llama/Llama-3.3-70B-Instruct."
+      },
+      {
+        "name": "TP",
+        "required": false,
+        "description": "Tensor-parallel size (default 4 for 4xH100)."
+      }
+    ],
+    "setup_steps": [
+      "Provision 4xH100 80GB host with NVIDIA driver 550+ and Docker 25+.",
+      "Pull the NGC container: `docker pull nvcr.io/nvidia/tritonserver:24.10-trtllm-python-py3`.",
+      "Mount workspace + run shell: `docker run --gpus all -it -v $(pwd):/workspace -w /workspace nvcr.io/.../tritonserver:24.10-trtllm-python-py3 bash`.",
+      "`huggingface-cli login` with a Llama-3.3-gated token.",
+      "Save the build+serve script and `chmod +x build-and-serve-trtllm.sh`.",
+      "Run `./build-and-serve-trtllm.sh` - first run takes ~30 min for download + convert + build.",
+      "Smoke-test: `curl -X POST localhost:8000/v2/models/ensemble/generate -d '{\"text_input\":\"hello\",\"max_tokens\":32}'`."
+    ],
+    "variations": [
+      {
+        "label": "Multi-LoRA serving on the same engine",
+        "description": "Serve multiple LoRA fine-tunes against one compiled base engine.",
+        "code_snippet": "python /app/tensorrt_llm/examples/llama/hf_lora_convert.py --in-file /loras/customer-support --out-dir /loras-trt/customer-support\n\ncurl -X POST localhost:8000/v2/models/ensemble/generate -d '{\"text_input\":\"...\",\"lora_task_uid\":0,\"lora_weights\":\"customer-support\"}'"
+      },
+      {
+        "label": "INT4 AWQ for cheaper hardware (A100)",
+        "description": "INT4 AWQ runs on A100 80GB single-GPU at ~70% of FP8 throughput.",
+        "code_snippet": "python /app/tensorrt_llm/examples/llama/convert_checkpoint.py --model_dir ./hf-model --output_dir ./trt-ckpt-awq --dtype float16 --use_weight_only --weight_only_precision int4_awq --tp_size 1\n\ntrtllm-build --checkpoint_dir ./trt-ckpt-awq --output_dir ./engines-awq --max_batch_size 32 --max_input_len 8192 --max_output_len 2048"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "RuntimeError: CUDA error: no kernel image is available",
+        "cause": "TRT-LLM compiled for sm_90 (H100) running on sm_80 (A100). TRT engines are not portable across GPU generations.",
+        "fix_snippet": "trtllm-build --checkpoint_dir ./trt-ckpt --output_dir ./engines-a100 --gpus_per_node 4 --workers 4"
+      },
+      {
+        "error_text": "OOM during build: not enough memory to allocate workspace",
+        "cause": "trtllm-build's transient workspace can exceed VRAM on smaller GPUs.",
+        "fix_snippet": "trtllm-build --checkpoint_dir ./trt-ckpt --output_dir ./engines --workers 1 --use_paged_context_fmha enable"
+      },
+      {
+        "error_text": "Triton fails to load model: 'failed to load tensorrtllm version 1'",
+        "cause": "Triton backend version mismatch - you compiled with TRT-LLM 0.13 but Triton image is for 0.12.",
+        "fix_snippet": "FROM nvcr.io/nvidia/tritonserver:24.10-trtllm-python-py3"
+      }
+    ],
+    "production_checklist": [
+      "Cache compiled engines as docker volumes or S3 - re-building on every pod start is a 20-min outage.",
+      "Run the Triton metrics endpoint (:8002) into Prometheus; alert on `nv_inference_queue_duration_ms` p99.",
+      "Always enable `enable_in_flight_batching=true` - without it, throughput collapses at concurrency >4.",
+      "Pin the NGC tag explicitly (`24.10-trtllm-python-py3`, not `latest`) - NVIDIA moves fast.",
+      "Test the exact LoRA combinatorics you need before production - some adapter combinations OOM at runtime.",
+      "Have a vLLM fallback ready - TRT-LLM has had instability with certain quant combos.",
+      "Set GPU clock to max-perf: `nvidia-smi -ac 1593,1980` (H100 base + boost) to avoid thermal throttling spikes."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.3-70B-Instruct (FP8 + Q4 AWQ)"
+      ],
+      "library_versions": [
+        "tensorrt_llm==0.13.0",
+        "Triton==24.10",
+        "CUDA==12.6",
+        "NVIDIA driver 550.90"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "tensorrt-llm",
+      "triton-inference-server",
+      "vllm",
+      "sglang"
+    ],
+    "related_glossary_slugs": [
+      "tensorrt",
+      "fp8",
+      "in-flight-batching",
+      "tensor-parallelism",
+      "kv-cache"
+    ],
+    "related_learn_slugs": [
+      "production-llm-deployment",
+      "h100-optimization"
+    ],
+    "faq": [
+      {
+        "question": "Is TRT-LLM actually worth the operational overhead vs vLLM?",
+        "answer": "On H100/H200 with FP8 + KV cache quant, TRT-LLM delivers 20-40% more tokens/sec than vLLM at the same hardware spend. On A100 or older the gap is much smaller (5-15%). Calculate the dollar savings on your real traffic before committing - if you're spending <$50k/year on inference, the engineering cost rarely pays back vs vLLM."
+      },
+      {
+        "question": "Can I use the OpenAI SDK with Triton?",
+        "answer": "Not directly - Triton's REST API uses NVIDIA's KServe-style /v2/models/.../generate format. Either (1) put a thin shim in front that translates OpenAI -> KServe, (2) use NVIDIA's TRT-LLM OpenAI-compat server (`tritonserver --openai-compatible`, ships in 24.10+), or (3) wrap with LiteLLM."
+      },
+      {
+        "question": "How long does engine compilation take?",
+        "answer": "Llama 3.3 70B FP8 on 4xH100: ~20-30 min for checkpoint conversion + ~15-25 min for trtllm-build. Cache the output engines aggressively. Re-build is required only when changing TP size, max batch size, max input/output length, or model weights."
+      }
+    ],
+    "meta_title": "TensorRT-LLM + Triton Optimized Llama 3.3 Deploy | OSS AI Hub",
+    "meta_description": "Compile Llama 3.3 70B to TensorRT-LLM FP8 engines + serve via Triton with in-flight batching. 20-40% more tok/s than vLLM on H100. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "ollama-modelfile-custom",
+    "title": "Ollama Custom Modelfile (System Prompt + Template + Params)",
+    "tldr": "Build a custom Ollama model with a baked-in system prompt, chat template override, and tuned sampling params - reproducible across teammates and CI without a separate API gateway.",
+    "description": "Build a custom Ollama model with a baked-in system prompt, chat template override, and tuned sampling params - reproducible across teammates and CI without a separate API gateway.",
+    "category": "llm-inference",
+    "language": "bash",
+    "framework": "ollama",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "ollama",
+      "modelfile",
+      "llama-3.3",
+      "local-llm",
+      "system-prompt"
+    ],
+    "best_for_tags": [
+      "solo-builder",
+      "prototyping",
+      "internal-tools"
+    ],
+    "featured": false,
+    "when_to_use": "Solo devs and small teams that want a single command (`ollama run my-team-bot`) to launch an LLM with a baked-in persona, sampling, and template - no Python, no .env, no API gateway. Pairs especially well with a desktop chat client (Open WebUI, Jan, LobeChat).",
+    "when_not_to_use": "Skip Ollama Modelfile when (1) you need >5 concurrent users - vLLM/llama.cpp scale better; (2) you need fine-grained per-request prompts - just use the system param at request time; (3) you need API auth - Ollama's HTTP server has no auth by default.",
+    "quick_start": "1) `brew install ollama`  2) `ollama pull llama3.3:70b-instruct-q4_K_M`  3) Write a `Modelfile`  4) `ollama create team-bot -f Modelfile`  5) `ollama run team-bot`",
+    "full_code": "# Modelfile - reusable team-wide Llama 3.3 with baked-in persona + sampling.\n#\n# After saving this file as `Modelfile` in your repo:\n#   ollama create team-bot -f Modelfile\n#   ollama run team-bot\n\nFROM llama3.3:70b-instruct-q4_K_M\n\n# ----- System prompt baked in -----\nSYSTEM \"\"\"\nYou are TeamBot, an internal engineering assistant for OSS AI Hub.\n\nGround rules:\n- Be concise. Default to bullet points or short code blocks.\n- If the user asks for code, prefer Python 3.11+ unless they specify otherwise.\n- When uncertain, say \"I'm not sure\" instead of inventing facts.\n- Cite the file path + line number whenever you reference code.\n- Never include API keys, passwords, or any value that looks like a secret.\n\nYou have access to our internal stack: FastAPI, Postgres 16, Redis 7, vLLM 0.7,\nLlama 3.3 70B Instruct. When asked about external services, default to the most\nopen-weight option.\n\"\"\"\n\n# ----- Sampling parameters tuned for engineering Q&A -----\nPARAMETER temperature 0.4\nPARAMETER top_p 0.9\nPARAMETER top_k 40\nPARAMETER repeat_penalty 1.05\nPARAMETER num_ctx 16384\n\n# Stop tokens\nPARAMETER stop \"<|eot_id|>\"\nPARAMETER stop \"<|start_header_id|>\"\nPARAMETER stop \"<|end_header_id|>\"\n\nLICENSE \"\"\"\nLlama 3 Community License (base weights)\nOSS AI Hub TeamBot configuration: MIT\n\"\"\"\nMESSAGE user \"Hi\"\nMESSAGE assistant \"Hi! I'm TeamBot. Ask me about our codebase, infra, or stack.\"\n",
+    "code": "# Modelfile\nFROM llama3.3:70b-instruct-q4_K_M\n\nSYSTEM \"\"\"\nYou are TeamBot, an internal engineering assistant.\nBe concise. Prefer bullets and short code blocks.\nSay 'I\\'m not sure' when uncertain.\n\"\"\"\n\nPARAMETER temperature 0.4\nPARAMETER top_p 0.9\nPARAMETER num_ctx 16384\nPARAMETER stop \"<|eot_id|>\"\n\nLICENSE \"Llama 3 Community License (base); TeamBot config: MIT\"\n",
+    "dependencies": [
+      "ollama"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "ollama",
+        "version": ">=0.5.0",
+        "purpose": "Local LLM runtime; bundles llama.cpp + model registry + REST API."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OLLAMA_HOST",
+        "required": false,
+        "description": "Bind address (default 127.0.0.1:11434)."
+      },
+      {
+        "name": "OLLAMA_MODELS",
+        "required": false,
+        "description": "Path to model storage (default ~/.ollama/models)."
+      },
+      {
+        "name": "OLLAMA_NUM_PARALLEL",
+        "required": false,
+        "description": "Concurrent slots per model (default 1). Bump to 4 for small models."
+      }
+    ],
+    "setup_steps": [
+      "Install Ollama: `brew install ollama` (mac) or `curl -fsSL https://ollama.com/install.sh | sh` (linux).",
+      "Start the service: `ollama serve`.",
+      "Pull the base model: `ollama pull llama3.3:70b-instruct-q4_K_M` (~42GB).",
+      "Save the Modelfile shown above as `Modelfile` in your repo's root.",
+      "Build: `ollama create team-bot -f Modelfile`. Takes ~30s.",
+      "Test: `ollama run team-bot` and chat.",
+      "Use via REST: `curl localhost:11434/api/chat -d '{\"model\":\"team-bot\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}]}'`."
+    ],
+    "variations": [
+      {
+        "label": "Build + push to shared Ollama registry",
+        "description": "Distribute your custom model across a team via a self-hosted Ollama registry.",
+        "code_snippet": "ollama create internal.example.com/eng/team-bot:v1 -f Modelfile\nollama push internal.example.com/eng/team-bot:v1\n\nollama pull internal.example.com/eng/team-bot:v1\nollama run internal.example.com/eng/team-bot:v1"
+      },
+      {
+        "label": "GPU-aware launcher script",
+        "description": "Wrapper that picks the best quant for the local GPU.",
+        "code_snippet": "#!/usr/bin/env bash\nset -euo pipefail\nVRAM=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | head -1 || echo 0)\nif (( VRAM >= 48000 )); then\n  ollama pull llama3.3:70b-instruct-q4_K_M\nelif (( VRAM >= 24000 )); then\n  sed -i 's|FROM llama3.3:70b-instruct-q4_K_M|FROM llama3.1:8b-instruct-q8_0|' Modelfile\nfi\nollama create team-bot -f Modelfile"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Error: pull model manifest: file does not exist",
+        "cause": "Wrong tag. Ollama's model registry uses `:70b-instruct-q4_K_M` style suffixes that shift over time.",
+        "fix_snippet": "ollama pull llama3.3:latest\nollama pull llama3.3:70b\nollama pull llama3.3:70b-instruct-q4_K_M"
+      },
+      {
+        "error_text": "Error: out of memory (when loading 70B)",
+        "cause": "Less VRAM than the model requires.",
+        "fix_snippet": "# In Modelfile, swap base:\n# FROM llama3.1:8b-instruct-q8_0\nollama create team-bot -f Modelfile"
+      },
+      {
+        "error_text": "Model ignores SYSTEM prompt at runtime",
+        "cause": "Client is passing its own `system` field, which overrides Modelfile SYSTEM.",
+        "fix_snippet": "curl localhost:11434/api/chat -d '{\"model\": \"team-bot\", \"messages\": [{\"role\": \"user\", \"content\": \"hello\"}]}'"
+      },
+      {
+        "error_text": "ollama create fails: unable to read Modelfile",
+        "cause": "Wrong path or hidden CRLF line endings.",
+        "fix_snippet": "file Modelfile  # should say 'ASCII text', not 'with CRLF line terminators'\ndos2unix Modelfile"
+      }
+    ],
+    "production_checklist": [
+      "Always pin the base FROM tag explicitly (e.g. `llama3.3:70b-instruct-q4_K_M`, not `:latest`).",
+      "Check Modelfile into git so the team's custom model is reproducible.",
+      "Never expose Ollama's port on the public internet - it has no auth.",
+      "Set OLLAMA_HOST=127.0.0.1:11434 by default; opt-in to LAN binding only when needed.",
+      "Use OLLAMA_NUM_PARALLEL=4 + OLLAMA_KEEP_ALIVE=30m for shared dev boxes.",
+      "Document the Modelfile's intended use in a README - future-you will forget why you set repeat_penalty=1.05."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "llama3.3:70b-instruct-q4_K_M",
+        "llama3.1:8b-instruct-q8_0",
+        "qwen2.5:72b-instruct-q4_K_M"
+      ],
+      "library_versions": [
+        "ollama==0.5.4",
+        "macOS 15 (Apple Silicon)",
+        "Ubuntu 24.04 (CUDA 12.4)"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "ollama",
+      "llama-cpp",
+      "lm-studio",
+      "openwebui"
+    ],
+    "related_glossary_slugs": [
+      "modelfile",
+      "system-prompt",
+      "quantization",
+      "local-llm"
+    ],
+    "related_learn_slugs": [
+      "local-llm-101",
+      "ollama-quickstart"
+    ],
+    "faq": [
+      {
+        "question": "Ollama vs llama.cpp vs LM Studio - which one?",
+        "answer": "All three wrap llama.cpp. Ollama wins on developer ergonomics (one binary, model registry, Modelfile, REST API), LM Studio wins on GUI + model browser, llama.cpp wins on raw control + serving headroom. For team/internal tools default to Ollama; for production-grade serving move to llama.cpp directly; LM Studio is best for non-developers."
+      },
+      {
+        "question": "Can I run multiple Modelfile-built models on one host?",
+        "answer": "Yes - Ollama caches one model in VRAM at a time by default and swaps on request. For frequent multi-model use, set OLLAMA_KEEP_ALIVE=30m and provision enough VRAM for the two heaviest. Better: run one Ollama process per GPU with CUDA_VISIBLE_DEVICES pinning."
+      },
+      {
+        "question": "How do I version my Modelfile?",
+        "answer": "Check it into git alongside your code. For binary distribution, push to a self-hosted Ollama registry with `ollama push my-registry/team/model:v1`. Tag every release; pin consumers to a specific tag, never to `:latest`."
+      }
+    ],
+    "meta_title": "Ollama Custom Modelfile (System Prompt + Params) | OSS AI Hub",
+    "meta_description": "Reusable Ollama Modelfile with baked-in system prompt + sampling for Llama 3.3 70B. One-command launch, git-checkable. MIT."
   }
 ]
