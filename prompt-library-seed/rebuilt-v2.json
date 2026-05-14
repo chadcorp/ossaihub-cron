@@ -3115,6 +3115,646 @@
     "meta_description": "Rewrite SaaS pricing for clarity + conversion. Tier-by-tier with evocative labels, anchor pricing, top-3 features each, and a 'right one for you' guide."
   },
   {
+    "slug": "api-design-from-requirements",
+    "title": "REST API Design From Requirements",
+    "tldr": "Designs a clean REST API from product requirements: resource model, endpoint paths, request/response shapes, error formats, and the questions the design surfaces but doesn't answer.",
+    "category": "code-generation",
+    "tags": [
+      "api-design",
+      "rest",
+      "openapi",
+      "architecture"
+    ],
+    "best_for_tags": [
+      "backend-development",
+      "api-first",
+      "platform-engineering"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "New product feature needing API surface",
+        "example": "\u2018Users need to manage saved searches with sharing\u2019 \u2192 REST API with /users/{id}/saved-searches, /shares, etc."
+      },
+      {
+        "scenario": "Migration from RPC to REST",
+        "example": "Legacy ad-hoc endpoints \u2192 clean resource-based REST design."
+      },
+      {
+        "scenario": "Pre-build review",
+        "example": "Backend lead drafts requirements; AI proposes design; team reviews before coding."
+      },
+      {
+        "scenario": "API consistency audit",
+        "example": "Multiple endpoints exist; AI proposes a re-design unifying patterns."
+      }
+    ],
+    "when_not_to_use": "Skip for highly RPC-shaped operations (use gRPC or RPC). Skip for WebSocket / real-time domains where REST is wrong from the start.",
+    "full_prompt": "You are a senior API designer. From the requirements, design a REST API.\n\nOUTPUT\n\n## 1. Resource model\nWhat are the nouns? List 4-8 resources with:\n- Resource name (singular)\n- Identity (UUID? slug? composite?)\n- Key fields (just names + types, not full schema)\n- Relationships to other resources\n\n## 2. Endpoints\nFor each resource, list the operations needed (not just full CRUD by default \u2014 only what requirements imply).\n\nFormat: `METHOD /path/with/{params}` -- brief description.\n\nInclude:\n- Standard CRUD where needed\n- Collection vs item endpoints\n- Sub-resource endpoints for relationships\n- Action endpoints for state transitions (POST /orders/{id}/cancel, not PATCH with state field)\n\n## 3. Request / response shapes\nFor 3-5 key endpoints, show the JSON shape (don't bloat \u2014 just structure). Include:\n- Pagination shape (limit/offset OR cursor)\n- Filter/sort query params\n- Error response shape (consistent across endpoints)\n\n## 4. Status codes\nMap the API's outcomes to HTTP status codes. Highlight non-obvious choices.\n\n## 5. Auth model\nWhat identity flows through? OAuth scopes? API keys with permissions? Tenant scoping?\n\n## 6. Versioning strategy\nURL-path versioning (/v1/), header (Accept: application/vnd.api+json;v=1), or no versioning yet?\n\n## 7. Open questions\n5-8 things the requirements don't answer that will affect the design.\n- Naming choices that have implications\n- Edge cases not covered\n- Permission boundaries unclear\n- Pagination performance assumptions\n\nRULES\n- Be Richardson-Maturity-Level-2 by default (resources + verbs). Use hypermedia (HATEOAS) only if explicitly required.\n- Names should be consistent: plural for collections (/users), singular for items (/users/{id}).\n- Use action endpoints for state transitions, not state-field PATCH (e.g., POST /orders/{id}/refund, not PATCH /orders/{id} {status: 'refunded'}).\n- Error response: one consistent shape with code, message, optional details.\n\nREQUIREMENTS\n{requirements}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "requirements",
+        "type": "string",
+        "description": "Product requirements / user stories for the API",
+        "required": true,
+        "example": "Users can create saved searches, share them with teammates with view/edit permissions, and receive notifications when others edit."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Seven sections covering resources, endpoints, request/response shapes, status codes, auth, versioning, and open questions."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on resource modeling; surfaces real edge cases."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes over-uses generic CRUD when action endpoints fit better."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; open questions can be generic \u2014 ask for \u2018specific to these requirements\u2019."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Cookie-cutter CRUD; needs explicit \u2018only what requirements imply\u2019 reminder."
+      }
+    ],
+    "variations": [
+      {
+        "label": "OpenAPI YAML output",
+        "description": "Emit as OpenAPI 3.1 spec.",
+        "prompt_snippet": "Replace markdown output with: \u2018output as OpenAPI 3.1 YAML, capturing all the endpoints, schemas, and security definitions.\u2019"
+      },
+      {
+        "label": "gRPC variant",
+        "description": "Same requirements \u2192 gRPC service definition.",
+        "prompt_snippet": "Replace REST design with: \u2018design as a gRPC service: services, methods, message types, error model, streaming where appropriate.\u2019"
+      },
+      {
+        "label": "Public-API-first",
+        "description": "Emphasize developer experience.",
+        "prompt_snippet": "Add: \u2018design as if this is a public API \u2014 naming consistency, helpful errors, and pagination matter more than internal convenience.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Generic CRUD for every resource.",
+        "fix": "Re-pin: \u2018only the operations requirements imply; sub-resources and actions where they fit naturally.\u2019"
+      },
+      {
+        "symptom": "Inconsistent naming (mix of plural / singular).",
+        "fix": "Add: \u2018consistency check: every collection plural, every item URL has /{id}.\u2019"
+      },
+      {
+        "symptom": "State changes via PATCH instead of action endpoints.",
+        "fix": "Add: \u2018for state transitions, prefer POST /resource/{id}/action over PATCH /resource/{id} {state: ...}.\u2019"
+      },
+      {
+        "symptom": "Error shape inconsistent.",
+        "fix": "Force a single error shape definition and require all error examples conform."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "senior-code-reviewer",
+      "refactor-to-pattern"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "rest",
+      "api-design",
+      "openapi"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why action endpoints over state-field PATCH?",
+        "answer": "Action endpoints encode intent clearly (POST /orders/{id}/cancel), allow side effects (notifications, idempotency), and make permission boundaries explicit. PATCH with state mixes data update and behavior change."
+      },
+      {
+        "question": "Should I version from day 1?",
+        "answer": "Yes if external. Internal APIs can start without versioning, but adding it later is painful. Default to /v1/ in path for clarity."
+      },
+      {
+        "question": "How big should an endpoint count be?",
+        "answer": "Resist endpoint sprawl. <30 endpoints for a focused product. If you're at 100+, you probably have multiple services hiding in one API."
+      }
+    ],
+    "meta_title": "REST API Design From Requirements \u2014 Prompt",
+    "meta_description": "Design a REST API from product requirements: resources, endpoints, schemas, error format, auth, versioning, and the open questions a team will hit."
+  },
+  {
+    "slug": "regex-builder-with-explanation",
+    "title": "Regex Builder With Plain-English Explanation",
+    "tldr": "Builds a regex from a plain-English description, returns it with breakdown of every group, test cases that should and shouldn't match, and a maintenance-friendly verbose-mode version.",
+    "category": "code-generation",
+    "tags": [
+      "regex",
+      "pattern-matching",
+      "validation",
+      "parsing"
+    ],
+    "best_for_tags": [
+      "text-processing",
+      "data-validation",
+      "log-parsing"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Validate email but only specific domains",
+        "example": "\u2018Match emails ending in @acme.com or @subsidiary.acme.com\u2019 \u2192 regex + 5 should-match, 5 shouldn't-match examples."
+      },
+      {
+        "scenario": "Parse log lines",
+        "example": "Apache log line format \u2192 regex with named groups for timestamp, IP, method, URL."
+      },
+      {
+        "scenario": "Find phone numbers in messy text",
+        "example": "\u2018US phone numbers in any common format\u2019 \u2192 regex with breakdown + edge cases."
+      },
+      {
+        "scenario": "Validate input with project-specific format",
+        "example": "\u2018Match our internal ticket IDs like INT-12345\u2019 \u2192 regex with verbose-mode commentary."
+      }
+    ],
+    "when_not_to_use": "Skip for parsing structured formats \u2014 use a real parser (HTML, JSON, CSV). Regex for HTML is famously bad. Skip when you need recursive parsing (regex can't handle balanced parens).",
+    "full_prompt": "You are a regex builder. Build a regex from the plain-English description.\n\nOUTPUT\n\n## 1. Regex\nThe regex itself, single line, between forward slashes with any flags.\n```\n/pattern/flags\n```\n\n## 2. Verbose-mode version\nSame regex with comments and whitespace (Python re.VERBOSE / Perl /x), so future maintainers can understand it.\n```python\npattern = re.compile(r'''\n    ^                  # start of line\n    (?P<group_name>...) # what this group captures\n    ...\n''', re.VERBOSE)\n```\n\n## 3. Breakdown\nFor each capturing group, named or numbered:\n- What it matches\n- Examples of what it catches\n\nFor each non-trivial token (lookaheads, quantifiers, character classes):\n- What it does\n- Why it's in the pattern\n\n## 4. Test cases\n\n### Should match (5+)\nConcrete strings that match. Show what each capture group captures.\n\n### Should NOT match (5+)\nConcrete strings that look like they might match but shouldn't. Explain why.\n\n## 5. Edge cases to consider\n3-5 cases the requester might want to think about:\n- Internationalization (Unicode in email local parts? non-ASCII names?)\n- Whitespace handling\n- Case sensitivity\n- Newline handling\n\n## 6. When this regex is wrong\n2-3 patterns of inputs where this regex will fail or be misleading. Honest about limits.\n\nRULES\n- Default to PCRE syntax; specify the flavor if it matters (Python re, JavaScript, POSIX ERE).\n- Default to non-greedy quantifiers when matching \u2018until a delimiter\u2019.\n- Prefer named groups for anything that will be extracted.\n- Don't write 200-character one-liners \u2014 if it gets long, break out the verbose version and recommend using it.\n- Catastrophic backtracking: if the pattern could be vulnerable (nested quantifiers), flag it.\n\nDESCRIPTION\n{description}\n\nLANGUAGE/FLAVOR (default: PCRE / Python re)\n{language_flavor}\n\nNow build the regex.",
+    "input_variables": [
+      {
+        "name": "description",
+        "type": "string",
+        "description": "What the regex should match",
+        "required": true,
+        "example": "Match URLs that start with http or https, optionally with www, ending in any TLD, capturing the host and path."
+      },
+      {
+        "name": "language_flavor",
+        "type": "string",
+        "description": "Regex flavor",
+        "required": false,
+        "example": "Python re"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: regex one-liner, verbose version, breakdown, test cases (should/shouldn't match), edge cases, when this regex is wrong."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong test cases including tricky negative ones."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally produces over-permissive patterns."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid baseline; edge cases section can be generic."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Useful for simple patterns; verify carefully on complex ones."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Multi-language emit",
+        "description": "Output regex in multiple language flavors.",
+        "prompt_snippet": "Add: \u2018also provide the regex adjusted for: JavaScript, Go (RE2), POSIX ERE \u2014 note where syntax differs.\u2019"
+      },
+      {
+        "label": "Catastrophic backtracking check",
+        "description": "Specifically audit for ReDoS.",
+        "prompt_snippet": "Add Step 7: \u2018ReDoS audit \u2014 identify any nested quantifiers, alternations, or repeats that could cause catastrophic backtracking. Propose a safe rewrite.\u2019"
+      },
+      {
+        "label": "Replace with parser when wrong",
+        "description": "Suggest non-regex alternatives.",
+        "prompt_snippet": "Add: \u2018if the right tool is a parser (HTML, JSON, etc.), say so and link to the appropriate library instead of pretending regex fits.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Regex is over-permissive (matches strings it shouldn't).",
+        "fix": "Re-pin: \u2018run mental test against each Shouldn't-Match example before emitting.\u2019"
+      },
+      {
+        "symptom": "Tests don't actually exercise the edge cases mentioned.",
+        "fix": "Add: \u2018test cases must include at least one for each edge case mentioned in Section 5.\u2019"
+      },
+      {
+        "symptom": "Verbose version is just the regex with line breaks, no comments.",
+        "fix": "Add: \u2018each non-trivial line in verbose version has a comment explaining what it does.\u2019"
+      },
+      {
+        "symptom": "Vulnerable to catastrophic backtracking.",
+        "fix": "Use the dedicated variation; otherwise add: \u2018before emitting, check for nested quantifiers like (a+)+ or (a|aa)+; rewrite to avoid them.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "structured-extraction-from-docs"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "regex",
+      "pattern-matching"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why both compact and verbose versions?",
+        "answer": "Compact for one-liner use (config files, short scripts). Verbose for code that lives \u2014 future maintainers (including you) will thank you for inline comments."
+      },
+      {
+        "question": "Can the model write SAFE regex for untrusted input?",
+        "answer": "It can flag catastrophic-backtracking patterns when asked. Don't trust untrusted-input regex without explicit ReDoS check + timeout in your matching code."
+      },
+      {
+        "question": "What about Unicode?",
+        "answer": "Specify in the description if you need Unicode-aware matching. \\\\w means different things in different regex flavors \u2014 call out the flavor in the input."
+      }
+    ],
+    "meta_title": "Regex Builder With Plain-English Explanation",
+    "meta_description": "Build a regex with verbose-mode version, group-by-group breakdown, positive/negative test cases, edge cases, and limits."
+  },
+  {
+    "slug": "sql-schema-migration-safe",
+    "title": "Safe SQL Schema Migration",
+    "tldr": "Generates a forward + rollback SQL migration with safety analysis: lock impact, replication delay, downtime risk, and the exact steps to roll forward without breaking running queries.",
+    "category": "code-generation",
+    "tags": [
+      "sql",
+      "migration",
+      "schema-change",
+      "postgres"
+    ],
+    "best_for_tags": [
+      "production-databases",
+      "zero-downtime",
+      "schema-evolution"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Add NOT NULL column to a 50M-row table",
+        "example": "Generate online-safe migration with default backfill, then NOT NULL constraint set."
+      },
+      {
+        "scenario": "Rename a column without breaking deploys",
+        "example": "Multi-stage migration: add new, dual-write, backfill, drop old \u2014 staged across releases."
+      },
+      {
+        "scenario": "Change a column type",
+        "example": "Same multi-stage pattern: add new column, dual-write/migrate, switch reads, drop old."
+      },
+      {
+        "scenario": "Add an index on a hot table",
+        "example": "CREATE INDEX CONCURRENTLY with monitoring guidance + rollback if it fails partway."
+      }
+    ],
+    "when_not_to_use": "Skip for small/dev databases where direct ALTER is fine. Skip when you're not running Postgres or MySQL \u2014 syntax and locking behavior differ in other engines.",
+    "full_prompt": "You are a database engineer writing a production migration. The team runs Postgres / MySQL on a busy table.\n\nINPUT\n- Desired schema change: {change}\n- Database engine: {engine}\n- Table size (approx rows): {table_size}\n- Write load: {write_load}\n- Replication setup: {replication}                  (single primary / streaming replicas / read replicas / multi-region)\n\nOUTPUT\n\n## 1. Risk assessment\n- Lock impact: which lock type is acquired by each step? For how long?\n- Replication delay: will this cause lag on replicas?\n- Downtime: any blocking writes / blocking reads?\n- Rollback risk: what makes this hard to undo?\n\n## 2. Staged migration plan\nThe safe path. Usually multiple deploys, NOT one big ALTER. For each stage:\n- Stage N: SQL to run + when (deploy boundary, after monitoring window, etc.).\n- What the application code looks like during this stage (dual-write? feature flag? old or new column?).\n- How to verify before moving to next stage.\n\n## 3. Forward SQL\nThe exact SQL for each stage. Use the engine's online-safe primitives:\n- Postgres: ADD COLUMN with default (PG11+), CREATE INDEX CONCURRENTLY, NOT VALID + VALIDATE for constraints\n- MySQL: ALGORITHM=INPLACE, LOCK=NONE where supported; INSTANT for 8.0+\n\n## 4. Rollback SQL\nFor each stage, the reverse. If a stage is one-way (e.g., dropping a column), say so explicitly and propose a different path that's reversible.\n\n## 5. Monitoring during the migration\n- Specific metrics to watch (active queries, replication lag, lock-wait time, table bloat).\n- Specific alerts that should trigger pause.\n- How long to wait between stages.\n\n## 6. Pre-flight checklist\n- Backup confirmed within X hours.\n- Replica lag baseline measured.\n- Application code deployed compatible with both schemas.\n- Maintenance window booked (or \"no window needed because online\" justified).\n\nRULES\n- Default to ONLINE / non-blocking when possible.\n- If a NOT NULL is required, use the multi-stage pattern (add column nullable + default \u2192 backfill \u2192 NOT NULL).\n- If renaming, never just RENAME \u2014 use add new, dual-write, backfill, switch reads, drop old.\n- For huge tables, CREATE INDEX CONCURRENTLY; never plain CREATE INDEX in production.\n- Be explicit about lock types in Postgres (ACCESS EXCLUSIVE vs SHARE UPDATE EXCLUSIVE).\n\nNow write the migration.",
+    "input_variables": [
+      {
+        "name": "change",
+        "type": "string",
+        "description": "Schema change requested",
+        "required": true,
+        "example": "Add a NOT NULL column 'preferences' (JSONB) to users with default '{}'"
+      },
+      {
+        "name": "engine",
+        "type": "string",
+        "description": "Database engine + version",
+        "required": true,
+        "example": "Postgres 15"
+      },
+      {
+        "name": "table_size",
+        "type": "string",
+        "description": "Approximate row count",
+        "required": true,
+        "example": "50M rows"
+      },
+      {
+        "name": "write_load",
+        "type": "string",
+        "description": "Write QPS or pattern",
+        "required": true,
+        "example": "~500 writes/sec sustained"
+      },
+      {
+        "name": "replication",
+        "type": "string",
+        "description": "Replica topology",
+        "required": false,
+        "example": "1 primary, 2 streaming replicas, 1 used for analytics"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: risk, staged plan, forward SQL, rollback SQL, monitoring, pre-flight checklist."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on multi-stage patterns and on naming actual lock types."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally proposes single-step ALTER for large tables \u2014 call it out."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Strong on Postgres specifics; weaker on MySQL nuances."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to skip the staged pattern; needs reminder for online safety."
+      }
+    ],
+    "variations": [
+      {
+        "label": "pt-online-schema-change wrapped",
+        "description": "For MySQL, propose pt-osc command.",
+        "prompt_snippet": "Add: \u2018if engine is MySQL and table is large, propose pt-online-schema-change command with appropriate options.\u2019"
+      },
+      {
+        "label": "gh-ost variant",
+        "description": "For MySQL with replicas.",
+        "prompt_snippet": "Add: \u2018if engine is MySQL with read replicas, propose gh-ost configuration with replica-cut-over option.\u2019"
+      },
+      {
+        "label": "Rails / Django migration code",
+        "description": "Wrap SQL in framework migration.",
+        "prompt_snippet": "Add: \u2018also emit the staged migrations as Django migration files (or Rails ActiveRecord migrations) where each stage is a separate migration class.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Single-step ALTER on a huge table.",
+        "fix": "Re-pin staged pattern; add table-size-based guard: \u2018>10M rows or >100 writes/sec mandates staged.\u2019"
+      },
+      {
+        "symptom": "Rollback for irreversible step (DROP COLUMN) marked \u2018easy\u2019.",
+        "fix": "Add: \u2018DROP is one-way; rollback requires the column to still be in the previous deploy. State the constraint explicitly.\u2019"
+      },
+      {
+        "symptom": "Missing CONCURRENTLY on index.",
+        "fix": "Add: \u2018CREATE INDEX without CONCURRENTLY is a production outage; never emit it for active tables.\u2019"
+      },
+      {
+        "symptom": "Lock type isn't named.",
+        "fix": "Add: \u2018every step names the lock type acquired and its duration estimate.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "sql-query-from-natural-language",
+      "senior-code-reviewer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "online-schema-change",
+      "lock-type"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Is the multi-stage pattern always necessary?",
+        "answer": "For large active tables, yes. For small or low-write tables, a single ALTER inside a transaction is fine. The prompt's table-size + write-load inputs drive this decision."
+      },
+      {
+        "question": "What about Postgres ADD COLUMN with default in PG11+?",
+        "answer": "PG11+ doesn't rewrite the table when adding a column with a non-volatile default \u2014 fast. But NOT NULL on the new column still needs the multi-stage pattern."
+      },
+      {
+        "question": "Can I skip the monitoring section?",
+        "answer": "Don't. The most common cause of online-migration outages is moving to the next stage before the current one has actually finished propagating."
+      }
+    ],
+    "meta_title": "Safe SQL Schema Migration \u2014 Prompt",
+    "meta_description": "Generate staged online-safe migrations with forward + rollback SQL, lock analysis, monitoring guidance, and a pre-flight checklist."
+  },
+  {
+    "slug": "code-snippet-with-tests-tdd",
+    "title": "Code Snippet With TDD Tests First",
+    "tldr": "Writes test cases FIRST, then implementation that passes them \u2014 including edge cases and error paths. Output is shaped for \u2018copy into a real repo and refactor\u2019 rather than \u2018demo code.\u2019",
+    "category": "code-generation",
+    "tags": [
+      "tdd",
+      "test-first",
+      "python",
+      "implementation"
+    ],
+    "best_for_tags": [
+      "test-coverage",
+      "tdd-workflow",
+      "robust-code"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Greenfield utility function",
+        "example": "\u2018Write a function to parse a phone number into E.164 format.\u2019 Get back tests for happy path + edge cases + the implementation."
+      },
+      {
+        "scenario": "Adding a new method to an existing class",
+        "example": "Specify the existing class shape; AI writes the new method + its tests."
+      },
+      {
+        "scenario": "Bug fix with regression test",
+        "example": "Describe the bug; AI writes a failing test that reproduces it, then the fix."
+      },
+      {
+        "scenario": "Library function for production code",
+        "example": "Robust with type hints, docstrings, and tests \u2014 copy-into-codebase-ready."
+      }
+    ],
+    "when_not_to_use": "Skip for one-off scripts where tests aren't worth it. Skip for highly stateful code where the test setup IS the hard part \u2014 write the integration test by hand.",
+    "full_prompt": "You are writing production-quality code using TDD. Tests FIRST, then implementation.\n\nINPUT\n- Function/method signature (with types): {signature}\n- Behavior description: {behavior}\n- Language: {language}\n- Test framework: {test_framework}                  (pytest / jest / etc.)\n\nOUTPUT\n\n## Step 1: Tests\nWrite the tests FIRST, before any implementation. Cover:\n- Happy path (1-2 cases)\n- Edge cases (empty input, max size, boundary values, etc.)\n- Error paths (invalid input, malformed data) \u2014 what exception or return value?\n- Real-world weird cases (Unicode in inputs, very long strings, etc.)\n\n8-15 test cases total. Each test:\n- Descriptive name (`test_returns_none_for_empty_string`, not `test_1`)\n- One assertion focus per test\n- Clear input \u2192 expected output\n\n## Step 2: Implementation\nWrite the function. Constraints:\n- Type hints on every parameter and return.\n- Docstring with one-line summary + Args/Returns/Raises sections.\n- Internal validation matches the test cases.\n- Style: clean, readable, comment ONLY for non-obvious decisions.\n\n## Step 3: Pre-flight\nA short section noting:\n- Any test case where the implementation is doing something tricky (worth a comment in code).\n- Any external dependency that should be passed in (don't hardcode http clients, file paths, etc.).\n- Any case the tests didn't cover but production code should \u2014 call it out so the user can decide whether to add the test.\n\nRULES\n- Tests are the spec. Implementation must pass all of them.\n- Don't catch and re-raise without adding info; let exceptions propagate unless you're translating to a domain-specific error.\n- No print() or logging in the function unless explicitly requested.\n- Tests use clear AAA pattern: Arrange, Act, Assert (or G-W-T: Given, When, Then).\n\nNow write tests, then implementation, then pre-flight.",
+    "input_variables": [
+      {
+        "name": "signature",
+        "type": "string",
+        "description": "Function signature with types",
+        "required": true,
+        "example": "def parse_phone(text: str) -> str | None"
+      },
+      {
+        "name": "behavior",
+        "type": "string",
+        "description": "What the function does",
+        "required": true,
+        "example": "Extracts the first valid US phone number from text and returns it in E.164 format (+1XXXXXXXXXX). Returns None if no valid number found."
+      },
+      {
+        "name": "language",
+        "type": "string",
+        "description": "Programming language",
+        "required": true,
+        "example": "Python"
+      },
+      {
+        "name": "test_framework",
+        "type": "string",
+        "description": "Test framework to use",
+        "required": true,
+        "example": "pytest"
+      }
+    ],
+    "expected_output": {
+      "format": "code",
+      "sample": "Test block first (8-15 tests), then the implementation, then a short pre-flight note section."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong test coverage and honest pre-flight notes."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally writes implementation that subtly fails a test it wrote \u2014 sanity check by running."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; tests sometimes have weaker edge cases."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Happy-path heavy; explicitly request edge cases and error paths."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Property-based tests",
+        "description": "Add Hypothesis tests for invariants.",
+        "prompt_snippet": "Add: \u2018also add 2-3 Hypothesis property-based tests for invariants (idempotency, monotonicity, etc.).\u2019"
+      },
+      {
+        "label": "Mutation-tested",
+        "description": "Suggest mutations that should fail.",
+        "prompt_snippet": "Add: \u2018list 3 small mutations of the implementation (off-by-one, wrong operator, etc.) that the tests would catch \u2014 proves coverage isn't shallow.\u2019"
+      },
+      {
+        "label": "Async version",
+        "description": "Async function and tests.",
+        "prompt_snippet": "Replace function with async def; tests use pytest-asyncio. Make sure all assertions are inside `async def test_*`."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Implementation doesn't pass own tests.",
+        "fix": "Re-pin: \u2018before final output, mentally run every test against the implementation; if any fails, rewrite.\u2019"
+      },
+      {
+        "symptom": "Tests are too coupled (changing implementation breaks all of them).",
+        "fix": "Add: \u2018tests assert on observable behavior, not internal implementation details.\u2019"
+      },
+      {
+        "symptom": "No edge-case coverage.",
+        "fix": "Add: \u2018list at minimum: empty/null, boundary value, max size, unicode, malformed input.\u2019"
+      },
+      {
+        "symptom": "Implementation has print() / debug code.",
+        "fix": "Re-pin: \u2018no print() or logging unless requested; tests assert on returns, not side effects.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "pytest-generator-from-source",
+      "senior-code-reviewer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "tdd",
+      "unit-testing"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why tests first?",
+        "answer": "Forces the model to commit to a behavior contract before implementation. Implementation drift (where the function does \u2018mostly what you wanted, except\u2026\u2019) becomes visible immediately."
+      },
+      {
+        "question": "Should I trust the tests are complete?",
+        "answer": "No \u2014 review them. The model writes thorough tests but won't always know your domain's edge cases. Add ones it missed."
+      },
+      {
+        "question": "How do I integrate with existing code?",
+        "answer": "Paste the surrounding context in `behavior`: \u2018this is a method on Class X which has attributes A, B, C.\u2019 The model will fit conventions."
+      }
+    ],
+    "meta_title": "Code Snippet With TDD Tests First \u2014 Prompt",
+    "meta_description": "Write tests FIRST, then the implementation that passes them \u2014 happy path, edge cases, errors. Includes a pre-flight note for missed cases."
+  },
+  {
     "slug": "senior-code-reviewer",
     "title": "Senior Code Reviewer (security + perf + style)",
     "category": "code-generation",
@@ -11765,6 +12405,662 @@
     ],
     "meta_title": "Subtitle Translator With Timing-Aware Compression",
     "meta_description": "Translate SRT/VTT subtitles into a target language while respecting reading-speed caps and on-screen line limits \u2014 Netflix-grade subtitle output."
+  },
+  {
+    "slug": "newsletter-issue-from-week",
+    "title": "Newsletter Issue From The Week's Notes",
+    "tldr": "Drafts a newsletter issue from raw weekly notes \u2014 picks the 2-3 strongest threads, finds the through-line, and lands one specific takeaway readers can act on Monday.",
+    "category": "writing-editing",
+    "tags": [
+      "newsletter",
+      "synthesis",
+      "writing",
+      "weekly-digest"
+    ],
+    "best_for_tags": [
+      "newsletter-writers",
+      "founders",
+      "creators"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Founder's weekly note to investors",
+        "example": "Past 7 days of notes (Slack, calls, decisions) \u2192 one synthesized 800-word note with a clear thesis."
+      },
+      {
+        "scenario": "Creator's weekly Substack",
+        "example": "Raw notes from links, books, conversations \u2192 newsletter that has a point, not just a list."
+      },
+      {
+        "scenario": "Team weekly digest",
+        "example": "Engineering team's week of work \u2192 digest framed for product/leadership readers."
+      },
+      {
+        "scenario": "Personal weekly review newsletter",
+        "example": "Journal + screenshots \u2192 reader-friendly version with one concrete takeaway."
+      }
+    ],
+    "when_not_to_use": "Skip when you actually need a roundup of links (use a curation prompt). Skip when the week didn't have a real through-line \u2014 forcing one is how newsletters get bad.",
+    "full_prompt": "You are drafting one issue of a weekly newsletter from the writer's raw notes. The goal is NOT a roundup; it's a piece with a point.\n\nWHAT YOU GET\n- Notes from the past week: meetings, articles read, decisions, observations, sketches of arguments.\n\nWHAT YOU PRODUCE\n\n## Step 1: Find the through-line\nRead all the notes. What's the ONE thread that connects 2-3 of the strongest items? Don't pick the biggest news \u2014 pick the most cohesive idea. State it in one sentence.\n\n## Step 2: Draft the issue\nLength: {target_word_count} words. Structure:\n\n1. OPENING (50-100 words). State the through-line \u2014 not as a thesis statement, but as a vivid moment or observation from the week. Don't bury the lead, but don't announce it either.\n\n2. BODY (60% of word count). Develop the through-line using 2-3 specific moments from the notes. For each: concrete detail, what made it stick, what it implies.\n\n3. THE TURN (10-15% of words). Where you complicate or push back on your own opening. Newsletters that don't earn this feel like LinkedIn posts.\n\n4. CLOSING (1 short paragraph). The thing reader could DO on Monday. Specific. Concrete.\n\n## Step 3: Subject line\n3 candidates. Each:\n- A specific noun, not a category.\n- A real promise, not a tease.\n- Under 60 characters.\n\nVOICE NOTES\n- Specific over general (one named person beats \"people\"; one Tuesday morning beats \"this week\").\n- One idea well-developed beats three ideas mentioned.\n- The reader is busy and smart \u2014 write for that.\n\nCONSTRAINTS\n- Use only what's in the notes. Don't invent supporting details.\n- Don't write \"delve\", \"dive into\", \"in today's fast-paced world\", or any tone-marker of AI-written content.\n- If two items in the notes contradict, name the contradiction explicitly.\n\nRAW NOTES\n{raw_notes}\n\nBegin with Step 1.",
+    "input_variables": [
+      {
+        "name": "raw_notes",
+        "type": "string",
+        "description": "Unstructured week notes",
+        "required": true,
+        "example": "Mon: call w/ Anita, talked about pricing experiment. Article: 'Why SaaS is hard now' (NYT). Wed: shipped feature. Realized our docs are stale..."
+      },
+      {
+        "name": "target_word_count",
+        "type": "integer",
+        "description": "Target newsletter length",
+        "required": false,
+        "example": "800"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Through-line statement, then drafted issue with opening, body, turn, closing \u2014 plus 3 subject lines."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Best at finding the actual through-line; doesn't force coherence on disparate notes."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Strong; sometimes pads body length \u2014 re-pin word count."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Often turns \u2018the turn\u2019 into a generic pivot; ask for genuine complication."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Falls into roundup format; needs constant reminder to find single thread."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Single-link expansion",
+        "description": "Expand one strong link into the issue.",
+        "prompt_snippet": "Replace through-line step with: \u2018pick the single most resonant link/conversation; write the entire issue using that as the spine.\u2019"
+      },
+      {
+        "label": "Photo-led",
+        "description": "Open with the week's strongest visual.",
+        "prompt_snippet": "Add: \u2018open with a description of one image/moment from the week; let it anchor the through-line.\u2019"
+      },
+      {
+        "label": "Q&A from a real reader",
+        "description": "Frame around a reader's question.",
+        "prompt_snippet": "Add: \u2018open with a reader's question from this week; treat the issue as your considered answer.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Output is a roundup with bullets instead of an issue.",
+        "fix": "Re-pin \u2018not a roundup; one through-line\u2019 and require \u2018the turn\u2019 paragraph explicitly."
+      },
+      {
+        "symptom": "Through-line is generic (\u2018people are anxious\u2019).",
+        "fix": "Add: \u2018through-line must reference at least 2 specific items from the notes.\u2019"
+      },
+      {
+        "symptom": "Closing CTA is vague (\u2018think about how this applies\u2019).",
+        "fix": "Add: \u2018closing names ONE concrete action the reader can take by next week.\u2019"
+      },
+      {
+        "symptom": "Tone reads AI.",
+        "fix": "Add banned phrases list including \u2018in today's fast-paced world\u2019, \u2018delve\u2019, \u2018dive deep\u2019, \u2018unlock\u2019 (verb), \u2018game-changer\u2019."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "voice-cloner-from-samples",
+      "blog-post-from-outline",
+      "tighten-prose-30pct"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "narrative-arc",
+      "through-line"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why force \u2018the turn\u2019?",
+        "answer": "Without it, newsletters read as one-take pronouncements. The turn signals to readers you've sat with the idea long enough to see its other side."
+      },
+      {
+        "question": "What if my week genuinely was a roundup?",
+        "answer": "Then write a roundup honestly. Don't manufacture a thesis when there isn't one \u2014 readers smell it."
+      },
+      {
+        "question": "How is this different from a blog post?",
+        "answer": "Newsletter = intimate voice, time-bound, one idea. Blog post = standalone, evergreen, can be longer and more structured. The opening especially differs \u2014 newsletters open in scene; posts often open in argument."
+      }
+    ],
+    "meta_title": "Newsletter Issue From The Week's Notes \u2014 Prompt",
+    "meta_description": "Draft a newsletter issue with a real through-line: pick 2-3 strongest threads, develop them, add the turn, land one concrete takeaway."
+  },
+  {
+    "slug": "linkedin-post-narrative-arc",
+    "title": "LinkedIn Post With Narrative Arc",
+    "tldr": "Turns a single insight into a LinkedIn post that actually has a story arc \u2014 setup, complication, turn, payoff \u2014 not a listicle, not a humble-brag.",
+    "category": "writing-editing",
+    "tags": [
+      "linkedin",
+      "social-writing",
+      "narrative",
+      "personal-brand"
+    ],
+    "best_for_tags": [
+      "founders",
+      "consultants",
+      "creators"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Founder writing about a lesson learned",
+        "example": "Real moment from the company \u2192 5-paragraph LinkedIn post that builds toward the lesson, not announces it."
+      },
+      {
+        "scenario": "Consultant sharing a framework",
+        "example": "Apply the framework to a real client scenario; let the story carry the framework."
+      },
+      {
+        "scenario": "Employee announcing a milestone (job change, anniversary)",
+        "example": "Personal but not cringey \u2014 anchored in specifics."
+      },
+      {
+        "scenario": "Engineer reflecting on a project shipped",
+        "example": "Technical context made readable; honest about what went wrong."
+      }
+    ],
+    "when_not_to_use": "Skip for sales posts (use a dedicated sales hook prompt). Skip when you don't have a real moment to anchor in \u2014 without specifics, the post will read fake.",
+    "full_prompt": "You are drafting a LinkedIn post that has a real narrative arc \u2014 not a listicle, not a humble-brag.\n\nINPUT\n- The CORE INSIGHT you want to land: {insight}\n- The REAL MOMENT it came from (specific time, specific person, specific decision): {moment}\n- AUDIENCE: {audience}\n- VOICE NOTES (banned phrases, preferred tone): {voice_notes}\n\nSTRUCTURE \u2014 5 short paragraphs, 8-15 words each opening, build longer\n1. OPENING SCENE (1-2 short sentences). Drop the reader into the specific moment. No setup, no \"Last week, I was thinking about...\" \u2014 just into the room.\n2. COMPLICATION. Something that didn't go as expected. A reaction you didn't anticipate. A constraint that wasn't supposed to bind.\n3. THE PIVOT (1 sentence). The shift in your thinking. Often: \"And then it hit me.\" (but don't say that.)\n4. THE INSIGHT. The thing you now know. Phrased as something the reader can take, not as a declaration about you.\n5. CLOSING. Either: a question that invites genuine response (not \"What do you think?\"), or a single sentence that doubles back to paragraph 1 differently.\n\nFORMAT RULES\n- 1500 characters max (LinkedIn hides past this in feed).\n- Short paragraphs. White space matters in social feeds.\n- One specific person mentioned by role (not name, unless you have permission).\n- One specific number if relevant.\n- NO bullet points. NO emojis (unless audience explicitly expects them).\n- NO \"I learned...\" / \"Here are 3 things...\" openings.\n\nBANNED PHRASES (these mark posts as low-effort)\n\"In today's fast-paced...\"\n\"Game-changer\"\n\"I'm humbled\"\n\"Excited to share\"\n\"Let's dive in\"\n\"Here's the thing\"\n\"Game on\"\n\"Crushing it\"\n\nNow draft the post.",
+    "input_variables": [
+      {
+        "name": "insight",
+        "type": "string",
+        "description": "The core idea to land",
+        "required": true,
+        "example": "Customer support reveals what your product actually is, not what you think it is"
+      },
+      {
+        "name": "moment",
+        "type": "string",
+        "description": "The specific real situation",
+        "required": true,
+        "example": "Tuesday: support agent escalated a refund request that I realized signaled a real product gap we'd been ignoring"
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Who reads this",
+        "required": true,
+        "example": "B2B SaaS founders + early-stage product leads"
+      },
+      {
+        "name": "voice_notes",
+        "type": "string",
+        "description": "Tone/banned phrases",
+        "required": false,
+        "example": "Direct, slightly self-deprecating. Never use \u2018grateful\u2019 or \u2018humbled\u2019."
+      }
+    ],
+    "expected_output": {
+      "format": "text",
+      "sample": "5-paragraph LinkedIn post under 1500 chars with opening scene, complication, pivot, insight, and closing."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on narrative arc; resists banned phrases when listed."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "good",
+        "notes": "Sometimes slips into \u2018Here's what I learned\u2019 structure; re-pin."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Tends toward overly polished tone; ask for \u2018slightly unfinished feeling\u2019."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Defaults to listicle; needs constant reminder."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Carousel adaptation",
+        "description": "Adapt to 6-slide carousel.",
+        "prompt_snippet": "Replace 5-paragraph structure with: \u20185-6 slides, each with a short title and 1-2 sentences. Slide 1 = opening scene; slide 6 = closing.\u2019"
+      },
+      {
+        "label": "Story plus framework",
+        "description": "End by extracting a 3-point framework.",
+        "prompt_snippet": "Add after Insight paragraph: \u2018then 3 bullets distilling the framework \u2014 short labels with a clause each.\u2019"
+      },
+      {
+        "label": "Audience-specific reframe",
+        "description": "Same insight, multiple audiences.",
+        "prompt_snippet": "Add: \u2018also draft a 100-word version for {alt_audience} adjusting voice and stakes accordingly.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Opens with \u2018Last week, I learned...\u2019",
+        "fix": "Re-pin: \u2018open in the specific scene, not in a frame about the scene.\u2019"
+      },
+      {
+        "symptom": "Insight is announced too early.",
+        "fix": "Add: \u2018the insight appears in paragraph 4 \u2014 earlier kills the arc.\u2019"
+      },
+      {
+        "symptom": "Closing is \u2018What do you think?\u2019",
+        "fix": "Add: \u2018closing question must be specific enough that not everyone could answer it the same way.\u2019"
+      },
+      {
+        "symptom": "Reads as humble-brag.",
+        "fix": "Add: \u2018the protagonist of the story is NOT you. The insight emerges from the situation, not from your cleverness.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "headline-rewrite-stronger",
+      "voice-cloner-from-samples"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "narrative-arc",
+      "social-writing"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Should I include hashtags?",
+        "answer": "1-3 specific ones max. 5+ generic hashtags (#leadership #growth) hurts more than helps. Leave room for the post to breathe."
+      },
+      {
+        "question": "What about emojis?",
+        "answer": "Depends on your audience. Tech founders / consultants: avoid. Marketing / creators: sparingly. Match what already works for you, not what's trending."
+      },
+      {
+        "question": "How is this different from blog writing?",
+        "answer": "LinkedIn rewards micro-arcs in 5 paragraphs. Blogs can be 5x longer. The opening matters more on LinkedIn \u2014 feed scrolling means you have 2 seconds."
+      }
+    ],
+    "meta_title": "LinkedIn Post With Narrative Arc \u2014 Prompt",
+    "meta_description": "5-paragraph LinkedIn post anchored in a real moment: opening scene, complication, pivot, insight, closing. Banned-phrases list included."
+  },
+  {
+    "slug": "executive-summary-1-page",
+    "title": "One-Page Executive Summary",
+    "tldr": "Compresses a long document (proposal, report, deck) into a one-page executive summary: situation, key findings, recommendation, and the 3 questions a CEO will ask.",
+    "category": "writing-editing",
+    "tags": [
+      "executive-summary",
+      "synthesis",
+      "compression",
+      "business-writing"
+    ],
+    "best_for_tags": [
+      "board-prep",
+      "deal-summaries",
+      "report-summaries"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "30-page proposal \u2192 1 page for the partner",
+        "example": "Compress vendor proposal to one page that surfaces tradeoffs, not just specs."
+      },
+      {
+        "scenario": "Research report for the C-suite",
+        "example": "Q3 market analysis (50 pages) \u2192 1-page exec summary with explicit recommendation."
+      },
+      {
+        "scenario": "Board meeting prep",
+        "example": "Past month's product work compressed for board package."
+      },
+      {
+        "scenario": "Deal memo",
+        "example": "M&A target analysis \u2192 1 page focused on the few things that matter for the go/no-go."
+      }
+    ],
+    "when_not_to_use": "Skip when the audience needs the full context (e.g., due diligence). Skip when the document is itself an executive summary \u2014 compressing twice loses meaning.",
+    "full_prompt": "You are compressing a long document into a one-page executive summary.\n\nINPUT\n- Full document (or detailed summary of it): {document}\n- Audience and decision they're making: {audience_and_decision}\n\nOUTPUT \u2014 ONE PAGE STRUCTURE\n\n# {document_title} \u2014 Executive Summary\n\n## Situation\n3-5 sentences. What is this document about, why it exists, what decision it informs. Frame for the audience's actual concern.\n\n## Key findings (3-5 bullets)\nEach bullet is a complete sentence stating one finding with the evidence in parens. NOT topic headers.\nExample: \"Customer churn dropped 23% post-feature-X, but only for accounts with >5 seats \u2014 suggesting feature is enterprise-relevant only.\"\n\n## Recommendation\nOne paragraph with the recommendation stated upfront, then the reasoning. If alternatives were considered, mention them. If the recommendation is conditional, name the condition.\n\n## What we don't know\n2-3 things that remain uncertain. This signals intellectual honesty AND surfaces what the decision depends on.\n\n## Questions the CEO will ask\n3 questions you predict they'll ask, with one-line answers. Pick questions you can answer; if they'd ask one you can't, note it explicitly.\n\n## Reading guide\nA one-line \"read pages X-Y for the full reasoning on the key finding.\"\n\nRULES\n- ONE PAGE. About 500 words. Cut anything that doesn't drive toward the decision.\n- No background information unless it directly affects the recommendation.\n- Numbers > adjectives. \"23%\" not \"significant\".\n- Don't restate obvious facts the audience already knows.\n- Hedge LESS, not more, than the underlying document \u2014 the audience needs a position to react to.\n\nDOCUMENT\n{document}\n\nAUDIENCE & DECISION\n{audience_and_decision}\n\nNow write the summary.",
+    "input_variables": [
+      {
+        "name": "document_title",
+        "type": "string",
+        "description": "Title of the doc being summarized",
+        "required": true,
+        "example": "Q3 Market Analysis: Mid-Market Vector DB Opportunity"
+      },
+      {
+        "name": "document",
+        "type": "string",
+        "description": "Full document or detailed summary",
+        "required": true,
+        "example": "[paste the full report]"
+      },
+      {
+        "name": "audience_and_decision",
+        "type": "string",
+        "description": "Who's reading and what they're deciding",
+        "required": true,
+        "example": "CEO + board. Decision: greenlight $4M investment in mid-market sales team."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six headed sections totaling ~500 words: situation, findings, recommendation, unknowns, predicted questions, reading guide."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at compression and at predicting CEO questions."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally bloats recommendation paragraph."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Strong on findings; recommendation can be wishy-washy \u2014 re-pin \u2018commit to one position\u2019."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to restate the whole document; needs aggressive cap on word count."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Two-version",
+        "description": "Generate both a 1-page and a 1-paragraph TL;DR.",
+        "prompt_snippet": "Add: \u2018also write a 50-word TL;DR for use in email subject preview / Slack DM.\u2019"
+      },
+      {
+        "label": "Decision matrix-led",
+        "description": "Open with a 4-cell decision matrix.",
+        "prompt_snippet": "Replace Situation section with: \u2018a 2x2 matrix of options with 1-line characterization each, then the recommendation references the matrix.\u2019"
+      },
+      {
+        "label": "Risk-focused",
+        "description": "Emphasize risks over opportunities.",
+        "prompt_snippet": "Add new section before Recommendation: \u2018TOP RISKS: 3 risks with severity and mitigation each.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Two pages instead of one.",
+        "fix": "Hard cap: \u2018exactly 500 words \u00b1 10%; trim until you fit.\u2019"
+      },
+      {
+        "symptom": "Findings are topic headers, not findings.",
+        "fix": "Re-pin: \u2018each finding is a complete sentence stating an insight, not a label.\u2019"
+      },
+      {
+        "symptom": "Recommendation hedges.",
+        "fix": "Add: \u2018state the recommendation in one declarative sentence at the start of the paragraph. Then defend.\u2019"
+      },
+      {
+        "symptom": "\u2018What we don't know\u2019 is missing or generic.",
+        "fix": "Force: \u2018at least 2 specific unknowns; vague ones (\u2018we need more data\u2019) don't count.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "meeting-decision-recorder",
+      "investor-update-monthly",
+      "strategic-tradeoff-analyzer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "executive-summary",
+      "compression"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why include \u2018what we don't know\u2019?",
+        "answer": "Two reasons: signals epistemic honesty (executives trust it more), and surfaces what additional work would close the decision gap."
+      },
+      {
+        "question": "How do I handle multiple recommendations?",
+        "answer": "Pick one primary recommendation. Mention 1-2 alternates briefly in the recommendation paragraph; don't equally weight."
+      },
+      {
+        "question": "What if the document is itself a summary?",
+        "answer": "Don't summarize a summary. Either present the original summary as-is, or expand a section and summarize that."
+      }
+    ],
+    "meta_title": "One-Page Executive Summary \u2014 Prompt",
+    "meta_description": "Compress a long document to one page: situation, findings, recommendation, unknowns, predicted CEO questions, reading guide. ~500 words."
+  },
+  {
+    "slug": "rewrite-for-different-audience",
+    "title": "Rewrite Same Content For Different Audience",
+    "tldr": "Re-versions the same content for a different audience \u2014 adjusts vocabulary, examples, stakes, length \u2014 while preserving the core argument. Useful for cross-functional comms.",
+    "category": "writing-editing",
+    "tags": [
+      "rewriting",
+      "audience-adaptation",
+      "translation",
+      "communication"
+    ],
+    "best_for_tags": [
+      "cross-functional-comms",
+      "internal-comms",
+      "documentation"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Engineering RFC \u2192 product update for execs",
+        "example": "Same proposal, different framing: technical RFC becomes 2-paragraph email for the leadership team."
+      },
+      {
+        "scenario": "Customer-facing announcement from internal change-log",
+        "example": "Internal release notes \u2192 customer-friendly email."
+      },
+      {
+        "scenario": "Research finding \u2192 ELI5 for company-wide all-hands",
+        "example": "ML research result \u2192 accessible 5-minute talk."
+      },
+      {
+        "scenario": "Investor update \u2192 team update",
+        "example": "Same numbers, different stakes and tone for the team."
+      }
+    ],
+    "when_not_to_use": "Skip when the original was already audience-targeted (you'll dilute it). Skip when the audiences need different INFORMATION, not different FRAMING \u2014 that's editing, not re-versioning.",
+    "full_prompt": "You are rewriting the same content for a different audience. The argument stays the same; the framing changes.\n\nINPUT\n- Original content: {original}\n- Original audience: {original_audience}\n- New audience: {new_audience}\n- New audience's core concern: {their_concern}\n- New stake (what they care about): {stake}\n\nYOUR PROCESS\n\n## Step 1: Extract the core argument\nIn one sentence, what is the original ARGUING? (Not just \u2018about\u2019 \u2014 what's the position?)\n\n## Step 2: Re-frame\n- Vocabulary: replace jargon with terms the new audience uses. If your new audience uses different jargon, use theirs.\n- Examples: swap or remove examples that won't land. Add examples relevant to {new_audience}.\n- Stakes: lead with what the new audience cares about ({stake}), not what the original led with.\n- Length: usually shorter for executives, longer for newcomers. Default: 40-60% of original.\n\n## Step 3: Write the new version\nHeadline + content. Use the new audience's expected format (email if they're execs, doc if engineers, slide bullets if it's for a meeting).\n\n## Step 4: What's lost\n2-3 bullets: things the original conveyed that the new version can't. Useful to either accept the loss or to attach as appendix.\n\nCRITICAL CONSTRAINTS\n- Preserve the core argument exactly. If the original says X, the new version says X (in different words).\n- Don't invent new claims the original didn't make.\n- Don't soften the argument unless the new audience is genuinely sensitive \u2014 most audiences want directness.\n- If the original is wrong about something, flag it; don't silently fix it.\n\nORIGINAL CONTENT\n{original}\n\nNow do Steps 1-4.",
+    "input_variables": [
+      {
+        "name": "original",
+        "type": "string",
+        "description": "The original content",
+        "required": true,
+        "example": "[paste the original]"
+      },
+      {
+        "name": "original_audience",
+        "type": "string",
+        "description": "Who it was for",
+        "required": true,
+        "example": "Senior engineers on the platform team"
+      },
+      {
+        "name": "new_audience",
+        "type": "string",
+        "description": "Who the new version is for",
+        "required": true,
+        "example": "CTO + 2-3 engineering directors"
+      },
+      {
+        "name": "their_concern",
+        "type": "string",
+        "description": "What new audience cares about",
+        "required": true,
+        "example": "Cost, scaling risk, team-impact"
+      },
+      {
+        "name": "stake",
+        "type": "string",
+        "description": "What makes this matter to them",
+        "required": true,
+        "example": "$X spend over 12 months, plus delivery risk on Q3 roadmap"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Steps 1-4: core argument in one sentence, re-framing notes, the rewritten content, and a \u2018what's lost\u2019 bullets list."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at preserving the argument while changing register."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can over-soften for non-technical audiences \u2014 re-pin directness."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Handles vocabulary swap well; weaker on adjusting stakes."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to rephrase rather than re-frame; needs explicit step 1."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Multi-audience same call",
+        "description": "Generate 3 versions for 3 audiences.",
+        "prompt_snippet": "Accept list of audiences; produce one re-version each plus comparison table."
+      },
+      {
+        "label": "Slide-format output",
+        "description": "Output as slide bullets.",
+        "prompt_snippet": "Replace prose output with: \u20185-7 slides, each with title + 2-4 bullets.\u2019"
+      },
+      {
+        "label": "Tone audit before rewrite",
+        "description": "Diagnose tone of original first.",
+        "prompt_snippet": "Add Step 0: \u2018Diagnose original tone: register, certainty, formality. Then in Step 2 explicitly note what changes.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "New version has a different argument.",
+        "fix": "Re-pin: \u2018same argument, different framing\u2019 and add \u2018before writing, paste the one-sentence argument; verify the new version says the same thing.\u2019"
+      },
+      {
+        "symptom": "Over-softened (executive version doesn't take a position).",
+        "fix": "Add: \u2018the new audience wants the call; soften the JUSTIFICATION wording, not the recommendation itself.\u2019"
+      },
+      {
+        "symptom": "Vocabulary swap is mechanical.",
+        "fix": "Add: \u2018use the NEW audience's natural terms even if they're imprecise from the original's view; that's the point.\u2019"
+      },
+      {
+        "symptom": "\u2018What's lost\u2019 is generic.",
+        "fix": "Add: \u2018each loss must cite a specific phrase or example from the original.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "executive-summary-1-page",
+      "tighten-prose-30pct"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "audience-awareness",
+      "translation"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "When should I lengthen vs shorten?",
+        "answer": "Lengthen for less-familiar audiences (more context). Shorten for senior audiences (less context, more conclusion). Default to shortening; over-explanation is the more common error."
+      },
+      {
+        "question": "How do I avoid the new version sounding patronizing?",
+        "answer": "Don't define terms the new audience knows. Don't over-justify. Don't say \u2018in simple terms\u2019 \u2014 just BE simple."
+      },
+      {
+        "question": "What if the original is technically wrong?",
+        "answer": "Flag it in Step 1 (\u2018core argument is X, but I notice claim Y is unsupported in the original\u2019). Don't silently fix \u2014 that's a separate decision."
+      }
+    ],
+    "meta_title": "Rewrite Same Content For Different Audience \u2014 Prompt",
+    "meta_description": "Re-version content for a new audience: same argument, different vocabulary/examples/stakes. Plus a \u2018what's lost\u2019 list to capture compression tradeoffs."
   },
   {
     "slug": "blog-post-from-outline",
