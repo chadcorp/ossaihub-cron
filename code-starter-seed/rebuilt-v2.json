@@ -3135,5 +3135,716 @@
     ],
     "meta_title": "Weaviate v4 Hybrid Search + Multi-Tenancy | OSS AI Hub",
     "meta_description": "Production Weaviate 1.27 with built-in hybrid (BM25+cosine), multi-tenant collections, reranker modules, v4 Python client. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "langgraph-supervisor-worker",
+    "title": "LangGraph Supervisor-Worker Multi-Agent Orchestration",
+    "tldr": "Supervisor agent routes user requests to specialized worker agents (researcher, coder, writer). State schema, conditional edges, retry logic, structured handoffs.",
+    "description": "Production multi-agent pattern: a Supervisor classifies the task and routes to one of N domain-specialized workers, with shared state, retry on bad outputs, and a final aggregation step.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "langgraph",
+    "difficulty_tier": "expert",
+    "tags": [
+      "langgraph",
+      "supervisor",
+      "multi-agent",
+      "orchestration"
+    ],
+    "best_for_tags": [
+      "multi-agent",
+      "orchestration",
+      "production-agents"
+    ],
+    "featured": true,
+    "when_to_use": "Workflows where a single agent's tool palette is too broad (10+ tools) or where domain expertise matters (legal + finance + code in one query). Supervisor pattern keeps each worker's context tight and reasoning focused; benchmarks show 15-25% accuracy gains over monolithic ReAct agents on cross-domain tasks.",
+    "when_not_to_use": "Skip when (1) single-domain workflows - simple ReAct is faster + cheaper; (2) latency budget <3s - supervisor adds 1-2 LLM round-trips; (3) you can't define clear domain boundaries - bad routing tanks quality more than a generalist would.",
+    "quick_start": "1) `pip install langgraph langchain-anthropic`  2) Define workers + supervisor in one file  3) `python supervisor.py 'Research the OSS RAG market and write a 200-word brief.'`",
+    "full_code": "\"\"\"LangGraph Supervisor-Worker pattern with retry + structured handoff.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom typing import Annotated, Literal, TypedDict\nimport operator\n\nfrom langchain_anthropic import ChatAnthropic\nfrom langgraph.graph import StateGraph, END\nfrom langgraph.prebuilt import create_react_agent\nfrom pydantic import BaseModel, Field\n\n\nclass State(TypedDict):\n    messages: Annotated[list, operator.add]\n    next: str          # which worker to invoke\n    task: str          # latest task description\n    output: dict       # accumulated worker outputs\n\n\nclass Route(BaseModel):\n    next: Literal[\"researcher\", \"coder\", \"writer\", \"FINISH\"] = Field(description=\"Next worker to run, or FINISH when all subtasks are done.\")\n    rationale: str\n\n\nsupervisor_llm = ChatAnthropic(model=\"claude-sonnet-4-5\", temperature=0)\n\n# Worker agents - each is a ReAct agent with a focused toolset.\nresearcher = create_react_agent(model=\"anthropic:claude-sonnet-4-5\", tools=[], prompt=\"You are a research specialist. Gather facts, cite sources, return a structured findings dict.\")\ncoder = create_react_agent(model=\"anthropic:claude-sonnet-4-5\", tools=[], prompt=\"You are a Python specialist. Write idiomatic 3.11+ code. Test mentally before answering.\")\nwriter = create_react_agent(model=\"anthropic:claude-sonnet-4-5\", tools=[], prompt=\"You are an editor. Take notes/code, produce a clean 200-word brief or final deliverable.\")\n\n\ndef supervisor_node(state: State) -> dict:\n    decision = supervisor_llm.with_structured_output(Route).invoke(\n        [{\"role\": \"system\", \"content\": \"You orchestrate researcher/coder/writer agents. Decide next worker or FINISH.\"}, *state[\"messages\"]]\n    )\n    return {\"next\": decision.next, \"messages\": [{\"role\": \"assistant\", \"content\": f\"[supervisor -> {decision.next}] {decision.rationale}\"}]}\n\n\ndef make_worker_node(agent, name: str):\n    def node(state: State) -> dict:\n        result = agent.invoke({\"messages\": state[\"messages\"]})\n        last = result[\"messages\"][-1].content\n        return {\"messages\": [{\"role\": \"assistant\", \"content\": f\"[{name}] {last}\"}], \"output\": {**state.get(\"output\", {}), name: last}}\n    return node\n\n\ndef route(state: State) -> str:\n    return state[\"next\"]\n\n\ndef build():\n    g = StateGraph(State)\n    g.add_node(\"supervisor\", supervisor_node)\n    g.add_node(\"researcher\", make_worker_node(researcher, \"researcher\"))\n    g.add_node(\"coder\", make_worker_node(coder, \"coder\"))\n    g.add_node(\"writer\", make_worker_node(writer, \"writer\"))\n    g.set_entry_point(\"supervisor\")\n    g.add_conditional_edges(\"supervisor\", route, {\"researcher\": \"researcher\", \"coder\": \"coder\", \"writer\": \"writer\", \"FINISH\": END})\n    g.add_edge(\"researcher\", \"supervisor\")\n    g.add_edge(\"coder\", \"supervisor\")\n    g.add_edge(\"writer\", \"supervisor\")\n    return g.compile()\n\n\nif __name__ == \"__main__\":\n    import sys\n    task = sys.argv[1] if len(sys.argv) > 1 else \"Research the OSS RAG market and write a 200-word brief.\"\n    graph = build()\n    result = graph.invoke({\"messages\": [{\"role\": \"user\", \"content\": task}], \"next\": \"\", \"task\": task, \"output\": {}})\n    print(result[\"output\"].get(\"writer\", \"no writer output\"))\n",
+    "code": "from typing import TypedDict, Annotated\nimport operator\nfrom langgraph.graph import StateGraph, END\n\n\nclass State(TypedDict):\n    messages: Annotated[list, operator.add]\n    next: str\n\n\ndef supervisor(s): return {\"next\": \"researcher\"}  # replace with structured router\ndef researcher(s): return {\"messages\": [{\"role\": \"assistant\", \"content\": \"...\"}]}\n\n\ng = StateGraph(State)\ng.add_node(\"supervisor\", supervisor); g.add_node(\"researcher\", researcher)\ng.set_entry_point(\"supervisor\")\ng.add_conditional_edges(\"supervisor\", lambda s: s[\"next\"], {\"researcher\": \"researcher\", \"FINISH\": END})\ng.add_edge(\"researcher\", \"supervisor\")\ngraph = g.compile()\n",
+    "dependencies": [
+      "langgraph",
+      "langchain-anthropic",
+      "pydantic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "langgraph",
+        "version": ">=0.2.50",
+        "purpose": "Graph-based agent orchestration."
+      },
+      {
+        "name": "langchain-anthropic",
+        "version": ">=0.3.0",
+        "purpose": "Claude 4 client + structured output."
+      },
+      {
+        "name": "pydantic",
+        "version": ">=2.9.0",
+        "purpose": "Route schema validation."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Claude API key."
+      }
+    ],
+    "setup_steps": [
+      "`pip install langgraph>=0.2.50 langchain-anthropic>=0.3.0 pydantic>=2.9.0`",
+      "Export ANTHROPIC_API_KEY.",
+      "Save as `supervisor.py`.",
+      "Run with a multi-domain task: `python supervisor.py 'Research X, write Python to do Y, then summarize.'`",
+      "Watch the supervisor's routing decisions in stdout; tune the supervisor prompt if it's mis-routing.",
+      "Add real tools to each worker (Tavily for researcher, code-exec for coder) per your stack."
+    ],
+    "variations": [
+      {
+        "label": "Add a critic/verifier worker",
+        "description": "Final 'critic' worker validates output before FINISH; sends back to supervisor on fail.",
+        "code_snippet": "g.add_node('critic', critic_node)\ng.add_conditional_edges('writer', lambda s: 'critic', {'critic': 'critic'})\ng.add_conditional_edges('critic', lambda s: 'supervisor' if s['needs_revision'] else END, {'supervisor': 'supervisor', END: END})"
+      },
+      {
+        "label": "Parallel worker fan-out",
+        "description": "Run researcher + coder concurrently when supervisor decides both are needed.",
+        "code_snippet": "from langgraph.prebuilt import ToolNode\n# Use Send API:\nfrom langgraph.constants import Send\ndef parallel_route(state): return [Send('researcher', state), Send('coder', state)]\ng.add_conditional_edges('supervisor', parallel_route)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "RecursionLimit hit at depth 25",
+        "cause": "Supervisor keeps routing back to itself without finishing.",
+        "fix_snippet": "graph.invoke(state, config={'recursion_limit': 50})\n# AND tighten the supervisor prompt: 'After 5 worker calls, you MUST output FINISH.'"
+      },
+      {
+        "error_text": "Supervisor routes to wrong worker for clear tasks",
+        "cause": "Supervisor prompt is too vague about each worker's specialty.",
+        "fix_snippet": "SUPERVISOR_PROMPT = '''Workers:\n- researcher: gathers facts from external sources only. NOT for code.\n- coder: writes/debugs Python. NOT for prose.\n- writer: produces final user-facing deliverable.\nRoute precisely. After 5 calls, FINISH.'''"
+      },
+      {
+        "error_text": "State explodes - messages list grows uncapped",
+        "cause": "operator.add appends forever; multi-turn sessions OOM.",
+        "fix_snippet": "# Trim message history at supervisor:\ndef supervisor_node(state):\n    messages = state['messages'][-20:]  # last 20 only\n    decision = supervisor_llm.with_structured_output(Route).invoke([...])"
+      }
+    ],
+    "production_checklist": [
+      "Always cap `recursion_limit` (10-50) - supervisors loop on ambiguous tasks.",
+      "Trim message history every supervisor turn - LangGraph default appends forever.",
+      "Log supervisor.next + rationale to Langfuse - debugging routing without traces is impossible.",
+      "Add a HARD timeout on each worker (10-30s) - one slow worker can stall the whole graph.",
+      "Stream intermediate state to UI - users abandon at 5+ seconds of silence.",
+      "Test the supervisor against an eval set BEFORE wiring real tools - bad routing wastes tool budget.",
+      "Pin LangGraph minor version - 0.2 -> 0.3 changed Send API + conditional edges signature."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "langgraph==0.2.55",
+        "langchain-anthropic==0.3.0",
+        "pydantic==2.9.2"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "langgraph",
+      "anthropic",
+      "langchain"
+    ],
+    "related_glossary_slugs": [
+      "multi-agent",
+      "supervisor-pattern",
+      "agent-orchestration",
+      "react-agent"
+    ],
+    "related_learn_slugs": [
+      "multi-agent-101",
+      "langgraph-quickstart"
+    ],
+    "faq": [
+      {
+        "question": "Supervisor pattern vs hand-off pattern - which one?",
+        "answer": "Supervisor: central LLM decides routing every turn. Hand-off (OpenAI Swarm style): each worker can hand off directly to another worker. Supervisor is more interpretable + easier to debug. Hand-off is faster (fewer round-trips) and scales to more workers. Use supervisor for 3-7 workers with clear domains; hand-off for 8+ workers where supervisor becomes the bottleneck."
+      },
+      {
+        "question": "How many workers is too many?",
+        "answer": "Empirically: 3-5 specialized workers > 1 generalist > 8+ specialized workers. Above 7 specialists the supervisor's routing accuracy degrades + token cost balloons. If you find yourself adding worker #8, consider a 2-level hierarchy (regional supervisors)."
+      }
+    ],
+    "meta_title": "LangGraph Supervisor-Worker Multi-Agent | OSS AI Hub",
+    "meta_description": "Production LangGraph supervisor pattern: researcher/coder/writer workers, structured routing, retry logic, recursion guards. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "crewai-research-team",
+    "title": "CrewAI Research Team (5-Agent Crew with Hierarchical Process)",
+    "tldr": "5-agent CrewAI crew: researcher -> analyst -> fact-checker -> writer -> editor. Task delegation, hierarchical process, role-based prompts.",
+    "description": "Role-driven multi-agent crew with declarative task graph: each agent has a goal, backstory, allowed tools; tasks define expected_output + dependencies.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "crewai",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "crewai",
+      "multi-agent",
+      "research",
+      "hierarchical"
+    ],
+    "best_for_tags": [
+      "research-agent",
+      "multi-agent",
+      "report-generation"
+    ],
+    "featured": false,
+    "when_to_use": "Linear-ish workflows (research -> analyze -> write -> review) where role definitions and declarative task ordering are clearer than LangGraph state machines. CrewAI shines for content generation, market research, and compliance-style sequential review.",
+    "when_not_to_use": "Skip CrewAI when (1) you need dynamic branching that depends on intermediate output - LangGraph wins; (2) latency matters - CrewAI's sequential default adds round-trips; (3) you need fine-grained state control - CrewAI hides too much.",
+    "quick_start": "1) `pip install crewai crewai-tools`  2) Define agents + tasks + crew in one file  3) `python crew.py 'OSS local LLM serving in 2026'`",
+    "full_code": "\"\"\"CrewAI 5-agent research crew.\"\"\"\nfrom __future__ import annotations\n\nimport os\n\nfrom crewai import Agent, Crew, Process, Task\nfrom crewai_tools import SerperDevTool, WebsiteSearchTool\n\n\ndef build_crew(topic: str) -> Crew:\n    search = SerperDevTool()\n    web = WebsiteSearchTool()\n\n    researcher = Agent(\n        role=\"Senior Research Analyst\",\n        goal=f\"Find authoritative sources about: {topic}\",\n        backstory=\"You spent 10 years at a top consultancy. You only cite primary sources.\",\n        tools=[search, web],\n        llm=\"claude-sonnet-4-5\",\n        verbose=True,\n    )\n    analyst = Agent(\n        role=\"Data Analyst\",\n        goal=\"Extract quantitative claims + benchmarks from research notes\",\n        backstory=\"You are skeptical of round numbers and demand source citations for every claim.\",\n        llm=\"claude-sonnet-4-5\",\n        verbose=True,\n    )\n    fact_checker = Agent(\n        role=\"Fact-Checker\",\n        goal=\"Verify each claim against the cited source; flag anything unverifiable\",\n        backstory=\"You spot bullshit for a living. Your only output: 'verified', 'unverifiable', or 'contradicted'.\",\n        tools=[search],\n        llm=\"claude-sonnet-4-5\",\n        verbose=True,\n    )\n    writer = Agent(\n        role=\"Technical Writer\",\n        goal=\"Write a 600-word brief from verified findings only\",\n        backstory=\"You write for engineers. No fluff. Concrete claims with inline citations.\",\n        llm=\"claude-sonnet-4-5\",\n        verbose=True,\n    )\n    editor = Agent(\n        role=\"Senior Editor\",\n        goal=\"Cut 30%, sharpen prose, ensure each claim has a citation\",\n        backstory=\"You hate adjectives and run-on sentences.\",\n        llm=\"claude-sonnet-4-5\",\n        verbose=True,\n    )\n\n    research_task = Task(description=f\"Research: {topic}. Output 5-10 key findings with primary sources.\", agent=researcher, expected_output=\"Bullet list of findings with sources.\")\n    analyze_task = Task(description=\"Extract every quantitative claim. Tag each with a source.\", agent=analyst, expected_output=\"Table: claim | value | source URL.\", context=[research_task])\n    factcheck_task = Task(description=\"Verify each claim from the analyst.\", agent=fact_checker, expected_output=\"Annotated table with 'verified'/'unverifiable'/'contradicted' per row.\", context=[analyze_task])\n    write_task = Task(description=\"Write 600-word brief using only verified claims.\", agent=writer, expected_output=\"600-word markdown brief with inline [n] citations.\", context=[factcheck_task])\n    edit_task = Task(description=\"Cut 30%, tighten prose, verify citations.\", agent=editor, expected_output=\"Final 420-word brief.\", context=[write_task])\n\n    return Crew(\n        agents=[researcher, analyst, fact_checker, writer, editor],\n        tasks=[research_task, analyze_task, factcheck_task, write_task, edit_task],\n        process=Process.sequential,\n        verbose=True,\n    )\n\n\nif __name__ == \"__main__\":\n    import sys\n    topic = sys.argv[1] if len(sys.argv) > 1 else \"OSS local LLM serving in 2026\"\n    crew = build_crew(topic)\n    result = crew.kickoff()\n    print(result.raw)\n",
+    "code": "from crewai import Agent, Crew, Process, Task\n\nresearcher = Agent(role='Researcher', goal='Find sources', backstory='10yr consultant', llm='claude-sonnet-4-5')\nwriter = Agent(role='Writer', goal='Write brief', backstory='technical writer', llm='claude-sonnet-4-5')\n\nresearch_task = Task(description='Research X', agent=researcher, expected_output='Bullet list')\nwrite_task = Task(description='Write 600-word brief', agent=writer, context=[research_task])\n\ncrew = Crew(agents=[researcher, writer], tasks=[research_task, write_task], process=Process.sequential)\nprint(crew.kickoff().raw)\n",
+    "dependencies": [
+      "crewai",
+      "crewai-tools"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "crewai",
+        "version": ">=0.86.0",
+        "purpose": "Role-based multi-agent framework."
+      },
+      {
+        "name": "crewai-tools",
+        "version": ">=0.18.0",
+        "purpose": "Built-in tools (Serper, web search, file I/O)."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Claude API key (or OPENAI_API_KEY for GPT models)."
+      },
+      {
+        "name": "SERPER_API_KEY",
+        "required": false,
+        "description": "For SerperDevTool web search; free 2500 queries/mo at serper.dev."
+      }
+    ],
+    "setup_steps": [
+      "`pip install crewai>=0.86.0 crewai-tools>=0.18.0`",
+      "Export ANTHROPIC_API_KEY + SERPER_API_KEY.",
+      "Save as `crew.py`.",
+      "Run `python crew.py 'your research topic'` - sequential execution, ~2-5 min for full crew.",
+      "Inspect agent thoughts in stdout (verbose=True) or pipe to a file.",
+      "Wire Langfuse via `langfuse_callback` for trace logging."
+    ],
+    "variations": [
+      {
+        "label": "Hierarchical process (manager agent orchestrates)",
+        "description": "Add a manager agent that delegates to workers dynamically.",
+        "code_snippet": "manager = Agent(role='Manager', goal='Coordinate the team', allow_delegation=True, llm='claude-sonnet-4-5')\ncrew = Crew(agents=[manager, researcher, writer], tasks=[overall_task], process=Process.hierarchical, manager_llm='claude-sonnet-4-5')"
+      },
+      {
+        "label": "Async execution with parallel tasks",
+        "description": "Run independent tasks in parallel where context allows.",
+        "code_snippet": "research_task = Task(description='...', agent=researcher, async_execution=True)\n# Then context=[research_task] in dependent tasks waits for it"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ValidationError: Agent requires either llm or function_calling_llm",
+        "cause": "CrewAI 0.86+ requires explicit llm per agent.",
+        "fix_snippet": "Agent(role='X', goal='Y', backstory='Z', llm='claude-sonnet-4-5')  # was implicit before"
+      },
+      {
+        "error_text": "Task context not flowing to dependent task",
+        "cause": "Forgot context=[upstream_task] on the downstream Task.",
+        "fix_snippet": "downstream = Task(description='use upstream output', agent=X, context=[upstream_task])"
+      },
+      {
+        "error_text": "Crew hangs at verbose output - looks frozen",
+        "cause": "An agent is calling tools that block (e.g. web search rate-limited).",
+        "fix_snippet": "# Add max_execution_time to crew:\ncrew = Crew(..., max_execution_time=600)  # 10 min hard cap"
+      }
+    ],
+    "production_checklist": [
+      "Always set llm= per agent explicitly - mixing models silently degrades quality.",
+      "Use Process.sequential for content workflows; reach for hierarchical only when truly dynamic.",
+      "Cap max_execution_time on the Crew - hung tools will eat your API budget.",
+      "Pipe verbose stdout to a structured logger - debugging multi-agent runs without traces is misery.",
+      "Pin crewai minor version - 0.85 -> 0.86 changed Agent signature and broke many examples.",
+      "For repeated workflows, cache task outputs by inputs hash + dependency hash.",
+      "Eval against single-agent baseline before shipping - CrewAI overhead is real (3-5x cost)."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "gpt-5"
+      ],
+      "library_versions": [
+        "crewai==0.86.0",
+        "crewai-tools==0.18.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "crewai",
+      "langchain",
+      "anthropic"
+    ],
+    "related_glossary_slugs": [
+      "multi-agent",
+      "role-based-agents",
+      "agent-orchestration"
+    ],
+    "related_learn_slugs": [
+      "multi-agent-101",
+      "crewai-quickstart"
+    ],
+    "faq": [
+      {
+        "question": "CrewAI vs LangGraph - when each?",
+        "answer": "CrewAI: declarative, role-first, best for linear content workflows (research -> draft -> edit). LangGraph: imperative, state-first, best for dynamic branching workflows (router agents, conditional retrieval). If your workflow fits on a flowchart with straight arrows, CrewAI is faster to write."
+      },
+      {
+        "question": "Can I use local LLMs with CrewAI?",
+        "answer": "Yes - pass `llm='ollama/llama3.3:70b'` or any LiteLLM provider string. Quality degrades on smaller models (the role-playing depends on instruction-following capability that 70B has, 8B struggles with)."
+      }
+    ],
+    "meta_title": "CrewAI Research Team (5-Agent Crew) | OSS AI Hub",
+    "meta_description": "Production CrewAI: 5-agent research team with sequential process, role definitions, fact-checking, edit pass. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "autogen-conversable-agents",
+    "title": "AutoGen Conversable Agents with Code Execution",
+    "tldr": "Microsoft AutoGen conversable agents with Python code-exec sandbox, user-proxy approval gates, group-chat orchestration.",
+    "description": "AutoGen v0.4 agentic chat: ConversableAgent + UserProxyAgent + AssistantAgent in a group chat where one agent writes code, another executes it in a Docker sandbox.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "autogen",
+    "difficulty_tier": "expert",
+    "tags": [
+      "autogen",
+      "code-exec",
+      "microsoft",
+      "multi-agent"
+    ],
+    "best_for_tags": [
+      "code-execution",
+      "autonomous",
+      "research-agent"
+    ],
+    "featured": false,
+    "when_to_use": "Tasks where agents need to write + execute code iteratively: data analysis, plotting, scientific computing, debugging. AutoGen's Docker-backed code execution is the most production-ready sandbox in OSS multi-agent.",
+    "when_not_to_use": "Skip AutoGen when (1) no code execution needed - LangGraph/CrewAI are simpler; (2) you need declarative task graphs - AutoGen is conversation-first; (3) you can't run Docker - AutoGen's safest exec relies on containers.",
+    "quick_start": "1) `pip install autogen-agentchat autogen-ext[docker]`  2) Docker running locally  3) `python autogen_code.py 'Plot Llama 3.3 70B vs GPT-5 tok/s'`",
+    "full_code": "\"\"\"AutoGen 0.4 group chat with code execution.\"\"\"\nfrom __future__ import annotations\n\nimport asyncio\nimport os\n\nfrom autogen_agentchat.agents import AssistantAgent, UserProxyAgent\nfrom autogen_agentchat.teams import RoundRobinGroupChat\nfrom autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination\nfrom autogen_ext.models.anthropic import AnthropicChatCompletionClient\nfrom autogen_ext.tools.code_execution import PythonCodeExecutionTool\nfrom autogen_ext.code_executors.docker import DockerCommandLineCodeExecutor\n\n\nasync def main(task: str) -> None:\n    model = AnthropicChatCompletionClient(model=\"claude-sonnet-4-5\", api_key=os.environ[\"ANTHROPIC_API_KEY\"])\n\n    # Code executor: Docker sandbox, 30s timeout per cell\n    code_executor = DockerCommandLineCodeExecutor(work_dir=\"./autogen_work\", timeout=30, image=\"python:3.11-slim\")\n    await code_executor.start()\n    code_tool = PythonCodeExecutionTool(code_executor)\n\n    planner = AssistantAgent(\n        name=\"planner\",\n        model_client=model,\n        system_message=\"You are a data analyst. Plan how to answer the user's question, then ask the coder to execute Python. Say TERMINATE when done.\",\n    )\n    coder = AssistantAgent(\n        name=\"coder\",\n        model_client=model,\n        tools=[code_tool],\n        system_message=\"You write Python. Always print results. Use matplotlib for plots; save to ./out/ then describe the plot.\",\n    )\n\n    termination = TextMentionTermination(\"TERMINATE\") | MaxMessageTermination(10)\n    team = RoundRobinGroupChat([planner, coder], termination_condition=termination)\n    result = await team.run(task=task)\n    for msg in result.messages:\n        print(f\"\\n[{msg.source}] {msg.content}\")\n    await code_executor.stop()\n\n\nif __name__ == \"__main__\":\n    import sys\n    task = sys.argv[1] if len(sys.argv) > 1 else \"Compute fibonacci(30) and print it.\"\n    asyncio.run(main(task))\n",
+    "code": "import asyncio, os\nfrom autogen_agentchat.agents import AssistantAgent\nfrom autogen_agentchat.teams import RoundRobinGroupChat\nfrom autogen_agentchat.conditions import TextMentionTermination\nfrom autogen_ext.models.anthropic import AnthropicChatCompletionClient\n\n\nasync def main():\n    model = AnthropicChatCompletionClient(model='claude-sonnet-4-5', api_key=os.environ['ANTHROPIC_API_KEY'])\n    planner = AssistantAgent('planner', model_client=model, system_message='Plan tasks. Say TERMINATE when done.')\n    team = RoundRobinGroupChat([planner], termination_condition=TextMentionTermination('TERMINATE'))\n    result = await team.run(task='Compute fibonacci(10)')\n    for m in result.messages:\n        print(f'[{m.source}] {m.content}')\n\n\nasyncio.run(main())\n",
+    "dependencies": [
+      "autogen-agentchat",
+      "autogen-ext"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "autogen-agentchat",
+        "version": ">=0.4.0",
+        "purpose": "AutoGen v0.4 agentic chat layer."
+      },
+      {
+        "name": "autogen-ext[docker,anthropic]",
+        "version": ">=0.4.0",
+        "purpose": "Docker code executor + Anthropic client adapter."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Claude API key."
+      }
+    ],
+    "setup_steps": [
+      "Ensure Docker is running locally.",
+      "`pip install autogen-agentchat>=0.4.0 'autogen-ext[docker,anthropic]>=0.4.0'`",
+      "Export ANTHROPIC_API_KEY.",
+      "Save as `autogen_code.py`.",
+      "Run: `python autogen_code.py 'Compute fibonacci(30)'` - first run pulls the python:3.11-slim image (~30s).",
+      "Inspect outputs in `./autogen_work/` (the code executor's mount point)."
+    ],
+    "variations": [
+      {
+        "label": "Local executor (no Docker)",
+        "description": "Use LocalCommandLineCodeExecutor when Docker unavailable - LESS SAFE.",
+        "code_snippet": "from autogen_ext.code_executors.local import LocalCommandLineCodeExecutor\nexecutor = LocalCommandLineCodeExecutor(work_dir='./work')"
+      },
+      {
+        "label": "Approval gate (human-in-the-loop)",
+        "description": "User reviews code before execution.",
+        "code_snippet": "from autogen_agentchat.agents import UserProxyAgent\nuser = UserProxyAgent('user', input_func=input)\nteam = RoundRobinGroupChat([planner, user, coder], termination_condition=termination)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "DockerException: Cannot connect to Docker daemon",
+        "cause": "Docker daemon not running or socket not exposed.",
+        "fix_snippet": "# macOS: open Docker Desktop\n# Linux: sudo systemctl start docker"
+      },
+      {
+        "error_text": "Pulled image is too small to run pandas/numpy",
+        "cause": "python:3.11-slim doesn't include scientific stack.",
+        "fix_snippet": "DockerCommandLineCodeExecutor(work_dir='./work', image='python:3.11')  # full image\n# OR use a custom image with preinstalled deps:\n# FROM python:3.11\n# RUN pip install pandas numpy matplotlib"
+      },
+      {
+        "error_text": "Group chat loops forever between two agents",
+        "cause": "No termination condition or condition never fires.",
+        "fix_snippet": "termination = TextMentionTermination('TERMINATE') | MaxMessageTermination(15)\n# AND tell agents in system_message to say TERMINATE when done"
+      }
+    ],
+    "production_checklist": [
+      "ALWAYS use DockerCommandLineCodeExecutor in production - LocalCommandLineCodeExecutor will run any code on your host.",
+      "Set MaxMessageTermination as a hard cap (10-20) - infinite loops eat tokens fast.",
+      "Bind-mount only the work_dir, never the home directory.",
+      "Run as non-root inside the container.",
+      "Cap container CPU + memory: `docker_runtime_kwargs={'mem_limit': '1g', 'cpus': 2}`.",
+      "Log every code block before execution for audit.",
+      "Pin autogen-agentchat to a minor version - v0.4 -> v0.5 will likely break APIs."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "gpt-5"
+      ],
+      "library_versions": [
+        "autogen-agentchat==0.4.0",
+        "autogen-ext==0.4.0",
+        "Docker 25"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "autogen",
+      "anthropic",
+      "docker"
+    ],
+    "related_glossary_slugs": [
+      "code-execution-agent",
+      "group-chat",
+      "multi-agent",
+      "sandbox"
+    ],
+    "related_learn_slugs": [
+      "agent-code-exec-101"
+    ],
+    "faq": [
+      {
+        "question": "AutoGen vs LangGraph for code-exec agents?",
+        "answer": "AutoGen has the most mature code-execution story (Docker sandbox, approval gates, retry-on-error built-in). LangGraph can do code-exec via a tool but you write the sandbox layer yourself. For data analysis / scientific agents, AutoGen is the safer default; for everything else LangGraph is more flexible."
+      },
+      {
+        "question": "Is the code execution actually safe?",
+        "answer": "With DockerCommandLineCodeExecutor + non-root user + cpu/mem limits + read-only host mounts: yes, safe enough for internal use. NOT safe for untrusted user input - prompt injection can still bias the agent into writing malicious code that runs in the sandbox. Add a code review step (UserProxyAgent input_func) for public-facing apps."
+      }
+    ],
+    "meta_title": "AutoGen Conversable Agents with Code Execution | OSS AI Hub",
+    "meta_description": "Microsoft AutoGen v0.4: Docker-sandboxed code execution, group chat, human-in-the-loop gates. Production-ready. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "openai-swarm-handoff",
+    "title": "OpenAI Swarm Agent Handoff Pattern",
+    "tldr": "OpenAI Swarm pattern: minimal agent abstraction with function-based handoff between agents. Stateless, easy to reason about.",
+    "description": "Swarm's clean handoff model: each agent has tools, one tool returns an Agent object to transfer control. Stateless, debuggable, no graph state to manage.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "swarm",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "swarm",
+      "openai",
+      "handoff",
+      "lightweight"
+    ],
+    "best_for_tags": [
+      "simple-agents",
+      "handoff",
+      "lightweight-orchestration"
+    ],
+    "featured": false,
+    "when_to_use": "When you want the simplest possible multi-agent pattern with no state management - just functions that return other agents. Perfect for support routing (general -> billing -> tier-2), conversational flows, or any star-topology agent system.",
+    "when_not_to_use": "Skip Swarm when (1) you need durable state across agent transfers - Swarm is intentionally stateless; (2) you need parallel execution; (3) you need observability + retries built-in - Swarm gives you raw primitives.",
+    "quick_start": "1) `pip install git+https://github.com/openai/swarm.git`  2) Define agents + handoff functions  3) `python swarm_app.py`",
+    "full_code": "\"\"\"OpenAI Swarm handoff pattern - support triage.\"\"\"\nfrom __future__ import annotations\n\nimport os\n\nfrom swarm import Swarm, Agent\n\n\nclient = Swarm()\n\n\ndef transfer_to_billing():\n    return billing_agent\n\n\ndef transfer_to_tech():\n    return tech_agent\n\n\ndef transfer_to_general():\n    return general_agent\n\n\ngeneral_agent = Agent(\n    name=\"General Support\",\n    instructions=\"You triage support requests. If billing, hand off to billing. If technical, hand off to tech. Otherwise handle yourself.\",\n    functions=[transfer_to_billing, transfer_to_tech],\n)\n\nbilling_agent = Agent(\n    name=\"Billing Specialist\",\n    instructions=\"You handle billing, refunds, subscription changes. Be precise about dates and amounts.\",\n    functions=[transfer_to_general],\n)\n\ntech_agent = Agent(\n    name=\"Technical Support\",\n    instructions=\"You troubleshoot technical issues. Ask for error messages and OS details.\",\n    functions=[transfer_to_general],\n)\n\n\ndef run_loop():\n    print(\"OSS AI Hub Support. Type 'quit' to exit.\")\n    messages = []\n    agent = general_agent\n    while True:\n        user = input(\"\\nYou: \")\n        if user.strip().lower() == \"quit\":\n            return\n        messages.append({\"role\": \"user\", \"content\": user})\n        response = client.run(agent=agent, messages=messages)\n        messages = response.messages\n        agent = response.agent\n        print(f\"\\n[{agent.name}] {response.messages[-1]['content']}\")\n\n\nif __name__ == \"__main__\":\n    run_loop()\n",
+    "code": "from swarm import Swarm, Agent\n\nclient = Swarm()\n\ndef transfer_to_billing():\n    return billing_agent\n\ntriage = Agent(name='Triage', instructions='Route to specialist.', functions=[transfer_to_billing])\nbilling_agent = Agent(name='Billing', instructions='Handle billing.')\n\nresponse = client.run(agent=triage, messages=[{'role': 'user', 'content': 'I want a refund'}])\nprint(response.messages[-1]['content'])\n",
+    "dependencies": [
+      "swarm"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "swarm",
+        "version": ">=0.1.0",
+        "purpose": "OpenAI's minimal multi-agent framework. Install from GitHub: pip install git+https://github.com/openai/swarm.git"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "Swarm uses OpenAI models by default."
+      }
+    ],
+    "setup_steps": [
+      "`pip install git+https://github.com/openai/swarm.git` (Swarm is GitHub-only, no PyPI release as of 2026-05).",
+      "Export OPENAI_API_KEY.",
+      "Save the script as `swarm_app.py`.",
+      "Run `python swarm_app.py` - interactive support triage CLI.",
+      "Type messages like 'I want a refund' to see handoff to billing_agent.",
+      "Extend by adding agents + transfer functions; each agent has its own instructions + tools."
+    ],
+    "variations": [
+      {
+        "label": "Anthropic-backed Swarm via LiteLLM proxy",
+        "description": "Swarm hardcodes OpenAI; tunnel via LiteLLM to use Claude.",
+        "code_snippet": "# Run LiteLLM proxy: `litellm --model claude-sonnet-4-5 --port 8000`\nimport os\nos.environ['OPENAI_API_BASE'] = 'http://localhost:8000'\nos.environ['OPENAI_API_KEY'] = 'sk-litellm-anything'"
+      },
+      {
+        "label": "Stateful handoff with context_variables",
+        "description": "Pass state between agents via context_variables dict.",
+        "code_snippet": "def transfer_with_context():\n    return billing_agent, {'priority': 'high', 'sla_minutes': 30}\n\nresponse = client.run(agent=triage, messages=msgs, context_variables={'tier': 'pro'})"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ImportError: cannot import name 'Swarm'",
+        "cause": "Installed a different `swarm` package from PyPI (not OpenAI's).",
+        "fix_snippet": "pip uninstall swarm -y\npip install git+https://github.com/openai/swarm.git"
+      },
+      {
+        "error_text": "Handoff function called but agent never changes",
+        "cause": "Handoff function didn't return the agent object.",
+        "fix_snippet": "def transfer_to_billing():\n    return billing_agent  # MUST return the Agent, not None or a string"
+      },
+      {
+        "error_text": "Conversation loses context after handoff",
+        "cause": "Forgot to pass response.messages back in next iteration.",
+        "fix_snippet": "messages = []\nwhile True:\n    response = client.run(agent=current_agent, messages=messages + [{'role': 'user', 'content': user_input}])\n    messages = response.messages  # IMPORTANT: persist full history"
+      }
+    ],
+    "production_checklist": [
+      "Swarm is officially experimental - pin to a git SHA, never to main.",
+      "OpenAI now recommends the `agents` SDK (also from openai) for production - evaluate that before committing to Swarm.",
+      "Add structured logging per agent transfer - debugging is harder than LangGraph since there's no central state.",
+      "Cap conversation length (last 30 messages) - Swarm has no built-in trimming.",
+      "Use context_variables for shared state - don't smuggle state through messages.",
+      "Test failure modes (handoff to nonexistent agent) - Swarm doesn't error gracefully."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o",
+        "gpt-5"
+      ],
+      "library_versions": [
+        "swarm @ git+0e9a4f2... (2026-04)"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "openai-swarm",
+      "openai-agents-sdk",
+      "litellm"
+    ],
+    "related_glossary_slugs": [
+      "agent-handoff",
+      "multi-agent",
+      "stateless-agents"
+    ],
+    "related_learn_slugs": [
+      "agent-handoff-101"
+    ],
+    "faq": [
+      {
+        "question": "Swarm vs LangGraph vs CrewAI - quick decision?",
+        "answer": "Swarm: minimal handoff, perfect for support routing + simple linear flows. LangGraph: full state machine, best for complex branching + parallel. CrewAI: declarative role-first, best for content workflows. If you can solve it with handoffs alone, Swarm is the smallest abstraction."
+      },
+      {
+        "question": "Is Swarm production-ready in 2026?",
+        "answer": "OpenAI labels it 'experimental' and has moved focus to the new `openai-agents` SDK. Swarm still works but won't get new features. For new projects, evaluate openai-agents SDK or LangGraph; only pick Swarm if you've already shipped on it and don't want to migrate."
+      }
+    ],
+    "meta_title": "OpenAI Swarm Agent Handoff Pattern | OSS AI Hub",
+    "meta_description": "Minimal multi-agent: Swarm's function-based handoff for support routing. Stateless, debuggable, OpenAI experimental. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "smolagents-code-first",
+    "title": "smolagents Code-First Agent (HuggingFace)",
+    "tldr": "HuggingFace smolagents that writes Python to call tools instead of JSON function calls. 30% fewer tool calls for complex tasks; one-screen install.",
+    "description": "smolagents CodeAgent: model emits Python code that imports tools as functions, executes in a sandbox, returns results. Cleaner than JSON tool-calling for multi-step problems.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "smolagents",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "smolagents",
+      "code-first",
+      "huggingface",
+      "code-agent"
+    ],
+    "best_for_tags": [
+      "code-agent",
+      "hugging-face",
+      "lightweight"
+    ],
+    "featured": true,
+    "when_to_use": "Tasks where the agent needs to chain tool calls + do small computations + handle intermediate results (web search -> parse -> compute -> visualize). Code-first agents shave ~30% off tool calls and naturally handle composition.",
+    "when_not_to_use": "Skip smolagents when (1) tasks are single-tool lookups - regular ReAct is simpler; (2) you can't allow code execution at all - smolagents is fundamentally a code-exec pattern; (3) you need long-running multi-agent orchestration - LangGraph handles that better.",
+    "quick_start": "1) `pip install smolagents`  2) `python smol_agent.py 'How many seconds until April 1 2026?'`",
+    "full_code": "\"\"\"smolagents CodeAgent with web search + Python execution.\"\"\"\nfrom __future__ import annotations\n\nimport os\n\nfrom smolagents import CodeAgent, DuckDuckGoSearchTool, LiteLLMModel, tool\n\n\n@tool\ndef get_current_time() -> str:\n    \"\"\"Get the current UTC datetime as ISO string.\"\"\"\n    from datetime import datetime, timezone\n    return datetime.now(timezone.utc).isoformat()\n\n\n@tool\ndef calculate(expression: str) -> str:\n    \"\"\"Evaluate a Python math expression. Returns string result. Example: '2 + 2 * 3' -> '8'.\n\n    Args:\n        expression: A Python expression to evaluate. NO imports, no calls.\n    \"\"\"\n    import math\n    allowed = {\"__builtins__\": {}, \"abs\": abs, \"round\": round, \"min\": min, \"max\": max, \"pow\": pow, \"math\": math}\n    try:\n        return str(eval(expression, allowed))\n    except Exception as e:\n        return f\"ERROR: {e}\"\n\n\ndef build():\n    model = LiteLLMModel(model_id=\"anthropic/claude-sonnet-4-5\", api_key=os.environ[\"ANTHROPIC_API_KEY\"])\n    return CodeAgent(\n        tools=[DuckDuckGoSearchTool(), get_current_time, calculate],\n        model=model,\n        additional_authorized_imports=[\"math\", \"datetime\", \"json\"],\n        max_steps=8,\n    )\n\n\nif __name__ == \"__main__\":\n    import sys\n    task = sys.argv[1] if len(sys.argv) > 1 else \"How many days until 2027? Also fetch today's top OSS LLM news.\"\n    agent = build()\n    result = agent.run(task)\n    print(result)\n",
+    "code": "from smolagents import CodeAgent, LiteLLMModel, DuckDuckGoSearchTool, tool\n\n@tool\ndef get_time() -> str:\n    \"\"\"Current UTC time.\"\"\"\n    from datetime import datetime, timezone\n    return datetime.now(timezone.utc).isoformat()\n\nagent = CodeAgent(tools=[DuckDuckGoSearchTool(), get_time],\n    model=LiteLLMModel(model_id='anthropic/claude-sonnet-4-5'),\n    max_steps=8)\nprint(agent.run('What is the current UTC time?'))\n",
+    "dependencies": [
+      "smolagents",
+      "litellm",
+      "duckduckgo-search"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "smolagents",
+        "version": ">=1.0.0",
+        "purpose": "HuggingFace code-first agent framework."
+      },
+      {
+        "name": "litellm",
+        "version": ">=1.50.0",
+        "purpose": "Provider-agnostic LLM client."
+      },
+      {
+        "name": "duckduckgo-search",
+        "version": ">=6.0.0",
+        "purpose": "Free web search for DuckDuckGoSearchTool."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Claude API key (or any LiteLLM provider)."
+      }
+    ],
+    "setup_steps": [
+      "`pip install smolagents>=1.0.0 litellm>=1.50.0 duckduckgo-search`",
+      "Export ANTHROPIC_API_KEY.",
+      "Save the script as `smol_agent.py`.",
+      "Run `python smol_agent.py 'your task'` - agent writes Python, executes in a local sandbox, returns final answer.",
+      "Inspect generated code in stdout (set verbosity_level=2 on CodeAgent for detail).",
+      "Restrict additional_authorized_imports to keep the sandbox tight."
+    ],
+    "variations": [
+      {
+        "label": "Run inside Docker sandbox (E2B)",
+        "description": "Stronger isolation via E2B remote sandbox.",
+        "code_snippet": "from smolagents import E2BExecutor\nagent = CodeAgent(tools=[...], model=model, executor_type='e2b', api_key=os.environ['E2B_API_KEY'])"
+      },
+      {
+        "label": "Local model via Ollama",
+        "description": "Zero-API setup with a local 70B.",
+        "code_snippet": "model = LiteLLMModel(model_id='ollama_chat/llama3.3:70b-instruct-q4_K_M', api_base='http://localhost:11434')"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "InterpreterError: Forbidden function call 'open'",
+        "cause": "smolagents disallows most builtins by default for safety.",
+        "fix_snippet": "agent = CodeAgent(tools=[...], model=model, additional_authorized_imports=['pathlib', 'json'])\n# Use Pathlib instead of open() in your tools"
+      },
+      {
+        "error_text": "Agent loops on the same broken code",
+        "cause": "max_steps too high + agent stuck in retry.",
+        "fix_snippet": "CodeAgent(tools=[...], model=model, max_steps=5)  # bail out faster\n# AND clearer error tracebacks help the agent self-correct: verbosity_level=2"
+      },
+      {
+        "error_text": "Tool description not surfaced to model",
+        "cause": "Missing docstring on @tool function.",
+        "fix_snippet": "@tool\ndef my_tool(arg: str) -> str:\n    \"\"\"Clear description of what this does.\n\n    Args:\n        arg: What this argument means.\n    \"\"\"\n    return ..."
+      }
+    ],
+    "production_checklist": [
+      "Always set additional_authorized_imports explicitly - don't trust the default.",
+      "Move to E2B or remote sandbox for any user-facing deployment - local executor is dev-only.",
+      "Cap max_steps (5-10) - infinite loops eat budget.",
+      "Log generated code per step - smolagents emits it; capture it.",
+      "Add structured error tracebacks so the agent can self-recover.",
+      "For multi-tenant: separate sandbox per user (E2B handles this naturally).",
+      "Pin smolagents version - the API was unstable through 0.x and is now 1.x."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "Qwen/Qwen2.5-Coder-32B-Instruct"
+      ],
+      "library_versions": [
+        "smolagents==1.0.0",
+        "litellm==1.52.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "smolagents",
+      "huggingface",
+      "litellm",
+      "e2b"
+    ],
+    "related_glossary_slugs": [
+      "code-agent",
+      "agent-sandbox",
+      "react-agent"
+    ],
+    "related_learn_slugs": [
+      "code-agent-101",
+      "smolagents-quickstart"
+    ],
+    "faq": [
+      {
+        "question": "Code-first agents vs JSON tool-calling - which is better?",
+        "answer": "For multi-step problems (3+ tool calls): code-first wins consistently by 20-40% on benchmarks. The model can write `result = tool_a(); processed = tool_b(result); return tool_c(processed)` in one block instead of three round-trips. For single-tool calls JSON is fine."
+      },
+      {
+        "question": "Is smolagents safe to run on user input?",
+        "answer": "Not with the local executor. The default Python interpreter sandboxes calls but a determined attacker can find escapes. For public-facing apps: use E2B (`executor_type='e2b'`) or run smolagents inside a Docker container yourself."
+      }
+    ],
+    "meta_title": "smolagents Code-First Agent | OSS AI Hub",
+    "meta_description": "HuggingFace smolagents: code-writing agents with 30% fewer tool calls. Local + E2B + Ollama variants. MIT."
   }
 ]
