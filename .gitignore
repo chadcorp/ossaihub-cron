@@ -1,6 +1,3 @@
-glossary-seed/v2-scripts/rewriter.log
-glossary-seed/rebuilt-v2/_failures.jsonl
-glossary-seed/rebuilt-v2/_failures.prev.jsonl
-glossary-seed/snapshots/
-glossary-seed/v2-scripts/rewriter2.log
-glossary-seed/BASE44-PROMPT-v2.inner.txt
+__pycache__/
+*.pyc
+.DS_Store
