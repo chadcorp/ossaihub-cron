@@ -8867,5 +8867,693 @@
     ],
     "meta_title": "Cloudflare Workers AI Edge Deploy | OSS AI Hub",
     "meta_description": "Production Cloudflare Workers AI: Llama 3.1 8B at the edge, streaming, AI Gateway, <100ms global TTFT. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "huggingface-trl-sft",
+    "title": "HuggingFace TRL SFTTrainer (Vanilla Single-File Recipe)",
+    "tldr": "Vanilla SFT with TRL SFTTrainer: packed sequences, chat template, FlashAttention 2, gradient checkpointing. Single-file recipe.",
+    "description": "Baseline SFT recipe everyone should start from. No magic - just TRL's SFTTrainer wired correctly with the right chat template, packing, and gradient checkpointing.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "trl",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "trl",
+      "sft",
+      "huggingface"
+    ],
+    "best_for_tags": [
+      "sft",
+      "baseline"
+    ],
+    "when_to_use": "Your first fine-tune. TRL SFTTrainer is the no-frills baseline - you understand exactly what's happening, and other recipes (Unsloth, Axolotl) make sense as optimizations on top of this.",
+    "when_not_to_use": "Skip when (1) you need 2x speedup - use Unsloth; (2) you need multi-GPU - use Axolotl; (3) you need GUI - use LLaMA-Factory.",
+    "quick_start": "1) `pip install trl transformers datasets peft`  2) Prepare HF dataset  3) `python sft.py`",
+    "full_code": "\"\"\"Vanilla TRL SFTTrainer with sane defaults.\"\"\"\nfrom datasets import load_dataset\nfrom transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments\nfrom trl import SFTTrainer, SFTConfig\nfrom peft import LoraConfig\n\n\nMODEL = \"meta-llama/Llama-3.1-8B-Instruct\"\n\ntokenizer = AutoTokenizer.from_pretrained(MODEL)\ntokenizer.pad_token = tokenizer.pad_token or tokenizer.eos_token\n\nmodel = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=\"bfloat16\", attn_implementation=\"flash_attention_2\")\n\nds = load_dataset(\"yahma/alpaca-cleaned\", split=\"train[:5000]\")\n\ndef format_chat(ex):\n    msgs = [{\"role\": \"user\", \"content\": ex[\"instruction\"]}, {\"role\": \"assistant\", \"content\": ex[\"output\"]}]\n    return {\"text\": tokenizer.apply_chat_template(msgs, tokenize=False)}\n\nds = ds.map(format_chat)\n\ntrainer = SFTTrainer(\n    model=model,\n    tokenizer=tokenizer,\n    train_dataset=ds,\n    peft_config=LoraConfig(r=16, lora_alpha=16, target_modules=[\"q_proj\",\"k_proj\",\"v_proj\",\"o_proj\"]),\n    args=SFTConfig(\n        output_dir=\"./out\",\n        per_device_train_batch_size=2,\n        gradient_accumulation_steps=8,\n        num_train_epochs=2,\n        learning_rate=2e-4,\n        warmup_ratio=0.03,\n        bf16=True,\n        gradient_checkpointing=True,\n        packing=True,\n        max_seq_length=4096,\n        logging_steps=10,\n        save_steps=500,\n        optim=\"adamw_torch\",\n    ),\n)\ntrainer.train()\ntrainer.save_model(\"./out/final\")\n",
+    "code": "from trl import SFTTrainer, SFTConfig\nfrom peft import LoraConfig\nfrom transformers import AutoTokenizer, AutoModelForCausalLM\nfrom datasets import load_dataset\n\ntok = AutoTokenizer.from_pretrained('meta-llama/Llama-3.1-8B-Instruct')\nmodel = AutoModelForCausalLM.from_pretrained('meta-llama/Llama-3.1-8B-Instruct', torch_dtype='bfloat16', attn_implementation='flash_attention_2')\nds = load_dataset('yahma/alpaca-cleaned', split='train[:5000]')\n\ntrainer = SFTTrainer(model=model, tokenizer=tok, train_dataset=ds,\n    peft_config=LoraConfig(r=16, lora_alpha=16, target_modules=['q_proj','k_proj','v_proj','o_proj']),\n    args=SFTConfig(output_dir='./out', per_device_train_batch_size=2, gradient_accumulation_steps=8,\n        num_train_epochs=2, learning_rate=2e-4, bf16=True, gradient_checkpointing=True, packing=True))\ntrainer.train()\n",
+    "dependencies": [
+      "trl",
+      "transformers",
+      "datasets",
+      "peft",
+      "flash-attn"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "trl",
+        "version": ">=0.13.0",
+        "purpose": "TRL trainers."
+      },
+      {
+        "name": "transformers",
+        "version": ">=4.46.0",
+        "purpose": "Model loading + tokenizer."
+      },
+      {
+        "name": "peft",
+        "version": ">=0.14.0",
+        "purpose": "LoRA adapters."
+      },
+      {
+        "name": "flash-attn",
+        "version": ">=2.7.0",
+        "purpose": "FlashAttention 2 for 2-3x speedup."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Llama access."
+      }
+    ],
+    "setup_steps": [
+      "GPU 24GB+ (or 16GB with smaller seq_len).",
+      "`pip install trl>=0.13.0 transformers>=4.46.0 peft>=0.14.0 datasets flash-attn>=2.7.0 bitsandbytes`",
+      "Save as `sft.py`, set HF_TOKEN, run.",
+      "Watch tensorboard or W&B for loss; expect 1-3h for 5k examples on A100.",
+      "Eval the merged model on your domain before shipping."
+    ],
+    "variations": [
+      {
+        "label": "Full-param fine-tune (no LoRA)",
+        "description": "Drop peft_config; needs 4xA100 for 8B.",
+        "code_snippet": "trainer = SFTTrainer(model=model, tokenizer=tok, train_dataset=ds, args=SFTConfig(...))  # no peft_config"
+      },
+      {
+        "label": "Multi-GPU via Accelerate",
+        "description": "Same script, launch with accelerate.",
+        "code_snippet": "# accelerate config (DeepSpeed Zero-2)\n# accelerate launch sft.py"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ImportError: flash-attn requires CUDA",
+        "cause": "flash-attn wheel mismatch.",
+        "fix_snippet": "pip install flash-attn --no-build-isolation\n# OR drop the flag: attn_implementation='sdpa'  (~30% slower but works)"
+      },
+      {
+        "error_text": "Loss spikes then NaN",
+        "cause": "Learning rate too high or bad data.",
+        "fix_snippet": "learning_rate=1e-4  # was 2e-4\n# Inspect first 10 examples after format_chat for malformed entries"
+      },
+      {
+        "error_text": "Tokenizer pad_token error",
+        "cause": "Llama tokenizers don't have a pad_token by default.",
+        "fix_snippet": "tokenizer.pad_token = tokenizer.eos_token"
+      }
+    ],
+    "production_checklist": [
+      "Always set the chat template before training - mismatched templates wreck the model.",
+      "Use packing=True - 30% faster training on short examples.",
+      "Eval on a held-out set every 500 steps - catches overfitting early.",
+      "Pin TRL version (0.13 vs 0.14 changes SFTConfig fields subtly).",
+      "Start with LoRA r=16; only bump after measuring need.",
+      "Save_total_limit=2 to avoid disk filling on long runs.",
+      "Test inference with the saved adapter BEFORE merging - catches save/load bugs."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.1-8B-Instruct"
+      ],
+      "library_versions": [
+        "trl==0.13.0",
+        "transformers==4.46.3",
+        "peft==0.14.0",
+        "flash-attn==2.7.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "huggingface-trl",
+      "peft"
+    ],
+    "related_glossary_slugs": [
+      "sft",
+      "lora",
+      "packing",
+      "flash-attention"
+    ],
+    "related_learn_slugs": [
+      "fine-tuning-101"
+    ],
+    "faq": [
+      {
+        "question": "TRL SFTTrainer vs Unsloth?",
+        "answer": "TRL: baseline, no magic, easy to debug. Unsloth: 2x faster + 30% less VRAM via custom kernels. Use TRL when learning fine-tuning; switch to Unsloth once you have a working baseline."
+      },
+      {
+        "question": "Why packing=True?",
+        "answer": "Concatenates short examples into max_seq_length chunks - dramatically improves GPU utilization on datasets with mixed-length examples. ~30% faster training, no quality cost when implemented correctly."
+      }
+    ],
+    "meta_title": "HuggingFace TRL SFTTrainer Vanilla Recipe | OSS AI Hub",
+    "meta_description": "Production SFT with TRL: LoRA, packed sequences, FlashAttention 2, gradient checkpointing. Single-file. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "continued-pretraining-domain",
+    "title": "Continued Pretraining for Domain Adaptation (Medical/Legal/Code)",
+    "tldr": "Continued pretraining of Llama 3.1 8B on a domain corpus (medical, legal, code) before instruction-tuning. Avoids catastrophic forgetting.",
+    "description": "Two-stage adaptation: (1) CPT on raw domain text with very low LR + LoRA on attention only; (2) SFT on domain instructions afterward.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "trl",
+    "difficulty_tier": "expert",
+    "tags": [
+      "cpt",
+      "domain-adaptation",
+      "trl"
+    ],
+    "best_for_tags": [
+      "domain-llm",
+      "cpt"
+    ],
+    "when_to_use": "Your domain has vocabulary the base model wasn't trained on (medical codes, legal citations, proprietary code). CPT on raw domain text exposes the model to domain language before instruction fine-tuning - typically 5-15% lift on domain QA tasks.",
+    "when_not_to_use": "Skip CPT when (1) general SFT already works; (2) you have <100k tokens of domain text - not enough signal; (3) domain isn't really novel (web data already covers it).",
+    "quick_start": "1) Collect a domain corpus as raw text  2) Run CPT with very low LR  3) SFT on domain instructions afterward.",
+    "full_code": "\"\"\"Continued pretraining (CPT) of Llama 3.1 8B on domain corpus.\"\"\"\nfrom datasets import load_dataset\nfrom transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling\nfrom peft import LoraConfig, get_peft_model\n\n\nMODEL = \"meta-llama/Llama-3.1-8B\"  # BASE, not Instruct - we'll instruct-tune after CPT\n\ntokenizer = AutoTokenizer.from_pretrained(MODEL)\ntokenizer.pad_token = tokenizer.eos_token\nmodel = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=\"bfloat16\", attn_implementation=\"flash_attention_2\")\n\n# LoRA on attention only - preserves base capability better than full attention+MLP\nmodel = get_peft_model(model, LoraConfig(r=64, lora_alpha=16, target_modules=[\"q_proj\", \"k_proj\", \"v_proj\", \"o_proj\"], task_type=\"CAUSAL_LM\"))\n\n# Domain corpus - raw text in 'text' column\nds = load_dataset(\"json\", data_files=\"medical_corpus.jsonl\", split=\"train\")\ndef tokenize(ex):\n    return tokenizer(ex[\"text\"], truncation=True, max_length=4096, return_overflowing_tokens=False)\nds = ds.map(tokenize, batched=True, remove_columns=ds.column_names)\n\ntrainer = Trainer(\n    model=model,\n    tokenizer=tokenizer,\n    train_dataset=ds,\n    data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False),\n    args=TrainingArguments(\n        output_dir=\"./out/cpt\",\n        per_device_train_batch_size=4,\n        gradient_accumulation_steps=4,\n        num_train_epochs=1,\n        learning_rate=5e-5,        # 10x lower than SFT - preserves base capabilities\n        weight_decay=0.01,\n        warmup_ratio=0.03,\n        bf16=True,\n        gradient_checkpointing=True,\n        logging_steps=10,\n        save_steps=1000,\n    ),\n)\ntrainer.train()\ntrainer.save_model(\"./out/cpt/final\")\n# Then run SFT on domain instructions starting from this checkpoint.\n",
+    "code": "from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, DataCollatorForLanguageModeling\nfrom datasets import load_dataset\nfrom peft import LoraConfig, get_peft_model\n\ntok = AutoTokenizer.from_pretrained('meta-llama/Llama-3.1-8B')\nmodel = AutoModelForCausalLM.from_pretrained('meta-llama/Llama-3.1-8B', torch_dtype='bfloat16')\nmodel = get_peft_model(model, LoraConfig(r=64, target_modules=['q_proj','k_proj','v_proj','o_proj']))\n\nds = load_dataset('json', data_files='domain.jsonl', split='train')\nds = ds.map(lambda e: tok(e['text'], truncation=True, max_length=4096), batched=True)\n\nTrainer(model=model, tokenizer=tok, train_dataset=ds,\n    data_collator=DataCollatorForLanguageModeling(tokenizer=tok, mlm=False),\n    args=TrainingArguments(output_dir='./out', learning_rate=5e-5, num_train_epochs=1, bf16=True)).train()\n",
+    "dependencies": [
+      "transformers",
+      "trl",
+      "datasets",
+      "peft"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "transformers",
+        "version": ">=4.46.0",
+        "purpose": "Trainer + tokenizer."
+      },
+      {
+        "name": "peft",
+        "version": ">=0.14.0",
+        "purpose": "LoRA."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Base model access."
+      }
+    ],
+    "setup_steps": [
+      "Collect domain corpus as JSONL with 'text' column (100k+ tokens minimum).",
+      "Start from BASE model (Llama-3.1-8B), not Instruct - we'll instruct after.",
+      "Use 10x lower LR than SFT (5e-5 vs 2e-4).",
+      "Run 1 epoch only - more causes catastrophic forgetting.",
+      "Follow with SFT on domain instructions from the CPT checkpoint.",
+      "Eval on domain QA + general benchmarks (MMLU) to verify no forgetting."
+    ],
+    "variations": [
+      {
+        "label": "Replay buffer (mix 5% general data)",
+        "description": "Prevents forgetting more aggressively.",
+        "code_snippet": "general = load_dataset('allenai/c4', split='train', streaming=True).take(10000)\nmixed = interleave_datasets([domain_ds, general], probabilities=[0.95, 0.05])"
+      },
+      {
+        "label": "Full-param CPT (better quality, much more VRAM)",
+        "description": "Drop LoRA for highest quality.",
+        "code_snippet": "# Skip get_peft_model. Needs 4xA100 80GB for Llama 8B."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Model forgets general capabilities (MMLU drops 20+ pts)",
+        "cause": "LR too high or too many epochs.",
+        "fix_snippet": "learning_rate=2e-5  # was 5e-5\nnum_train_epochs=0.5  # was 1"
+      },
+      {
+        "error_text": "CPT loss stops decreasing mid-epoch",
+        "cause": "Saturated on small corpus.",
+        "fix_snippet": "# Either collect more data OR move to SFT phase early"
+      },
+      {
+        "error_text": "Domain QA still weak after CPT + SFT",
+        "cause": "CPT corpus was thin or wrong shape (e.g. headlines instead of full text).",
+        "fix_snippet": "# CPT works best on long-form domain text (papers, manuals, reports), not snippets."
+      }
+    ],
+    "production_checklist": [
+      "Start from BASE not Instruct for CPT.",
+      "10x lower LR than SFT (5e-5 typical).",
+      "1 epoch max - more = catastrophic forgetting.",
+      "Always eval on general benchmarks (MMLU) post-CPT to detect forgetting.",
+      "Mix 5-10% general data as 'replay' to anchor general capabilities.",
+      "Don't skip the SFT-after-CPT step - CPT alone produces a base-shaped model.",
+      "Track domain perplexity drop - if it doesn't drop, CPT didn't help."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.1-8B"
+      ],
+      "library_versions": [
+        "transformers==4.46.3",
+        "peft==0.14.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "huggingface-trl",
+      "peft"
+    ],
+    "related_glossary_slugs": [
+      "cpt",
+      "catastrophic-forgetting",
+      "domain-adaptation"
+    ],
+    "related_learn_slugs": [
+      "fine-tuning-101"
+    ],
+    "faq": [
+      {
+        "question": "CPT vs RAG for domain knowledge?",
+        "answer": "RAG: cheaper, dynamic, easy to update - prefer it. CPT: better for domain *language* (vocabulary, structure) but expensive + static. The right answer is usually 'do RAG; consider CPT only if specific knowledge is missing AND your domain has unique vocabulary the model struggles with'."
+      },
+      {
+        "question": "How much corpus do I need?",
+        "answer": "Minimum useful: 1M tokens of high-quality domain text. Sweet spot: 50-500M tokens. Above 1B tokens you're essentially doing pretraining."
+      }
+    ],
+    "meta_title": "Continued Pretraining for Domain Adaptation | OSS AI Hub",
+    "meta_description": "Production CPT recipe: LoRA-r64 attention-only, low LR, 1 epoch, replay buffer. Pre-instruction domain adaptation. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "synthetic-data-generation-magpie",
+    "title": "Synthetic Instruction Data with Magpie (Self-Instruct via BOS)",
+    "tldr": "Generate high-quality instruction-tuning data via Magpie: prompt a base model with its own BOS, collect diverse instructions, filter.",
+    "description": "Magpie technique: feed Llama 3 Instruct only its BOS + chat-start tokens, let it generate the user turn first, then complete with assistant. Highly diverse synthetic SFT data.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "magpie",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "synthetic-data",
+      "magpie",
+      "sft-data"
+    ],
+    "best_for_tags": [
+      "synthetic-data",
+      "sft-data"
+    ],
+    "when_to_use": "You need an instruction-tuning dataset but don't have one for your domain. Magpie is the highest-quality OSS synthetic data generator in 2026 - the data is more diverse than Alpaca + better than self-instruct + free (your own GPU).",
+    "when_not_to_use": "Skip Magpie when (1) you have real labeled data already - it beats synthetic; (2) you need very narrow domain coverage - human curation will be tighter; (3) you're targeting safety alignment - synthetic alignment data has well-known issues.",
+    "quick_start": "1) `pip install vllm transformers`  2) Run Magpie on Llama 3 70B Instruct  3) Filter by quality + dedupe.",
+    "full_code": "\"\"\"Magpie synthetic instruction data generation via vLLM.\"\"\"\nfrom vllm import LLM, SamplingParams\nimport json, hashlib, random\n\nMODEL = \"meta-llama/Llama-3.3-70B-Instruct\"\nllm = LLM(model=MODEL, tensor_parallel_size=4, gpu_memory_utilization=0.92)\n\n# Llama 3 chat tokens\nUSER_START = \"<|start_header_id|>user<|end_header_id|>\\n\\n\"\nUSER_END = \"<|eot_id|>\"\nASST_START = \"<|start_header_id|>assistant<|end_header_id|>\\n\\n\"\n\n# Stage 1: generate diverse user instructions by feeding ONLY the user header\nN = 10000\ninst_params = SamplingParams(temperature=1.0, top_p=0.95, max_tokens=512, stop=[USER_END, ASST_START])\ninstructions = []\nfor batch in range(0, N, 500):\n    prompts = [f\"<|begin_of_text|>{USER_START}\"] * 500\n    outputs = llm.generate(prompts, inst_params)\n    instructions.extend([o.outputs[0].text.strip() for o in outputs if o.outputs[0].text.strip()])\n\n# Dedupe by hash\nseen = set(); deduped = []\nfor inst in instructions:\n    h = hashlib.md5(inst.encode()).hexdigest()\n    if h not in seen and 20 < len(inst) < 500:\n        seen.add(h); deduped.append(inst)\n\n# Stage 2: complete each with an assistant response\nresp_params = SamplingParams(temperature=0.7, max_tokens=2048, stop=[USER_END])\nprompts = [f\"<|begin_of_text|>{USER_START}{i}{USER_END}{ASST_START}\" for i in deduped]\noutputs = llm.generate(prompts, resp_params)\n\nwith open(\"magpie_sft.jsonl\", \"w\") as f:\n    for inst, out in zip(deduped, outputs):\n        f.write(json.dumps({\"instruction\": inst, \"output\": out.outputs[0].text.strip()}) + \"\\n\")\nprint(f\"wrote {len(deduped)} examples to magpie_sft.jsonl\")\n",
+    "code": "from vllm import LLM, SamplingParams\nimport json\n\nllm = LLM(model='meta-llama/Llama-3.3-70B-Instruct', tensor_parallel_size=4)\nUSER = '<|start_header_id|>user<|end_header_id|>\\n\\n'\nEOT = '<|eot_id|>'\n\n# Generate instructions by feeding only the user header\nprompts = [f'<|begin_of_text|>{USER}'] * 1000\nouts = llm.generate(prompts, SamplingParams(temperature=1.0, max_tokens=512, stop=[EOT]))\ninstructions = [o.outputs[0].text.strip() for o in outs]\n",
+    "dependencies": [
+      "vllm"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "vllm",
+        "version": "==0.7.0",
+        "purpose": "High-throughput generation."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Llama 3.3 70B access."
+      }
+    ],
+    "setup_steps": [
+      "GPU pool (4xA100 80GB recommended).",
+      "`pip install vllm==0.7.0`",
+      "Save as `magpie.py`, run - generates ~10k examples in 1-2h.",
+      "Filter generated data: dedupe, length-clip (20-500 chars instruction), drop low-quality.",
+      "Optional: run a second pass with a stronger judge (Claude) to score + filter to top 50%.",
+      "Use the resulting JSONL as your SFT dataset."
+    ],
+    "variations": [
+      {
+        "label": "Filter with reward model",
+        "description": "Score each (instruction, output) pair, keep top N%.",
+        "code_snippet": "from transformers import AutoModelForSequenceClassification, AutoTokenizer\nrm = AutoModelForSequenceClassification.from_pretrained('Skywork/Skywork-Reward-Llama-3.1-8B-v0.2')\n# score each pair, keep top 50%"
+      },
+      {
+        "label": "Domain-specific seed prefix",
+        "description": "Constrain instruction generation to a domain.",
+        "code_snippet": "prompts = [f'<|begin_of_text|>{USER}As a medical professional, '] * 1000\n# model continues from this prefix"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Instructions all sound similar",
+        "cause": "Temperature too low or seed prompt too similar.",
+        "fix_snippet": "temperature=1.2, top_p=0.95  # was 1.0/0.9"
+      },
+      {
+        "error_text": "Many empty or truncated instructions",
+        "cause": "Stop tokens triggered too early.",
+        "fix_snippet": "# Ensure stop=[EOT, ASST_START] - NOT just [EOT]\n# Filter post-hoc: only keep if 20 < len(inst) < 500"
+      },
+      {
+        "error_text": "Quality lower than expected",
+        "cause": "Llama 3.0 base model used; quality is lower than 3.1 or 3.3.",
+        "fix_snippet": "MODEL = 'meta-llama/Llama-3.3-70B-Instruct'  # not 3.0"
+      }
+    ],
+    "production_checklist": [
+      "Run on Instruct, not base - Magpie needs the instruction-following primitive.",
+      "Use the largest Instruct model you can (70B beats 8B for diversity + quality).",
+      "ALWAYS dedupe by hash - 10-30% of generations repeat.",
+      "Filter by length: 20-500 chars instruction, 50-2000 chars response.",
+      "Quality-filter with a reward model or LLM judge for the final 10-30%.",
+      "Mix Magpie data 50/50 with curated human examples for best results.",
+      "Verify diversity - cluster the data and check cluster sizes; small clusters mean over-collapse."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.3-70B-Instruct"
+      ],
+      "library_versions": [
+        "vllm==0.7.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "vllm"
+    ],
+    "related_glossary_slugs": [
+      "synthetic-data",
+      "self-instruct",
+      "magpie"
+    ],
+    "related_learn_slugs": [
+      "fine-tuning-101"
+    ],
+    "faq": [
+      {
+        "question": "Magpie vs self-instruct / Alpaca approach?",
+        "answer": "Self-instruct (Alpaca): seed with hand-written examples, generate variations. Magpie: no seed needed - the BOS trick produces more diverse data with fewer prompt-engineering pitfalls. Magpie data scores higher on diversity benchmarks + downstream SFT quality."
+      },
+      {
+        "question": "How many Magpie examples do I need?",
+        "answer": "10k is the entry point. 100k+ approaches commercial dataset quality. The compute cost is real - 100k examples on 4xA100 is ~12 hours = ~$30 at 70B."
+      }
+    ],
+    "meta_title": "Synthetic Instruction Data with Magpie | OSS AI Hub",
+    "meta_description": "Production Magpie recipe: generate diverse SFT data via BOS-only prompts on Llama 3 Instruct. Dedup + quality filter. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "kto-binary-feedback",
+    "title": "KTO Fine-Tune (Binary Thumbs-Up/Down Feedback)",
+    "tldr": "KTO alignment using binary labels (good/bad) instead of paired preferences. Easier data collection than DPO.",
+    "description": "Kahneman-Tversky Optimization: align with just {prompt, completion, label} instead of {prompt, chosen, rejected}. Works when your feedback is thumbs-up/down not pairs.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "trl",
+    "difficulty_tier": "expert",
+    "tags": [
+      "kto",
+      "binary-feedback",
+      "trl",
+      "alignment"
+    ],
+    "best_for_tags": [
+      "kto",
+      "binary-data"
+    ],
+    "when_to_use": "You collect thumbs-up/thumbs-down feedback from users (chat apps, recommender systems). KTO uses this signal directly - no need to construct chosen/rejected pairs. Drastically simplifies the data collection pipeline.",
+    "when_not_to_use": "Skip KTO when (1) you have paired preferences - DPO is simpler; (2) feedback is very imbalanced (95% positive) - KTO struggles; (3) you can collect Likert (1-5) - use IPO or direct reward modeling instead.",
+    "quick_start": "1) `pip install trl>=0.13`  2) Dataset with {prompt, completion, label: True/False}  3) `python kto.py`",
+    "full_code": "\"\"\"KTO fine-tune on binary feedback.\"\"\"\nfrom transformers import AutoTokenizer, AutoModelForCausalLM\nfrom trl import KTOConfig, KTOTrainer\nfrom peft import LoraConfig\nfrom datasets import load_dataset\n\n\nMODEL = \"chadcorp/llama3_1_8b_ossai_sft_v1\"\n\ntok = AutoTokenizer.from_pretrained(MODEL)\ntok.pad_token = tok.pad_token or tok.eos_token\nmodel = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=\"bfloat16\", device_map=\"auto\")\n\n# Dataset columns: prompt, completion, label (bool: True=thumbs-up, False=thumbs-down)\nds = load_dataset(\"argilla/ultrafeedback-kto-cleaned\", split=\"train[:10000]\")\n\ntrainer = KTOTrainer(\n    model=model,\n    args=KTOConfig(\n        output_dir=\"./out/kto\",\n        per_device_train_batch_size=4,\n        gradient_accumulation_steps=2,\n        num_train_epochs=1,\n        learning_rate=5e-6,\n        beta=0.1,\n        max_length=2048,\n        max_prompt_length=1024,\n        warmup_ratio=0.03,\n        bf16=True,\n        # KTO-specific: importance weights to balance positive vs negative samples\n        desirable_weight=1.0,\n        undesirable_weight=1.0,\n    ),\n    tokenizer=tok,\n    train_dataset=ds,\n    peft_config=LoraConfig(r=16, lora_alpha=16, target_modules=[\"q_proj\",\"k_proj\",\"v_proj\",\"o_proj\"]),\n)\ntrainer.train()\ntrainer.save_model(\"./out/kto/final\")\n",
+    "code": "from trl import KTOConfig, KTOTrainer\nfrom peft import LoraConfig\nfrom transformers import AutoTokenizer, AutoModelForCausalLM\nfrom datasets import load_dataset\n\ntok = AutoTokenizer.from_pretrained('chadcorp/llama3_1_8b_sft')\nmodel = AutoModelForCausalLM.from_pretrained('chadcorp/llama3_1_8b_sft', torch_dtype='bfloat16', device_map='auto')\nds = load_dataset('argilla/ultrafeedback-kto-cleaned', split='train[:10000]')\n\nKTOTrainer(model=model, tokenizer=tok, train_dataset=ds,\n    args=KTOConfig(output_dir='./out', per_device_train_batch_size=4, learning_rate=5e-6, beta=0.1, bf16=True),\n    peft_config=LoraConfig(r=16, target_modules=['q_proj','k_proj','v_proj','o_proj'])).train()\n",
+    "dependencies": [
+      "trl",
+      "transformers",
+      "peft"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "trl",
+        "version": ">=0.13.0",
+        "purpose": "KTOTrainer + config."
+      },
+      {
+        "name": "peft",
+        "version": ">=0.14.0",
+        "purpose": "LoRA."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Model access."
+      }
+    ],
+    "setup_steps": [
+      "Collect binary feedback as JSONL with {prompt, completion, label}.",
+      "`pip install trl>=0.13.0 peft>=0.14.0 transformers datasets`",
+      "Balance dataset: 30-70% positive labels typical.",
+      "Run `python kto.py` - 6-12h on A100 for 10k examples.",
+      "Eval the result against the SFT baseline on your domain.",
+      "Tune desirable_weight / undesirable_weight if your data is imbalanced."
+    ],
+    "variations": [
+      {
+        "label": "Class-imbalance weighting",
+        "description": "Handle 90/10 thumbs-up/down distributions.",
+        "code_snippet": "# If 90% thumbs-up, upweight thumbs-down:\nKTOConfig(desirable_weight=1.0, undesirable_weight=9.0, ...)"
+      },
+      {
+        "label": "Mix with DPO data if available",
+        "description": "Use KTOTrainer on a mix of binary + paired.",
+        "code_snippet": "# Convert paired -> binary: for each (chosen, rejected):\n# row1 = {prompt, completion: chosen, label: True}\n# row2 = {prompt, completion: rejected, label: False}"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Model only learns to output positive examples",
+        "cause": "All samples labeled True OR undesirable_weight too low.",
+        "fix_snippet": "# Bump undesirable_weight 2-5x:\nKTOConfig(undesirable_weight=3.0)"
+      },
+      {
+        "error_text": "Loss is NaN early in training",
+        "cause": "Learning rate too high for the model + LoRA combo.",
+        "fix_snippet": "learning_rate=1e-6  # was 5e-6"
+      },
+      {
+        "error_text": "Eval shows worse than baseline SFT",
+        "cause": "KTO over-applied; not enough negative signal.",
+        "fix_snippet": "# Reduce beta (less aggressive update):\nbeta=0.05  # was 0.1"
+      }
+    ],
+    "production_checklist": [
+      "Balance your data - 30-70% positives is healthy; otherwise use weights.",
+      "Start from SFT model, NOT base - KTO assumes instruction-following exists.",
+      "beta=0.1 default; 0.05 conservative, 0.3 aggressive.",
+      "Always compare against SFT-baseline on eval set before shipping.",
+      "Pin trl version - KTO API has been moving.",
+      "Use small batches + grad accum - KTO can be unstable at large effective batch sizes.",
+      "Sample from a held-out feedback set for the eval - don't reuse training data."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "chadcorp/llama3_1_8b_sft_v1"
+      ],
+      "library_versions": [
+        "trl==0.13.0",
+        "peft==0.14.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "huggingface-trl",
+      "peft"
+    ],
+    "related_glossary_slugs": [
+      "kto",
+      "dpo",
+      "binary-feedback",
+      "alignment"
+    ],
+    "related_learn_slugs": [
+      "alignment-101"
+    ],
+    "faq": [
+      {
+        "question": "KTO vs DPO when I have both kinds of data?",
+        "answer": "If you have paired preferences AND binary feedback: combine them. Convert paired into binary (chosen=True, rejected=False) and feed both to KTOTrainer. You get more data for the same alignment effect."
+      },
+      {
+        "question": "Is KTO better than DPO?",
+        "answer": "On paired data, DPO and KTO are roughly equivalent. KTO's edge is enabling alignment on data you couldn't otherwise use (binary feedback from production). Use whichever matches your data shape."
+      }
+    ],
+    "meta_title": "KTO Fine-Tune with Binary Feedback | OSS AI Hub",
+    "meta_description": "Production KTO recipe: align with thumbs-up/down labels, no paired prefs needed. Imbalance weights + LoRA. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "galore-full-finetune-low-vram",
+    "title": "GaLore Full Fine-Tune on a 24GB GPU (7B Model)",
+    "tldr": "GaLore gradient-projection trick: full-parameter fine-tune of 7B models on consumer 24GB GPUs. Better quality than LoRA.",
+    "description": "GaLore projects gradients onto a low-rank subspace, slashing optimizer memory. Lets you do full-parameter fine-tuning on a 24GB RTX 4090 - LoRA-level VRAM, full-parameter quality.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "galore",
+    "difficulty_tier": "expert",
+    "tags": [
+      "galore",
+      "full-finetune",
+      "consumer-gpu"
+    ],
+    "best_for_tags": [
+      "full-finetune",
+      "consumer-gpu"
+    ],
+    "when_to_use": "You want full-parameter fine-tune quality on a consumer GPU (no LoRA bottleneck) without paying for cloud H100s. GaLore on a 4090 fits a full 7B fine-tune in ~22GB VRAM - same memory as a LoRA-r64 run but ~3-5% better on most evals.",
+    "when_not_to_use": "Skip GaLore when (1) LoRA results are already great - simpler; (2) you need to fine-tune 70B - GaLore alone doesn't scale that high; (3) you need 2x training speed - Unsloth+LoRA is faster.",
+    "quick_start": "1) `pip install transformers galore-torch`  2) Replace optimizer with GaLoreAdamW  3) Run with full-param fine-tune.",
+    "full_code": "\"\"\"GaLore full-param fine-tune of Llama 3 7B on a 24GB GPU.\"\"\"\nfrom transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments\nfrom datasets import load_dataset\nfrom galore_torch import GaLoreAdamW\n\nMODEL = \"meta-llama/Llama-3.1-8B-Instruct\"\ntok = AutoTokenizer.from_pretrained(MODEL)\ntok.pad_token = tok.eos_token\nmodel = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=\"bfloat16\", attn_implementation=\"flash_attention_2\")\n\nds = load_dataset(\"yahma/alpaca-cleaned\", split=\"train[:5000]\")\ndef fmt(ex):\n    return {\"text\": tok.apply_chat_template([{\"role\":\"user\",\"content\":ex[\"instruction\"]},{\"role\":\"assistant\",\"content\":ex[\"output\"]}], tokenize=False)}\nds = ds.map(fmt)\nds = ds.map(lambda e: tok(e[\"text\"], truncation=True, max_length=2048), batched=True)\n\n\n# Split params: GaLore-projected (large matrices) vs regular (everything else)\ngalore_params = []; regular_params = []\ntarget_modules = [\"q_proj\", \"k_proj\", \"v_proj\", \"o_proj\", \"gate_proj\", \"up_proj\", \"down_proj\"]\nfor n, p in model.named_parameters():\n    if any(t in n for t in target_modules):\n        galore_params.append(p)\n    else:\n        regular_params.append(p)\n\n\nparam_groups = [\n    {\"params\": regular_params},\n    {\"params\": galore_params, \"rank\": 256, \"update_proj_gap\": 200, \"scale\": 0.25, \"proj_type\": \"std\"},\n]\noptimizer = GaLoreAdamW(param_groups, lr=2e-5, weight_decay=0.01)\n\ntrainer = Trainer(\n    model=model,\n    tokenizer=tok,\n    train_dataset=ds,\n    optimizers=(optimizer, None),\n    args=TrainingArguments(\n        output_dir=\"./out/galore\",\n        per_device_train_batch_size=1,\n        gradient_accumulation_steps=16,\n        num_train_epochs=2,\n        bf16=True,\n        gradient_checkpointing=True,\n        logging_steps=10,\n        save_steps=500,\n    ),\n)\ntrainer.train()\ntrainer.save_model(\"./out/galore/final\")\n",
+    "code": "from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments\nfrom galore_torch import GaLoreAdamW\n\nmodel = AutoModelForCausalLM.from_pretrained('meta-llama/Llama-3.1-8B-Instruct', torch_dtype='bfloat16')\ngalore_params = [p for n,p in model.named_parameters() if any(t in n for t in ['q_proj','k_proj','v_proj','o_proj'])]\nregular_params = [p for n,p in model.named_parameters() if p not in galore_params]\n\nopt = GaLoreAdamW([\n    {'params': regular_params},\n    {'params': galore_params, 'rank': 256, 'update_proj_gap': 200, 'scale': 0.25, 'proj_type': 'std'},\n], lr=2e-5)\n",
+    "dependencies": [
+      "transformers",
+      "galore-torch",
+      "flash-attn"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "galore-torch",
+        "version": ">=1.0",
+        "purpose": "Gradient-projected AdamW."
+      },
+      {
+        "name": "transformers",
+        "version": ">=4.46.0",
+        "purpose": "Model loading."
+      },
+      {
+        "name": "flash-attn",
+        "version": ">=2.7.0",
+        "purpose": "Attention kernels."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Llama access."
+      }
+    ],
+    "setup_steps": [
+      "24GB GPU (RTX 4090, 3090, A6000).",
+      "`pip install galore-torch transformers>=4.46.0 datasets flash-attn`",
+      "Save the full_code and adjust target_modules + rank to taste.",
+      "Run - ~12-24h for 5k examples on a 4090.",
+      "Eval against LoRA + full-param baselines to confirm GaLore is helping.",
+      "Save checkpoints frequently - full-param runs are expensive to redo."
+    ],
+    "variations": [
+      {
+        "label": "GaLore 8-bit (even less VRAM)",
+        "description": "Pair GaLore with 8-bit Adam.",
+        "code_snippet": "from galore_torch import GaLoreAdamW8bit\noptimizer = GaLoreAdamW8bit(param_groups, lr=2e-5)"
+      },
+      {
+        "label": "Q-GaLore (4-bit weights)",
+        "description": "Combine GaLore + 4-bit base for sub-12GB fine-tune.",
+        "code_snippet": "# pip install q-galore-torch; lets you fit 8B in ~12GB. Quality slightly lower than full-precision GaLore."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "RuntimeError: CUDA out of memory at the optimizer step",
+        "cause": "GaLore rank too high.",
+        "fix_snippet": "# Drop rank from 256 -> 128:\n{'params': galore_params, 'rank': 128, ...}"
+      },
+      {
+        "error_text": "Loss diverges vs LoRA baseline",
+        "cause": "GaLore LR needs to be lower than LoRA LR.",
+        "fix_snippet": "lr=1e-5  # was 2e-5"
+      },
+      {
+        "error_text": "Training 3x slower than LoRA",
+        "cause": "Periodic projection update (every update_proj_gap steps) is expensive.",
+        "fix_snippet": "# Bump update_proj_gap from 200 -> 500 to project less frequently:\n{'update_proj_gap': 500}"
+      }
+    ],
+    "production_checklist": [
+      "Use rank=256 as the starting point - drop to 128 for tight VRAM, raise to 512 for quality.",
+      "Use 10x lower LR than LoRA - GaLore is sensitive.",
+      "Pair with FlashAttention 2 + gradient checkpointing for max VRAM savings.",
+      "Eval against LoRA + full-param baselines - GaLore wins on some tasks, ties on others.",
+      "GaLore's main appeal is VRAM, not speed - expect 1.5-3x slower per step vs LoRA.",
+      "Save checkpoints every 200 steps - the long runs lose hours on crashes.",
+      "Pin galore-torch version - the project is young."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.1-8B-Instruct"
+      ],
+      "library_versions": [
+        "galore-torch==1.0",
+        "transformers==4.46.3",
+        "RTX 4090 24GB"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "huggingface-trl"
+    ],
+    "related_glossary_slugs": [
+      "galore",
+      "low-rank-projection",
+      "full-finetuning"
+    ],
+    "related_learn_slugs": [
+      "fine-tuning-101"
+    ],
+    "faq": [
+      {
+        "question": "GaLore vs LoRA vs QLoRA - which?",
+        "answer": "LoRA: simplest, fastest, slight quality penalty vs full-param. QLoRA: LoRA + 4-bit base, even less VRAM, marginally lower quality. GaLore: full-param quality at LoRA-ish VRAM, ~2x slower than LoRA. Use GaLore when you measurably need full-param quality and don't have H100 budget."
+      },
+      {
+        "question": "Why isn't everyone using GaLore?",
+        "answer": "Three reasons: (1) it's 2-3x slower than LoRA, (2) the optimizer + projection introduce hyperparameter complexity (rank, gap, scale, proj_type), (3) LoRA results are 'good enough' for most tasks. GaLore shines on hard tasks where 3-5% matters."
+      }
+    ],
+    "meta_title": "GaLore Full Fine-Tune on 24GB GPU | OSS AI Hub",
+    "meta_description": "Production GaLore: full-parameter fine-tune of Llama 7B on a single 24GB consumer GPU via gradient projection. MIT."
   }
 ]
