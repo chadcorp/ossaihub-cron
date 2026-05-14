@@ -30,7 +30,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -76,7 +76,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Senior Code Reviewer (security + perf + style) | OSS AI Hub Prompt Library",
+    "meta_title": "Senior Code Reviewer (security + perf + style) | OSS AI Hub Prompt...",
     "meta_description": "Acts as a staff-level engineer reviewing a pull request. Flags security issues, performance regressions, race conditions, and style violations with line re",
     "model_compatibility": [
       {
@@ -131,7 +131,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -232,7 +232,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -333,7 +333,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -411,7 +411,7 @@
     "submitter_email": "seed@ossaihub.com",
     "submitter_name": "OSS Hub",
     "slug": "sql-query-from-natural-language",
-    "title": "Natural Language → SQL Query",
+    "title": "Natural Language \u2192 SQL Query",
     "category": "code-generation",
     "content": "You are a senior database engineer. Given the schema and the natural-language question, write a single correct SQL query optimized for the indexes in the schema. Then explain (in 1-2 sentences) why your query is efficient and which indexes it uses.\n\nSchema:\n```sql\n{schema}\n```\n\nQuestion: {question}\n\nReturn:\n1. The SQL query (wrapped in ```sql ... ```)\n2. Brief efficiency note\n3. Estimated worst-case complexity (e.g. O(n log n))",
     "full_prompt": "You are a senior database engineer. Given the schema and the natural-language question, write a single correct SQL query optimized for the indexes in the schema. Then explain (in 1-2 sentences) why your query is efficient and which indexes it uses.\n\nSchema:\n```sql\n{schema}\n```\n\nQuestion: {question}\n\nReturn:\n1. The SQL query (wrapped in ```sql ... ```)\n2. Brief efficiency note\n3. Estimated worst-case complexity (e.g. O(n log n))",
@@ -434,7 +434,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -480,7 +480,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Natural Language → SQL Query | OSS AI Hub Prompt Library",
+    "meta_title": "Natural Language \u2192 SQL Query | OSS AI Hub Prompt Library",
     "meta_description": "Given a database schema and a natural-language question, produce a correct, indexed-friendly SQL query with EXPLAIN-able performance.",
     "model_compatibility": [
       {
@@ -534,7 +534,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -635,7 +635,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -713,7 +713,7 @@
     "submitter_email": "seed@ossaihub.com",
     "submitter_name": "OSS Hub",
     "slug": "migrate-python-2-to-3",
-    "title": "Migrate Legacy Code (Py2→Py3, JS→TS, etc.)",
+    "title": "Migrate Legacy Code (Py2\u2192Py3, JS\u2192TS, etc.)",
     "category": "code-generation",
     "content": "You are an expert in code generation. Task: Migrate code across language versions or paradigms. Outputs migrated code + caveats + test plan.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
     "full_prompt": "You are an expert in code generation. Task: Migrate code across language versions or paradigms. Outputs migrated code + caveats + test plan.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
@@ -735,7 +735,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -781,7 +781,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Migrate Legacy Code (Py2→Py3, JS→TS, etc.) | OSS AI Hub Prompt Library",
+    "meta_title": "Migrate Legacy Code (Py2\u2192Py3, JS\u2192TS, etc.) | OSS AI Hub Prompt Library",
     "meta_description": "Migrate code across language versions or paradigms. Outputs migrated code + caveats + test plan.",
     "model_compatibility": [
       {
@@ -835,7 +835,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -936,7 +936,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -1037,7 +1037,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -1137,7 +1137,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -1239,7 +1239,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -1339,7 +1339,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -1439,7 +1439,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -1540,7 +1540,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -1641,7 +1641,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -1740,7 +1740,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -1840,7 +1840,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -1941,7 +1941,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -2042,7 +2042,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -2120,7 +2120,7 @@
     "submitter_email": "seed@ossaihub.com",
     "submitter_name": "OSS Hub",
     "slug": "tone-shift-formal-casual",
-    "title": "Tone-Shift (formal ↔ casual ↔ technical)",
+    "title": "Tone-Shift (formal \u2194 casual \u2194 technical)",
     "category": "writing-editing",
     "content": "You are an expert in writing editing. Task: Rewrite a piece of text in a different tone register: formal/casual/technical/empathetic/aggressive. Preserves meaning.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
     "full_prompt": "You are an expert in writing editing. Task: Rewrite a piece of text in a different tone register: formal/casual/technical/empathetic/aggressive. Preserves meaning.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
@@ -2142,7 +2142,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -2188,7 +2188,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Tone-Shift (formal ↔ casual ↔ technical) | OSS AI Hub Prompt Library",
+    "meta_title": "Tone-Shift (formal \u2194 casual \u2194 technical) | OSS AI Hub Prompt Library",
     "meta_description": "Rewrite a piece of text in a different tone register: formal/casual/technical/empathetic/aggressive. Preserves meaning.",
     "model_compatibility": [
       {
@@ -2243,7 +2243,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -2344,7 +2344,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -2444,7 +2444,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -2544,7 +2544,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -2590,7 +2590,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Rewrite for Skim Readers (TL;DR + bullets + bold key terms) | OSS AI Hub Prompt Library",
+    "meta_title": "Rewrite for Skim Readers (TL;DR + bullets + bold key terms) | OSS A...",
     "meta_description": "Restructure long-form content into a skim-readable version with TL;DR at top, scannable bullets, and key terms bolded.",
     "model_compatibility": [
       {
@@ -2644,7 +2644,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -2745,7 +2745,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -2846,7 +2846,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -2924,7 +2924,7 @@
     "submitter_email": "seed@ossaihub.com",
     "submitter_name": "OSS Hub",
     "slug": "resume-parser-structured",
-    "title": "Resume Parser → Structured Schema",
+    "title": "Resume Parser \u2192 Structured Schema",
     "category": "data-extraction",
     "content": "You are an expert in data extraction. Task: Parse a resume PDF/text into typed JSON: name, contact, experience (with normalized dates), skills, education, certifications.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
     "full_prompt": "You are an expert in data extraction. Task: Parse a resume PDF/text into typed JSON: name, contact, experience (with normalized dates), skills, education, certifications.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
@@ -2947,7 +2947,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -2993,7 +2993,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Resume Parser → Structured Schema | OSS AI Hub Prompt Library",
+    "meta_title": "Resume Parser \u2192 Structured Schema | OSS AI Hub Prompt Library",
     "meta_description": "Parse a resume PDF/text into typed JSON: name, contact, experience (with normalized dates), skills, education, certifications.",
     "model_compatibility": [
       {
@@ -3025,7 +3025,7 @@
     "submitter_email": "seed@ossaihub.com",
     "submitter_name": "OSS Hub",
     "slug": "pdf-table-to-json",
-    "title": "PDF Table → JSON",
+    "title": "PDF Table \u2192 JSON",
     "category": "data-extraction",
     "content": "You are an expert in data extraction. Task: Convert tables extracted from PDFs (often messy) into clean structured JSON with column inference and unit normalization.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
     "full_prompt": "You are an expert in data extraction. Task: Convert tables extracted from PDFs (often messy) into clean structured JSON with column inference and unit normalization.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
@@ -3048,7 +3048,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -3094,7 +3094,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "PDF Table → JSON | OSS AI Hub Prompt Library",
+    "meta_title": "PDF Table \u2192 JSON | OSS AI Hub Prompt Library",
     "meta_description": "Convert tables extracted from PDFs (often messy) into clean structured JSON with column inference and unit normalization.",
     "model_compatibility": [
       {
@@ -3126,7 +3126,7 @@
     "submitter_email": "seed@ossaihub.com",
     "submitter_name": "OSS Hub",
     "slug": "email-thread-summarize-actions",
-    "title": "Email Thread → Summary + Action Items",
+    "title": "Email Thread \u2192 Summary + Action Items",
     "category": "data-extraction",
     "content": "You are an expert in data extraction. Task: Read an email thread, produce summary + extracted action items with assignee, deadline, and dependency tracking.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
     "full_prompt": "You are an expert in data extraction. Task: Read an email thread, produce summary + extracted action items with assignee, deadline, and dependency tracking.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
@@ -3149,7 +3149,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -3195,7 +3195,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Email Thread → Summary + Action Items | OSS AI Hub Prompt Library",
+    "meta_title": "Email Thread \u2192 Summary + Action Items | OSS AI Hub Prompt Library",
     "meta_description": "Read an email thread, produce summary + extracted action items with assignee, deadline, and dependency tracking.",
     "model_compatibility": [
       {
@@ -3227,7 +3227,7 @@
     "submitter_email": "seed@ossaihub.com",
     "submitter_name": "OSS Hub",
     "slug": "meeting-notes-to-tasks",
-    "title": "Meeting Notes → Task List",
+    "title": "Meeting Notes \u2192 Task List",
     "category": "data-extraction",
     "content": "You are an expert in data extraction. Task: Convert raw meeting transcript into a structured task list: tasks, owners, due dates, blockers, and next-meeting agenda items.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
     "full_prompt": "You are an expert in data extraction. Task: Convert raw meeting transcript into a structured task list: tasks, owners, due dates, blockers, and next-meeting agenda items.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
@@ -3250,7 +3250,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -3296,7 +3296,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Meeting Notes → Task List | OSS AI Hub Prompt Library",
+    "meta_title": "Meeting Notes \u2192 Task List | OSS AI Hub Prompt Library",
     "meta_description": "Convert raw meeting transcript into a structured task list: tasks, owners, due dates, blockers, and next-meeting agenda items.",
     "model_compatibility": [
       {
@@ -3350,7 +3350,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -3451,7 +3451,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -3529,7 +3529,7 @@
     "submitter_email": "seed@ossaihub.com",
     "submitter_name": "OSS Hub",
     "slug": "medical-summary-soap",
-    "title": "Medical Note → SOAP Format",
+    "title": "Medical Note \u2192 SOAP Format",
     "category": "data-extraction",
     "content": "You are an expert in data extraction. Task: Restructure a medical note into SOAP format (Subjective, Objective, Assessment, Plan) with proper terminology preservation.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
     "full_prompt": "You are an expert in data extraction. Task: Restructure a medical note into SOAP format (Subjective, Objective, Assessment, Plan) with proper terminology preservation.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
@@ -3551,7 +3551,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -3597,7 +3597,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Medical Note → SOAP Format | OSS AI Hub Prompt Library",
+    "meta_title": "Medical Note \u2192 SOAP Format | OSS AI Hub Prompt Library",
     "meta_description": "Restructure a medical note into SOAP format (Subjective, Objective, Assessment, Plan) with proper terminology preservation.",
     "model_compatibility": [
       {
@@ -3629,11 +3629,11 @@
     "submitter_email": "seed@ossaihub.com",
     "submitter_name": "OSS Hub",
     "slug": "web-page-key-info",
-    "title": "Web Page → Key Info Extractor",
+    "title": "Web Page \u2192 Key Info Extractor",
     "category": "data-extraction",
-    "content": "You are an expert in data extraction. Task: Given scraped HTML, extract main content (title, author, body, date, key entities) — works on news, blogs, product pages.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
-    "full_prompt": "You are an expert in data extraction. Task: Given scraped HTML, extract main content (title, author, body, date, key entities) — works on news, blogs, product pages.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
-    "tldr": "Given scraped HTML, extract main content (title, author, body, date, key entities) — works on news, blogs, product pages.",
+    "content": "You are an expert in data extraction. Task: Given scraped HTML, extract main content (title, author, body, date, key entities) \u2014 works on news, blogs, product pages.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
+    "full_prompt": "You are an expert in data extraction. Task: Given scraped HTML, extract main content (title, author, body, date, key entities) \u2014 works on news, blogs, product pages.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
+    "tldr": "Given scraped HTML, extract main content (title, author, body, date, key entities) \u2014 works on news, blogs, product pages.",
     "difficulty_tier": "intermediate",
     "tags": [
       "web-scraping",
@@ -3644,14 +3644,14 @@
     ],
     "use_cases": [
       {
-        "scenario": "Given scraped HTML, extract main content (title, author, body, date, key entities) — works on news, blogs, product pages.",
+        "scenario": "Given scraped HTML, extract main content (title, author, body, date, key entities) \u2014 works on news, blogs, product pages.",
         "example": "See full_prompt for variable placeholders to substitute."
       }
     ],
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -3697,8 +3697,8 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Web Page → Key Info Extractor | OSS AI Hub Prompt Library",
-    "meta_description": "Given scraped HTML, extract main content (title, author, body, date, key entities) — works on news, blogs, product pages.",
+    "meta_title": "Web Page \u2192 Key Info Extractor | OSS AI Hub Prompt Library",
+    "meta_description": "Given scraped HTML, extract main content (title, author, body, date, key entities) \u2014 works on news, blogs, product pages.",
     "model_compatibility": [
       {
         "model": "claude-sonnet-4-5",
@@ -3751,7 +3751,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -3851,7 +3851,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -3951,7 +3951,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -3997,7 +3997,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Deep Paper Summarizer (TLDR + methods + results + critique) | OSS AI Hub Prompt Library",
+    "meta_title": "Deep Paper Summarizer (TLDR + methods + results + critique) | OSS A...",
     "meta_description": "Summarize a research paper into TL;DR, methods, key results, limitations, and your critical assessment.",
     "model_compatibility": [
       {
@@ -4051,7 +4051,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -4151,7 +4151,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -4251,7 +4251,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -4352,7 +4352,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -4452,7 +4452,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -4552,7 +4552,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -4598,7 +4598,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Zero-Shot Task Decomposer for Complex Workflows | OSS AI Hub Prompt Library",
+    "meta_title": "Zero-Shot Task Decomposer for Complex Workflows | OSS AI Hub Prompt...",
     "meta_description": "Decompose a complex multi-step task into atomic sub-tasks with dependencies, time estimates, and success criteria per step.",
     "model_compatibility": [
       {
@@ -4652,7 +4652,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -4752,7 +4752,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -4852,7 +4852,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -4952,7 +4952,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -5052,7 +5052,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -5152,7 +5152,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -5252,7 +5252,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -5353,7 +5353,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -5452,7 +5452,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -5553,7 +5553,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -5654,7 +5654,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -5754,7 +5754,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -5854,7 +5854,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -5953,7 +5953,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -6053,7 +6053,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -6153,7 +6153,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -6253,7 +6253,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -6353,7 +6353,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -6453,7 +6453,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -6552,7 +6552,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -6653,7 +6653,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -6753,7 +6753,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -6852,7 +6852,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -6951,7 +6951,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -7051,7 +7051,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -7097,7 +7097,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Budget-Forcing Reasoning (with thinking tokens) | OSS AI Hub Prompt Library",
+    "meta_title": "Budget-Forcing Reasoning (with thinking tokens) | OSS AI Hub Prompt...",
     "meta_description": "Force a minimum number of reasoning tokens before answering. Used in o1-style inference scaling. Includes Claude extended-thinking variant.",
     "model_compatibility": [
       {
@@ -7151,7 +7151,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -7251,7 +7251,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -7351,7 +7351,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -7451,7 +7451,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -7551,7 +7551,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -7651,7 +7651,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -7697,7 +7697,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Multi-Label Classification (with confidence) | OSS AI Hub Prompt Library",
+    "meta_title": "Multi-Label Classification (with confidence) | OSS AI Hub Prompt Li...",
     "meta_description": "Classify input into multiple labels from a fixed taxonomy with confidence scores per label. JSON output enforced.",
     "model_compatibility": [
       {
@@ -7751,7 +7751,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -7797,7 +7797,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Translation with Cultural Context Preservation | OSS AI Hub Prompt Library",
+    "meta_title": "Translation with Cultural Context Preservation | OSS AI Hub Prompt...",
     "meta_description": "Translate text preserving cultural references, idioms, and tone. Includes translator's notes for untranslatable phrases.",
     "model_compatibility": [
       {
@@ -7851,7 +7851,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -7952,7 +7952,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -8052,7 +8052,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -8152,7 +8152,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -8252,7 +8252,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -8298,7 +8298,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Subtitle Translation (with timing constraints) | OSS AI Hub Prompt Library",
+    "meta_title": "Subtitle Translation (with timing constraints) | OSS AI Hub Prompt...",
     "meta_description": "Translate SRT/VTT subtitles preserving timing, fitting target text to subtitle-read-rate (~20 chars/sec), and natural line breaks.",
     "model_compatibility": [
       {
@@ -8353,7 +8353,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -8399,7 +8399,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Detailed Image Description (alt-text quality) | OSS AI Hub Prompt Library",
+    "meta_title": "Detailed Image Description (alt-text quality) | OSS AI Hub Prompt L...",
     "meta_description": "Produce alt-text-quality image descriptions covering subject, action, setting, mood, and notable details. WCAG-compliant length.",
     "model_compatibility": [
       {
@@ -8453,7 +8453,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -8531,7 +8531,7 @@
     "submitter_email": "seed@ossaihub.com",
     "submitter_name": "OSS Hub",
     "slug": "chart-data-extraction",
-    "title": "Chart Data Extractor (image → CSV)",
+    "title": "Chart Data Extractor (image \u2192 CSV)",
     "category": "multimodal",
     "content": "You are an expert in multimodal. Task: Extract data from chart images (bar, line, pie) into structured CSV with values, labels, and uncertainty notes.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
     "full_prompt": "You are an expert in multimodal. Task: Extract data from chart images (bar, line, pie) into structured CSV with values, labels, and uncertainty notes.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
@@ -8553,7 +8553,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -8599,7 +8599,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Chart Data Extractor (image → CSV) | OSS AI Hub Prompt Library",
+    "meta_title": "Chart Data Extractor (image \u2192 CSV) | OSS AI Hub Prompt Library",
     "meta_description": "Extract data from chart images (bar, line, pie) into structured CSV with values, labels, and uncertainty notes.",
     "model_compatibility": [
       {
@@ -8653,7 +8653,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -8731,7 +8731,7 @@
     "submitter_email": "seed@ossaihub.com",
     "submitter_name": "OSS Hub",
     "slug": "ui-screenshot-to-spec",
-    "title": "UI Screenshot → Component Spec",
+    "title": "UI Screenshot \u2192 Component Spec",
     "category": "multimodal",
     "content": "You are an expert in multimodal. Task: Given a UI screenshot, produce a structured component spec: layout, components used, design tokens, interaction states.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
     "full_prompt": "You are an expert in multimodal. Task: Given a UI screenshot, produce a structured component spec: layout, components used, design tokens, interaction states.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
@@ -8753,7 +8753,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -8799,7 +8799,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "UI Screenshot → Component Spec | OSS AI Hub Prompt Library",
+    "meta_title": "UI Screenshot \u2192 Component Spec | OSS AI Hub Prompt Library",
     "meta_description": "Given a UI screenshot, produce a structured component spec: layout, components used, design tokens, interaction states.",
     "model_compatibility": [
       {
@@ -8853,7 +8853,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -8954,7 +8954,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -9055,7 +9055,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -9155,7 +9155,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -9235,9 +9235,9 @@
     "slug": "log-pattern-extraction",
     "title": "Log Pattern Extraction + Clustering",
     "category": "analysis",
-    "content": "You are an expert in analysis. Task: Cluster raw log lines into structured templates (e.g. 'user X logged in from IP Y' → '<user> logged in from <ip>') with frequency counts.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
-    "full_prompt": "You are an expert in analysis. Task: Cluster raw log lines into structured templates (e.g. 'user X logged in from IP Y' → '<user> logged in from <ip>') with frequency counts.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
-    "tldr": "Cluster raw log lines into structured templates (e.g. 'user X logged in from IP Y' → '<user> logged in from <ip>') with frequency counts.",
+    "content": "You are an expert in analysis. Task: Cluster raw log lines into structured templates (e.g. 'user X logged in from IP Y' \u2192 '<user> logged in from <ip>') with frequency counts.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
+    "full_prompt": "You are an expert in analysis. Task: Cluster raw log lines into structured templates (e.g. 'user X logged in from IP Y' \u2192 '<user> logged in from <ip>') with frequency counts.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
+    "tldr": "Cluster raw log lines into structured templates (e.g. 'user X logged in from IP Y' \u2192 '<user> logged in from <ip>') with frequency counts.",
     "difficulty_tier": "intermediate",
     "tags": [
       "logs",
@@ -9248,14 +9248,14 @@
     ],
     "use_cases": [
       {
-        "scenario": "Cluster raw log lines into structured templates (e.g. 'user X logged in from IP Y' → '<user> logged in from <ip>') with frequency counts.",
+        "scenario": "Cluster raw log lines into structured templates (e.g. 'user X logged in from IP Y' \u2192 '<user> logged in from <ip>') with frequency counts.",
         "example": "See full_prompt for variable placeholders to substitute."
       }
     ],
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -9302,7 +9302,7 @@
       }
     ],
     "meta_title": "Log Pattern Extraction + Clustering | OSS AI Hub Prompt Library",
-    "meta_description": "Cluster raw log lines into structured templates (e.g. 'user X logged in from IP Y' → '<user> logged in from <ip>') with frequency counts.",
+    "meta_description": "Cluster raw log lines into structured templates (e.g. 'user X logged in from IP Y' \u2192 '<user> logged in from <ip>') with frequency counts.",
     "model_compatibility": [
       {
         "model": "claude-sonnet-4-5",
@@ -9355,7 +9355,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -9455,7 +9455,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -9501,7 +9501,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Error Trace Classifier (groups similar errors) | OSS AI Hub Prompt Library",
+    "meta_title": "Error Trace Classifier (groups similar errors) | OSS AI Hub Prompt...",
     "meta_description": "Group raw exception stack traces by root cause, producing canonical error patterns + count per pattern.",
     "model_compatibility": [
       {
@@ -9556,7 +9556,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -9657,7 +9657,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -9757,7 +9757,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -9857,7 +9857,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -9957,7 +9957,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -10056,7 +10056,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -10102,7 +10102,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Poem with Form Constraint (sonnet, haiku, villanelle) | OSS AI Hub Prompt Library",
+    "meta_title": "Poem with Form Constraint (sonnet, haiku, villanelle) | OSS AI Hub...",
     "meta_description": "Generate a poem strictly adhering to a chosen form's meter, rhyme scheme, and structural constraints.",
     "model_compatibility": [
       {
@@ -10155,7 +10155,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -10201,7 +10201,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Divergent Brainstorm (50+ ideas, no judgment) | OSS AI Hub Prompt Library",
+    "meta_title": "Divergent Brainstorm (50+ ideas, no judgment) | OSS AI Hub Prompt L...",
     "meta_description": "Produce a high-quantity divergent brainstorm of 50+ ideas around a seed, deliberately including outlandish ones. No filtering.",
     "model_compatibility": [
       {
@@ -10256,7 +10256,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -10356,7 +10356,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -10456,7 +10456,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -10502,7 +10502,7 @@
         "answer": "Yes - 2-3 few-shot examples almost always lift performance, especially on smaller models."
       }
     ],
-    "meta_title": "Persona: PM Interviewer (case study practice) | OSS AI Hub Prompt Library",
+    "meta_title": "Persona: PM Interviewer (case study practice) | OSS AI Hub Prompt L...",
     "meta_description": "Persona that conducts realistic PM case-study interviews: estimation, prioritization, metrics design. Gives structured feedback after.",
     "model_compatibility": [
       {
@@ -10556,7 +10556,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -10656,7 +10656,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -10755,7 +10755,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -10855,7 +10855,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -10956,7 +10956,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -11056,7 +11056,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -11155,7 +11155,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -11255,7 +11255,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -11355,7 +11355,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -11435,9 +11435,9 @@
     "slug": "quiz-generator-bloom",
     "title": "Bloom's Taxonomy Quiz Generator",
     "category": "education",
-    "content": "You are an expert in education. Task: Generate quiz questions across all 6 Bloom's levels (remember → create) from study material. Includes answer key + rubric.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
-    "full_prompt": "You are an expert in education. Task: Generate quiz questions across all 6 Bloom's levels (remember → create) from study material. Includes answer key + rubric.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
-    "tldr": "Generate quiz questions across all 6 Bloom's levels (remember → create) from study material. Includes answer key + rubric.",
+    "content": "You are an expert in education. Task: Generate quiz questions across all 6 Bloom's levels (remember \u2192 create) from study material. Includes answer key + rubric.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
+    "full_prompt": "You are an expert in education. Task: Generate quiz questions across all 6 Bloom's levels (remember \u2192 create) from study material. Includes answer key + rubric.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
+    "tldr": "Generate quiz questions across all 6 Bloom's levels (remember \u2192 create) from study material. Includes answer key + rubric.",
     "difficulty_tier": "intermediate",
     "tags": [
       "quiz",
@@ -11448,14 +11448,14 @@
     ],
     "use_cases": [
       {
-        "scenario": "Generate quiz questions across all 6 Bloom's levels (remember → create) from study material. Includes answer key + rubric.",
+        "scenario": "Generate quiz questions across all 6 Bloom's levels (remember \u2192 create) from study material. Includes answer key + rubric.",
         "example": "See full_prompt for variable placeholders to substitute."
       }
     ],
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -11502,7 +11502,7 @@
       }
     ],
     "meta_title": "Bloom's Taxonomy Quiz Generator | OSS AI Hub Prompt Library",
-    "meta_description": "Generate quiz questions across all 6 Bloom's levels (remember → create) from study material. Includes answer key + rubric.",
+    "meta_description": "Generate quiz questions across all 6 Bloom's levels (remember \u2192 create) from study material. Includes answer key + rubric.",
     "model_compatibility": [
       {
         "model": "claude-sonnet-4-5",
@@ -11555,7 +11555,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -11654,7 +11654,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -11753,7 +11753,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -11852,7 +11852,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -11952,7 +11952,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -12032,9 +12032,9 @@
     "slug": "priority-matrix-eisenhower",
     "title": "Eisenhower Priority Matrix Sorter",
     "category": "productivity",
-    "content": "You are an expert in productivity. Task: Sort a task list into the 4-quadrant Eisenhower matrix (urgent×important) with reasoning per task.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
-    "full_prompt": "You are an expert in productivity. Task: Sort a task list into the 4-quadrant Eisenhower matrix (urgent×important) with reasoning per task.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
-    "tldr": "Sort a task list into the 4-quadrant Eisenhower matrix (urgent×important) with reasoning per task.",
+    "content": "You are an expert in productivity. Task: Sort a task list into the 4-quadrant Eisenhower matrix (urgent\u00d7important) with reasoning per task.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
+    "full_prompt": "You are an expert in productivity. Task: Sort a task list into the 4-quadrant Eisenhower matrix (urgent\u00d7important) with reasoning per task.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
+    "tldr": "Sort a task list into the 4-quadrant Eisenhower matrix (urgent\u00d7important) with reasoning per task.",
     "difficulty_tier": "intermediate",
     "tags": [
       "prioritization"
@@ -12044,14 +12044,14 @@
     ],
     "use_cases": [
       {
-        "scenario": "Sort a task list into the 4-quadrant Eisenhower matrix (urgent×important) with reasoning per task.",
+        "scenario": "Sort a task list into the 4-quadrant Eisenhower matrix (urgent\u00d7important) with reasoning per task.",
         "example": "See full_prompt for variable placeholders to substitute."
       }
     ],
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -12098,7 +12098,7 @@
       }
     ],
     "meta_title": "Eisenhower Priority Matrix Sorter | OSS AI Hub Prompt Library",
-    "meta_description": "Sort a task list into the 4-quadrant Eisenhower matrix (urgent×important) with reasoning per task.",
+    "meta_description": "Sort a task list into the 4-quadrant Eisenhower matrix (urgent\u00d7important) with reasoning per task.",
     "model_compatibility": [
       {
         "model": "claude-sonnet-4-5",
@@ -12131,9 +12131,9 @@
     "slug": "standup-update-formatter",
     "title": "Daily Standup Update Formatter",
     "category": "productivity",
-    "content": "You are an expert in productivity. Task: Format raw notes into a clean standup update: Yesterday / Today / Blockers — under 3 minutes to read.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
-    "full_prompt": "You are an expert in productivity. Task: Format raw notes into a clean standup update: Yesterday / Today / Blockers — under 3 minutes to read.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
-    "tldr": "Format raw notes into a clean standup update: Yesterday / Today / Blockers — under 3 minutes to read.",
+    "content": "You are an expert in productivity. Task: Format raw notes into a clean standup update: Yesterday / Today / Blockers \u2014 under 3 minutes to read.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
+    "full_prompt": "You are an expert in productivity. Task: Format raw notes into a clean standup update: Yesterday / Today / Blockers \u2014 under 3 minutes to read.\n\nInputs: {inputs}\n\nRequirements:\n- Be specific and actionable, not generic.\n- Cite evidence or reasoning for non-obvious claims.\n- Output in a clean, structured format (use headers / bullets / code blocks as appropriate).\n- If you lack information, say so explicitly rather than guessing.\n\nBegin.",
+    "tldr": "Format raw notes into a clean standup update: Yesterday / Today / Blockers \u2014 under 3 minutes to read.",
     "difficulty_tier": "intermediate",
     "tags": [
       "standup"
@@ -12143,14 +12143,14 @@
     ],
     "use_cases": [
       {
-        "scenario": "Format raw notes into a clean standup update: Yesterday / Today / Blockers — under 3 minutes to read.",
+        "scenario": "Format raw notes into a clean standup update: Yesterday / Today / Blockers \u2014 under 3 minutes to read.",
         "example": "See full_prompt for variable placeholders to substitute."
       }
     ],
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -12197,7 +12197,7 @@
       }
     ],
     "meta_title": "Daily Standup Update Formatter | OSS AI Hub Prompt Library",
-    "meta_description": "Format raw notes into a clean standup update: Yesterday / Today / Blockers — under 3 minutes to read.",
+    "meta_description": "Format raw notes into a clean standup update: Yesterday / Today / Blockers \u2014 under 3 minutes to read.",
     "model_compatibility": [
       {
         "model": "claude-sonnet-4-5",
@@ -12250,7 +12250,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -12350,7 +12350,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -12450,7 +12450,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -12550,7 +12550,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -12650,7 +12650,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -12750,7 +12750,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -12850,7 +12850,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -12950,7 +12950,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -13050,7 +13050,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
@@ -13151,7 +13151,7 @@
     "when_not_to_use": "Skip when the prompt's specialization doesn't match your task - generic chatbots are fine for general queries.",
     "input_variables": [],
     "expected_output": {
-      "format": "Free-form text response following the prompt's output requirements.",
+      "format": "text",
       "sample": "[Model-specific - see test runs]"
     },
     "few_shot_examples": [],
