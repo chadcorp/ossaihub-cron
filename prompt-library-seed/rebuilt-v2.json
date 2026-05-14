@@ -9812,6 +9812,336 @@
     "meta_description": "Apply written refund policy to an individual request. Returns approve / deny / escalate with full audit trail + customer-message draft. Compliance-ready."
   },
   {
+    "slug": "policy-compliance-checker",
+    "title": "Policy Compliance Checker",
+    "tldr": "Takes a piece of content and checks it against a stated policy (style guide, compliance rules, brand guidelines). Returns specific violations with the rule cited and the fix.",
+    "category": "safety",
+    "tags": [
+      "compliance",
+      "policy",
+      "content-review",
+      "safety"
+    ],
+    "best_for_tags": [
+      "compliance-review",
+      "style-guide",
+      "regulated-industries"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Marketing copy review against brand guidelines",
+        "example": "Blog post against brand voice guide \u2192 list of brand violations + suggested fixes."
+      },
+      {
+        "scenario": "Compliance content check",
+        "example": "Financial product description against regulatory rules \u2192 flagged claims."
+      },
+      {
+        "scenario": "PR/internal docs against style guide",
+        "example": "Press release against company style guide \u2192 consistency violations."
+      },
+      {
+        "scenario": "User-generated content moderation",
+        "example": "Forum posts against community rules with cited rule + action."
+      }
+    ],
+    "when_not_to_use": "Skip for high-stakes legal review \u2014 augment, don't replace human reviewers. Skip when the policy is itself ambiguous \u2014 fix the policy first or LLM compliance will be inconsistent.",
+    "full_prompt": "You are a compliance reviewer. Check the content against the stated policy.\n\nINPUT\n- The content: {content}\n- The policy / rules: {policy}\n- Severity ladder (what counts as blocker vs nit): {severity_ladder}\n\nOUTPUT\n\n## 1. Verdict\n- PASS: no issues found\n- PASS WITH NITS: minor issues only\n- REVISIONS NEEDED: at least one MAJOR issue\n- BLOCKED: at least one BLOCKER\n\n## 2. Findings (sorted by severity)\nFor each issue:\n\n### {Severity}: <one-line summary>\n- **Rule cited**: exact rule from policy (verbatim, with section/number if applicable)\n- **Location in content**: quote the offending span\n- **Why it violates**: 1-2 sentences explaining the conflict\n- **Suggested fix**: specific rewrite or change\n\n## 3. Rules NOT violated\nQuick confirmation that the content correctly adheres to 2-3 specific high-stakes rules. This builds confidence in the review.\n\n## 4. Edge cases the policy doesn't cover\nCases the content has that the policy is silent on. Surface for human judgment \u2014 don't flag as violations.\n\n## 5. Recommendations\n- If REVISIONS NEEDED or BLOCKED: prioritized fix list (do blockers first)\n- If PASS WITH NITS: optional improvements\n- If PASS: any preventative suggestions for future content\n\nRULES\n- Don't flag what the policy doesn't address. If a rule isn't stated, it isn't a violation.\n- Cite RULES verbatim \u2014 vague paraphrases hide bad reasoning.\n- For BLOCKER claims, double-check: is this actually a rule, or your interpretation?\n- Empty findings list is a valid output \u2014 don't manufacture issues.\n\nCONTENT\n{content}\n\nPOLICY\n{policy}\n\nSEVERITY LADDER\n{severity_ladder}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "content",
+        "type": "string",
+        "description": "The content to review",
+        "required": true,
+        "example": "Our new product is the BEST in the industry, guaranteed to double your revenue overnight!"
+      },
+      {
+        "name": "policy",
+        "type": "string",
+        "description": "The policy / rules to check against",
+        "required": true,
+        "example": "1. No superlative claims ('best', 'top'). 2. No guarantees of specific financial outcomes. 3. Brand tone: confident but measured."
+      },
+      {
+        "name": "severity_ladder",
+        "type": "string",
+        "description": "How to classify severity",
+        "required": true,
+        "example": "BLOCKER: legal/compliance violations. MAJOR: brand voice or factual issues. NIT: stylistic preferences."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Five sections: verdict, sorted findings with rule + location + fix, rules-NOT-violated confirmation, edge cases, prioritized recommendations."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on citing rules verbatim and distinguishing policy from interpretation."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes invents rules \u2014 re-pin \u2018only what's in the policy.\u2019"
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; \u2018rules not violated\u2019 section often empty \u2014 force."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Over-flags; needs explicit \u2018only the stated rules\u2019 reminder."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Per-rule audit",
+        "description": "Walk through every rule in order.",
+        "prompt_snippet": "Replace \u2018findings sorted by severity\u2019 with: \u2018for each rule in policy, in order: PASS / FLAG / EDGE CASE.\u2019"
+      },
+      {
+        "label": "Rewrite mode",
+        "description": "Output a compliant rewrite alongside.",
+        "prompt_snippet": "Add Section 6: \u2018rewritten version of content that addresses all blockers + majors; preserve voice as much as possible.\u2019"
+      },
+      {
+        "label": "Multi-policy",
+        "description": "Check against multiple policies.",
+        "prompt_snippet": "Accept multiple policies; produce findings keyed by which policy each violation is from."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Flags issues that aren't actually in the policy.",
+        "fix": "Re-pin: \u2018only flag what's STATED in the policy. Verify each finding cites verbatim rule.\u2019"
+      },
+      {
+        "symptom": "Empty \u2018rules not violated\u2019 section.",
+        "fix": "Force: \u2018confirm at least 2-3 rules the content correctly adheres to.\u2019"
+      },
+      {
+        "symptom": "Misses egregious violations.",
+        "fix": "Run twice with different framings; alert if results differ. Or use stricter judge model."
+      },
+      {
+        "symptom": "Severity all marked MAJOR.",
+        "fix": "Re-pin ladder with examples for each level; force distribution check."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "content-moderation",
+      "pii-redactor",
+      "refund-policy-decision"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "compliance",
+      "policy-enforcement"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Replace human review entirely?",
+        "answer": "No \u2014 augment. LLM catches obvious violations; humans handle judgment calls, novel cases, and final accountability. Especially for legal/regulated content."
+      },
+      {
+        "question": "Calibration?",
+        "answer": "Sample 20 cases; hand-grade. Compare to LLM verdict. Refine the policy if LLM and humans disagree on what the policy says (often the policy is the unclear part)."
+      },
+      {
+        "question": "Can this work for non-text policies?",
+        "answer": "Yes \u2014 image/code compliance follows same pattern. Adjust prompt to call out the appropriate medium ('check this code against our security policy')."
+      }
+    ],
+    "meta_title": "Policy Compliance Checker \u2014 Prompt",
+    "meta_description": "Check content against stated policy: cite the rule, locate the violation, suggest a fix. Severity ladder + rules-not-violated confirmation."
+  },
+  {
+    "slug": "harmful-output-pre-check",
+    "title": "Pre-Output Harmful Content Check",
+    "tldr": "Before sending an LLM's response to a user, run it through a quick safety check: detects PII leaks, harmful advice, hallucinated facts in cited form, and policy-violating content. Returns block/warn/pass.",
+    "category": "safety",
+    "tags": [
+      "safety",
+      "output-validation",
+      "moderation",
+      "pre-output"
+    ],
+    "best_for_tags": [
+      "user-facing-llm",
+      "safety-pipelines",
+      "content-moderation"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Pre-send filter on chat responses",
+        "example": "Before showing user, run LLM output through this check; block if it leaks PII or makes harmful claims."
+      },
+      {
+        "scenario": "Post-generation cleanup in pipelines",
+        "example": "Background generation job \u2014 every output passes the check before being stored."
+      },
+      {
+        "scenario": "Customer-facing AI assistant",
+        "example": "Hard safety bar \u2014 block harmful advice; warn on uncertain factual claims."
+      },
+      {
+        "scenario": "Audit pass on existing content",
+        "example": "Run on a corpus of stored AI responses to find what slipped through."
+      }
+    ],
+    "when_not_to_use": "Skip for trusted internal contexts (engineering tools, research). Skip when the user-base is sophisticated and pre-filtering is patronizing. Skip when latency matters more than risk.",
+    "full_prompt": "You are a safety checker. Review the LLM output and decide if it's safe to send to the user.\n\nINPUT\n- The LLM output being checked: {output}\n- Context (what was asked, who's the user, domain): {context}\n- Allowed content classes: {allowed_classes}     (some apps allow content others don't)\n- Hard-blocked content classes: {blocked_classes}\n\nOUTPUT (one JSON object)\n\n{\n  \"verdict\": \"pass\" | \"warn\" | \"block\",\n  \"reasons\": [\n    {\n      \"category\": \"pii-leak\" | \"harmful-advice\" | \"false-confidence\" | \"policy-violation\" | \"off-topic\" | \"other\",\n      \"severity\": \"info\" | \"warn\" | \"block\",\n      \"evidence\": \"verbatim quote from output\",\n      \"explanation\": \"1-line why this is a concern\"\n    }\n  ],\n  \"sanitized_version_if_warn\": \"optional rewritten content with warn-level issues removed\",\n  \"confidence\": \"high\" | \"medium\" | \"low\"\n}\n\nCATEGORIES TO CHECK\n\n1. PII-LEAK: contains email, phone, SSN, credit card, API key, or other PII that shouldn't be in this response.\n2. HARMFUL-ADVICE: medical / legal / financial advice presented authoritatively without disclaimer. Self-harm content. Dangerous DIY (electrical, chemical, etc.) without safety context.\n3. FALSE-CONFIDENCE: specific factual claims (numbers, dates, names) the model is likely guessing. Especially: \"studies show\", \"Dr. Smith proved\", specific years/percentages.\n4. POLICY-VIOLATION: content violating {blocked_classes}.\n5. OFF-TOPIC: response not related to user's question \u2014 possibly a model hijack or context confusion.\n\nRULES\n- BLOCK if any reason is severity=block.\n- WARN if multiple severity=warn reasons OR one info+ ambiguous case.\n- PASS if no concerns or only severity=info reasons.\n- Don't invent issues; if output looks clean, say so with confidence=high.\n- 'False confidence' is hard \u2014 require AT LEAST a specific claim (number/date/proper noun) AND no source cited; not all confident statements are false.\n\nOUTPUT\n{output}\n\nCONTEXT\n{context}\n\nOutput JSON only.",
+    "input_variables": [
+      {
+        "name": "output",
+        "type": "string",
+        "description": "The LLM's generated response",
+        "required": true,
+        "example": "Sure! Your account number is 1234-5678-9012, and you can email Bob at bob@company.com to update it."
+      },
+      {
+        "name": "context",
+        "type": "string",
+        "description": "What was asked and who's asking",
+        "required": true,
+        "example": "User asked how to update their billing info. Consumer app, anonymous users."
+      },
+      {
+        "name": "allowed_classes",
+        "type": "string",
+        "description": "Content classes acceptable in this context",
+        "required": false,
+        "example": "Account-level help (with proper auth). Generic guidance."
+      },
+      {
+        "name": "blocked_classes",
+        "type": "string",
+        "description": "Hard-blocked classes",
+        "required": true,
+        "example": "Other-user PII. Medical advice. Legal advice. API keys / passwords."
+      }
+    ],
+    "expected_output": {
+      "format": "json",
+      "schema": "{ verdict, reasons[], sanitized_version_if_warn, confidence }",
+      "sample": "{\n  \"verdict\": \"block\",\n  \"reasons\": [{\"category\": \"pii-leak\", \"severity\": \"block\", \"evidence\": \"account number is 1234-5678-9012\", \"explanation\": \"Account number disclosed without auth verification\"}],\n  \"confidence\": \"high\"\n}"
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on subtle false-confidence detection."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes over-blocks \u2014 calibrate severity."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; false-confidence detection weaker."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Use stronger judge for safety-critical paths."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Llama Guard hybrid",
+        "description": "Cheap first-pass + LLM-judge for ambiguous.",
+        "prompt_snippet": "Add: \u2018run cheaper safety classifier (Llama Guard) first; only invoke this LLM judge if classifier returns ambiguous result.\u2019"
+      },
+      {
+        "label": "Domain-specific",
+        "description": "Healthcare / finance specific.",
+        "prompt_snippet": "Add: \u2018context is healthcare; flag any specific medical advice as block unless disclaimer present. Flag dosage / treatment specifics regardless of disclaimer.\u2019"
+      },
+      {
+        "label": "Block reasons surfaced to user",
+        "description": "User-friendly block messages.",
+        "prompt_snippet": "Add: \u2018also produce user_message field \u2014 friendly explanation of why the response was blocked, without revealing the exact rule.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Misses subtle PII (account IDs, internal references).",
+        "fix": "Add: \u2018PII includes account numbers, customer IDs, internal employee names \u2014 not just emails/phones.\u2019"
+      },
+      {
+        "symptom": "Over-blocks neutral content.",
+        "fix": "Tighten BLOCK criteria; ensure reasons must include verbatim evidence."
+      },
+      {
+        "symptom": "Misses confident hallucinations.",
+        "fix": "Add: \u2018specific factual claims with no source = warn at minimum.\u2019"
+      },
+      {
+        "symptom": "Latency too high for inline use.",
+        "fix": "Use Llama Guard variation as first-pass; only invoke LLM judge on uncertain cases.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "prompt-injection-detector",
+      "pii-redactor",
+      "content-moderation"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "safety-pipeline",
+      "output-validation"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Replace model's own safety?",
+        "answer": "No \u2014 defense in depth. Model's safety + this judge + structural guards (limited tools, sandboxes). One layer fails; rest hold."
+      },
+      {
+        "question": "Latency cost?",
+        "answer": "100-500ms per check. Use hybrid (fast classifier + LLM judge on ambiguous) for production. Or run in background for non-critical paths."
+      },
+      {
+        "question": "False-positive cost?",
+        "answer": "High \u2014 users frustrated. Tune severity carefully; bias toward warn (rewrite-and-send) over block. Reserve block for genuine harm."
+      }
+    ],
+    "meta_title": "Pre-Output Harmful Content Check \u2014 Prompt",
+    "meta_description": "Pre-send safety check: PII leaks, harmful advice, false confidence, policy violations. Returns verdict + sanitized version + confidence."
+  },
+  {
     "slug": "structured-extraction-from-docs",
     "title": "Structured Data Extraction from Unstructured Documents",
     "category": "data-extraction",
