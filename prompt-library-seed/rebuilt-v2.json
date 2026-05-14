@@ -3015,6 +3015,692 @@
     "meta_description": "When a metric moves unexpectedly, generate ranked hypotheses with cheap diagnostics for each. Investigate cheap-and-likely first."
   },
   {
+    "slug": "hiring-rubric-builder",
+    "title": "Hiring Rubric Builder For A Role",
+    "tldr": "Builds a hiring rubric for a specific role: 4-6 dimensions with anchored levels (1-4 each), interview questions per dimension, and a calibration question to prevent rubric drift across interviewers.",
+    "category": "business",
+    "tags": [
+      "hiring",
+      "interviewing",
+      "rubric",
+      "calibration"
+    ],
+    "best_for_tags": [
+      "recruiting",
+      "interview-design",
+      "hiring-managers"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "New role's first interview loop",
+        "example": "\u2018Senior Backend Engineer\u2019 \u2192 rubric with 5 dimensions, anchored 1-4 with specific examples, sample interview questions."
+      },
+      {
+        "scenario": "Calibration across multiple interviewers",
+        "example": "Each interviewer sees the same rubric anchors; \u2018scored 3 on system design\u2019 means the same thing."
+      },
+      {
+        "scenario": "Promotion criteria",
+        "example": "Same rubric structure for internal promotions, anchors recalibrated for the level."
+      },
+      {
+        "scenario": "Hiring panel debrief sheet",
+        "example": "Rubric becomes the debrief structure \u2014 each interviewer scores then panel discusses."
+      }
+    ],
+    "when_not_to_use": "Skip for purely vibes-based hires (founder-led, friend hires). Skip for very specialized senior roles where you'd rather have unstructured deep conversations with 2-3 candidates.",
+    "full_prompt": "You are designing a hiring rubric for a specific role. The rubric will be used by multiple interviewers to evaluate candidates consistently.\n\nINPUT\n- Role: {role}\n- Level: {level}                    (e.g., L3 / Senior / Staff)\n- Team context: {team_context}\n- What success looks like in this role (6-12 months in): {success_picture}\n\nOUTPUT\n\n## Rubric dimensions (4-6)\nEach dimension is a CAPABILITY, not a topic. Examples of capabilities:\n- \"Reduces ambiguous problems to actionable steps\"\n- \"Communicates trade-offs to non-technical stakeholders\"\n- \"Handles disagreement with peers productively\"\nBad (these are topics):\n- \"Python\" (you can be a strong or weak Python user \u2014 what's the capability?)\n- \"Communication\" (too vague)\n\nFor each dimension:\n\n### Dimension N: <capability>\n\n| Level 1 (does not meet) | Level 2 (developing) | Level 3 (meets) | Level 4 (exceeds) |\n|---|---|---|---|\n| Anchor with concrete behavior | Anchor | Anchor | Anchor |\n\nThe Level-3 anchor is what you'd expect from a \"meets bar\" candidate. Level-4 is rare.\n\n## Interview questions per dimension\n2-3 questions per dimension, designed to elicit evidence at multiple levels.\n\nEach question:\n- Open-ended (no yes/no).\n- Past-experience focused (\"Tell me about a time when...\" > \"How would you...\").\n- Has a probing follow-up (\"What did you try first? What did you change?\")\n\n## Calibration scenario\nONE common interview scenario with three candidate answers labeled with their score on this dimension. Used to calibrate interviewers before live interviews.\n\n## Decision rule\nHow to combine dimension scores into a hire/no-hire decision:\n- Minimum threshold per dimension (e.g., no Level 1 anywhere, at least one Level 4)\n- How to weight dimensions if they conflict\n- When to call a tie\n\n## Anti-bias notes\n3-4 specific biases this rubric is vulnerable to + a guardrail for each:\n- \"Cultural fit\" without concrete behavior anchors \u2192 bias toward similar candidates. Guardrail: require behavioral examples.\n- Etc.\n\nRULES\n- Dimensions should be ORTHOGONAL \u2014 a strong candidate could excel in one and not another.\n- Anchors are observable behaviors, not feelings (\"I felt they understood\" doesn't count).\n- Don't include \"passion\" / \"drive\" / \"ownership\" as a top-level dimension \u2014 too vague. Break into observable behaviors.\n\nROLE\n{role}\n\nCONTEXT\n{team_context}\n\nSUCCESS PICTURE\n{success_picture}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "role",
+        "type": "string",
+        "description": "Job title and seniority",
+        "required": true,
+        "example": "Senior Backend Engineer"
+      },
+      {
+        "name": "level",
+        "type": "string",
+        "description": "Career level",
+        "required": true,
+        "example": "L5 / Senior, 5-8 years experience"
+      },
+      {
+        "name": "team_context",
+        "type": "string",
+        "description": "About the team",
+        "required": true,
+        "example": "8-person engineering team, scaling from 100k to 1M users, mostly Python/Postgres/AWS"
+      },
+      {
+        "name": "success_picture",
+        "type": "string",
+        "description": "What success in this role looks like",
+        "required": true,
+        "example": "By month 6, has shipped a major feature solo, is the go-to person for one subsystem, has trained one junior on it."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "4-6 dimensions, each with a 4-level anchor table + interview questions; plus calibration scenario, decision rule, anti-bias notes."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on concrete behavior anchors and identifying real biases."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes anchors are too generic \u2014 re-pin \u2018observable behavior\u2019."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Holds the structure; anti-bias section can be clich\u00e9."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to use vague dimensions; explicitly forbid in prompt."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Take-home variant",
+        "description": "Replace one interview question with a take-home rubric.",
+        "prompt_snippet": "Add: \u2018for the technical dimension, propose a 2-hour take-home with a separate rubric for scoring the submission.\u2019"
+      },
+      {
+        "label": "Pair-interview rubric",
+        "description": "Rubric for pair-programming interviews.",
+        "prompt_snippet": "Add Dimension: \u2018ability to think aloud during problem-solving\u2019; include guidance for pair interviewers to score this in real-time."
+      },
+      {
+        "label": "Reference check rubric",
+        "description": "Extend to back-channel references.",
+        "prompt_snippet": "Add Section: \u2018reference check questions that probe each dimension; how to score what references say.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Dimensions like \u2018Python skills\u2019 instead of capabilities.",
+        "fix": "Re-pin: \u2018dimensions are CAPABILITIES, not skills or topics.\u2019"
+      },
+      {
+        "symptom": "Anchors are feelings (\u2018seemed confident\u2019).",
+        "fix": "Add: \u2018every anchor is an observable behavior or artifact; if it requires inference, rewrite.\u2019"
+      },
+      {
+        "symptom": "Decision rule is vague (\u2018discuss at debrief\u2019).",
+        "fix": "Add: \u2018decision rule must be testable \u2014 given X scores, the answer is Y; given Z scores, the answer is W.\u2019"
+      },
+      {
+        "symptom": "Anti-bias section is generic.",
+        "fix": "Add: \u2018each bias must reference a SPECIFIC dimension or anchor that's vulnerable; generic \u2018watch for bias\u2019 doesn't count.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "okr-quarterly-drafter",
+      "weekly-review-coach"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "hiring-rubric",
+      "calibration",
+      "structured-interviewing"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How many dimensions is right?",
+        "answer": "4-6. Fewer and you miss important angles. More and interviewers lose track and lean on gut. The starter caps at 6 deliberately."
+      },
+      {
+        "question": "Should I share the rubric with candidates?",
+        "answer": "The dimensions and questions \u2014 yes (transparency builds trust, prep helps both sides). The anchors and decision rule \u2014 typically no (gives away the test)."
+      },
+      {
+        "question": "What about culture fit?",
+        "answer": "Avoid \u2018culture fit\u2019 as a dimension \u2014 it's where most bias hides. If something specific about your culture matters (high autonomy, async, etc.), make it an explicit capability with anchors."
+      }
+    ],
+    "meta_title": "Hiring Rubric Builder For A Role \u2014 Prompt",
+    "meta_description": "Build a structured hiring rubric: 4-6 capability dimensions with anchored 1-4 levels, interview questions, calibration scenario, decision rule."
+  },
+  {
+    "slug": "fundraise-pitch-deck-outline",
+    "title": "Fundraise Pitch Deck Outline (Seed to Series A)",
+    "tldr": "Outlines a fundraise pitch deck (10-14 slides) tailored to stage. Each slide includes its job-to-be-done, the question it answers, what to put on it, and the trap to avoid.",
+    "category": "business",
+    "tags": [
+      "fundraising",
+      "pitch-deck",
+      "founders",
+      "investor-relations"
+    ],
+    "best_for_tags": [
+      "seed-stage",
+      "series-a",
+      "founder-fundraising"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "First-time founder building seed deck",
+        "example": "Get a slide-by-slide outline calibrated for seed (vs Series A, which needs different evidence)."
+      },
+      {
+        "scenario": "Series A prep",
+        "example": "Outline tuned for Series A: metrics weight more, vision still matters, board materials maturity."
+      },
+      {
+        "scenario": "Pivot announcement to existing investors",
+        "example": "Special-case version focused on what changed and what's preserved."
+      },
+      {
+        "scenario": "Sales deck \u2192 investor deck conversion",
+        "example": "Identify what to add and what to cut when adapting sales material."
+      }
+    ],
+    "when_not_to_use": "Skip for highly unusual fundraises (rolling SAFE, bridge round, deep-tech with 7-year horizons) \u2014 those have non-standard narratives. Use this for typical Seed/A patterns.",
+    "full_prompt": "You are an experienced fundraiser advising on a pitch deck. Output a slide-by-slide outline tailored to the stage.\n\nINPUT\n- Round being raised: {round}                     (e.g., \"Seed $3M\", \"Series A $12M\")\n- Company stage and metrics: {stage_metrics}\n- Sector: {sector}\n- Founder narrative summary: {founder_narrative}\n- Investor type targeted: {investor_type}         (e.g., \"Tier 1 sector-specialist VC\", \"Strategic\", \"Generalist\")\n\nOUTPUT \u2014 slide-by-slide outline\n\nFor each slide:\n\n## Slide N: <slide name>\n\n- **Job to be done**: What this slide must accomplish in the investor's mind.\n- **Question it answers**: The specific question an investor would ask if you didn't put this slide.\n- **What to put on it**: 3-5 specific elements (not just \u2018the team\u2019; specifically: \u2018photo + 3-bullet credibility + the one experience that maps to this company\u2019).\n- **Trap to avoid**: The most common failure mode of this slide.\n\nSTANDARD SEED DECK (~12-14 SLIDES)\n1. Title (company name + one-line + raise + your name)\n2. Problem (real pain, real audience, real evidence)\n3. Solution (with one screenshot or product moment, not a description)\n4. Why now (what changed that makes this possible / urgent)\n5. Market (TAM/SAM/SOM done credibly, not Excel-fantasy)\n6. Product (1-2 slides showing what it actually does)\n7. Traction (numbers honestly; if early, the early signals you DO have)\n8. Business model (how you make money, unit economics if known)\n9. Competition (matrix or 2x2 \u2014 not \"we have no competitors\")\n10. Go-to-market (how you reach customers; first 100 won, plan for next 1000)\n11. Team (team is product at seed; show why this team for this problem)\n12. The ask + use of funds (specific milestones the money buys)\n13. Vision (where this goes if it works)\n14. Appendix (waiting in the wings if asked)\n\nADJUSTMENTS BY STAGE\n- Seed: heavy on team + why-now + market + early signal. Light on metrics.\n- Series A: heavier on traction (retention, revenue, unit economics). Vision still matters but evidence weighs more.\n- Series B+: enterprise sales motion, defensibility, scaling levers.\n\nINVESTOR TYPE ADJUSTMENTS\n- Sector specialist: assume domain context; lean into nuance.\n- Generalist: more sector-context slides; less assumed knowledge.\n- Strategic: include strategic fit + integration narrative.\n\nCRITICAL RULES\n- Each slide does ONE thing. Don't combine.\n- Investor reads top to bottom, no skipping. Order is part of the argument.\n- If you don't have a number for a slide, don't make one up \u2014 acknowledge and frame around qualitative evidence.\n\nNOW PRODUCE THE OUTLINE FOR {round}.",
+    "input_variables": [
+      {
+        "name": "round",
+        "type": "string",
+        "description": "Round and amount",
+        "required": true,
+        "example": "Series A, $12M target"
+      },
+      {
+        "name": "stage_metrics",
+        "type": "string",
+        "description": "Where the company is now",
+        "required": true,
+        "example": "B2B SaaS, $1.4M ARR, growing 18% MoM, 8 enterprise customers, 24-month runway pre-raise"
+      },
+      {
+        "name": "sector",
+        "type": "string",
+        "description": "Sector / category",
+        "required": true,
+        "example": "Developer tools for data engineering"
+      },
+      {
+        "name": "founder_narrative",
+        "type": "string",
+        "description": "Founder origin + insight",
+        "required": true,
+        "example": "Two ex-Snowflake engineers; built an internal tool there for 4 years that this company productizes. Insight: every data team rebuilds the same wrapper."
+      },
+      {
+        "name": "investor_type",
+        "type": "string",
+        "description": "Type of investor",
+        "required": false,
+        "example": "Tier 1 enterprise-software-specialist VC"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "12-14 slides, each with: job-to-be-done, question, what to put, trap to avoid. Stage-adjusted."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on stage-specific calibration; identifies real traps."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes generic on \u2018traps to avoid.\u2019"
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid structure; traps section can be clich\u00e9."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Doesn't differentiate stages well; needs explicit prompting."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Memo-first variant",
+        "description": "Optimize for memo-reading investors (Coatue, Tiger).",
+        "prompt_snippet": "Add: \u2018also output a 2-page memo version: prose-driven, deck visuals optional, suitable for investors who prefer reading to slides.\u2019"
+      },
+      {
+        "label": "Pre-mortem the deck",
+        "description": "Identify what makes investors pass.",
+        "prompt_snippet": "After outline, add: \u20185 most likely reasons an investor passes on this deck \u2014 and the slide that should preempt each.\u2019"
+      },
+      {
+        "label": "Founder strengths emphasis",
+        "description": "Lead with what makes this team unbeatable on this problem.",
+        "prompt_snippet": "Move team slide earlier (slide 3-4) if founder narrative is the strongest asset; adjust subsequent slides accordingly."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Generic \u2018traps to avoid\u2019.",
+        "fix": "Re-pin: \u2018traps must be specific to this slide and this company stage; \u2018too much text\u2019 doesn't count.\u2019"
+      },
+      {
+        "symptom": "Slide 9 says \u2018we have no competitors.\u2019",
+        "fix": "Add explicit guidance: \u2018if you genuinely have no competitors, you have no market. Reframe as \u2018adjacent solutions our buyers currently use\u2019 \u2014 there's always something.\u2019"
+      },
+      {
+        "symptom": "Stage adjustments not applied.",
+        "fix": "Add: \u2018before output, state the stage explicitly; every slide's content should reflect this stage.\u2019"
+      },
+      {
+        "symptom": "Vision slide is corporate-speak.",
+        "fix": "Add: \u2018vision must be SPECIFIC \u2014 a world where X happens because we exist. Avoid \u2018change the world\u2019 unless the company actually does.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "investor-update-monthly",
+      "competitive-feature-matrix",
+      "executive-summary-1-page"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "pitch-deck",
+      "fundraise"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Should I customize per investor?",
+        "answer": "The deck stays mostly the same; the conversation customizes. Customize: opening line, the example you walk through, the metric you emphasize. Don't rebuild the deck."
+      },
+      {
+        "question": "How long is too long?",
+        "answer": "12-14 slides + appendix. 20+ is usually padding or a confused argument. If you can't fit your pitch in 14, you don't have clarity yet."
+      },
+      {
+        "question": "Use a template or build from scratch?",
+        "answer": "Build from scratch \u2014 templates leak through. The outline this prompt gives you is the bones; the visual presentation is your work."
+      }
+    ],
+    "meta_title": "Fundraise Pitch Deck Outline (Seed to Series A)",
+    "meta_description": "Slide-by-slide deck outline: job-to-be-done, question answered, what to put, trap to avoid. Stage-tuned (seed/A) and investor-type-aware."
+  },
+  {
+    "slug": "go-to-market-experiment-design",
+    "title": "Go-To-Market Experiment Design",
+    "tldr": "Design a single GTM experiment with a falsifiable hypothesis, leading indicators, kill criterion, and sample-size justification. Anti-fishing \u2014 forces commitment to a specific bet.",
+    "category": "business",
+    "tags": [
+      "gtm",
+      "experiments",
+      "growth",
+      "hypothesis"
+    ],
+    "best_for_tags": [
+      "startup-growth",
+      "marketing-experiments",
+      "channel-tests"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Testing a new acquisition channel",
+        "example": "\u2018Should we invest in LinkedIn ads?\u2019 \u2192 2-week structured experiment with success and kill criteria."
+      },
+      {
+        "scenario": "Pricing experiment",
+        "example": "Test new packaging tier on subset of trials; success = 15%+ upgrade rate; kill = <5% or any unforeseen churn."
+      },
+      {
+        "scenario": "Sales motion change",
+        "example": "Test free trial vs demo-led for SMB segment; clear leading indicators."
+      },
+      {
+        "scenario": "Content marketing test",
+        "example": "Test long-form blog vs short-form social for B2B audience; measure properly."
+      }
+    ],
+    "when_not_to_use": "Skip when the experiment is too cheap to design (just try it). Skip when the company can't actually pull the trigger fast \u2014 design without execution is theater.",
+    "full_prompt": "You are designing a GTM experiment. The point is to LEARN, not to feel productive.\n\nINPUT\n- The bet you want to test: {bet}\n- Current company stage / size: {stage}\n- What you know already (existing data): {prior_data}\n- Resources committable: {resources}        (people, dollars, weeks)\n\nOUTPUT\n\n## 1. Hypothesis (falsifiable)\nOne sentence in the form: \"We believe X will produce Y because Z.\"\n- X = specific action\n- Y = measurable outcome with a number and time-bound\n- Z = the causal mechanism\n\nBad: \"We think LinkedIn ads will help us grow.\"\nGood: \"We believe spending $5k on LinkedIn ads targeting Director-level data engineers will generate 30+ qualified leads in 2 weeks, because we have evidence this audience converts at 3% on cold outreach.\"\n\n## 2. Leading indicators (visible in days, not weeks)\n3-5 metrics that, if they move, predict success early. For each:\n- Metric\n- What \u2018on track\u2019 looks like at day 3 and day 7\n\n## 3. Lagging indicators (the actual proof)\n1-3 metrics that constitute final success. With:\n- Target threshold to call SUCCESS.\n- Threshold to call FAILURE.\n- \u2018Inconclusive\u2019 zone between.\n\n## 4. Kill criterion\nSpecific signal that we should stop early. NOT just \u2018if it's not working\u2019 \u2014 a concrete number or observation.\n\n## 5. Sample size justification\nWhy is the proposed scale big enough to see a real signal? Either:\n- Statistical: minimum sample size for 80% power at expected effect size.\n- Empirical: similar tests historically gave clear signal at this scale.\n- Pragmatic: smallest budget that's larger than a noise threshold.\n\n## 6. Cost & timeline\n- Total spend\n- People-time required\n- Calendar weeks\n- Opportunity cost (what we're NOT doing while running this)\n\n## 7. Decision criteria after\nThree outcomes pre-committed:\n- If SUCCESS: what do we do next (scale up, productize, hire)?\n- If FAILURE: what do we kill?\n- If INCONCLUSIVE: what's the next experiment to disambiguate?\n\n## 8. What this experiment won't tell us\n2-3 things people will be tempted to read into the results that this design CAN'T prove. Honesty here prevents over-extrapolation.\n\nANTI-FISHING RULE\nIf after running this experiment we'd need to re-interpret to call it a \u2018win\u2019, the hypothesis was wrong. Pre-commit to the criteria before starting.\n\nTHE BET TO TEST\n{bet}\n\nBegin design.",
+    "input_variables": [
+      {
+        "name": "bet",
+        "type": "string",
+        "description": "The GTM bet to test",
+        "required": true,
+        "example": "We should run LinkedIn ads to acquire enterprise leads."
+      },
+      {
+        "name": "stage",
+        "type": "string",
+        "description": "Company stage",
+        "required": true,
+        "example": "Seed-stage, $400k ARR, 4 customers"
+      },
+      {
+        "name": "prior_data",
+        "type": "string",
+        "description": "What we know",
+        "required": true,
+        "example": "3% conversion on cold email to director-level. Some inbound leads from blog content. No paid ads tried yet."
+      },
+      {
+        "name": "resources",
+        "type": "string",
+        "description": "What we can commit",
+        "required": true,
+        "example": "$5k budget, 1 marketing hire 50% time, 2 weeks"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Eight sections: hypothesis, leading indicators, lagging indicators, kill criterion, sample size, cost, decision criteria, won't-tell-us."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong falsifiable hypotheses and honest won't-tell-us."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally over-confident on sample-size math."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; kill criterion can be vague \u2014 re-pin."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Defaults to vague hypotheses; needs explicit form."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Multi-armed bandit variant",
+        "description": "When testing several variations at once.",
+        "prompt_snippet": "Replace single-hypothesis with 3-4 hypothesis variants; describe how to allocate budget across arms (e.g., Thompson sampling) and when to declare a winner."
+      },
+      {
+        "label": "Holdout-group design",
+        "description": "Compare treatment to no-treatment.",
+        "prompt_snippet": "Add: \u2018design with a true holdout group \u2014 what percentage of audience gets no treatment? How will randomization be ensured?\u2019"
+      },
+      {
+        "label": "Sequential analysis",
+        "description": "For long-running experiments.",
+        "prompt_snippet": "Add: \u2018design as a sequential test \u2014 check thresholds at days 3, 7, 14; stop early if you cross a pre-set significance boundary.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Hypothesis is vague (\u2018LinkedIn ads will help us grow\u2019).",
+        "fix": "Re-pin form: \u2018we believe X will produce Y because Z.\u2019 All three required."
+      },
+      {
+        "symptom": "Kill criterion is \u2018if it's not working.\u2019",
+        "fix": "Add: \u2018kill criterion must be a SPECIFIC number or observation; vague \u2018not working\u2019 doesn't count.\u2019"
+      },
+      {
+        "symptom": "Won't-tell-us is empty.",
+        "fix": "Add: \u2018every experiment has limits; if you can't list any, you haven't thought hard enough about what the data CAN'T support.\u2019"
+      },
+      {
+        "symptom": "Decision criteria all say \u2018discuss internally.\u2019",
+        "fix": "Force pre-commitment: \u2018if SUCCESS, we will SPECIFICALLY do X. Names the action.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "a-b-test-result-interpreter",
+      "decomposition-into-subgoals",
+      "okr-quarterly-drafter"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "gtm-experiment",
+      "hypothesis-driven-development"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "What if the experiment is too small to be statistically significant?",
+        "answer": "Then call it an exploratory test, not a decision-making experiment. Use it to learn \u2014 don't pretend it proves things it can't."
+      },
+      {
+        "question": "What about confounders?",
+        "answer": "Section 8 (won't-tell-us) is where to surface confounders. \u2018LinkedIn ads ran while we also launched a feature \u2014 improvement may be either.\u2019"
+      },
+      {
+        "question": "Should the team see all sections before starting?",
+        "answer": "Yes. Pre-commitment is the point. Section 7 (decision criteria) is especially important \u2014 people rationalize after; pre-commitment prevents that."
+      }
+    ],
+    "meta_title": "Go-To-Market Experiment Design \u2014 Prompt",
+    "meta_description": "Falsifiable GTM experiment design with leading indicators, kill criterion, sample-size justification, and pre-committed decision rules."
+  },
+  {
+    "slug": "customer-segmentation-from-data",
+    "title": "Customer Segmentation From Behavioral Data",
+    "tldr": "Builds segmentation from customer behavioral data (usage, purchase, retention patterns). Names segments by JOB-TO-BE-DONE, not demographics. Includes the questions data alone can't answer.",
+    "category": "business",
+    "tags": [
+      "segmentation",
+      "customer-analysis",
+      "jtbd",
+      "growth"
+    ],
+    "best_for_tags": [
+      "product-marketing",
+      "growth-strategy",
+      "retention"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Pre-pricing change",
+        "example": "Segment customers by usage patterns to ensure new pricing doesn't hurt high-value segments."
+      },
+      {
+        "scenario": "Product roadmap prioritization",
+        "example": "Identify the segment driving retention vs growth; build for them differently."
+      },
+      {
+        "scenario": "Messaging differentiation",
+        "example": "Build separate landing pages or onboarding for distinct segments."
+      },
+      {
+        "scenario": "Churn risk targeting",
+        "example": "Identify high-risk segments and tailor saves/retention campaigns."
+      }
+    ],
+    "when_not_to_use": "Skip when customer base is small (<200) \u2014 segmentation is statistically noisy. Skip for one-time purchase products where retention isn't a variable.",
+    "full_prompt": "You are segmenting a customer base from behavioral data. Output JTBD-named segments, not demographic clusters.\n\nINPUT\n- Customer count: {n_customers}\n- Time window of data: {time_window}\n- Available data fields: {fields}\n- Business question this segmentation answers: {business_question}\n\nOUTPUT\n\n## Step 1: Behavioral dimensions\nPick 3-5 dimensions of behavior visible in the data. Each is a SPECTRUM, not a category:\n- \"Frequency of use: rarely / weekly / daily / multiple times daily\"\n- \"Breadth of features used: 1-2 / 3-5 / 6+\"\n- \"Time to first value: same day / week / month+\"\n\nNOT dimensions:\n- \"Industry\" (demographic, not behavioral)\n- \"Company size\" (demographic)\n\n## Step 2: Hypothesize segments\nSketch 3-5 segments \u2014 each occupies a corner or edge of the dimensional space. For each:\n\n### Segment N: <name>\n- **Job to be done** (their core \"I want to ___ when ___\"): the JTBD they're hiring your product for.\n- **Behavioral signature**: their position on each dimension.\n- **Estimated size**: rough % of customer base.\n- **Lifetime value pattern**: are they high-LTV, low-LTV, or unknown?\n- **Retention pattern**: do they stick, churn, oscillate?\n\nBad segment names: \"Power Users\", \"Enterprise\". (Don't tell you why they use the product.)\nGood segment names: \"Daily Decision-Makers\" (job: support recurring decisions); \"Quarterly Reporters\" (job: produce periodic reports).\n\n## Step 3: Validation questions\nWhat questions would the team need to answer to confirm these segments are real?\n- Interview candidates (which customers? what to ask?)\n- Data analyses to run (correlations, cohort comparisons)\n- A/B tests that would prove segment-level different response to messaging\n\n## Step 4: What data alone can't tell us\n3-5 things the data CANNOT reveal that you'd need to confirm before betting on segmentation:\n- Causality (does feature X drive retention, or do retainers happen to use X?)\n- Intent (do they renew because they love it or because they're locked in?)\n- Future behavior changes\n- Edge segments (rare types that don't show up at scale)\n\n## Step 5: Action implications\nFor each segment, the 1-2 PRODUCT/MARKETING actions if this segmentation holds:\n- Product: feature priorities differ?\n- Marketing: messaging differs?\n- Pricing: packaging implications?\n\nRULES\n- Segments must be MUTUALLY EXCLUSIVE \u2014 every customer fits one primary segment.\n- Segments should be ACTIONABLE \u2014 if knowing the segment doesn't change anything you'd do, it's not useful.\n- Don't over-fit to current product. Future product strategy might support new segments.\n\nINPUT DATA SUMMARY\n{data_summary}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "n_customers",
+        "type": "integer",
+        "description": "Approximate customer count",
+        "required": true,
+        "example": "1200"
+      },
+      {
+        "name": "time_window",
+        "type": "string",
+        "description": "Period covered by data",
+        "required": true,
+        "example": "Past 12 months"
+      },
+      {
+        "name": "fields",
+        "type": "string",
+        "description": "What fields are available",
+        "required": true,
+        "example": "sign_up_date, plan, MRR, last_login, weekly_active_days, features_used (list), support_tickets_count, churn_date_or_null"
+      },
+      {
+        "name": "business_question",
+        "type": "string",
+        "description": "What this segmentation should answer",
+        "required": true,
+        "example": "Why is overall retention 70% but some cohorts retain 90%? Where do we invest to expand the strong cohort?"
+      },
+      {
+        "name": "data_summary",
+        "type": "string",
+        "description": "Summary stats or distributions if available",
+        "required": false,
+        "example": "Median weekly_active_days = 2.3, p90 = 5.0, distribution bimodal..."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Five steps: dimensions, hypothesized segments with JTBD names, validation questions, what-data-cant-tell, action implications."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong JTBD naming and honest data-limitation acknowledgment."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; segment names sometimes drift toward marketing labels."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; can over-segment (8+ segments without need)."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Defaults to demographic categories; needs explicit JTBD focus."
+      }
+    ],
+    "variations": [
+      {
+        "label": "RFM segmentation",
+        "description": "Classical Recency-Frequency-Monetary.",
+        "prompt_snippet": "Replace dimensional approach with: \u2018pure RFM scoring \u2014 segment by tercile of each, label resulting cells.\u2019 Simpler but less actionable."
+      },
+      {
+        "label": "Cohort-based view",
+        "description": "Segment by sign-up cohort rather than current state.",
+        "prompt_snippet": "Add: \u2018also segment customers by cohort (month of sign-up) and report which cohorts show the strongest patterns.\u2019"
+      },
+      {
+        "label": "Multi-product segmentation",
+        "description": "When you sell multiple products.",
+        "prompt_snippet": "Add: \u2018segments may differ by product; produce segmentation per product as well as cross-product.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Segments are demographic labels (\u2018SMB\u2019, \u2018Enterprise\u2019).",
+        "fix": "Re-pin: \u2018behavioral, not demographic.\u2019 Demographics may correlate with segments but aren't the segment."
+      },
+      {
+        "symptom": "Too many segments (8+).",
+        "fix": "Add: \u20183-5 segments. If you can't fit, your dimensions are wrong or you're overfitting.\u2019"
+      },
+      {
+        "symptom": "Action implications are generic (\u2018personalize messaging\u2019).",
+        "fix": "Add: \u2018actions must be specific \u2014 name a feature, a pricing change, a campaign.\u2019"
+      },
+      {
+        "symptom": "What-data-can't-tell is empty.",
+        "fix": "Add: \u2018data never tells you intent or causality without validation. Name at minimum 3 unknowns.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "cohort-retention-analyzer",
+      "competitive-feature-matrix"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "segmentation",
+      "jtbd",
+      "customer-analytics"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why JTBD names?",
+        "answer": "Demographic labels (\u2018SMB\u2019) make you build for a category that doesn't exist. JTBD names (\u2018Quarterly Reporters\u2019) tell you what your product needs to do, and reveal who else in adjacent segments has the same job."
+      },
+      {
+        "question": "Should I validate before acting?",
+        "answer": "Always. Section 3 (validation questions) is the bridge. Acting on a hypothesized segmentation that turns out wrong is more expensive than a 2-week validation pass."
+      },
+      {
+        "question": "What if my segments overlap heavily?",
+        "answer": "Then your dimensions aren't well-chosen, or you genuinely have fewer segments than you thought. Don't force separation \u2014 collapse and try different dimensions."
+      }
+    ],
+    "meta_title": "Customer Segmentation From Behavioral Data",
+    "meta_description": "Build segments from behavioral data with JTBD names, hypothesized segments, validation questions, and honest data-limitation acknowledgment."
+  },
+  {
     "slug": "strategic-tradeoff-analyzer",
     "title": "Strategic Tradeoff Analyzer (multi-option matrix)",
     "category": "business",
