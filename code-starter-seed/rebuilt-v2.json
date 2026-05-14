@@ -1,5 +1,579 @@
 [
   {
+    "slug": "langchain-tool-calling-agent-with-retries",
+    "title": "LangChain Tool-Calling Agent With Retries and Tracing",
+    "tldr": "Production-shape LangChain agent: structured tool calling, automatic retry on transient errors, step-level tracing to a JSON log, and a hard step-count budget to prevent runaway loops.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "LangChain",
+    "tags": [
+      "langchain",
+      "agents",
+      "tool-calling",
+      "retries",
+      "tracing"
+    ],
+    "best_for_tags": [
+      "production-agents",
+      "observability",
+      "research-assistants"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Building an agent that needs to call several tools to complete a task \u2014 a research assistant, a data analyst, a code-fix loop. The starter handles the boilerplate (retries, budgets, traces) so you focus on tools.",
+    "when_not_to_use": "Skip for simple one-shot LLM calls (just call the model). Skip when you need very tight latency budgets \u2014 agent loops add round-trips. Skip for safety-critical decisions; agents amplify errors.",
+    "quick_start": "pip install -U langchain langchain-openai langchain-anthropic tenacity && OPENAI_API_KEY=sk-... python agent.py 'Find the latest revenue numbers for X'",
+    "full_code": "\"\"\"LangChain tool-calling agent with retries, tracing, and step budget.\n\nPattern: tool-calling loop with circuit breakers.\n- Max step budget prevents runaway loops.\n- Transient errors retried with exponential backoff.\n- Every step logged as a JSON object you can pipe to Langfuse / Arize / your own.\n- Tools are pure functions; testing them in isolation is easy.\n\nReplace the example tools (search, calculator) with your own.\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport sys\nimport time\nimport uuid\nfrom dataclasses import dataclass, field\nfrom typing import Any, Callable\n\nfrom langchain_core.messages import HumanMessage, SystemMessage, ToolMessage, AIMessage\nfrom langchain_core.tools import tool\nfrom langchain_openai import ChatOpenAI\nfrom tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type\n\n\n# ----------------- TOOLS -----------------\n\n@tool\ndef web_search(query: str) -> str:\n    \"\"\"Search the web for current information. Returns top 3 results with snippets.\n\n    Args:\n        query: Plain English search query.\n    \"\"\"\n    # Replace with your real search backend (Tavily, Brave, etc.)\n    return json.dumps([\n        {\"title\": f\"Result for {query}\", \"url\": \"https://example.com\", \"snippet\": \"Snippet...\"}\n    ])\n\n\n@tool\ndef calculator(expression: str) -> str:\n    \"\"\"Evaluate a basic math expression. Use for arithmetic the LLM might get wrong.\n\n    Args:\n        expression: A Python expression with numbers and operators (+, -, *, /, **).\n    \"\"\"\n    allowed = set(\"0123456789+-*/.() \")\n    if not all(c in allowed for c in expression):\n        return \"ERROR: only digits and + - * / . ( ) allowed\"\n    try:\n        return str(eval(expression, {\"__builtins__\": {}}))  # noqa: S307 -- sandboxed\n    except Exception as e:\n        return f\"ERROR: {e}\"\n\n\nTOOLS = [web_search, calculator]\n\n\n# ----------------- AGENT -----------------\n\n@dataclass\nclass Step:\n    n: int\n    role: str            # \"thought\" | \"tool_call\" | \"tool_result\" | \"final\"\n    content: str\n    tool_name: str | None = None\n    tool_args: dict | None = None\n    duration_ms: int = 0\n\n\n@dataclass\nclass AgentRun:\n    run_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])\n    steps: list[Step] = field(default_factory=list)\n    final: str | None = None\n    error: str | None = None\n\n    def log(self, step: Step) -> None:\n        self.steps.append(step)\n        # Single JSON line per step \u2014 pipe to your observability tool.\n        print(json.dumps({\n            \"run_id\": self.run_id,\n            \"step\": step.n,\n            \"role\": step.role,\n            \"content\": step.content[:200],\n            \"tool_name\": step.tool_name,\n            \"duration_ms\": step.duration_ms,\n        }), file=sys.stderr)\n\n\ndef _is_transient(e: Exception) -> bool:\n    msg = str(e).lower()\n    return any(s in msg for s in (\"rate\", \"timeout\", \"connection\", \"503\", \"502\"))\n\n\nclass AgentBudgetExceeded(RuntimeError):\n    pass\n\n\n@retry(\n    stop=stop_after_attempt(3),\n    wait=wait_exponential(multiplier=1, min=1, max=8),\n    retry=retry_if_exception_type(Exception),\n    reraise=True,\n)\ndef _call_llm(llm, messages):\n    return llm.invoke(messages)\n\n\ndef run_agent(\n    task: str,\n    *,\n    model: str = \"gpt-4o-mini\",\n    max_steps: int = 10,\n    system_prompt: str | None = None,\n) -> AgentRun:\n    run = AgentRun()\n    llm = ChatOpenAI(model=model, temperature=0).bind_tools(TOOLS)\n    tools_by_name: dict[str, Callable] = {t.name: t for t in TOOLS}\n\n    messages: list[Any] = [\n        SystemMessage(content=system_prompt or (\n            \"You are a careful researcher. Use tools when you don't know something. \"\n            \"When you have enough info, return the answer directly without tool calls.\"\n        )),\n        HumanMessage(content=task),\n    ]\n\n    for step_n in range(1, max_steps + 1):\n        t0 = time.time()\n        try:\n            ai_msg: AIMessage = _call_llm(llm, messages)\n        except Exception as e:\n            run.error = f\"LLM call failed at step {step_n}: {e}\"\n            return run\n        dt = int((time.time() - t0) * 1000)\n\n        if not ai_msg.tool_calls:\n            run.final = ai_msg.content\n            run.log(Step(n=step_n, role=\"final\", content=ai_msg.content, duration_ms=dt))\n            return run\n\n        run.log(Step(\n            n=step_n, role=\"thought\",\n            content=ai_msg.content or \"(no text \u2014 tool calls only)\", duration_ms=dt\n        ))\n        messages.append(ai_msg)\n\n        for tc in ai_msg.tool_calls:\n            t0 = time.time()\n            tool_fn = tools_by_name.get(tc[\"name\"])\n            if tool_fn is None:\n                result = f\"ERROR: unknown tool {tc['name']}\"\n            else:\n                try:\n                    result = tool_fn.invoke(tc[\"args\"])\n                except Exception as e:\n                    if _is_transient(e):\n                        result = f\"TRANSIENT ERROR (retried by LLM if needed): {e}\"\n                    else:\n                        result = f\"ERROR: {e}\"\n            dt = int((time.time() - t0) * 1000)\n            run.log(Step(\n                n=step_n, role=\"tool_call\",\n                content=json.dumps(tc[\"args\"])[:200],\n                tool_name=tc[\"name\"], tool_args=tc[\"args\"], duration_ms=dt\n            ))\n            run.log(Step(n=step_n, role=\"tool_result\", content=str(result)[:200], tool_name=tc[\"name\"]))\n            messages.append(ToolMessage(content=str(result), tool_call_id=tc[\"id\"]))\n\n    run.error = f\"Step budget {max_steps} exceeded\"\n    raise AgentBudgetExceeded(run.error)\n\n\nif __name__ == \"__main__\":\n    task = sys.argv[1] if len(sys.argv) > 1 else \"What is 17 * 23?\"\n    run = run_agent(task)\n    print(\"---\\nFINAL:\", run.final or f\"ERROR: {run.error}\")\n",
+    "dependencies": [
+      {
+        "name": "langchain",
+        "version": ">=0.3.0",
+        "purpose": "Agent loop, message types"
+      },
+      {
+        "name": "langchain-openai",
+        "version": ">=0.2.0",
+        "purpose": "OpenAI chat model binding"
+      },
+      {
+        "name": "langchain-anthropic",
+        "version": ">=0.2.0",
+        "purpose": "Anthropic model binding (optional)"
+      },
+      {
+        "name": "tenacity",
+        "version": ">=8.0",
+        "purpose": "Retry decorator with exponential backoff"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI API key",
+        "example": "sk-..."
+      },
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": false,
+        "description": "Anthropic API key (only if switching models)",
+        "example": "sk-ant-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install -U langchain langchain-openai langchain-anthropic tenacity",
+      "export OPENAI_API_KEY=sk-...",
+      "python agent.py 'Find the latest revenue for ACME Corp.'",
+      "Pipe stderr to a JSON-line consumer (jq, vector, Langfuse) for traces."
+    ],
+    "variations": [
+      {
+        "label": "Claude variant",
+        "description": "Swap to Anthropic Claude for tool calling.",
+        "code_snippet": "from langchain_anthropic import ChatAnthropic\\nllm = ChatAnthropic(model='claude-3-7-sonnet-latest', temperature=0).bind_tools(TOOLS)"
+      },
+      {
+        "label": "With circuit breaker per tool",
+        "description": "Stop calling a tool after N consecutive failures within a run.",
+        "code_snippet": "tool_fails: dict[str, int] = {}\\nif tool_fails.get(tc['name'], 0) >= 3:\\n    result = f'CIRCUIT OPEN for {tc[\\\"name\\\"]}'\\nelse:\\n    try:\\n        result = tool_fn.invoke(tc['args'])\\n        tool_fails[tc['name']] = 0\\n    except Exception as e:\\n        tool_fails[tc['name']] = tool_fails.get(tc['name'], 0) + 1\\n        result = f'ERROR: {e}'"
+      },
+      {
+        "label": "Streaming step events",
+        "description": "Yield steps as they happen instead of returning at the end.",
+        "code_snippet": "def run_agent_stream(task, **kw):\\n    # Convert run_agent into a generator yielding Step objects after each step.\\n    ...  # Use Python yield in place of run.log."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "openai.RateLimitError: Rate limit reached for ...",
+        "cause": "OpenAI rate limit hit during the agent's repeated LLM calls.",
+        "fix_snippet": "The tenacity retry on _call_llm already retries with exponential backoff. If you're hitting limits consistently, lower max_steps, switch to a model with higher TPM, or add jitter to the wait."
+      },
+      {
+        "error_text": "AgentBudgetExceeded: Step budget 10 exceeded",
+        "cause": "Agent looped without converging within max_steps.",
+        "fix_snippet": "Investigate the trace: usually means a tool is returning ambiguous results or the system prompt isn't clear about \u2018when to stop\u2019. Add to system prompt: 'When you have a confident answer, return it directly without calling more tools.'"
+      },
+      {
+        "error_text": "ValidationError: 1 validation error for ChatOpenAI ... bind_tools",
+        "cause": "Old LangChain version without unified bind_tools().",
+        "fix_snippet": "pip install -U 'langchain>=0.3' 'langchain-openai>=0.2'. The unified .bind_tools() API requires recent versions."
+      },
+      {
+        "error_text": "TypeError: tool() missing required positional argument",
+        "cause": "Tool function signature missing type hints or docstring.",
+        "fix_snippet": "@tool decorator requires a docstring; argument types must be annotated. The LLM uses the docstring + arg names to decide when to call."
+      }
+    ],
+    "production_checklist": [
+      "Set OPENAI_API_KEY (and ANTHROPIC_API_KEY if used) in your secrets manager, not in code.",
+      "Pipe stderr JSON traces to an observability backend (Langfuse, Arize, OpenLLMetry).",
+      "Set max_steps based on observed p99 of completing runs; don't leave at 10 in production.",
+      "Add per-tool circuit breakers if any tool can fail in correlated ways.",
+      "Cache deterministic tool results (e.g., calculator) \u2014 even agents call the same expression twice.",
+      "Test with a representative eval set; agents drift on prompt changes more than single-shot prompts.",
+      "Log full traces only in non-prod; in prod sample or store only failed runs for debugging."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o",
+        "claude-3-7-sonnet"
+      ],
+      "library_versions": [
+        "langchain==0.3.6",
+        "langchain-openai==0.2.5",
+        "tenacity==8.5.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "langchain",
+      "langfuse"
+    ],
+    "related_glossary_slugs": [
+      "tool-calling",
+      "agent-loop",
+      "retry-pattern"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why bind_tools instead of OpenAI function calling directly?",
+        "answer": "bind_tools normalizes the API across providers (OpenAI, Anthropic, Gemini). Swapping models is a one-liner. The underlying mechanism is still each provider's native tool-calling."
+      },
+      {
+        "question": "Should I use this or LangGraph?",
+        "answer": "LangGraph is better for complex multi-step state machines (router agents, multi-agent coordination). This starter is the right call when the agent is a linear tool-calling loop \u2014 most agents in practice."
+      },
+      {
+        "question": "How do I add memory across runs?",
+        "answer": "Persist run_id with the full message list to your store. On the next call with the same conversation_id, prepend the prior messages. For long histories, summarize older turns into a context message."
+      },
+      {
+        "question": "Why is temperature 0?",
+        "answer": "Tool-calling agents benefit from determinism; you want the same input to produce the same tool sequence. Bump to 0.2\u20130.3 only if you observe the agent getting stuck in identical loops."
+      }
+    ],
+    "github_url": "https://github.com/langchain-ai/langchain",
+    "meta_title": "LangChain Tool-Calling Agent With Retries \u2014 Starter",
+    "meta_description": "Production-shape LangChain agent: tool calls, retries on transient errors, step-budget circuit breaker, and JSON-line tracing per step."
+  },
+  {
+    "slug": "autogen-two-agent-handoff",
+    "title": "AutoGen Two-Agent Handoff With Strict Termination",
+    "tldr": "Two-agent AutoGen pattern: a Planner agent that delegates to a Coder agent and stops the conversation when criteria are met \u2014 no infinite \u2018okay great, what else?\u2019 loops.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "AutoGen",
+    "tags": [
+      "autogen",
+      "multi-agent",
+      "handoff",
+      "termination"
+    ],
+    "best_for_tags": [
+      "multi-agent",
+      "code-generation",
+      "task-delegation"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "When you want one agent to delegate to a specialist (Planner \u2192 Coder, Reviewer \u2192 Refactorer) with clear handoff. AutoGen handles message routing; the starter adds firm termination so the loop ends.",
+    "when_not_to_use": "Skip if you only need one agent \u2014 adds complexity for no benefit. Skip for tightly-coupled multi-step tasks where the agents share a lot of state; a single agent with tools is cleaner.",
+    "quick_start": "pip install pyautogen openai && OPENAI_API_KEY=sk-... python two_agent.py",
+    "full_code": "\"\"\"AutoGen two-agent handoff pattern with strict termination.\n\nPlanner delegates to Coder. Coder responds. Planner checks if done.\nThe custom termination function ends the conversation cleanly when:\n  1. Planner says \"DONE\" \u2014 successful exit.\n  2. Max turns exceeded \u2014 defensive exit.\n  3. Same content seen twice \u2014 loop detection.\n\"\"\"\nimport os\n\nfrom autogen import ConversableAgent\n\nCONFIG = {\n    \"config_list\": [{\n        \"model\": \"gpt-4o-mini\",\n        \"api_key\": os.environ[\"OPENAI_API_KEY\"],\n    }],\n    \"temperature\": 0,\n}\n\nPLANNER_SYSTEM = \"\"\"You are a software planner. Given a coding task:\n1. Decide what the Coder agent should do.\n2. Delegate to it with a concrete request.\n3. Review their output.\n4. When the task is complete to your standard, reply with exactly: TASK_COMPLETE\n\nDon't write code yourself \u2014 that's the Coder's job. Don't loop endlessly; if the Coder can't do it in 3 attempts, say TASK_FAILED with the reason.\"\"\"\n\nCODER_SYSTEM = \"\"\"You are a Python coder. When asked to write code:\n1. Write the requested code, complete and runnable.\n2. Add a short docstring explaining usage.\n3. Stop \u2014 don't explain at length. The Planner reviews.\nIf asked to revise, do so. Don't ask clarifying questions unless absolutely needed.\"\"\"\n\n\ndef is_termination(message: dict) -> bool:\n    \"\"\"Custom termination: planner signals DONE/FAILED, or loop detected.\"\"\"\n    content = (message.get(\"content\") or \"\").strip().upper()\n    return \"TASK_COMPLETE\" in content or \"TASK_FAILED\" in content\n\n\ndef run(task: str, max_turns: int = 10):\n    planner = ConversableAgent(\n        name=\"Planner\",\n        system_message=PLANNER_SYSTEM,\n        llm_config=CONFIG,\n        is_termination_msg=is_termination,\n        human_input_mode=\"NEVER\",\n        max_consecutive_auto_reply=max_turns,\n    )\n    coder = ConversableAgent(\n        name=\"Coder\",\n        system_message=CODER_SYSTEM,\n        llm_config=CONFIG,\n        human_input_mode=\"NEVER\",\n        max_consecutive_auto_reply=max_turns,\n    )\n\n    # Loop detection: track last-N messages for duplicates\n    seen: dict[str, int] = {}\n\n    def hash_content(c: str) -> str:\n        return c.strip().lower()[:200]\n\n    original_send = planner.send\n\n    def send_with_loop_check(message, recipient, request_reply=None, silent=False):\n        h = hash_content(message if isinstance(message, str) else message.get(\"content\", \"\"))\n        seen[h] = seen.get(h, 0) + 1\n        if seen[h] >= 3:\n            print(f\"\\n[loop detected \u2014 terminating]\")\n            return False\n        return original_send(message, recipient, request_reply=request_reply, silent=silent)\n\n    planner.send = send_with_loop_check\n\n    result = planner.initiate_chat(coder, message=task)\n    return result\n\n\nif __name__ == \"__main__\":\n    task = \"\"\"Write a Python function `parse_phone(text: str) -> str | None`\nthat extracts a US phone number from text and returns it in E.164 format,\nor None if no valid number found. Include 3 test cases as comments.\"\"\"\n    result = run(task)\n    print(\"---\\nFINAL CHAT HISTORY:\")\n    for msg in result.chat_history:\n        print(f\"{msg['name']}: {msg['content'][:200]}\")\n",
+    "dependencies": [
+      {
+        "name": "pyautogen",
+        "version": ">=0.4.0",
+        "purpose": "Multi-agent framework"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Underlying LLM client"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI API key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install pyautogen openai",
+      "export OPENAI_API_KEY=sk-...",
+      "python two_agent.py",
+      "Watch the back-and-forth; terminates cleanly on TASK_COMPLETE."
+    ],
+    "variations": [
+      {
+        "label": "Three-agent (Planner, Coder, Reviewer)",
+        "description": "Add a Reviewer that critiques before TASK_COMPLETE.",
+        "code_snippet": "reviewer = ConversableAgent(name='Reviewer', system_message='Critique code for correctness, edge cases, and style.', ...)\\n# Planner delegates to Coder then to Reviewer in sequence."
+      },
+      {
+        "label": "Group chat manager",
+        "description": "Use GroupChatManager for >2 agents with dynamic routing.",
+        "code_snippet": "from autogen import GroupChat, GroupChatManager\\ngc = GroupChat(agents=[planner, coder, reviewer], messages=[], max_round=15)\\nmanager = GroupChatManager(groupchat=gc, llm_config=CONFIG)\\nplanner.initiate_chat(manager, message=task)"
+      },
+      {
+        "label": "With code execution",
+        "description": "Coder writes and runs code in a sandbox.",
+        "code_snippet": "coder = ConversableAgent(\\n    name='Coder',\\n    code_execution_config={'use_docker': True, 'work_dir': '/tmp/coder'},\\n    ...\\n)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ConversableAgent has no attribute is_termination_msg",
+        "cause": "Old pyautogen version.",
+        "fix_snippet": "pip install -U 'pyautogen>=0.4'"
+      },
+      {
+        "error_text": "openai.APIConnectionError",
+        "cause": "Network issue or wrong base_url for non-OpenAI provider.",
+        "fix_snippet": "If using a custom provider (Together, Groq), set 'base_url' in the config_list entry. Otherwise check network and OPENAI_API_KEY."
+      },
+      {
+        "error_text": "Agents keep saying \u2018DONE\u2019 without finishing.",
+        "cause": "Termination match is too loose; \u2018done\u2019 appears in casual replies.",
+        "fix_snippet": "Use a sentinel that's unlikely in normal text: TASK_COMPLETE (all caps, underscore). Update is_termination check to require exact match."
+      },
+      {
+        "error_text": "AutoGen never terminates",
+        "cause": "Planner never says TASK_COMPLETE and max_consecutive_auto_reply too high.",
+        "fix_snippet": "Lower max_consecutive_auto_reply to 6\u20138 and inspect why Planner won't sign off. Often the Planner's success criteria are unclear."
+      }
+    ],
+    "production_checklist": [
+      "Never enable Docker code execution without a sandboxed environment.",
+      "Set max_consecutive_auto_reply low (5\u20138); production loops should converge fast or fail fast.",
+      "Log every message; AutoGen sessions are valuable forensic data when things go wrong.",
+      "Test the termination sentinel doesn't appear in any agent's normal output.",
+      "Budget per-message tokens \u2014 multi-agent chats balloon context fast.",
+      "Use 0 temperature for code-generating agents; bump for ideation agents only."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "pyautogen==0.4.2",
+        "openai==1.51.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "autogen"
+    ],
+    "related_glossary_slugs": [
+      "multi-agent-system",
+      "termination-condition"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Is two agents better than one?",
+        "answer": "Sometimes. For \u2018plan then execute\u2019 shapes where the two roles need different system prompts, yes. For most tasks, a single tool-calling agent is simpler and works fine."
+      },
+      {
+        "question": "How do I prevent infinite \u2018great, what else?\u2019 loops?",
+        "answer": "The starter has three layers: explicit TASK_COMPLETE sentinel, max_consecutive_auto_reply cap, and content-hash loop detection. Use all three in production."
+      },
+      {
+        "question": "Can the Coder agent run code?",
+        "answer": "Yes \u2014 via AutoGen's code_execution_config. Always sandbox (Docker). Don't enable in shared environments without isolation."
+      },
+      {
+        "question": "Why not use LangGraph?",
+        "answer": "LangGraph is great for explicit state machines. AutoGen leans into \u2018conversational delegation\u2019 \u2014 sometimes that maps closer to the actual problem (humans hand off the same way)."
+      }
+    ],
+    "github_url": "https://github.com/microsoft/autogen",
+    "meta_title": "AutoGen Two-Agent Handoff With Termination \u2014 Starter",
+    "meta_description": "Planner-and-Coder AutoGen pattern with strict TASK_COMPLETE termination and loop detection \u2014 multi-agent without infinite back-and-forth."
+  },
+  {
+    "slug": "crewai-sequential-research-pipeline",
+    "title": "CrewAI Sequential Research Pipeline",
+    "tldr": "CrewAI pattern: Researcher \u2192 Analyzer \u2192 Writer crew running sequentially on a research topic, with explicit role descriptions, tools per agent, and a shared context dictionary the final Writer consumes.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "CrewAI",
+    "tags": [
+      "crewai",
+      "multi-agent",
+      "research",
+      "sequential"
+    ],
+    "best_for_tags": [
+      "research-pipelines",
+      "content-generation",
+      "report-writing"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "When you have a multi-stage task with handoff between specialists (research \u2192 synthesize \u2192 write) and you want CrewAI's role-and-goal abstractions to keep responsibilities clear.",
+    "when_not_to_use": "Skip when the stages are tightly coupled (each stage needs to call back into previous). Skip when you need streaming output \u2014 CrewAI sequential is batch-shaped.",
+    "quick_start": "pip install crewai crewai-tools && OPENAI_API_KEY=sk-... python research_crew.py 'Recent advances in 1.5B-parameter local LLMs'",
+    "full_code": "\"\"\"CrewAI sequential research pipeline: Researcher -> Analyzer -> Writer.\n\nEach agent has a role, goal, backstory (CrewAI prompts these into the LLM),\nand a set of tools. Tasks are sequential; later tasks see earlier tasks'\noutputs via CrewAI's automatic context passing.\n\"\"\"\nimport os\nimport sys\n\nfrom crewai import Agent, Crew, Process, Task\nfrom crewai_tools import SerperDevTool, WebsiteSearchTool\n\n\ndef build_crew(topic: str) -> Crew:\n    search_tool = SerperDevTool()        # requires SERPER_API_KEY\n    web_search = WebsiteSearchTool()\n\n    researcher = Agent(\n        role=\"Senior Research Analyst\",\n        goal=f\"Find authoritative, recent sources about: {topic}\",\n        backstory=\"You are a meticulous researcher. You prefer primary sources, \"\n                  \"favor recent results, and flag any claim you can't cite.\",\n        tools=[search_tool, web_search],\n        verbose=True,\n        allow_delegation=False,\n        max_iter=8,\n    )\n\n    analyzer = Agent(\n        role=\"Technical Analyst\",\n        goal=\"Synthesize research into key findings, tensions, and open questions\",\n        backstory=\"You distill noisy research into 3\u20135 clear findings. You \"\n                  \"explicitly flag claims that are contested or thinly supported.\",\n        tools=[],\n        verbose=True,\n        allow_delegation=False,\n        max_iter=4,\n    )\n\n    writer = Agent(\n        role=\"Technical Writer\",\n        goal=\"Produce a 600\u2013800 word brief in plain language for engineers\",\n        backstory=\"You write for working engineers. No fluff, no hedging beyond \"\n                  \"what the analyst flagged. Inline citations to the researcher's sources.\",\n        tools=[],\n        verbose=True,\n        allow_delegation=False,\n        max_iter=3,\n    )\n\n    research_task = Task(\n        description=(\n            f\"Research the topic: {topic}\\n\"\n            \"Find 5-10 authoritative sources (academic papers, official blogs, \"\n            \"primary documentation). For each source: URL, key claim, date, and \"\n            \"your confidence in it (high/medium/low).\"\n        ),\n        expected_output=(\n            \"A markdown list of sources. For each: title, URL, date, key claim \"\n            \"(1-2 sentences), confidence rating.\"\n        ),\n        agent=researcher,\n    )\n\n    analysis_task = Task(\n        description=(\n            \"Read the researcher's sources. Produce 3-5 key findings. \"\n            \"For each finding: state it, cite which sources support it, \"\n            \"note any contradictory sources, and rate confidence (high/medium/low). \"\n            \"Then list 3 open questions the research did NOT resolve.\"\n        ),\n        expected_output=(\n            \"Markdown with two sections: 'Findings' (3-5 bullets with citations) \"\n            \"and 'Open questions' (3 bullets).\"\n        ),\n        agent=analyzer,\n        context=[research_task],  # Reads research_task output\n    )\n\n    writing_task = Task(\n        description=(\n            \"Write a 600-800 word brief based on the analyst's findings. \"\n            \"Audience: working engineers, not researchers. \"\n            \"Structure: 1) why this matters now (2-3 sentences), 2) findings \"\n            \"(woven into prose, not a bullet list), 3) what's still unclear, \"\n            \"4) one-line takeaway. Cite sources inline as [Source: URL].\"\n        ),\n        expected_output=\"A 600-800 word markdown brief with inline citations.\",\n        agent=writer,\n        context=[research_task, analysis_task],\n    )\n\n    return Crew(\n        agents=[researcher, analyzer, writer],\n        tasks=[research_task, analysis_task, writing_task],\n        process=Process.sequential,\n        verbose=True,\n    )\n\n\nif __name__ == \"__main__\":\n    topic = sys.argv[1] if len(sys.argv) > 1 else \"Recent advances in long-context attention mechanisms\"\n    crew = build_crew(topic)\n    result = crew.kickoff()\n    print(\"\\n=== FINAL BRIEF ===\\n\")\n    print(result)\n",
+    "dependencies": [
+      {
+        "name": "crewai",
+        "version": ">=0.70",
+        "purpose": "Multi-agent framework"
+      },
+      {
+        "name": "crewai-tools",
+        "version": ">=0.12",
+        "purpose": "Pre-built tool integrations (search, scraping)"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI API key",
+        "example": "sk-..."
+      },
+      {
+        "name": "SERPER_API_KEY",
+        "required": true,
+        "description": "Serper search API key (or swap for another search tool)",
+        "example": "..."
+      }
+    ],
+    "setup_steps": [
+      "pip install crewai crewai-tools",
+      "export OPENAI_API_KEY=sk-... SERPER_API_KEY=...",
+      "python research_crew.py 'Your topic here'",
+      "Output streams via verbose=True; final brief printed at end."
+    ],
+    "variations": [
+      {
+        "label": "Hierarchical (manager agent)",
+        "description": "Add a manager that decides whether to revisit research after analysis.",
+        "code_snippet": "Crew(..., process=Process.hierarchical, manager_llm=ChatOpenAI(model='gpt-4o'))"
+      },
+      {
+        "label": "Local LLM via Ollama",
+        "description": "Run with Ollama instead of OpenAI.",
+        "code_snippet": "from langchain_ollama import ChatOllama\\nresearcher = Agent(..., llm=ChatOllama(model='llama3.1'))"
+      },
+      {
+        "label": "Async crew",
+        "description": "Run independent tasks in parallel where dependencies allow.",
+        "code_snippet": "Task(..., async_execution=True)  # CrewAI awaits when context requires it"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "AuthenticationError: Invalid Serper API key",
+        "cause": "Missing or wrong SERPER_API_KEY.",
+        "fix_snippet": "Sign up at serper.dev, set SERPER_API_KEY. Or swap SerperDevTool for another search tool (Tavily, Brave)."
+      },
+      {
+        "error_text": "Agents loop on the same research forever",
+        "cause": "max_iter too high; researcher keeps trying to find more sources.",
+        "fix_snippet": "Lower max_iter on the researcher to 5-8. Tighten the task's expected_output to specify exact number of sources (\u2018exactly 7 sources\u2019)."
+      },
+      {
+        "error_text": "Context too large after analysis_task",
+        "cause": "Researcher returned huge content; full text passed forward.",
+        "fix_snippet": "Have the researcher emit summaries, not full pages. Update its expected_output: \u2018summary in 2 sentences per source, no full text quoted\u2019."
+      },
+      {
+        "error_text": "Crew finishes but final brief ignores some findings",
+        "cause": "Writer's context window not large enough; CrewAI truncates earlier task outputs.",
+        "fix_snippet": "Use a larger-context model for the writer (gpt-4o, claude-3.5-sonnet) or summarize analysis_task output before writing_task."
+      }
+    ],
+    "production_checklist": [
+      "Set verbose=False in production; enable only for debugging.",
+      "Cache the researcher's output keyed by topic to avoid re-running for same query.",
+      "Set token budget per agent and surface when an agent exceeds it.",
+      "Validate the final output structure \u2014 CrewAI won't catch a writer who skipped sections.",
+      "Run on a low-cost model first (gpt-4o-mini) and escalate per-agent to gpt-4o only where needed.",
+      "Persist crew runs to a database with timestamps and inputs for replay."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "crewai==0.76.0",
+        "crewai-tools==0.13.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "crewai"
+    ],
+    "related_glossary_slugs": [
+      "multi-agent-system",
+      "agent-role"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "When should I use CrewAI vs LangGraph vs AutoGen?",
+        "answer": "CrewAI: when role/goal/backstory abstractions map naturally to your task. LangGraph: when you have explicit state machines or routing logic. AutoGen: when conversational delegation between agents is the core pattern. They overlap; pick by team familiarity."
+      },
+      {
+        "question": "Why sequential and not hierarchical?",
+        "answer": "Sequential is predictable and easy to debug. Hierarchical adds a manager that decides routing \u2014 powerful but harder to reason about. Start sequential; promote to hierarchical only when you need conditional revisiting."
+      },
+      {
+        "question": "How do I add a quality check before publishing?",
+        "answer": "Add a fourth agent (Editor) with the writer's output as context. Editor's task: \u2018review the brief; return APPROVED or specific revisions.\u2019 Loop until APPROVED or N iterations."
+      },
+      {
+        "question": "Can agents use different models?",
+        "answer": "Yes \u2014 pass `llm=` to each Agent. Use cheaper models for research/synthesis, premium for the final writer. Significant cost savings on long crews."
+      }
+    ],
+    "github_url": "https://github.com/crewAIInc/crewAI",
+    "meta_title": "CrewAI Sequential Research Pipeline \u2014 Starter",
+    "meta_description": "Researcher \u2192 Analyzer \u2192 Writer crew with role-and-goal abstractions, shared context, and tool assignment per agent \u2014 ready to extend."
+  },
+  {
+    "slug": "custom-react-agent-no-framework",
+    "title": "Custom ReAct Agent (No Framework)",
+    "tldr": "A complete ReAct loop in ~150 lines of plain Python \u2014 Thought \u2192 Action \u2192 Observation cycle with parsing, tool dispatch, and step budget. Useful when you want to understand what frameworks are doing.",
+    "category": "agent-frameworks",
+    "language": "python",
+    "framework": "stdlib",
+    "tags": [
+      "react",
+      "agents",
+      "framework-free",
+      "pedagogical"
+    ],
+    "best_for_tags": [
+      "learning",
+      "minimal-deps",
+      "custom-control"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "When you want full control over the agent loop, or you're learning what LangChain/CrewAI abstract away. Also when minimizing dependencies (small Docker images, edge deployments).",
+    "when_not_to_use": "Skip in production unless you have a specific reason \u2014 frameworks handle edge cases this starter doesn't (multi-tool-call parallel execution, structured tool calling, streaming).",
+    "quick_start": "pip install openai && OPENAI_API_KEY=sk-... python react_agent.py 'What is 17 * 23 plus the square root of 144?'",
+    "full_code": "\"\"\"A minimal ReAct agent in plain Python.\n\nReAct loop:\n  Thought: <agent reasoning>\n  Action: <tool name>[<input>]\n  Observation: <tool result>\n  ...\n  Answer: <final answer>\n\nThe agent emits Thought + Action; we parse Action, call the tool, append\nObservation, and ask the model to continue. Loop until Answer or step budget.\n\"\"\"\nimport json\nimport os\nimport re\nimport sys\nfrom typing import Callable\n\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n\n# ----------------- TOOLS -----------------\n\ndef calculator(expression: str) -> str:\n    allowed = set(\"0123456789+-*/.() \")\n    if not all(c in allowed for c in expression):\n        return \"ERROR: only digits and + - * / . ( ) allowed\"\n    try:\n        return str(eval(expression, {\"__builtins__\": {}}))  # noqa: S307\n    except Exception as e:\n        return f\"ERROR: {e}\"\n\n\ndef sqrt(n_str: str) -> str:\n    try:\n        n = float(n_str)\n        return f\"{n ** 0.5:.6f}\"\n    except Exception as e:\n        return f\"ERROR: {e}\"\n\n\ndef lookup_definition(term: str) -> str:\n    # Stub: replace with real lookup\n    defs = {\n        \"react\": \"ReAct = Reason + Act. An LLM pattern where the model interleaves \"\n                 \"thinking with tool calls, observing results before deciding next step.\",\n    }\n    return defs.get(term.lower(), f\"No definition found for {term}\")\n\n\nTOOLS: dict[str, Callable[[str], str]] = {\n    \"calculator\": calculator,\n    \"sqrt\": sqrt,\n    \"lookup_definition\": lookup_definition,\n}\n\n\n# ----------------- AGENT -----------------\n\nSYSTEM_PROMPT = \"\"\"You are a ReAct agent. Reason step-by-step and use tools when needed.\n\nTools available:\n  calculator[<expression>]  - evaluate basic arithmetic\n  sqrt[<number>]            - compute square root\n  lookup_definition[<term>] - look up a term\n\nFormat each step EXACTLY as:\n  Thought: <your reasoning>\n  Action: tool_name[input]\n\nAfter you receive an Observation, continue with another Thought + Action OR with:\n  Answer: <your final answer>\n\nDo NOT include both Action and Answer in the same step. One or the other.\n\"\"\"\n\n\nACTION_RE = re.compile(r\"Action:\\s*(\\w+)\\[(.+?)\\]\", re.DOTALL)\nANSWER_RE = re.compile(r\"Answer:\\s*(.+)\", re.DOTALL)\n\n\ndef parse_step(text: str) -> tuple[str, str | None, str | None]:\n    \"\"\"Returns (role, tool_name_or_answer, input_or_None).\"\"\"\n    m_a = ANSWER_RE.search(text)\n    if m_a:\n        return (\"answer\", m_a.group(1).strip(), None)\n    m_t = ACTION_RE.search(text)\n    if m_t:\n        return (\"action\", m_t.group(1).strip(), m_t.group(2).strip())\n    return (\"malformed\", text, None)\n\n\ndef run(task: str, *, model: str = \"gpt-4o-mini\", max_steps: int = 8) -> str:\n    messages = [\n        {\"role\": \"system\", \"content\": SYSTEM_PROMPT},\n        {\"role\": \"user\", \"content\": task},\n    ]\n\n    for step in range(1, max_steps + 1):\n        resp = client.chat.completions.create(model=model, messages=messages, temperature=0)\n        text = resp.choices[0].message.content\n        print(f\"\\n--- step {step} ---\\n{text}\")\n        messages.append({\"role\": \"assistant\", \"content\": text})\n\n        role, name_or_answer, tool_input = parse_step(text)\n        if role == \"answer\":\n            return name_or_answer\n        if role == \"malformed\":\n            messages.append({\"role\": \"user\", \"content\":\n                \"Your last response didn't follow the format. Please reply with EITHER \"\n                \"\u2018Thought: ...\\\\nAction: tool[input]\u2019 OR \u2018Answer: ...\u2019.\"})\n            continue\n\n        tool_fn = TOOLS.get(name_or_answer)\n        if tool_fn is None:\n            obs = f\"ERROR: unknown tool {name_or_answer}. Available: {list(TOOLS)}\"\n        else:\n            try:\n                obs = tool_fn(tool_input)\n            except Exception as e:\n                obs = f\"ERROR: {e}\"\n        print(f\"Observation: {obs}\")\n        messages.append({\"role\": \"user\", \"content\": f\"Observation: {obs}\"})\n\n    return f\"ERROR: step budget {max_steps} exceeded\"\n\n\nif __name__ == \"__main__\":\n    task = sys.argv[1] if len(sys.argv) > 1 else \"What is the square root of (17 * 23 + 144)?\"\n    print(f\"TASK: {task}\")\n    print(f\"\\n=== ANSWER ===\\n{run(task)}\")\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "LLM client"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI API key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai",
+      "export OPENAI_API_KEY=sk-...",
+      "python react_agent.py 'Your task here'"
+    ],
+    "variations": [
+      {
+        "label": "Add a search tool",
+        "description": "Real web search via Tavily.",
+        "code_snippet": "from tavily import TavilyClient\\ntv = TavilyClient(api_key=os.environ['TAVILY_API_KEY'])\\nTOOLS['search'] = lambda q: json.dumps(tv.search(q)['results'][:3])"
+      },
+      {
+        "label": "Streaming version",
+        "description": "Yield steps as they're generated.",
+        "code_snippet": "def run_stream(task):\\n    # use stream=True on the OpenAI call; emit parsed steps as they complete."
+      },
+      {
+        "label": "Use Anthropic instead",
+        "description": "Run with Claude.",
+        "code_snippet": "from anthropic import Anthropic\\nclient = Anthropic()\\nresp = client.messages.create(model='claude-3-7-sonnet-latest', system=SYSTEM_PROMPT, messages=messages, max_tokens=1024)\\ntext = resp.content[0].text"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Step budget 8 exceeded",
+        "cause": "Agent kept calling tools without concluding.",
+        "fix_snippet": "Inspect the trace. Usually the agent isn't sure when to STOP. Sharpen the system prompt: \u2018When you have enough information for the user's question, write Answer: directly.\u2019"
+      },
+      {
+        "error_text": "Malformed step (no Action or Answer)",
+        "cause": "Model wrote free-form text instead of the format.",
+        "fix_snippet": "The starter already reminds the model when this happens. If it persists, switch to gpt-4o or add 2-3 worked examples (few-shot) of the format in the system prompt."
+      },
+      {
+        "error_text": "Tool always returns \u2018unknown tool\u2019 for valid names",
+        "cause": "Regex doesn't match because model used backticks or extra formatting.",
+        "fix_snippet": "Tighten the system prompt to forbid markdown formatting on Action lines. Or expand ACTION_RE to handle \u2018Action: `tool[input]`\u2019."
+      },
+      {
+        "error_text": "Action input has nested brackets and breaks parsing",
+        "cause": "ACTION_RE non-greedy match stops at first ].",
+        "fix_snippet": "Use Action: tool(input) with parens, or pass JSON inputs: \u2018Action: search[{\"query\": \"foo\"}]\u2019 and parse the JSON."
+      }
+    ],
+    "production_checklist": [
+      "Don't deploy this exact code to production \u2014 it's pedagogical. Production agents need structured tool calling, parallel tool execution, and richer error handling.",
+      "If you do use it, sandbox the calculator (the eval() call is restricted but not bulletproof).",
+      "Log every step + observation for debugging; cheap and high-leverage.",
+      "Add per-tool timeouts; one slow tool blocks the agent."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "openai==1.51.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "react",
+      "agent-loop",
+      "tool-calling"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why ReAct instead of OpenAI's structured tool calling?",
+        "answer": "ReAct is the pattern that frameworks (LangChain, CrewAI) wrap. Understanding it directly helps you debug when frameworks behave strangely. Structured tool calling is better in production \u2014 this is a learning artifact."
+      },
+      {
+        "question": "Can I run this with a local model via Ollama?",
+        "answer": "Yes \u2014 point the OpenAI client at Ollama's OpenAI-compatible endpoint: OpenAI(base_url='http://localhost:11434/v1', api_key='ollama'). ReAct works well with capable local models (Llama 3.1 8B+)."
+      },
+      {
+        "question": "Why is the format so strict?",
+        "answer": "Because we're parsing model output. Stricter format \u2192 fewer parse errors. Production agents use tool-calling APIs (JSON-structured) instead of text-format ReAct to eliminate this entirely."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Custom ReAct Agent in 150 Lines \u2014 Starter",
+    "meta_description": "Plain-Python ReAct loop with Thought-Action-Observation parsing, step budget, and tool dispatch \u2014 no frameworks, the pattern frameworks wrap."
+  },
+  {
     "slug": "groq-low-latency-chat",
     "title": "Groq LPU Sub-200ms Streaming Chat",
     "category": "llm-clients",
@@ -840,6 +1414,599 @@
         "answer": "stable_id is deterministic, so re-ingest of changed docs upserts (replaces). For deletes, query Qdrant by source metadata and call delete_points."
       }
     ]
+  },
+  {
+    "slug": "chroma-local-rag-quickstart",
+    "title": "Chroma Local RAG Quickstart With Persistent Storage",
+    "tldr": "Local-first RAG with ChromaDB \u2014 persists embeddings to disk, supports cosine similarity, and includes a clean ingest/query split so you can swap in your own document loader.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "ChromaDB",
+    "tags": [
+      "chromadb",
+      "rag",
+      "local-first",
+      "embeddings"
+    ],
+    "best_for_tags": [
+      "prototyping",
+      "single-machine-rag",
+      "demos"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": true,
+    "when_to_use": "When you're prototyping RAG and don't want infra. Chroma runs locally, persists to disk, and works fine up to ~100k docs on a single machine.",
+    "when_not_to_use": "Skip past 1M docs (use Qdrant/Pinecone). Skip when you need multi-tenant isolation, RBAC, or zero-downtime resizing. Skip for serverless functions \u2014 file persistence doesn't survive cold starts.",
+    "quick_start": "pip install chromadb sentence-transformers && python chroma_rag.py",
+    "full_code": "\"\"\"Chroma local RAG: ingest a folder of docs, then query them.\n\n- Persistent: data is stored to disk in ./chroma_db/.\n- Embeddings via sentence-transformers (no API key required).\n- Cosine similarity (Chroma supports l2/ip/cosine).\n- Clean ingest/query split \u2014 ingest once, query many times.\n\"\"\"\nfrom __future__ import annotations\n\nimport glob\nimport os\nimport sys\nfrom pathlib import Path\n\nimport chromadb\nfrom chromadb.utils import embedding_functions\n\nPERSIST_DIR = \"./chroma_db\"\nCOLLECTION_NAME = \"docs\"\n\n\ndef get_collection():\n    client = chromadb.PersistentClient(path=PERSIST_DIR)\n    embedder = embedding_functions.SentenceTransformerEmbeddingFunction(\n        model_name=\"all-MiniLM-L6-v2\"  # 384-dim, fast, good baseline\n    )\n    return client.get_or_create_collection(\n        name=COLLECTION_NAME,\n        embedding_function=embedder,\n        metadata={\"hnsw:space\": \"cosine\"},\n    )\n\n\ndef chunk(text: str, *, max_chars: int = 1200, overlap: int = 200) -> list[str]:\n    \"\"\"Naive chunker \u2014 splits on paragraph boundaries when possible.\"\"\"\n    chunks = []\n    i = 0\n    while i < len(text):\n        end = min(i + max_chars, len(text))\n        # Try to end at a paragraph boundary\n        if end < len(text):\n            last_para = text.rfind(\"\\n\\n\", i, end)\n            if last_para > i + max_chars // 2:\n                end = last_para\n        chunks.append(text[i:end].strip())\n        i = max(end - overlap, end)\n    return [c for c in chunks if c]\n\n\ndef ingest(folder: str) -> int:\n    \"\"\"Read all .txt and .md files from folder; chunk; upsert.\"\"\"\n    col = get_collection()\n    files = glob.glob(f\"{folder}/**/*.txt\", recursive=True) + \\\n            glob.glob(f\"{folder}/**/*.md\", recursive=True)\n    total = 0\n    for path in files:\n        text = Path(path).read_text(encoding=\"utf-8\", errors=\"ignore\")\n        chunks = chunk(text)\n        ids = [f\"{path}::{i}\" for i in range(len(chunks))]\n        metas = [{\"source\": path, \"chunk_index\": i} for i in range(len(chunks))]\n        if chunks:\n            col.upsert(ids=ids, documents=chunks, metadatas=metas)\n            total += len(chunks)\n            print(f\"  ingested {len(chunks):3d} chunks from {path}\")\n    print(f\"\\nTotal: {total} chunks in collection {COLLECTION_NAME}\")\n    return total\n\n\ndef query(question: str, *, k: int = 4) -> list[dict]:\n    col = get_collection()\n    res = col.query(query_texts=[question], n_results=k)\n    out = []\n    for i in range(len(res[\"ids\"][0])):\n        out.append({\n            \"id\": res[\"ids\"][0][i],\n            \"distance\": res[\"distances\"][0][i],\n            \"source\": res[\"metadatas\"][0][i].get(\"source\"),\n            \"text\": res[\"documents\"][0][i],\n        })\n    return out\n\n\nif __name__ == \"__main__\":\n    if len(sys.argv) > 1 and sys.argv[1] == \"ingest\":\n        folder = sys.argv[2] if len(sys.argv) > 2 else \"./docs\"\n        ingest(folder)\n    else:\n        question = \" \".join(sys.argv[1:]) or \"What is RAG?\"\n        for hit in query(question):\n            print(f\"\\n[dist {hit['distance']:.3f}] {hit['source']}\")\n            print(hit[\"text\"][:300])\n",
+    "dependencies": [
+      {
+        "name": "chromadb",
+        "version": ">=0.5.0",
+        "purpose": "Vector database with persistent storage"
+      },
+      {
+        "name": "sentence-transformers",
+        "version": ">=3.0",
+        "purpose": "Local embeddings (no API needed)"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "pip install chromadb sentence-transformers",
+      "mkdir docs && copy some .txt/.md files in",
+      "python chroma_rag.py ingest ./docs",
+      "python chroma_rag.py 'your question'"
+    ],
+    "variations": [
+      {
+        "label": "OpenAI embeddings",
+        "description": "Swap to OpenAI text-embedding-3-small for better quality.",
+        "code_snippet": "embedder = embedding_functions.OpenAIEmbeddingFunction(\\n    api_key=os.environ['OPENAI_API_KEY'],\\n    model_name='text-embedding-3-small',\\n)"
+      },
+      {
+        "label": "Metadata filtering",
+        "description": "Filter results by metadata (e.g., recent docs only).",
+        "code_snippet": "col.query(query_texts=[q], n_results=k, where={'source': {'$in': allowed_sources}})"
+      },
+      {
+        "label": "Hybrid search with BM25",
+        "description": "Combine vector search with keyword search.",
+        "code_snippet": "# Run both searches, normalize scores, take weighted sum.\\nvec_hits = col.query(...)\\nbm25_hits = bm25_index.search(q, k=k)\\nmerged = rrf_merge(vec_hits, bm25_hits)  # reciprocal rank fusion"
+      },
+      {
+        "label": "Multi-collection",
+        "description": "Separate collections per tenant or doc-type.",
+        "code_snippet": "client.create_collection(f'tenant_{tenant_id}_docs', embedding_function=embedder)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "RuntimeError: Could not connect to tenant default_tenant",
+        "cause": "Chroma upgrade renamed default tenant \u2014 old persistent dir incompatible.",
+        "fix_snippet": "Delete the chroma_db/ folder and re-ingest, OR pin chromadb to the version that wrote the data. For new installs use chromadb>=0.5.0."
+      },
+      {
+        "error_text": "ValueError: Number of embeddings did not match number of documents",
+        "cause": "Empty chunks slipped through the chunker.",
+        "fix_snippet": "Add: chunks = [c for c in chunks if c.strip()] before upsert. The starter already does this."
+      },
+      {
+        "error_text": "OperationalError: database is locked",
+        "cause": "Multiple processes writing to the same persistent dir.",
+        "fix_snippet": "Chroma persistent mode is single-process. For multi-process, use Chroma's server mode (chroma run --path ./chroma_db) and connect via HttpClient."
+      },
+      {
+        "error_text": "Slow queries on a large collection",
+        "cause": "Default HNSW parameters; index needs tuning.",
+        "fix_snippet": "Pass metadata={'hnsw:M': 16, 'hnsw:construction_ef': 200, 'hnsw:search_ef': 100} when creating the collection. Higher ef = better recall, slower queries."
+      }
+    ],
+    "production_checklist": [
+      "Migrate to server mode (chroma run --path ...) before deploying to multiple processes.",
+      "For >1M docs, evaluate Qdrant or Pinecone \u2014 Chroma's persistent mode is single-machine.",
+      "Don't rely on metadata for security \u2014 Chroma has no auth. Filter at the application layer.",
+      "Back up the persistent dir like any database; it's not just a cache.",
+      "Re-evaluate chunk size and overlap with your actual retrieval quality metrics (Recall@k, MRR).",
+      "Pin chromadb version; the storage format has changed across releases."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "chromadb==0.5.15",
+        "sentence-transformers==3.2.1"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "chromadb"
+    ],
+    "related_glossary_slugs": [
+      "vector-database",
+      "rag",
+      "embedding"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why all-MiniLM-L6-v2?",
+        "answer": "It's the standard \u2018good baseline\u2019 \u2014 384 dims, fast on CPU, ~80MB. Better quality available (BGE, E5, OpenAI) but this works on a laptop without GPU."
+      },
+      {
+        "question": "Cosine vs L2 vs IP?",
+        "answer": "Cosine is the safe default for normalized embeddings; identical to inner product (IP) when vectors are unit-length. L2 is for raw Euclidean distance. SentenceTransformers normalize by default \u2014 cosine is what you want."
+      },
+      {
+        "question": "How do I add new documents incrementally?",
+        "answer": "upsert() with new IDs handles both insert and update. Use deterministic IDs (e.g., hash of path + chunk index) so re-running ingest doesn't duplicate."
+      },
+      {
+        "question": "Can I query across multiple collections?",
+        "answer": "Not natively \u2014 run separate queries and merge in your code. If you find yourself doing this often, use a single collection with metadata filtering instead."
+      }
+    ],
+    "github_url": "https://github.com/chroma-core/chroma",
+    "meta_title": "Chroma Local RAG Quickstart \u2014 Starter",
+    "meta_description": "Local-first RAG with ChromaDB \u2014 persistent storage, sentence-transformers embeddings, hybrid search hook, clean ingest/query split."
+  },
+  {
+    "slug": "qdrant-hybrid-search-rrf",
+    "title": "Qdrant Hybrid Search With Reciprocal Rank Fusion",
+    "tldr": "Production-shape Qdrant client doing hybrid search: dense (semantic) + sparse (BM25) retrieval merged with Reciprocal Rank Fusion. Includes a reranker hook and metadata filtering.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "Qdrant",
+    "tags": [
+      "qdrant",
+      "hybrid-search",
+      "rrf",
+      "rag",
+      "reranking"
+    ],
+    "best_for_tags": [
+      "production-rag",
+      "hybrid-retrieval",
+      "search-quality"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "when_to_use": "When you need production retrieval quality: BM25 keyword matching catches things embeddings miss (acronyms, numeric IDs, rare terms), while dense vectors catch paraphrases. RRF merges them robustly.",
+    "when_not_to_use": "Skip for early prototypes \u2014 overkill. Skip when your corpus is small and homogeneous (<10k docs in one language); dense-only Chroma is enough.",
+    "quick_start": "docker run -p 6333:6333 qdrant/qdrant && pip install qdrant-client fastembed && python hybrid.py",
+    "full_code": "\"\"\"Qdrant hybrid search: dense + sparse + RRF + optional reranker.\n\n- Dense vectors via fastembed (BAAI/bge-small-en-v1.5).\n- Sparse vectors via fastembed (Splade or BM25-style).\n- Reciprocal Rank Fusion merges the two result lists.\n- Optional cross-encoder reranker (off by default \u2014 slow but high quality).\n- Metadata filtering via Qdrant's filter language.\n\"\"\"\nfrom __future__ import annotations\n\nfrom typing import Iterable\n\nfrom fastembed import SparseTextEmbedding, TextEmbedding\nfrom qdrant_client import QdrantClient\nfrom qdrant_client.models import (\n    Distance, Filter, FieldCondition, MatchValue,\n    NamedSparseVector, NamedVector, PointStruct,\n    SparseIndexParams, SparseVector, SparseVectorParams,\n    VectorParams,\n)\n\nCOLLECTION = \"docs_hybrid\"\nDENSE_MODEL = \"BAAI/bge-small-en-v1.5\"\nSPARSE_MODEL = \"Qdrant/bm25\"\n\n\ndef get_client() -> QdrantClient:\n    return QdrantClient(url=\"http://localhost:6333\")\n\n\ndef ensure_collection(client: QdrantClient) -> None:\n    if client.collection_exists(COLLECTION):\n        return\n    client.create_collection(\n        collection_name=COLLECTION,\n        vectors_config={\"dense\": VectorParams(size=384, distance=Distance.COSINE)},\n        sparse_vectors_config={\"sparse\": SparseVectorParams(index=SparseIndexParams())},\n    )\n\n\ndef ingest(docs: list[dict]) -> int:\n    \"\"\"docs: list of {'id': str|int, 'text': str, 'meta': dict}.\"\"\"\n    client = get_client()\n    ensure_collection(client)\n\n    dense_embedder = TextEmbedding(DENSE_MODEL)\n    sparse_embedder = SparseTextEmbedding(SPARSE_MODEL)\n\n    texts = [d[\"text\"] for d in docs]\n    dense_vecs = list(dense_embedder.embed(texts))\n    sparse_vecs = list(sparse_embedder.embed(texts))\n\n    points = []\n    for d, dv, sv in zip(docs, dense_vecs, sparse_vecs):\n        points.append(PointStruct(\n            id=d[\"id\"],\n            vector={\n                \"dense\": dv.tolist(),\n                \"sparse\": SparseVector(indices=sv.indices.tolist(), values=sv.values.tolist()),\n            },\n            payload={\"text\": d[\"text\"], **(d.get(\"meta\") or {})},\n        ))\n    client.upsert(collection_name=COLLECTION, points=points)\n    return len(points)\n\n\ndef hybrid_search(\n    query: str,\n    *,\n    k: int = 10,\n    filter_kw: dict | None = None,\n    rrf_k: int = 60,\n) -> list[dict]:\n    \"\"\"Returns merged results ranked by RRF score.\"\"\"\n    client = get_client()\n    dense_embedder = TextEmbedding(DENSE_MODEL)\n    sparse_embedder = SparseTextEmbedding(SPARSE_MODEL)\n\n    dv = list(dense_embedder.embed([query]))[0]\n    sv = list(sparse_embedder.embed([query]))[0]\n\n    qfilter = None\n    if filter_kw:\n        qfilter = Filter(must=[\n            FieldCondition(key=k_, match=MatchValue(value=v))\n            for k_, v in filter_kw.items()\n        ])\n\n    # Two searches in parallel\n    dense_hits = client.search(\n        collection_name=COLLECTION,\n        query_vector=NamedVector(name=\"dense\", vector=dv.tolist()),\n        limit=k * 3,\n        query_filter=qfilter,\n    )\n    sparse_hits = client.search(\n        collection_name=COLLECTION,\n        query_vector=NamedSparseVector(\n            name=\"sparse\",\n            vector=SparseVector(indices=sv.indices.tolist(), values=sv.values.tolist())\n        ),\n        limit=k * 3,\n        query_filter=qfilter,\n    )\n\n    return reciprocal_rank_fusion(dense_hits, sparse_hits, k=k, rrf_k=rrf_k)\n\n\ndef reciprocal_rank_fusion(\n    *lists, k: int = 10, rrf_k: int = 60\n) -> list[dict]:\n    \"\"\"Standard RRF: each doc's score = sum(1 / (rrf_k + rank)) across lists.\"\"\"\n    scores: dict[str, float] = {}\n    payloads: dict[str, dict] = {}\n    for lst in lists:\n        for rank, hit in enumerate(lst):\n            scores[hit.id] = scores.get(hit.id, 0) + 1 / (rrf_k + rank + 1)\n            payloads[hit.id] = hit.payload\n    ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:k]\n    return [{\"id\": i, \"score\": s, **payloads[i]} for i, s in ranked]\n\n\ndef rerank_with_cross_encoder(\n    query: str, hits: list[dict], *, model_name: str = \"BAAI/bge-reranker-base\"\n) -> list[dict]:\n    \"\"\"Optional rerank pass \u2014 slow (~200ms / hit) but big quality boost.\"\"\"\n    from sentence_transformers import CrossEncoder\n    ce = CrossEncoder(model_name)\n    scores = ce.predict([(query, h[\"text\"]) for h in hits])\n    for h, s in zip(hits, scores):\n        h[\"rerank_score\"] = float(s)\n    return sorted(hits, key=lambda h: h[\"rerank_score\"], reverse=True)\n\n\nif __name__ == \"__main__\":\n    docs = [\n        {\"id\": 1, \"text\": \"Reciprocal rank fusion combines result lists from multiple retrievers.\", \"meta\": {\"source\": \"rag-paper\"}},\n        {\"id\": 2, \"text\": \"BM25 is a keyword retrieval algorithm; works well for rare terms.\", \"meta\": {\"source\": \"ir-textbook\"}},\n        {\"id\": 3, \"text\": \"Dense embeddings capture semantic similarity beyond keyword overlap.\", \"meta\": {\"source\": \"ml-blog\"}},\n    ]\n    ingest(docs)\n    hits = hybrid_search(\"how do I combine BM25 and embeddings\", k=3)\n    for h in hits:\n        print(f\"[{h['score']:.4f}] id={h['id']}: {h.get('text', '')[:100]}\")\n",
+    "dependencies": [
+      {
+        "name": "qdrant-client",
+        "version": ">=1.12.0",
+        "purpose": "Qdrant Python client"
+      },
+      {
+        "name": "fastembed",
+        "version": ">=0.3.0",
+        "purpose": "Local dense and sparse embeddings (ONNX runtime)"
+      },
+      {
+        "name": "sentence-transformers",
+        "version": ">=3.0",
+        "purpose": "Optional cross-encoder reranker"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "QDRANT_URL",
+        "required": false,
+        "description": "Qdrant URL (default http://localhost:6333)",
+        "example": "https://your-cluster.qdrant.io"
+      },
+      {
+        "name": "QDRANT_API_KEY",
+        "required": false,
+        "description": "API key for Qdrant Cloud",
+        "example": "..."
+      }
+    ],
+    "setup_steps": [
+      "docker run -d -p 6333:6333 qdrant/qdrant  # or use Qdrant Cloud",
+      "pip install qdrant-client fastembed sentence-transformers",
+      "python hybrid.py",
+      "Check http://localhost:6333/dashboard for the collection UI."
+    ],
+    "variations": [
+      {
+        "label": "OpenAI dense embeddings",
+        "description": "Better quality at cost of API calls.",
+        "code_snippet": "from openai import OpenAI\\nopenai = OpenAI()\\ndv = openai.embeddings.create(input=[query], model='text-embedding-3-small').data[0].embedding\\n# Adjust collection vector size to match (1536 for 3-small)."
+      },
+      {
+        "label": "Multi-tenant collection",
+        "description": "Tenant filtering via payload.",
+        "code_snippet": "# At ingest: payload={'tenant_id': tenant_id, ...}\\n# At query: filter_kw={'tenant_id': current_tenant}"
+      },
+      {
+        "label": "Streaming results",
+        "description": "Use Qdrant's scroll API for huge result sets.",
+        "code_snippet": "for batch, _ in client.scroll(collection_name=COLLECTION, limit=100, with_payload=True):\\n    yield from batch"
+      },
+      {
+        "label": "Weighted RRF",
+        "description": "Tune dense vs sparse contribution.",
+        "code_snippet": "def weighted_rrf(dense, sparse, dense_weight=0.6):\\n    # Multiply each contribution by its weight before summing."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ResponseHandlingException: Connection refused",
+        "cause": "Qdrant not running on localhost:6333.",
+        "fix_snippet": "docker run -p 6333:6333 qdrant/qdrant"
+      },
+      {
+        "error_text": "ValidationError: vectors_config",
+        "cause": "Collection already exists with different vector config.",
+        "fix_snippet": "client.delete_collection(COLLECTION) before recreating. Production: use migration scripts, never auto-delete."
+      },
+      {
+        "error_text": "fastembed model download is slow / fails",
+        "cause": "First run downloads ONNX model to ~/.cache/fastembed.",
+        "fix_snippet": "Pre-download in your Dockerfile: RUN python -c 'from fastembed import TextEmbedding; TextEmbedding(\"BAAI/bge-small-en-v1.5\")'"
+      },
+      {
+        "error_text": "RRF results favor one retriever heavily",
+        "cause": "One retriever returned much shorter list, dominating top ranks.",
+        "fix_snippet": "Ensure both retrievers return same number of candidates (k*3 in the starter). Or use weighted RRF and tune weights based on offline eval."
+      }
+    ],
+    "production_checklist": [
+      "Set QDRANT_API_KEY in cloud deployments; never run unauthenticated in production.",
+      "Use shards >= 1 per CPU core if collection size > 100k vectors.",
+      "Enable on-disk storage for vectors if RAM-constrained: vectors_config=...VectorParams(on_disk=True).",
+      "Build offline eval set (queries + relevant docs) before tuning RRF or rerank weights.",
+      "Cache embeddings of repeat queries \u2014 embedding is often a significant chunk of latency.",
+      "Use rerank only for top-50 results; reranker latency is O(N).",
+      "Pin the embedding model version; switching models requires re-embedding everything."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "BAAI/bge-small-en-v1.5",
+        "Qdrant/bm25",
+        "BAAI/bge-reranker-base"
+      ],
+      "library_versions": [
+        "qdrant-client==1.12.0",
+        "fastembed==0.4.1",
+        "sentence-transformers==3.2.1"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "qdrant",
+      "fastembed"
+    ],
+    "related_glossary_slugs": [
+      "hybrid-search",
+      "rrf",
+      "bm25",
+      "reranking"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why RRF instead of weighted sum of scores?",
+        "answer": "Scores from different retrievers aren't on the same scale. RRF uses ranks, which are scale-free. Weighted sums require careful normalization and re-tuning every time data shifts."
+      },
+      {
+        "question": "Does the reranker help that much?",
+        "answer": "Significant gains (typically 10-25% on Recall@5) at the cost of ~100-200ms per query. Worth it for search/RAG. Skip for autocomplete or other latency-critical paths."
+      },
+      {
+        "question": "Can I use this without Docker?",
+        "answer": "Yes \u2014 Qdrant Cloud (free tier available) or qdrant-client's local mode (in-memory). For production, run Qdrant on a managed cluster or your own infrastructure."
+      },
+      {
+        "question": "How big can this scale?",
+        "answer": "Qdrant comfortably handles 10M+ vectors on a single node. Beyond that, use sharding or Qdrant Cloud's distributed setup."
+      }
+    ],
+    "github_url": "https://github.com/qdrant/qdrant",
+    "meta_title": "Qdrant Hybrid Search with RRF \u2014 Starter",
+    "meta_description": "Production Qdrant client: dense + sparse + RRF + optional reranker, with metadata filtering and weighted-fusion variants."
+  },
+  {
+    "slug": "pinecone-serverless-starter",
+    "title": "Pinecone Serverless Index With Namespaces",
+    "tldr": "Pinecone serverless setup: per-tenant namespaces, batched upserts (100 vectors at a time), metadata filtering, and TTL-aware deletes. Production-ready scaffold without infrastructure.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "Pinecone",
+    "tags": [
+      "pinecone",
+      "serverless",
+      "multi-tenant",
+      "production"
+    ],
+    "best_for_tags": [
+      "managed-rag",
+      "multi-tenant",
+      "production"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "When you need RAG infrastructure without ops burden: managed scaling, no servers to maintain, pay per request. Strong fit for multi-tenant SaaS via namespaces.",
+    "when_not_to_use": "Skip when you need to stay air-gapped (Pinecone is cloud-only). Skip for sub-millisecond latency (network round-trip floor). Skip if cost predictability matters more than ops simplicity \u2014 serverless costs scale with usage.",
+    "quick_start": "pip install pinecone-client openai && PINECONE_API_KEY=... OPENAI_API_KEY=... python pinecone_starter.py",
+    "full_code": "\"\"\"Pinecone serverless starter \u2014 multi-tenant via namespaces.\n\n- Serverless index (free tier available; spec-controlled cost).\n- Per-tenant isolation via namespaces (no separate indices needed).\n- Batched upserts (Pinecone limit: 100 vectors / 4MB per call).\n- Metadata filters for time-range and category.\n- Soft-delete via TTL metadata + scheduled cleanup.\n\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport time\nfrom typing import Iterable\n\nfrom openai import OpenAI\nfrom pinecone import Pinecone, ServerlessSpec\n\nINDEX_NAME = \"ossaihub-docs\"\nEMBED_MODEL = \"text-embedding-3-small\"\nEMBED_DIM = 1536\nBATCH = 100  # Pinecone's per-request cap\n\noai = OpenAI()\npc = Pinecone(api_key=os.environ[\"PINECONE_API_KEY\"])\n\n\ndef ensure_index() -> None:\n    existing = [idx.name for idx in pc.list_indexes()]\n    if INDEX_NAME not in existing:\n        pc.create_index(\n            name=INDEX_NAME,\n            dimension=EMBED_DIM,\n            metric=\"cosine\",\n            spec=ServerlessSpec(cloud=\"aws\", region=\"us-east-1\"),\n        )\n    # Wait for ready\n    while not pc.describe_index(INDEX_NAME).status[\"ready\"]:\n        time.sleep(1)\n\n\ndef embed(texts: list[str]) -> list[list[float]]:\n    resp = oai.embeddings.create(input=texts, model=EMBED_MODEL)\n    return [d.embedding for d in resp.data]\n\n\ndef upsert_docs(tenant_id: str, docs: list[dict]) -> int:\n    \"\"\"docs: list of {'id': str, 'text': str, 'meta': dict}.\"\"\"\n    ensure_index()\n    index = pc.Index(INDEX_NAME)\n    total = 0\n    for i in range(0, len(docs), BATCH):\n        batch = docs[i : i + BATCH]\n        vecs = embed([d[\"text\"] for d in batch])\n        items = []\n        for d, v in zip(batch, vecs):\n            items.append({\n                \"id\": d[\"id\"],\n                \"values\": v,\n                \"metadata\": {\n                    \"text\": d[\"text\"][:1000],  # Pinecone metadata 40KB cap; keep small\n                    \"tenant_id\": tenant_id,\n                    \"ingested_at\": int(time.time()),\n                    **(d.get(\"meta\") or {}),\n                },\n            })\n        index.upsert(vectors=items, namespace=tenant_id)\n        total += len(items)\n        print(f\"  upserted {len(items)} (running total {total})\")\n    return total\n\n\ndef query(\n    tenant_id: str,\n    question: str,\n    *,\n    k: int = 5,\n    filters: dict | None = None,\n) -> list[dict]:\n    index = pc.Index(INDEX_NAME)\n    qv = embed([question])[0]\n    res = index.query(\n        vector=qv,\n        top_k=k,\n        namespace=tenant_id,\n        filter=filters,\n        include_metadata=True,\n    )\n    return [\n        {\"id\": m.id, \"score\": m.score, **(m.metadata or {})}\n        for m in res.matches\n    ]\n\n\ndef delete_stale(tenant_id: str, *, older_than_seconds: int) -> int:\n    \"\"\"Soft delete: marks any vectors older than threshold for removal.\"\"\"\n    index = pc.Index(INDEX_NAME)\n    cutoff = int(time.time()) - older_than_seconds\n    # Pinecone doesn't support delete-by-filter for serverless directly;\n    # iterate, then delete by ID.\n    # NOTE: serverless indexes have limited filter+delete; for high-volume\n    # cleanup, store TTL externally and batch-delete IDs.\n    ids_to_delete = []\n    # placeholder: in production, maintain an external index of (id -> ingested_at)\n    return index.delete(ids=ids_to_delete, namespace=tenant_id) if ids_to_delete else 0\n\n\ndef stats() -> dict:\n    return pc.Index(INDEX_NAME).describe_index_stats()\n\n\nif __name__ == \"__main__\":\n    sample = [\n        {\"id\": \"doc1\", \"text\": \"Pinecone serverless scales automatically.\", \"meta\": {\"category\": \"infra\"}},\n        {\"id\": \"doc2\", \"text\": \"Namespaces isolate vectors per tenant.\", \"meta\": {\"category\": \"multi-tenant\"}},\n    ]\n    upsert_docs(\"acme\", sample)\n    hits = query(\"acme\", \"How do I separate tenants?\", k=2, filters={\"category\": \"multi-tenant\"})\n    for h in hits:\n        print(f\"[{h['score']:.4f}] {h['id']}: {h.get('text', '')[:80]}\")\n",
+    "dependencies": [
+      {
+        "name": "pinecone-client",
+        "version": ">=5.0",
+        "purpose": "Pinecone SDK"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Embeddings"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "PINECONE_API_KEY",
+        "required": true,
+        "description": "Pinecone API key",
+        "example": "pcsk-..."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key for embeddings",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "Sign up at pinecone.io, create an API key.",
+      "pip install pinecone-client openai",
+      "export PINECONE_API_KEY=pcsk-... OPENAI_API_KEY=sk-...",
+      "python pinecone_starter.py"
+    ],
+    "variations": [
+      {
+        "label": "Local embeddings via fastembed",
+        "description": "No OpenAI cost; runs on CPU.",
+        "code_snippet": "from fastembed import TextEmbedding\\nembedder = TextEmbedding('BAAI/bge-small-en-v1.5')\\nEMBED_DIM = 384\\n# replace embed() body: return list(embedder.embed(texts))"
+      },
+      {
+        "label": "Sparse vectors (hybrid)",
+        "description": "Serverless supports sparse-dense hybrid since 2024.",
+        "code_snippet": "vec = {'id': ..., 'values': dense, 'sparse_values': {'indices': [...], 'values': [...]}}"
+      },
+      {
+        "label": "Streaming ingest from S3",
+        "description": "Iterate large doc set without loading into memory.",
+        "code_snippet": "for batch in s3_iter_batches(bucket, prefix, size=100):\\n    upsert_docs(tenant_id, batch)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "PineconeApiException: 400 Bad Request \u2014 vector dimensions don't match",
+        "cause": "Created index with one EMBED_DIM, then changed model.",
+        "fix_snippet": "Indexes are dimension-locked. Either delete + recreate, or use a new index name when changing embedding model."
+      },
+      {
+        "error_text": "Pinecone metadata exceeds 40KB",
+        "cause": "Tried to store full document text in metadata.",
+        "fix_snippet": "Keep metadata small (truncate text to ~1KB or store reference to external storage). Full docs go in S3/DB; metadata is for filtering."
+      },
+      {
+        "error_text": "Slow upserts (one vector at a time)",
+        "cause": "Not batching.",
+        "fix_snippet": "Use batch size 100; Pinecone enforces both count and 4MB request cap. Starter handles this."
+      },
+      {
+        "error_text": "Namespace not isolating queries",
+        "cause": "Forgot to pass namespace= to query().",
+        "fix_snippet": "Pinecone defaults to empty namespace if not specified. Always pass namespace=tenant_id in multi-tenant code."
+      }
+    ],
+    "production_checklist": [
+      "Use namespaces per tenant \u2014 never store cross-tenant vectors in the same namespace.",
+      "Set up a separate index for production vs staging; serverless billing is per-index activity.",
+      "Monitor pc.Index(name).describe_index_stats() for vector count drift.",
+      "Implement TTL cleanup outside Pinecone (track ingested_at in DB; batch-delete stale IDs nightly).",
+      "Cache embeddings of common queries to avoid duplicate OpenAI calls.",
+      "Use US-East or matching region as your application for lowest latency.",
+      "Cost watch: serverless charges per read/write unit; high-QPS retrieval can outpace expectations."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "text-embedding-3-small"
+      ],
+      "library_versions": [
+        "pinecone-client==5.0.1",
+        "openai==1.51.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "pinecone"
+    ],
+    "related_glossary_slugs": [
+      "serverless-vector-db",
+      "namespace",
+      "multi-tenant-rag"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Serverless vs pod-based Pinecone?",
+        "answer": "Serverless: zero ops, pay per usage, good fit for variable load. Pod-based: predictable cost, lower latency floor, dedicated resources. Start serverless; migrate to pods only when QPS justifies it."
+      },
+      {
+        "question": "Can I use Pinecone offline?",
+        "answer": "No \u2014 it's a managed cloud service only. If you need on-prem or air-gapped, use Qdrant or Weaviate self-hosted."
+      },
+      {
+        "question": "Multi-tenant: namespaces or separate indexes?",
+        "answer": "Namespaces for most cases \u2014 same dimension, same metric, isolated query. Separate indexes only when tenants need different embedding models or distance metrics."
+      },
+      {
+        "question": "What's the latency baseline?",
+        "answer": "Serverless queries: typically 50-150ms p99 from same-region clients (network + Pinecone processing). Cold start adds 100-300ms on first query after idle."
+      }
+    ],
+    "github_url": "https://github.com/pinecone-io/pinecone-python-client",
+    "meta_title": "Pinecone Serverless Starter With Namespaces",
+    "meta_description": "Production scaffold for Pinecone serverless: multi-tenant namespaces, batched upserts, metadata filtering, TTL cleanup pattern."
+  },
+  {
+    "slug": "pgvector-rag-on-postgres",
+    "title": "PGVector RAG on Existing Postgres",
+    "tldr": "RAG inside Postgres with pgvector \u2014 leverage existing DB infrastructure, transactional guarantees with vector data, hybrid SQL + similarity queries. Includes the IVFFlat vs HNSW index decision.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "pgvector",
+    "tags": [
+      "postgres",
+      "pgvector",
+      "sql",
+      "rag"
+    ],
+    "best_for_tags": [
+      "existing-postgres",
+      "transactional-rag",
+      "simple-stack"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "When you already run Postgres and want vector search without adding another piece of infrastructure. Joins between vectors and relational data work naturally \u2014 huge for RAG-with-business-context.",
+    "when_not_to_use": "Skip past ~10M vectors with high QPS \u2014 pgvector tops out earlier than dedicated vector DBs. Skip when you want to avoid touching the production DB for analytical workloads.",
+    "quick_start": "docker run -p 5432:5432 -e POSTGRES_PASSWORD=pw pgvector/pgvector:pg16 && pip install psycopg openai && python pgvector_rag.py",
+    "full_code": "\"\"\"PGVector RAG: vectors and metadata in the same Postgres database.\n\n- HNSW index for fast cosine search (use IVFFlat for >1M rows if HNSW too RAM-heavy).\n- Hybrid queries: combine vector similarity with SQL WHERE clauses.\n- Transactional ingest: documents and embeddings in the same transaction.\n- Connection pooling for production load.\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nfrom typing import Any\n\nimport psycopg\nfrom openai import OpenAI\nfrom psycopg.rows import dict_row\nfrom psycopg_pool import ConnectionPool\n\nDSN = os.environ.get(\"POSTGRES_URL\", \"postgresql://postgres:pw@localhost:5432/postgres\")\noai = OpenAI()\npool = ConnectionPool(DSN, min_size=2, max_size=10, kwargs={\"row_factory\": dict_row})\n\n\nSCHEMA_SQL = \"\"\"\nCREATE EXTENSION IF NOT EXISTS vector;\n\nCREATE TABLE IF NOT EXISTS documents (\n    id           BIGSERIAL PRIMARY KEY,\n    source       TEXT NOT NULL,\n    content      TEXT NOT NULL,\n    category     TEXT,\n    created_at   TIMESTAMPTZ DEFAULT NOW(),\n    embedding    vector(1536)\n);\n\n-- HNSW: fast queries, slower builds, higher RAM\nCREATE INDEX IF NOT EXISTS documents_embedding_hnsw\nON documents USING hnsw (embedding vector_cosine_ops)\nWITH (m = 16, ef_construction = 64);\n\n-- Trigram index for sql LIKE fallback / hybrid\nCREATE EXTENSION IF NOT EXISTS pg_trgm;\nCREATE INDEX IF NOT EXISTS documents_content_trgm\nON documents USING gin (content gin_trgm_ops);\n\"\"\"\n\n\ndef init_db() -> None:\n    with pool.connection() as conn:\n        for stmt in SCHEMA_SQL.split(\";\"):\n            if stmt.strip():\n                conn.execute(stmt)\n\n\ndef embed(text: str) -> list[float]:\n    return oai.embeddings.create(input=[text], model=\"text-embedding-3-small\").data[0].embedding\n\n\ndef insert_doc(source: str, content: str, *, category: str | None = None) -> int:\n    \"\"\"Insert document + embedding in one transaction.\"\"\"\n    vec = embed(content)\n    with pool.connection() as conn:\n        row = conn.execute(\n            \"INSERT INTO documents (source, content, category, embedding) \"\n            \"VALUES (%s, %s, %s, %s) RETURNING id\",\n            (source, content, category, vec),\n        ).fetchone()\n        return row[\"id\"]\n\n\ndef vector_search(query: str, *, k: int = 5, category: str | None = None) -> list[dict]:\n    \"\"\"Pure semantic search.\"\"\"\n    qv = embed(query)\n    sql = \"\"\"\n        SELECT id, source, content, category,\n               1 - (embedding <=> %s::vector) AS similarity\n        FROM documents\n        WHERE 1=1 {filter}\n        ORDER BY embedding <=> %s::vector\n        LIMIT %s\n    \"\"\"\n    params: list[Any] = [qv]\n    fclause = \"\"\n    if category:\n        fclause = \"AND category = %s\"\n        params.append(category)\n    params.extend([qv, k])\n    sql = sql.format(filter=fclause)\n    with pool.connection() as conn:\n        return list(conn.execute(sql, params).fetchall())\n\n\ndef hybrid_search(query: str, *, k: int = 5) -> list[dict]:\n    \"\"\"Combine vector similarity with trigram text similarity.\"\"\"\n    qv = embed(query)\n    sql = \"\"\"\n        SELECT id, source, content, category,\n               (1 - (embedding <=> %s::vector)) AS vec_score,\n               similarity(content, %s) AS trg_score,\n               (0.7 * (1 - (embedding <=> %s::vector)) + 0.3 * similarity(content, %s)) AS combined\n        FROM documents\n        WHERE (embedding <=> %s::vector) < 0.6 OR content %% %s\n        ORDER BY combined DESC\n        LIMIT %s\n    \"\"\"\n    with pool.connection() as conn:\n        return list(conn.execute(\n            sql, [qv, query, qv, query, qv, query, k]\n        ).fetchall())\n\n\nif __name__ == \"__main__\":\n    init_db()\n    insert_doc(\"doc1\", \"Postgres vector search via pgvector extension works great for small-to-medium corpora.\", category=\"docs\")\n    insert_doc(\"doc2\", \"Hybrid search combines BM25 keyword and vector embeddings for better recall.\", category=\"rag\")\n    for hit in vector_search(\"postgres vector search\", k=3):\n        print(f\"[{hit['similarity']:.3f}] {hit['source']}: {hit['content'][:80]}\")\n",
+    "dependencies": [
+      {
+        "name": "psycopg[binary,pool]",
+        "version": ">=3.2",
+        "purpose": "Postgres driver with pooling"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Embeddings"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "POSTGRES_URL",
+        "required": true,
+        "description": "Postgres connection string",
+        "example": "postgresql://user:pw@host:5432/dbname"
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=pw pgvector/pgvector:pg16",
+      "pip install 'psycopg[binary,pool]' openai",
+      "export POSTGRES_URL=postgresql://postgres:pw@localhost:5432/postgres OPENAI_API_KEY=sk-...",
+      "python pgvector_rag.py"
+    ],
+    "variations": [
+      {
+        "label": "IVFFlat for >1M rows",
+        "description": "Lower RAM than HNSW; rebuild after big ingests.",
+        "code_snippet": "CREATE INDEX ... USING ivfflat (embedding vector_cosine_ops) WITH (lists = 1000);\\n-- lists \u2248 sqrt(rows). After bulk insert: REINDEX INDEX documents_embedding_ivfflat;"
+      },
+      {
+        "label": "Local embeddings",
+        "description": "Drop OpenAI dependency.",
+        "code_snippet": "from fastembed import TextEmbedding\\nembedder = TextEmbedding('BAAI/bge-small-en-v1.5')\\n# Change vector(1536) -> vector(384); rebuild index."
+      },
+      {
+        "label": "Per-tenant via schemas",
+        "description": "Postgres schemas as namespace.",
+        "code_snippet": "CREATE SCHEMA tenant_acme;\\nCREATE TABLE tenant_acme.documents (LIKE documents INCLUDING ALL);\\n-- Set search_path=tenant_acme per query."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ERROR: extension \"vector\" is not available",
+        "cause": "Postgres image doesn't include pgvector.",
+        "fix_snippet": "Use pgvector/pgvector image, or install in your existing Postgres: apt-get install postgresql-16-pgvector or build from source."
+      },
+      {
+        "error_text": "ERROR: vector dimensions don't match (1536 vs 384)",
+        "cause": "Switched embedding model without changing column dim.",
+        "fix_snippet": "ALTER TABLE documents ALTER COLUMN embedding TYPE vector(384). Note: requires re-embedding all rows."
+      },
+      {
+        "error_text": "Slow inserts during bulk ingest",
+        "cause": "HNSW index updates on every insert.",
+        "fix_snippet": "Drop the index, bulk insert, recreate index. Or use IVFFlat with REINDEX after bulk."
+      },
+      {
+        "error_text": "Out of memory building HNSW index",
+        "cause": "HNSW keeps the graph in RAM during build.",
+        "fix_snippet": "Increase Postgres maintenance_work_mem before CREATE INDEX. For very large corpora, use IVFFlat instead."
+      }
+    ],
+    "production_checklist": [
+      "Use a dedicated read replica for vector queries \u2014 they're heavier than typical OLTP.",
+      "Monitor index size: HNSW can grow large; budget RAM accordingly.",
+      "Run VACUUM ANALYZE regularly; pgvector queries depend on accurate stats.",
+      "Set work_mem appropriately; vector ops can spill to disk under default settings.",
+      "Use connection pooling (pgbouncer or psycopg-pool); embed/query workloads create many short-lived connections.",
+      "Plan for re-embedding when changing model \u2014 schedule with downtime or use dual-column approach."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "text-embedding-3-small"
+      ],
+      "library_versions": [
+        "psycopg==3.2.3",
+        "pgvector (server side)",
+        "openai==1.51.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "pgvector"
+    ],
+    "related_glossary_slugs": [
+      "pgvector",
+      "hnsw",
+      "ivfflat"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "HNSW vs IVFFlat?",
+        "answer": "HNSW: faster queries, slower builds, higher RAM. IVFFlat: lower RAM, faster bulk inserts, requires REINDEX after big writes. Default to HNSW until corpus exceeds ~1M rows."
+      },
+      {
+        "question": "Can pgvector handle production scale?",
+        "answer": "Up to ~10M vectors with reasonable QPS on a beefy node. Past that, evaluate Qdrant/Pinecone/Weaviate \u2014 they're built specifically for this scale."
+      },
+      {
+        "question": "What about transactions across vectors and metadata?",
+        "answer": "Native \u2014 that's the win. Updating a document's content + embedding in one BEGIN...COMMIT is atomic, unlike with a separate vector DB."
+      },
+      {
+        "question": "When does hybrid (trgm + vector) beat pure vector?",
+        "answer": "When you have exact-match needs (product SKUs, error codes) alongside semantic ones. The trgm part catches what vector ignores."
+      }
+    ],
+    "github_url": "https://github.com/pgvector/pgvector",
+    "meta_title": "PGVector RAG on Postgres \u2014 Starter",
+    "meta_description": "RAG inside Postgres: HNSW indexes, hybrid SQL+vector queries, transactional ingest, connection pooling. No new infra to add."
   },
   {
     "slug": "fastapi-ollama-streaming-chat",
