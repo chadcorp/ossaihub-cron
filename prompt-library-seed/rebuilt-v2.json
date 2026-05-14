@@ -7527,6 +7527,689 @@
     "meta_description": "Generate 50+ wildly varied ideas around a seed concept. No judgment, structured by 10 lenses. Weirdness dial 1-10."
   },
   {
+    "slug": "support-macro-from-recurring-tickets",
+    "title": "Support Macro From Recurring Tickets",
+    "tldr": "Reads 5-15 similar support tickets and produces a reusable macro: the core message, three voice variants (formal/neutral/friendly), variables to fill in, and the edge cases the macro shouldn't be used for.",
+    "category": "customer-support",
+    "tags": [
+      "macros",
+      "templates",
+      "support-ops",
+      "scaling"
+    ],
+    "best_for_tags": [
+      "support-team-scaling",
+      "knowledge-base",
+      "automation"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Building macros for new product launch",
+        "example": "After launch, 50 tickets ask the same thing \u2014 author one macro from those tickets."
+      },
+      {
+        "scenario": "Onboarding new support reps",
+        "example": "Existing macros + new tickets \u2192 updated macro library."
+      },
+      {
+        "scenario": "Multi-channel deployment",
+        "example": "Single macro authored once, three voice variants for email/chat/community forum."
+      },
+      {
+        "scenario": "Quarterly macro audit",
+        "example": "Review which existing macros are getting edited heavily \u2014 re-author with current voice."
+      }
+    ],
+    "when_not_to_use": "Skip for single-instance issues \u2014 macros are for recurring. Skip for high-stakes situations (refunds, cancellations) \u2014 those need human judgment, not templates.",
+    "full_prompt": "You are a senior support ops manager. You're authoring a reusable macro from recent similar tickets.\n\nINPUT\n- A set of recent tickets that look similar: {ticket_samples}\n- Brand voice notes: {voice_notes}\n- Constraints (what you can and can't promise): {policy_constraints}\n\nOUTPUT\n\n## 1. The recurring question\nOne sentence: what are these tickets ACTUALLY asking? (Not the surface words \u2014 the underlying need.)\n\n## 2. Core message\nThe 1-2 sentence answer all variants will share. Plain, no voice tone yet.\n\n## 3. Variables to fill in\nList the placeholders the rep will substitute:\n- {customer_name}\n- {specific_thing_they_asked_about}\n- etc.\n\n## 4. Three voice variants\n\n### Formal variant (~60-80 words)\nFor: emails to enterprise customers, post-incident communications.\nTone: measured, no contractions, slightly more structured.\n\n### Neutral variant (~50-70 words)\nFor: standard email and ticketing tool replies.\nTone: clear, warm-but-businesslike, contractions OK.\n\n### Friendly variant (~40-60 words)\nFor: in-app chat, community forums.\nTone: contractions, casual, an emoji is fine if culturally appropriate.\n\nEach variant uses the same variables in the same positions, so reps can switch by channel without re-authoring.\n\n## 5. When NOT to use this macro\n3-5 cases where the macro would feel canned or harmful:\n- Customer is angry \u2014 needs acknowledgment first\n- Issue has unusual context that doesn't fit the standard answer\n- Customer is on a different plan / segment than typical\n- Escalation criteria met (named in policy)\n- ...\n\n## 6. Related macros and escalation paths\nMacros for adjacent issues; when to route to engineering / billing / retention.\n\nRULES\n- Macros are STARTING POINTS for reps. They should always personalize.\n- Don't promise anything outside the policy_constraints.\n- If the recurring tickets reveal a product issue, FLAG IT in section 5 (this macro is paper over a real fix needed).\n- Never include \"I understand your frustration\" or \"Thanks for reaching out\" as openers \u2014 too template-y; let rep choose.\n\nRECENT TICKETS\n{ticket_samples}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "ticket_samples",
+        "type": "string",
+        "description": "5-15 similar support tickets (with redacted PII)",
+        "required": true,
+        "example": "Ticket 1: \u2018Hi, my API keys aren't working after the upgrade...\u2019\\nTicket 2: \u2018API authentication broke when I upgraded to Pro plan...\u2019"
+      },
+      {
+        "name": "voice_notes",
+        "type": "string",
+        "description": "Brand voice guidance",
+        "required": true,
+        "example": "Warm but professional. Never apologize before acknowledging the issue. Avoid corporate-speak."
+      },
+      {
+        "name": "policy_constraints",
+        "type": "string",
+        "description": "What can/can't be promised",
+        "required": true,
+        "example": "Cannot promise refund timing under 5 days. Cannot escalate to specific engineers by name. Can offer free migration help on enterprise plans only."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: recurring question, core message, variables, three voice variants, when NOT to use, related macros/escalation."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on the \u2018underlying need\u2019 distillation; voice variants stay distinct."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes friendly variant slips toward template-y openers \u2014 re-pin banned phrases."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; \u2018when NOT to use\u2019 section can be soft."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Variants can sound similar; require explicit voice differences (contractions, emoji, length)."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Multi-language",
+        "description": "Generate macros in multiple languages.",
+        "prompt_snippet": "Add: \u2018produce the three voice variants in English + {target_languages}; preserve meaning, not literal translation.\u2019"
+      },
+      {
+        "label": "With chat-specific snippets",
+        "description": "Pre-written chat shortcuts.",
+        "prompt_snippet": "Add Section 7: \u20183-5 quick chat snippets (under 20 words each) for live chat \u2014 acknowledgment, hold, escalation.\u2019"
+      },
+      {
+        "label": "Product-issue flag",
+        "description": "Surface when macros cover product gaps.",
+        "prompt_snippet": "Add: \u2018if the recurring issue indicates a product problem, write a 2-sentence summary suitable for engineering/product backlog.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "All three voice variants sound the same.",
+        "fix": "Re-pin distinctness: formal=no contractions, friendly=contractions+emoji-ok. Show specific differences."
+      },
+      {
+        "symptom": "Macro promises something outside policy.",
+        "fix": "Add: \u2018before final output, verify every promise is in policy_constraints; remove or soften violators.\u2019"
+      },
+      {
+        "symptom": "\u2018When NOT to use\u2019 is empty or generic.",
+        "fix": "Add: \u2018at minimum 3 specific cases; \u2018complicated situations\u2019 doesn't count.\u2019"
+      },
+      {
+        "symptom": "Macro hides a product bug.",
+        "fix": "Add: \u2018if the recurring issue is actually a product problem, flag it in a separate \u2018Product issue surfaced\u2019 section.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "faq-from-tickets",
+      "support-ticket-triage",
+      "support-response-empathetic"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "support-macro",
+      "knowledge-base"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Should reps always use the macro verbatim?",
+        "answer": "No \u2014 macros are starting points. The friendly variant especially expects reps to personalize the opener and closer. Verbatim macros sound robotic."
+      },
+      {
+        "question": "How often should I refresh macros?",
+        "answer": "Quarterly minimum. When product/policy changes, immediately. When CSAT drops on a macro-heavy issue type, immediately audit."
+      },
+      {
+        "question": "When does the macro hide a product problem?",
+        "answer": "If reps are sending the same macro 50+ times/week, fix the product. Macros that scale support volume on a recurring bug are technical debt with a smile."
+      }
+    ],
+    "meta_title": "Support Macro From Recurring Tickets \u2014 Prompt",
+    "meta_description": "Generate a reusable support macro from 5-15 similar tickets: core message + three voice variants + when NOT to use + escalation paths."
+  },
+  {
+    "slug": "support-knowledge-base-article-from-resolution",
+    "title": "KB Article From a Solved Ticket",
+    "tldr": "Turns a single solved support ticket into a public-facing knowledge base article \u2014 strips PII, generalizes to the audience, adds prerequisites, troubleshooting flowchart, and \u2018still stuck?\u2019 escalation.",
+    "category": "customer-support",
+    "tags": [
+      "knowledge-base",
+      "documentation",
+      "support",
+      "self-service"
+    ],
+    "best_for_tags": [
+      "help-center",
+      "documentation",
+      "deflection"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Convert top-volume tickets into self-serve articles",
+        "example": "Solved ticket about API key rotation \u2192 KB article that deflects future tickets on this topic."
+      },
+      {
+        "scenario": "Edge-case captures",
+        "example": "Senior rep solves a tricky integration issue \u2192 article captures the solution before tribal knowledge fades."
+      },
+      {
+        "scenario": "Sprint-cadence KB updates",
+        "example": "Weekly: turn 3-5 solved tickets into KB articles."
+      },
+      {
+        "scenario": "Localization seed",
+        "example": "English article first, then translate; this prompt makes the English crisp enough to translate well."
+      }
+    ],
+    "when_not_to_use": "Skip for one-off issues (article won't be useful). Skip when the solution involves internal admin actions only \u2014 those aren't user-visible.",
+    "full_prompt": "You are converting a solved support ticket into a public knowledge-base article.\n\nINPUT\n- The solved ticket (rep + customer exchange, redacted of PII): {ticket}\n- The resolution that worked: {resolution}\n- Target audience: {audience}                          (free-tier users / power users / admins / developers)\n- Product context: {product_context}\n\nOUTPUT\n\n## Article structure\n\n### Title\nA how-to question phrased the way a user would search:\n- \"How do I rotate my API keys?\" (not \"API key rotation procedure\")\n- \"Why am I seeing rate limit errors?\" (not \"Rate limiting troubleshooting guide\")\n\n### TL;DR (1-2 sentences)\nThe one-paragraph answer for users who only read the top.\n\n### Prerequisites\nWhat the user must already have or know to follow the steps.\n- Account / plan requirements\n- Permissions / role\n- Existing setup (e.g., \"you've already created an API key\")\n\n### Steps\nNumbered. Each step:\n- One concrete action\n- The expected result (so user knows it worked)\n- A screenshot suggestion in [brackets] (you can't generate the screenshot but mark where one should go)\n\nIf steps branch (e.g., \"if you're on the Pro plan, go to X; otherwise Y\"), use sub-numbering.\n\n### Troubleshooting\n2-4 things that go wrong + how to recognize + how to fix:\n\n| Symptom | Likely cause | Fix |\n\n### Still stuck?\nDirect escalation: how to contact support, what info to include.\n\n### Related articles\n2-4 adjacent articles users might also need.\n\nRULES\n- Strip ALL PII from the original ticket (names, emails, account IDs, etc.).\n- Generalize the resolution \u2014 the original ticket had ONE customer's situation; the article serves many.\n- Steps must be ordered correctly; users follow them top-to-bottom.\n- Don't include internal jargon or tool names users wouldn't know.\n- Tone matches help-center conventions: warm, direct, not chatty.\n- Each step has a SUCCESS criterion (how the user knows they did it right).\n\nINPUT\n\nTicket:\n{ticket}\n\nResolution that worked:\n{resolution}\n\nAudience:\n{audience}\n\nProduct context:\n{product_context}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "ticket",
+        "type": "string",
+        "description": "The full solved ticket exchange (PII redacted)",
+        "required": true,
+        "example": "[Customer]: My API keys broke after I upgraded plans. [Rep]: Let me check... I see your plan changed. Try regenerating from Settings \u2192 API Keys \u2192 Regenerate. [Customer]: That worked, thanks!"
+      },
+      {
+        "name": "resolution",
+        "type": "string",
+        "description": "The specific resolution steps that worked",
+        "required": true,
+        "example": "Plan change voids existing keys. Customer needs to regenerate from Settings \u2192 API Keys \u2192 Regenerate. New keys take ~30 sec to propagate."
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Who reads the article",
+        "required": true,
+        "example": "Developers using our API"
+      },
+      {
+        "name": "product_context",
+        "type": "string",
+        "description": "Product info needed for the article",
+        "required": false,
+        "example": "B2B SaaS API platform. Plans: Free, Pro, Enterprise. Plan changes regenerate API keys for security."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Title, TL;DR, prerequisites, numbered steps with success criteria, troubleshooting table, still-stuck contact, related articles."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong PII stripping and accurate generalization."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally leaves overly specific phrasing \u2014 re-pin generalization."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; troubleshooting table can be thin."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Sometimes leaves PII; double-check before publishing."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Video-script companion",
+        "description": "Produce a 60-second video script alongside.",
+        "prompt_snippet": "Add: \u2018also output a 60-second video script (5-7 spoken sentences) covering the same steps for users who prefer video.\u2019"
+      },
+      {
+        "label": "Multi-difficulty",
+        "description": "Produce beginner + advanced versions.",
+        "prompt_snippet": "Add: \u2018in addition, produce an \u2018advanced\u2019 version that compresses the steps for power users who already know the basics.\u2019"
+      },
+      {
+        "label": "Schema.org HowTo markup",
+        "description": "Generate JSON-LD for SEO.",
+        "prompt_snippet": "Add: \u2018also output Schema.org HowTo JSON-LD block for SEO.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "PII leaks into the article.",
+        "fix": "Re-pin: \u2018strip ALL PII; if a name/email/ID appears in output, that's a P0 bug.\u2019"
+      },
+      {
+        "symptom": "Steps assume the user already knows X.",
+        "fix": "Force prerequisites section to be specific \u2014 what plan, what role, what existing setup."
+      },
+      {
+        "symptom": "Title is wordy.",
+        "fix": "Add: \u2018title is the question a user would type into search \u2014 short and natural.\u2019"
+      },
+      {
+        "symptom": "Article duplicates an existing one.",
+        "fix": "Before generating, ask: \u2018provide existing KB articles for this product area; merge or supersede rather than duplicating.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "faq-from-tickets",
+      "support-macro-from-recurring-tickets"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "knowledge-base",
+      "self-service"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Will the article actually deflect tickets?",
+        "answer": "Only if it's discoverable (SEO + in-app help search) and accurate. Track deflection by tagging tickets that \u2018found this article first\u2019 vs \u2018didn't find it.\u2019"
+      },
+      {
+        "question": "How long should articles be?",
+        "answer": "As short as the answer allows. Most issues are 5-10 step articles. If yours is 30+ steps, probably 3 articles."
+      },
+      {
+        "question": "Localization?",
+        "answer": "Translate after the English is solid. Use the localized-translation prompt; preserve step numbering and screenshot markers across languages."
+      }
+    ],
+    "meta_title": "KB Article From a Solved Ticket \u2014 Prompt",
+    "meta_description": "Turn a solved support ticket into a public KB article: TL;DR, prerequisites, numbered steps with success criteria, troubleshooting, escalation."
+  },
+  {
+    "slug": "support-csat-recovery-response",
+    "title": "CSAT-Recovery Response After Bad Score",
+    "tldr": "Drafts a low-CSAT recovery message: acknowledges without grovelling, asks one diagnostic question, frames for relationship recovery \u2014 not score reversal.",
+    "category": "customer-support",
+    "tags": [
+      "csat",
+      "customer-recovery",
+      "support",
+      "retention"
+    ],
+    "best_for_tags": [
+      "retention",
+      "post-resolution",
+      "feedback-loop"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Auto-trigger after low CSAT survey",
+        "example": "Customer leaves 2/5 \u2192 personalized recovery message within 24 hours."
+      },
+      {
+        "scenario": "Manager review of low-scored interactions",
+        "example": "Manager drafts the follow-up before deciding to handle directly."
+      },
+      {
+        "scenario": "Bulk recovery campaign post-incident",
+        "example": "After widespread outage with CSAT drops, base recovery template + personalized hooks."
+      },
+      {
+        "scenario": "Account manager outreach",
+        "example": "AM informed of low CSAT; sends a thoughtful follow-up message."
+      }
+    ],
+    "when_not_to_use": "Skip when the customer explicitly asked for no follow-up. Skip when the underlying issue is unresolved \u2014 fix the issue first, message after. Don't message a customer whose anger you'd amplify.",
+    "full_prompt": "You are drafting a CSAT-recovery response to a customer who left a low score.\n\nINPUT\n- Customer name / role: {customer_name_role}\n- The interaction context: {interaction_context}\n- Customer's CSAT score + comment (if any): {score_comment}\n- What you've learned about why: {known_or_inferred_cause}\n- Account/relationship context: {account_context}\n- Brand voice constraints: {voice_notes}\n\nOUTPUT \u2014 ONE MESSAGE, 100-150 WORDS\n\n## Structure\n\n1. OPENING (1 sentence). Name the score. Don't grovel; acknowledge it.\n   Bad: \"I'm so sorry to see you weren't happy!\"\n   Good: \"I saw your 2/5 on Thursday's ticket and wanted to follow up directly.\"\n\n2. ACKNOWLEDGMENT (1-2 sentences). Specifically what you understand was frustrating. Be concrete; vague apology reads template.\n\n3. ONE DIAGNOSTIC QUESTION (1 sentence). What you actually need to know to make it right. Open-ended; not \"did we resolve it?\" \u2014 something that surfaces real diagnosis.\n\n4. WHAT WE'RE DOING (1-2 sentences). Something CONCRETE. Not \"we take feedback seriously\" \u2014 a specific action you're taking now, even if it's just \"I've passed your note to the support lead who reviewed Thursday's case.\"\n\n5. CLOSING (1 sentence). An offer of next step. Reply, call, escalation path. No \"have a great day\" filler.\n\nRULES\n- Don't ask the customer to update the CSAT score. Score is downstream of the experience.\n- Don't promise something you can't deliver.\n- Match their register: angry & concise? Mirror it. Polite & detailed? Mirror it.\n- Use their name once, naturally \u2014 not three times.\n- 100-150 words. Long messages signal corporate-process; short signals attention.\n\nBANNED PHRASES (these mark CSAT-recovery messages as automated):\n- \"Thanks for your valuable feedback\"\n- \"I'm really sorry to hear\"\n- \"We take this very seriously\"\n- \"Your satisfaction is our top priority\"\n- \"Please give us another chance\"\n\nINPUT\nCustomer: {customer_name_role}\nContext: {interaction_context}\nScore & comment: {score_comment}\nKnown cause: {known_or_inferred_cause}\nAccount context: {account_context}\nVoice: {voice_notes}\n\nNow write the message.",
+    "input_variables": [
+      {
+        "name": "customer_name_role",
+        "type": "string",
+        "description": "Customer name + role/title",
+        "required": true,
+        "example": "Jane Doe, Director of Data Engineering at Acme Corp"
+      },
+      {
+        "name": "interaction_context",
+        "type": "string",
+        "description": "What the ticket was about",
+        "required": true,
+        "example": "Reported API rate-limiting issues; took 3 days to resolve due to misrouted ticket."
+      },
+      {
+        "name": "score_comment",
+        "type": "string",
+        "description": "Score and customer's written comment",
+        "required": true,
+        "example": "2/5. Comment: \u2018took way too long to get answers\u2019"
+      },
+      {
+        "name": "known_or_inferred_cause",
+        "type": "string",
+        "description": "Why the experience was bad",
+        "required": true,
+        "example": "Ticket misrouted to wrong team for 48 hours; customer received boilerplate replies during that time."
+      },
+      {
+        "name": "account_context",
+        "type": "string",
+        "description": "Account / relationship info",
+        "required": false,
+        "example": "Enterprise customer, $80k ARR, renewal in 4 months, primary contact for past 2 years."
+      },
+      {
+        "name": "voice_notes",
+        "type": "string",
+        "description": "Voice constraints",
+        "required": false,
+        "example": "Direct, no corporate-speak. We can offer a 20-min call with the engineering lead. Cannot offer credits or refunds."
+      }
+    ],
+    "expected_output": {
+      "format": "text",
+      "sample": "100-150 word message with opening, acknowledgment, one diagnostic question, concrete action, closing offer."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong avoidance of banned phrases; concrete actions, not platitudes."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can slip into \u2018sincere apologies for...\u2019 \u2014 re-pin banned phrases."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; sometimes asks for score update \u2014 explicitly forbid."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Defaults to over-apologetic; needs constant pinning."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Manager-from",
+        "description": "Sent from a manager, not the original rep.",
+        "prompt_snippet": "Add: \u2018this is from the support manager, not the original rep. Tone: I read your interaction directly and want to make sure we got it right.\u2019"
+      },
+      {
+        "label": "With concession",
+        "description": "Includes an actual offered concession.",
+        "prompt_snippet": "Add: \u2018include one concrete concession (credit, dedicated point of contact, expedited escalation) \u2014 name it specifically.\u2019"
+      },
+      {
+        "label": "Post-major-incident",
+        "description": "After a widespread issue.",
+        "prompt_snippet": "Add: \u2018context is a multi-customer incident; acknowledge it was systemic, share the actual root cause briefly, share what's changed.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Asks customer to update CSAT score.",
+        "fix": "Re-pin: \u2018never ask for score update; that's a process problem masquerading as customer recovery.\u2019"
+      },
+      {
+        "symptom": "Generic \u2018we take this seriously\u2019 language.",
+        "fix": "Banned-phrases list active; tighten if needed."
+      },
+      {
+        "symptom": "Multiple questions in the message.",
+        "fix": "Add: \u2018exactly ONE diagnostic question. The customer is already frustrated \u2014 don't add cognitive load.\u2019"
+      },
+      {
+        "symptom": "Message is 250+ words.",
+        "fix": "Hard cap 100-150. Long apologies feel corporate."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "support-response-empathetic",
+      "escalation-classifier"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "csat",
+      "customer-recovery"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Will this fix the score?",
+        "answer": "No, and don't expect it to. The goal is relationship, not metric. If you fix the underlying issue, future scores will reflect it."
+      },
+      {
+        "question": "Should we always reach out on low CSAT?",
+        "answer": "On low scores from accounts that matter (paid, multi-month tenure): yes. On free-tier or one-off complaints: don't waste rep time."
+      },
+      {
+        "question": "What about customers who left no comment?",
+        "answer": "Lead with the diagnostic question \u2014 \u2018we got a low score with no comment; we'd genuinely like to know what we missed.\u2019 Often surfaces the real issue."
+      }
+    ],
+    "meta_title": "CSAT-Recovery Response After Bad Score \u2014 Prompt",
+    "meta_description": "Draft a 100-150 word recovery message: acknowledge without grovelling, ask one diagnostic question, name a concrete action."
+  },
+  {
+    "slug": "billing-dispute-deescalation",
+    "title": "Billing Dispute De-Escalation Response",
+    "tldr": "Drafts a response to a billing dispute that acknowledges the charge issue, explains the policy concisely, and offers a clear next-step path \u2014 without sounding defensive or robotic.",
+    "category": "customer-support",
+    "tags": [
+      "billing",
+      "dispute",
+      "de-escalation",
+      "policy"
+    ],
+    "best_for_tags": [
+      "billing-support",
+      "retention",
+      "policy-explanation"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Customer disputes a charge they didn't recognize",
+        "example": "Most likely they forgot a renewal \u2014 response explains kindly without making them feel stupid."
+      },
+      {
+        "scenario": "Refund request outside policy window",
+        "example": "Acknowledge the request, explain the window, offer an alternative (credit, prorated)."
+      },
+      {
+        "scenario": "Duplicate charge appeared",
+        "example": "Verify, refund, explain why duplicates happen, prevent escalation to chargeback."
+      },
+      {
+        "scenario": "Plan-tier confusion",
+        "example": "Customer thought they were on a cheaper plan; explain billing, offer to apply downgrade going forward."
+      }
+    ],
+    "when_not_to_use": "Skip when the dispute is clearly fraud (escalate to security). Skip when customer is in legal/chargeback territory \u2014 that needs legal/finance review, not a recovery message.",
+    "full_prompt": "You are responding to a billing dispute. Goal: resolve the issue, preserve the relationship, avoid chargeback.\n\nINPUT\n- Customer message: {customer_message}\n- Account billing history (relevant facts): {billing_facts}\n- Policy that applies: {applicable_policy}\n- What you can offer: {available_remedies}                  (refund, credit, plan change, etc. \u2014 your authority)\n- Brand voice constraints: {voice_notes}\n\nOUTPUT \u2014 ONE EMAIL, 150-200 WORDS\n\n## Structure\n\n1. OPEN with acknowledgment of the specific charge / event. Don't start with \"Thanks for your message.\" Start with the facts.\n2. SHARE WHAT YOU SEE in the account \u2014 neutral, specific. (\"On April 12, we processed your annual renewal of $599 against the card ending 4242.\")\n3. EXPLAIN the policy in 1-2 sentences. Not legalese \u2014 the human version.\n4. ACKNOWLEDGE the discomfort. (\"I get that an unexpected charge is jarring.\") Brief; one line max.\n5. OFFER the path forward. Name the specific remedy you can extend. If none available, offer the next-best (e.g., credit on next renewal, plan change going forward).\n6. CLOSE with one clear next step. (\"Reply with \u2018yes, refund\u2019 and I'll process today\" or \"Want me to switch you to Pro Monthly going forward?\")\n\nRULES\n- Don't apologize for the policy. The policy exists; explain it without defensiveness.\n- Don't blame the customer (\"you should have known the renewal date\").\n- Don't promise something outside available_remedies.\n- Be specific with numbers and dates from billing_facts.\n- Match tone to message: angry customer gets shorter, sharper response. Confused customer gets gentler.\n- Never include \"I understand this can be frustrating\" as a standalone. Acknowledge the specific frustration.\n\nBANNED PHRASES\n- \"We appreciate your business\"\n- \"Please note that\"\n- \"Per our terms of service\"\n- \"Unfortunately, our policy is\"\n- \"As a one-time courtesy\"\n\nINPUT\n\nCustomer message:\n{customer_message}\n\nBilling facts:\n{billing_facts}\n\nPolicy:\n{applicable_policy}\n\nAvailable remedies:\n{available_remedies}\n\nVoice:\n{voice_notes}\n\nNow write the email.",
+    "input_variables": [
+      {
+        "name": "customer_message",
+        "type": "string",
+        "description": "The customer's billing dispute",
+        "required": true,
+        "example": "Hi - I just saw a $599 charge on my card from your company. I don't recognize it. Please refund immediately."
+      },
+      {
+        "name": "billing_facts",
+        "type": "string",
+        "description": "Relevant billing history",
+        "required": true,
+        "example": "Customer signed up April 12 2024 on annual plan ($599/year). Auto-renewal April 12 2026. Renewal notice email sent April 5 2026. Card ending 4242."
+      },
+      {
+        "name": "applicable_policy",
+        "type": "string",
+        "description": "Relevant policy",
+        "required": true,
+        "example": "Annual plan auto-renews unless canceled before renewal date. Refund window is 7 days from renewal charge for plan-tier downgrades."
+      },
+      {
+        "name": "available_remedies",
+        "type": "string",
+        "description": "What can be offered",
+        "required": true,
+        "example": "Full refund if within 7 days (currently day 5). Plan change to monthly going forward. Cannot prorate."
+      },
+      {
+        "name": "voice_notes",
+        "type": "string",
+        "description": "Voice constraints",
+        "required": false,
+        "example": "Direct, no defensiveness. We absolutely want to honor the refund \u2014 don't make them feel bad about it."
+      }
+    ],
+    "expected_output": {
+      "format": "text",
+      "sample": "150-200 word email with 6 sections: acknowledge, share facts, explain policy briefly, brief empathy, offer path, clear next step."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on the \u2018policy without defensiveness\u2019 balance."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes opens with \u2018Thank you for reaching out\u2019 \u2014 call out banned phrase list."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; tends to under-explain remedies \u2014 re-pin specificity."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Defaults to formal corporate tone; needs explicit voice direction."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Chargeback-imminent variant",
+        "description": "When customer threatened chargeback.",
+        "prompt_snippet": "Add: \u2018customer mentioned chargeback. Lead with the remedy, not the policy. Don't reference chargeback in your reply \u2014 just resolve.\u2019"
+      },
+      {
+        "label": "Enterprise customer",
+        "description": "For B2B with account manager.",
+        "prompt_snippet": "Add: \u2018this is enterprise with named account manager. Cc the AM. Tone is more measured; offer a 15-min call to discuss going forward.\u2019"
+      },
+      {
+        "label": "Post-refund follow-up",
+        "description": "After refund processed.",
+        "prompt_snippet": "Replace structure with: \u2018refund already issued; this is the confirmation message. Confirm refund details, summarize what happened, share how we'll prevent it next time.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Defensive about policy.",
+        "fix": "Add: \u2018policy is information; share it without justifying or apologizing.\u2019"
+      },
+      {
+        "symptom": "Blames customer \u2018you should have\u2019.",
+        "fix": "Re-pin: \u2018never frame as customer's fault, even if technically true.\u2019"
+      },
+      {
+        "symptom": "Offers something outside available_remedies.",
+        "fix": "Add: \u2018before sending, verify every offer is in available_remedies; remove violators.\u2019"
+      },
+      {
+        "symptom": "Closes without clear next step.",
+        "fix": "Force: \u2018the close must contain a specific instruction or question that drives the next reply.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "refund-policy-decision",
+      "escalation-classifier"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "billing-dispute",
+      "chargeback"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "What if I can't offer ANY remedy?",
+        "answer": "Then the email is harder. Explain the policy clearly without apology, offer the closest-adjacent help (account credit, plan optimization, future check-in). Don't fake remedies you don't have."
+      },
+      {
+        "question": "When to escalate vs respond?",
+        "answer": "Escalate: amount > $X (your threshold), chargeback mentioned, customer is enterprise, or policy is ambiguous. Otherwise respond directly."
+      },
+      {
+        "question": "How fast should this go out?",
+        "answer": "Same business day if possible. Billing disputes intensify with time and can spiral to chargebacks. Speed matters more than polish."
+      }
+    ],
+    "meta_title": "Billing Dispute De-Escalation Response \u2014 Prompt",
+    "meta_description": "Draft a 150-200 word billing dispute reply: acknowledge specific charge, explain policy without defensiveness, offer concrete remedy with next step."
+  },
+  {
     "slug": "faq-from-tickets",
     "title": "FAQ Builder from Support Tickets",
     "category": "customer-support",
@@ -12997,6 +13680,677 @@
     ],
     "meta_title": "Cross-Domain Analogical Reasoning \u2014 Prompt",
     "meta_description": "Find three analogies from different domains for your problem \u2014 extract transferable solution patterns and design experiments to test which one applies."
+  },
+  {
+    "slug": "user-interview-question-guide",
+    "title": "User Interview Question Guide From Research Goal",
+    "tldr": "Builds a 30-45 minute user interview guide from a research goal: opener, 3-4 thematic sections, behavior-first questions, and a \u2018red-flag\u2019 list of questions to NOT ask.",
+    "category": "research",
+    "tags": [
+      "user-research",
+      "interviews",
+      "discovery",
+      "qualitative"
+    ],
+    "best_for_tags": [
+      "product-research",
+      "user-discovery",
+      "jtbd"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Pre-feature user discovery",
+        "example": "\u2018Do our power users want collaboration features?\u2019 \u2192 40-min guide focused on workflow, not features."
+      },
+      {
+        "scenario": "Churn diagnosis",
+        "example": "Talk to 8 churned customers; consistent guide surfaces patterns."
+      },
+      {
+        "scenario": "Buyer-persona refinement",
+        "example": "Validate hypothesized persona via questions that probe motivations."
+      },
+      {
+        "scenario": "Pricing research",
+        "example": "Willingness-to-pay without asking \u2018how much would you pay?\u2019"
+      }
+    ],
+    "when_not_to_use": "Skip for usability testing (different format \u2014 task-based, not conversational). Skip for quantitative research (use surveys).",
+    "full_prompt": "You are a user research lead designing an interview guide.\n\nINPUT\n- Research goal: {research_goal}\n- Target participant: {target_participant}\n- Interview length: {interview_length_minutes}\n- Interview format: {format}                  (video, phone, in-person)\n- What you already know (don't re-ask): {known_context}\n\nOUTPUT\n\n## 1. Opening (5 min)\n- Welcome line + setup permissions (recording, confidentiality).\n- \u2018About me\u2019 \u2014 researcher's brief intro.\n- Throwaway warm-up question to ease the participant in.\n\n## 2. Context & background (5-10 min)\n3-5 questions establishing the participant's situation. NOT about your product yet:\n- Their role / company / day-to-day\n- The general problem space they live in\n\n## 3. The heart (50-60% of interview)\n3-4 thematic sections. Each has 2-4 questions. Sections should map to the research goal but not lead the participant.\n\nQuestion patterns to use:\n- \"Walk me through the last time you [activity].\" (behavioral specifics)\n- \"What were you doing right before this?\"\n- \"What did you do next?\"\n- \"Tell me about a time when this didn't work.\"\n\nPatterns to AVOID:\n- \"Would you use a feature that...?\" (hypothetical \u2192 unreliable)\n- \"Do you like X?\" (yes/no, low signal)\n- \"How important is X to you on a scale of 1-10?\" (Likert questions hide actual behavior)\n- \"Don't you think...?\" (leading)\n\n## 4. Specific probes (15-20% of interview)\n2-4 questions that test specific hypotheses you have. Frame them as opens, not closeds.\n\n## 5. Closing (5 min)\n- \"What didn't I ask about that I should have?\"\n- \"Who else should I talk to?\"\n- Compensation / next steps.\n\n## 6. Red-flag questions to NOT ask\nA list of questions a researcher might be tempted to ask but shouldn't:\n- Anything that hints at your hypothesis\n- Anything that puts the participant in a hypothetical\n- Anything with corporate jargon they wouldn't use\n- Anything that's secretly a sales question\n\n## 7. Listening cues\n3-5 things to listen FOR during the interview:\n- Specific phrases that reveal underlying frames (\"I just need to...\" vs \"I really want to...\")\n- Workarounds the participant has invented\n- Moments where they get specific without being asked\n\n## 8. After-interview synthesis prompts\n3-4 questions to answer immediately after the interview ends:\n- What surprised me?\n- What contradicted my assumptions?\n- What did they NOT say that I expected?\n\nRULES\n- Total questions ~12-18 for a 45-min interview. More than that, you're rushing.\n- Behavioral over hypothetical (3-to-1 ratio at minimum).\n- Specific recent moments over generalizations (\"last time\" > \"usually\").\n- Open-ended over yes/no.\n- Don't lead the witness. The participant should not be able to guess what answer you want.\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "research_goal",
+        "type": "string",
+        "description": "What you're trying to learn",
+        "required": true,
+        "example": "Understand how data engineers currently handle pipeline incident response; identify the biggest unmet need."
+      },
+      {
+        "name": "target_participant",
+        "type": "string",
+        "description": "Who you're interviewing",
+        "required": true,
+        "example": "Senior data engineers at companies 50-500 employees, on call rotation"
+      },
+      {
+        "name": "interview_length_minutes",
+        "type": "integer",
+        "description": "Length in minutes",
+        "required": true,
+        "example": "45"
+      },
+      {
+        "name": "format",
+        "type": "string",
+        "description": "Interview format",
+        "required": false,
+        "example": "Video, recorded with consent"
+      },
+      {
+        "name": "known_context",
+        "type": "string",
+        "description": "What you already know \u2014 don't re-ask",
+        "required": false,
+        "example": "They use Datadog + PagerDuty; we know that already from surveys."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "8 sections: opening, context, heart (themes + questions), probes, closing, red-flag questions, listening cues, after-interview prompts."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on behavior-first phrasing; identifies leading questions accurately."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes slips into Likert-scale questions \u2014 re-pin avoidance."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; \u2018red-flag questions\u2019 section can be generic."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Defaults to hypothetical phrasing; needs explicit anti-pattern reminder."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Diary study follow-up",
+        "description": "After diary collection.",
+        "prompt_snippet": "Add: \u2018interview is post-diary; questions probe specific entries from their diary, not general behavior.\u2019"
+      },
+      {
+        "label": "Multi-stakeholder",
+        "description": "Interview 2 people from same org.",
+        "prompt_snippet": "Add: \u2018design for two participants from same org (e.g., engineer + manager); add comparative questions revealing perspective differences.\u2019"
+      },
+      {
+        "label": "JTBD-focused",
+        "description": "Jobs-to-be-done framework.",
+        "prompt_snippet": "Frame all thematic sections around JTBD: triggering event, prior attempts, struggles, hire/fire moments."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Hypothetical questions \u2018Would you use...\u2019",
+        "fix": "Re-pin: \u2018behavioral, past-tense, specific. No hypotheticals.\u2019"
+      },
+      {
+        "symptom": "Too many questions for the time slot.",
+        "fix": "Add: \u2018count questions; max 1 per 2.5 minutes of interview length.\u2019"
+      },
+      {
+        "symptom": "Leading questions.",
+        "fix": "Add: \u2018red-flag questions section must flag anything that hints at your hypothesis.\u2019"
+      },
+      {
+        "symptom": "Skips listening cues.",
+        "fix": "Force section 7 to be concrete: name 3-5 specific phrases/behaviors to listen for."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "user-research-synthesizer",
+      "interviewer-persona-deep-questions"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "user-research",
+      "qualitative-research",
+      "jtbd"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why no Likert questions?",
+        "answer": "Likert scales feel scientific but mostly capture self-report bias. Behavioral questions \u2018walk me through the last time\u2019 reveal what people actually do \u2014 different from what they think they do."
+      },
+      {
+        "question": "How many interviews until I have signal?",
+        "answer": "Classic answer is 5-8 for qualitative saturation per persona. For complex behaviors, 10-15. If everyone says different things at 8, your participants aren't uniform \u2014 consider segmenting."
+      },
+      {
+        "question": "Should I share the guide with participants in advance?",
+        "answer": "Generally no \u2014 it shapes their answers. Share the broad topic and time, not the specific questions."
+      }
+    ],
+    "meta_title": "User Interview Question Guide From Research Goal",
+    "meta_description": "Build a 30-45 min interview guide: opener, themed sections with behavioral questions, listening cues, and red-flag questions to NOT ask."
+  },
+  {
+    "slug": "literature-review-by-position",
+    "title": "Literature Review By Position (Not By Source)",
+    "tldr": "Reframes a literature review around POSITIONS / arguments, not sources. Each section is a claim with supporting + opposing sources, gaps, and an honest takeaway about what the field actually knows.",
+    "category": "research",
+    "tags": [
+      "literature-review",
+      "synthesis",
+      "academic",
+      "research"
+    ],
+    "best_for_tags": [
+      "thesis-writing",
+      "research-synthesis",
+      "field-mapping"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Thesis chapter on a contested topic",
+        "example": "10+ sources on \u2018does X cause Y\u2019 \u2014 synthesize by position, not by paper."
+      },
+      {
+        "scenario": "Industry analyst report",
+        "example": "\u2018What's the state of vector databases in 2025?\u2019 \u2014 surface positions, not just summarize papers."
+      },
+      {
+        "scenario": "Pre-research framing",
+        "example": "Before doing primary research, map the existing debate to find genuine gaps."
+      },
+      {
+        "scenario": "Policy memo",
+        "example": "Position-based review serves decision-making better than chronological summary."
+      }
+    ],
+    "when_not_to_use": "Skip for topics with consensus (just cite the consensus). Skip when sources are too few (need 5+ to identify positions). Skip for systematic reviews requiring strict PRISMA methodology.",
+    "full_prompt": "You are a research synthesizer. You'll build a literature review BY POSITION, not by source.\n\nINPUT\n- Research question: {research_question}\n- Sources (papers, articles, reports): {sources}\n- Audience (academic / practitioner / policy): {audience}\n\nOUTPUT\n\n## 1. The question\nRestate the research question; identify 3-5 sub-questions if it has multiple parts.\n\n## 2. Map of positions\nFor each sub-question, identify the 2-5 distinct POSITIONS that exist in the literature.\n\nA position is a defensible answer or stance, not a source. Multiple sources may share a position. Some sources may straddle positions.\n\nFor each position:\n### Position N: <one-sentence claim>\n- Sources defending this position: cite each with 1-line summary.\n- Strongest argument for: what makes this position compelling?\n- Weakest spot: where does this position have gaps or contradictions?\n- Sources challenging or qualifying: cite each.\n\n## 3. Where the field agrees (consensus)\n2-4 specific claims most positions accept.\n\n## 4. Where the field disagrees (live debate)\n2-4 specific claims where positions diverge sharply. Be specific \u2014 \"they disagree about X mechanism, not Y outcome.\"\n\n## 5. Gaps the literature doesn't address\n3-5 questions that NONE of the positions answer or even ask. These are publishable / actionable.\n\n## 6. Honest takeaway\nWhat does the field actually know about {research_question}? Phrase as a researcher would: confidence levels per claim.\n- \"Well-established: ...\"\n- \"Probable but contested: ...\"\n- \"Unknown: ...\"\n\n## 7. For the reader's next step\nIf audience is practitioner: which position is most usable today?\nIf academic: what's the publishable opening?\nIf policy: what's the defensible-now claim that won't be contradicted soon?\n\nRULES\n- Cite specific sources; never say \"many studies\" or \"research shows\" without citing.\n- A position is what the AUTHORS argue \u2014 don't invent positions sources don't actually hold.\n- When sources disagree, name the disagreement explicitly; don't paper over.\n- Honest about confidence \u2014 don't pretend more is known than is.\n- If a position has only one source supporting it, say so \u2014 that's information.\n\nSOURCES\n{sources}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "research_question",
+        "type": "string",
+        "description": "The question being reviewed",
+        "required": true,
+        "example": "Does retrieval-augmented generation reduce hallucinations in domain-specific LLM applications?"
+      },
+      {
+        "name": "sources",
+        "type": "string",
+        "description": "List of sources with brief summaries",
+        "required": true,
+        "example": "1. Lewis et al. 2020: introduces RAG; claims hallucination reduction. 2. Mialon et al. 2023: argues RAG only helps when retrieved context is genuinely relevant..."
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Reader type",
+        "required": true,
+        "example": "Practitioners (ML engineers deciding whether to use RAG)"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Seven sections: question, position map, consensus, disagreements, gaps, honest takeaway, reader's next step."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on distinguishing positions from sources; honest about confidence."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes invents positions sources don't actually hold."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; gaps section can be generic."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Defaults to source-by-source summary; needs explicit reframing."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Field map",
+        "description": "Add a 2x2 positioning chart.",
+        "prompt_snippet": "Add: \u2018output a 2x2 chart positioning each source on two dimensions; label axes from the field's tensions.\u2019"
+      },
+      {
+        "label": "Timeline view",
+        "description": "Track positions over time.",
+        "prompt_snippet": "Add: \u2018also note how positions have evolved \u2014 which claims have weakened, which strengthened, since first proposed.\u2019"
+      },
+      {
+        "label": "Pre-research framing",
+        "description": "What study would resolve open questions.",
+        "prompt_snippet": "After section 5 (gaps), add: \u2018for each gap, propose the SPECIFIC study that would resolve it \u2014 design, measure, expected effect size.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Output is source-by-source summary.",
+        "fix": "Re-pin: \u2018POSITIONS, not papers. A position is a claim; multiple papers share one position.\u2019"
+      },
+      {
+        "symptom": "Invents positions sources don't hold.",
+        "fix": "Add: \u2018every position must cite sources that actually defend it; if no real source defends a position, it's not a position in the literature.\u2019"
+      },
+      {
+        "symptom": "Confidence levels missing.",
+        "fix": "Force section 6 explicit ladder: well-established / probable but contested / unknown."
+      },
+      {
+        "symptom": "Gaps section is generic.",
+        "fix": "Add: \u2018gaps must be specific questions or claims, not topic areas (\u2018more research needed on X\u2019 doesn't count).\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "literature-review-synthesizer",
+      "competitive-teardown"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "literature-review",
+      "synthesis",
+      "epistemology"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Position vs claim \u2014 what's the difference?",
+        "answer": "A position is a defensible stance someone in the field actively defends. A claim is a single statement. A position has supporting arguments and known critics; an isolated claim doesn't."
+      },
+      {
+        "question": "How many sources is enough?",
+        "answer": "5-8 minimum for position-based synthesis; <5 and you're really doing a paper review, not a literature review. 15-25 is a thorough review chapter."
+      },
+      {
+        "question": "What if all sources agree?",
+        "answer": "Then the field has consensus on that question. Move to the unanswered question downstream \u2014 that's where the live debate is."
+      }
+    ],
+    "meta_title": "Literature Review By Position (Not By Source)",
+    "meta_description": "Synthesize literature by POSITIONS, not sources: map debates, identify consensus + disagreement + gaps, honest takeaway with confidence levels."
+  },
+  {
+    "slug": "research-protocol-from-question",
+    "title": "Research Protocol From a Question",
+    "tldr": "Designs a complete research protocol: hypotheses, variables, methodology selection, sample size, threats to validity, and timeline. Calibrated for industry research, not academic.",
+    "category": "research",
+    "tags": [
+      "research-protocol",
+      "methodology",
+      "experiment-design",
+      "validity"
+    ],
+    "best_for_tags": [
+      "industry-research",
+      "ux-research",
+      "applied-research"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Pre-research planning",
+        "example": "Question is broad; protocol surfaces methodology choice, sample size, and what we can/can't claim."
+      },
+      {
+        "scenario": "Multi-method study",
+        "example": "Interviews + survey + behavioral data \u2014 protocol coordinates them."
+      },
+      {
+        "scenario": "Vendor research project",
+        "example": "External research firm sees a clear protocol; reduces scope creep and ambiguity."
+      },
+      {
+        "scenario": "Pre-funding research design",
+        "example": "Investor / leadership wants confidence in methodology before approving research budget."
+      }
+    ],
+    "when_not_to_use": "Skip for very small exploratory studies (just do them). Skip for academic publication targets \u2014 those need stricter protocols (IRB, pre-registration, PRISMA where relevant).",
+    "full_prompt": "You are designing a research protocol for an industry research question.\n\nINPUT\n- Research question: {research_question}\n- Stakeholder context (what decision this informs): {decision_context}\n- Time/budget constraints: {constraints}\n- Available data sources: {available_data}\n- Team capacity: {team_capacity}\n\nOUTPUT \u2014 protocol document\n\n## 1. Refined research question(s)\nSharpen the input question. If it's compound, split. If it's ambiguous, propose 2-3 alternative phrasings and note the differences in what they'd reveal.\n\n## 2. Hypotheses\nSpecific testable claims (or expected patterns). Each:\n- Null: what would have to be true for the hypothesis to be FALSE?\n- Alternative: what we expect to find.\n- Direction: does the hypothesis predict an effect direction, or just non-zero?\n\n## 3. Methodology choice\nSelect the right method(s) and JUSTIFY:\n- Quant survey: large N, generalizable, weak on why.\n- Qual interview: small N, deep on why, weak on prevalence.\n- Behavioral data: actual behavior, biased by what's instrumented.\n- A/B experiment: causal claim, requires control.\n- Mixed-methods: most informative, costliest.\n\nPick ONE primary method; secondary if budget allows.\n\n## 4. Variables\n- Independent (what we manipulate or compare).\n- Dependent (what we measure).\n- Confounders (what could distort the relationship).\n- Mitigation for top 2-3 confounders.\n\n## 5. Sample\n- Who: target population.\n- How many: sample size calculation (or stated rationale if statistical math doesn't apply).\n- How recruited: source + filters.\n- Sampling biases this introduces and mitigations.\n\n## 6. Instruments / protocol\nFor each method:\n- Interview guide / survey / logging spec / experiment design.\n- Estimated time per participant.\n- Pilot strategy (1-3 pilot runs before full).\n\n## 7. Analysis plan\nPRE-COMMIT to:\n- The analyses to run (don't fish post hoc).\n- The threshold for \u2018meaningful effect.\u2019\n- What we'll do if results are null.\n\n## 8. Threats to validity\nThree buckets:\n- Internal: does our design support causal claims?\n- External: will findings generalize beyond our sample?\n- Construct: are we measuring what we think we are?\n2-3 specific threats per bucket + mitigation.\n\n## 9. Timeline + cost\n- Calendar weeks\n- People-time\n- Direct costs (incentives, tools, vendors)\n\n## 10. What this research CANNOT tell us\n3-5 specific limits of the protocol. Important for stakeholders to know upfront.\n\nRULES\n- Industry-grade rigor, not academic. We're informing decisions, not publishing.\n- Be honest about what's achievable in the time/budget given.\n- Pre-commit analysis plan to prevent post-hoc fishing.\n- Address validity threats specifically, not generically.\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "research_question",
+        "type": "string",
+        "description": "Research question",
+        "required": true,
+        "example": "Does showing product onboarding videos increase 30-day retention?"
+      },
+      {
+        "name": "decision_context",
+        "type": "string",
+        "description": "What decision this informs",
+        "required": true,
+        "example": "Whether to invest engineering + production resources in building an onboarding video system."
+      },
+      {
+        "name": "constraints",
+        "type": "string",
+        "description": "Time/budget limits",
+        "required": true,
+        "example": "8 weeks total, $15k budget, 1 researcher full-time"
+      },
+      {
+        "name": "available_data",
+        "type": "string",
+        "description": "Data sources we already have",
+        "required": false,
+        "example": "User sign-up + retention data going back 18 months. CSAT surveys quarterly. Can deploy in-app surveys."
+      },
+      {
+        "name": "team_capacity",
+        "type": "string",
+        "description": "Who's doing the work",
+        "required": false,
+        "example": "1 senior UX researcher, part-time analyst (10 hrs/week)"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "10 sections covering questions, hypotheses, methodology, variables, sample, instruments, analysis plan, validity threats, timeline/cost, limits."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on methodology justification and pre-commitment discipline."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes overstates sample-size confidence."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; validity threats can be generic."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Methodology selection sometimes lazy; needs explicit comparison."
+      }
+    ],
+    "variations": [
+      {
+        "label": "RCT-specific",
+        "description": "Random controlled trial design.",
+        "prompt_snippet": "Add: \u2018design as a proper RCT \u2014 random assignment, control group, pre-registration of analysis plan. Specify randomization mechanism.\u2019"
+      },
+      {
+        "label": "Diary study",
+        "description": "Multi-day participant logs.",
+        "prompt_snippet": "Replace single-instrument with: \u201814-day diary study with daily prompts + 2 deep-dive interviews per participant.\u2019"
+      },
+      {
+        "label": "Combined quant + qual",
+        "description": "Mixed-methods design.",
+        "prompt_snippet": "Add: \u2018mixed-methods: quant survey to N=300 + qual interviews with N=12 outliers. Integration plan for combining findings.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Methodology selected without justification.",
+        "fix": "Re-pin: \u2018methodology section must compare 2+ options and explain choice; not just propose one.\u2019"
+      },
+      {
+        "symptom": "Analysis plan vague.",
+        "fix": "Add: \u2018list the specific tests/comparisons before starting; vagueness invites post-hoc fishing.\u2019"
+      },
+      {
+        "symptom": "Validity threats are clich\u00e9s.",
+        "fix": "Force specificity: \u2018each threat must be SPECIFIC to this design \u2014 what exactly could distort what here.\u2019"
+      },
+      {
+        "symptom": "\u2018CANNOT tell us\u2019 section empty.",
+        "fix": "Add: \u2018every protocol has limits; list at least 3 specific things this design can't determine.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "go-to-market-experiment-design",
+      "user-interview-question-guide"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "research-protocol",
+      "validity",
+      "methodology"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Industry vs academic protocols?",
+        "answer": "Industry serves decisions; academic serves publications. Industry can afford lower N if directional answer is enough; academic needs power for inferential statistics. The prompt is industry-tuned."
+      },
+      {
+        "question": "What if budget is too small for the right method?",
+        "answer": "Protocol surfaces that. Better to know upfront that available budget supports only directional qual than to do an under-powered quant study."
+      },
+      {
+        "question": "Should I pre-register?",
+        "answer": "For high-stakes industry research with public commitments (papers, regulatory filings): yes. For internal product decisions: pre-commit to stakeholders (less formal) but don't publicly register."
+      }
+    ],
+    "meta_title": "Research Protocol From a Question \u2014 Prompt",
+    "meta_description": "Full research protocol: hypotheses, methodology, variables, sample size, validity threats, analysis plan, timeline. Industry-grade rigor."
+  },
+  {
+    "slug": "thematic-coding-from-transcripts",
+    "title": "Thematic Coding From Qualitative Transcripts",
+    "tldr": "Codes qualitative transcripts (interviews, support tickets, reviews) into themes with frequency, exemplar quotes, and distinguishes saturated themes from singletons that might still matter.",
+    "category": "research",
+    "tags": [
+      "thematic-analysis",
+      "qualitative",
+      "coding",
+      "synthesis"
+    ],
+    "best_for_tags": [
+      "user-research-synthesis",
+      "interview-analysis",
+      "qualitative"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Synthesizing 8 user interviews",
+        "example": "Find recurring themes + the powerful singletons that hint at edge segments."
+      },
+      {
+        "scenario": "Quarterly support ticket review",
+        "example": "100+ tickets coded; themes feed into product backlog and KB priorities."
+      },
+      {
+        "scenario": "App store review analysis",
+        "example": "Code 200 reviews into themes; track which themes shift over versions."
+      },
+      {
+        "scenario": "Open-ended survey responses",
+        "example": "Code free-text answers from 500-person survey."
+      }
+    ],
+    "when_not_to_use": "Skip for tiny samples (<5 transcripts) \u2014 manual reading is fine. Skip when you need quantification \u2014 thematic coding shows what's there, not how prevalent at scale.",
+    "full_prompt": "You are coding qualitative transcripts into themes. Goal: surface what's actually being said, not what you expect to find.\n\nINPUT\n- Transcripts (interviews / tickets / reviews): {transcripts}\n- Research question or analytical lens: {research_question}\n- Audience for the analysis: {audience}\n\nPROCESS\n\n## Pass 1: Open coding\nRead each transcript. Tag every interesting unit (a sentence or two that says something specific). Don't try to be tidy yet.\n\nOutput a TAG LIST with:\n- Tag name (short, descriptive)\n- Definition (1 line)\n- Count: how many transcripts contained it\n- Exemplar quote (verbatim, attributed to transcript-N)\n\nYou should have 30-80 tags after this pass.\n\n## Pass 2: Theme clustering\nGroup related tags into themes. A theme:\n- Captures a meaningful pattern across multiple transcripts.\n- Has a clear name (avoid generic \u2018user satisfaction\u2019).\n- Distinguishable from other themes \u2014 orthogonal.\n\nFor each theme:\n\n### Theme N: <name>\n- Definition: 1-2 sentences capturing the underlying pattern.\n- Tags included: list which open-coding tags this theme rolls up.\n- Frequency: in how many transcripts does this theme appear?\n- Saturation: did new tags stop appearing in this theme after the 5th transcript? (Saturated themes are robust; thin themes need more data.)\n- Two exemplar quotes (verbatim): show the range.\n\nAim for 5-9 themes. Fewer = too coarse. More = clustering hasn't done its job.\n\n## Pass 3: Singletons that matter\nIdentify 2-4 SINGLETON tags (appeared in 1-2 transcripts) that might still be important \u2014 usually surface edge segments or weak signals worth following up.\n\nFor each singleton:\n- The tag and quote.\n- Why it might matter (compelling, unexpected, hints at unmet need).\n\n## Pass 4: What's NOT here\n3-4 things you EXPECTED to find based on the research question but didn't see in the data:\n- Did participants not mention X?\n- Are there obvious themes that didn't actually emerge?\n- This is information \u2014 sometimes the loudest finding is the silence.\n\n## Pass 5: Synthesis paragraph\n2-3 sentence summary of what these transcripts collectively say. Honest about confidence given sample size.\n\nRULES\n- Exemplar quotes are VERBATIM (minus PII).\n- A theme requires support from at least 3 transcripts unless explicitly flagged as \u2018thin.\u2019\n- Don't smooth disagreement \u2014 if transcripts contradict each other, that's a theme of its own.\n- Resist confirmation: themes should emerge from data, not from your research question.\n\nTRANSCRIPTS\n{transcripts}\n\nBegin Pass 1.",
+    "input_variables": [
+      {
+        "name": "transcripts",
+        "type": "string",
+        "description": "Transcripts of interviews / tickets / reviews",
+        "required": true,
+        "example": "Transcript 1: [interview...]\\nTranscript 2: [interview...]"
+      },
+      {
+        "name": "research_question",
+        "type": "string",
+        "description": "Analytical lens",
+        "required": true,
+        "example": "Why do data engineers churn from our product after month 2?"
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Who will read the analysis",
+        "required": false,
+        "example": "Product team + leadership for retention strategy meeting"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Five passes: open codes (30-80 tags), themes (5-9 with definitions/exemplars), singletons-that-matter, what's-not-here, synthesis paragraph."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on emergent themes; doesn't over-fit to the research question."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes confirmation-biased to research question."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; singleton identification can be shallow."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to produce 3-4 broad themes; needs explicit minimum count."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Codebook-driven",
+        "description": "Use pre-defined codes.",
+        "prompt_snippet": "Add: \u2018also code against this PROVIDED codebook: {existing_codes}. Note where data fits or contradicts the codebook.\u2019"
+      },
+      {
+        "label": "Comparative",
+        "description": "Two groups of transcripts.",
+        "prompt_snippet": "Replace single set with: \u2018group A vs group B transcripts; show themes unique to each plus shared themes.\u2019"
+      },
+      {
+        "label": "Frequency table",
+        "description": "Quantified theme presence.",
+        "prompt_snippet": "Add: \u2018output a final table: themes \u00d7 transcripts, marking presence/absence per cell.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "5 themes that are basically the same.",
+        "fix": "Re-pin: \u2018themes must be orthogonal; if you can't differentiate, collapse.\u2019"
+      },
+      {
+        "symptom": "Exemplar quotes paraphrased.",
+        "fix": "Add: \u2018quotes are VERBATIM; if you can't quote, the theme isn't well-supported by the data.\u2019"
+      },
+      {
+        "symptom": "Confirmation bias toward research question.",
+        "fix": "Add: \u2018open coding pass treats research question as one lens among many; don't filter out tags that don't fit.\u2019"
+      },
+      {
+        "symptom": "\u2018What's NOT here\u2019 section empty.",
+        "fix": "Force: \u2018what's expected but absent is itself a finding; list 3-4 specifically.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "user-research-synthesizer",
+      "user-interview-question-guide"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "thematic-analysis",
+      "qualitative-coding"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How many transcripts is enough?",
+        "answer": "5-8 for qualitative saturation per segment. If you have 3 segments (e.g., users, churned users, never-converts), aim for 5-8 each. Below that, treat findings as directional."
+      },
+      {
+        "question": "Saturated vs thin themes?",
+        "answer": "Saturated = new transcripts stop adding new content within the theme. Thin = only 2-3 transcripts contain the theme. Saturated themes are robust; thin ones are flagged for further data collection."
+      },
+      {
+        "question": "What about negative cases?",
+        "answer": "When transcripts contradict the dominant theme, the contradiction is a theme. Don't average it away \u2014 name it explicitly."
+      }
+    ],
+    "meta_title": "Thematic Coding From Qualitative Transcripts \u2014 Prompt",
+    "meta_description": "Code qualitative transcripts into themes via 5-pass process: open codes, theme clustering, singletons-that-matter, what's-not-here, synthesis."
   },
   {
     "slug": "literature-review-synthesizer",
