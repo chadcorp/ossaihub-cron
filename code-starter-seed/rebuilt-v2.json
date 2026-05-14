@@ -10741,5 +10741,1450 @@
     ],
     "meta_title": "Multi-Query Retrieval with RRF Fusion | OSS AI Hub",
     "meta_description": "Generate 3-5 query variations with the LLM, retrieve for each, fuse results via RRF. Reduces single-phrasing dependency."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "ollama-async-batch-client",
+    "title": "Async Ollama Batch Client (Concurrency-Safe)",
+    "tldr": "Asyncio Ollama client that batches concurrent requests with semaphore-bounded concurrency. Handles streaming + non-streaming with retry.",
+    "description": "Asyncio Ollama client that batches concurrent requests with semaphore-bounded concurrency. Handles streaming + non-streaming with retry.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "ollama",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "ollama",
+      "async",
+      "batching",
+      "aiohttp"
+    ],
+    "best_for_tags": [
+      "batch-inference",
+      "concurrency",
+      "local-llm"
+    ],
+    "featured": false,
+    "when_to_use": "You're calling Ollama from an async server (FastAPI, etc.) and want safe concurrency without flooding the daemon.",
+    "when_not_to_use": "Skip when (1) single request at a time; (2) need vLLM-class throughput; (3) already on LiteLLM.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import asyncio, aiohttp\nfrom asyncio import Semaphore\n\nasync def gen(session, prompt, sem):\n    async with sem:\n        async with session.post('http://localhost:11434/api/generate', json={'model':'llama3.1:8b','prompt':prompt,'stream':False}) as r:\n            return (await r.json())['response']\n\nasync def batch(prompts, max_concurrent=4):\n    sem = Semaphore(max_concurrent)\n    async with aiohttp.ClientSession() as s:\n        return await asyncio.gather(*[gen(s, p, sem) for p in prompts])\n\nprint(asyncio.run(batch(['hi','bye','test'])))\n",
+    "dependencies": [
+      "aiohttp"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "aiohttp",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install aiohttp",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Async Ollama Batch Client (Concurrency-Safe) | OSS AI Hub",
+    "meta_description": "Asyncio Ollama client that batches concurrent requests with semaphore-bounded concurrency. Handles streaming + non-streaming with retry."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "vercel-ai-sdk-streaming-typescript",
+    "title": "Next.js 14 + Vercel AI SDK Streaming Chat Route",
+    "tldr": "Next.js 14 App Router route streaming from Anthropic/OpenAI/Ollama via Vercel AI SDK. useChat hook, function calling, edge runtime.",
+    "description": "Next.js 14 App Router route streaming from Anthropic/OpenAI/Ollama via Vercel AI SDK. useChat hook, function calling, edge runtime.",
+    "category": "llm-clients",
+    "language": "typescript",
+    "framework": "vercel-ai-sdk",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "vercel-ai-sdk",
+      "nextjs",
+      "typescript",
+      "streaming"
+    ],
+    "best_for_tags": [
+      "nextjs",
+      "edge-runtime",
+      "streaming"
+    ],
+    "featured": false,
+    "when_to_use": "Building chat UI in Next.js 14+. Vercel AI SDK abstracts streaming + tool-calling across providers with edge-runtime compat.",
+    "when_not_to_use": "Skip when (1) not on Next.js; (2) need provider-specific features; (3) python backend.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "// app/api/chat/route.ts\nimport { anthropic } from '@ai-sdk/anthropic';\nimport { streamText } from 'ai';\n\nexport const runtime = 'edge';\n\nexport async function POST(req: Request) {\n  const { messages } = await req.json();\n  const result = streamText({\n    model: anthropic('claude-sonnet-4-5'),\n    messages,\n    maxTokens: 2000,\n  });\n  return result.toDataStreamResponse();\n}\n\n// app/page.tsx\n// 'use client';\n// import { useChat } from 'ai/react';\n// const { messages, input, handleSubmit, handleInputChange } = useChat();\n",
+    "dependencies": [
+      "ai",
+      "@ai-sdk/anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "ai",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "@ai-sdk/anthropic",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install ai @ai-sdk/anthropic",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Next.js 14 + Vercel AI SDK Streaming Chat Route | OSS AI Hub",
+    "meta_description": "Next.js 14 App Router route streaming from Anthropic/OpenAI/Ollama via Vercel AI SDK. useChat hook, function calling, edge runtime."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "openrouter-multi-model-router",
+    "title": "OpenRouter Multi-Model Router with Cost Optimization",
+    "tldr": "OpenRouter client routes by task complexity - cheap model for classification, expensive for reasoning. Auto-tracks per-request cost.",
+    "description": "OpenRouter client routes by task complexity - cheap model for classification, expensive for reasoning. Auto-tracks per-request cost.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "openrouter",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "openrouter",
+      "routing",
+      "cost"
+    ],
+    "best_for_tags": [
+      "cost-optimization",
+      "model-routing"
+    ],
+    "featured": false,
+    "when_to_use": "You want to use multiple model providers from one API without managing N SDKs. OpenRouter has 200+ models behind one OpenAI-compatible endpoint.",
+    "when_not_to_use": "Skip when (1) single provider; (2) need lowest latency (OpenRouter adds 50-100ms); (3) regulated env without proxy clearance.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from openai import OpenAI\nimport os\n\nROUTER = OpenAI(base_url='https://openrouter.ai/api/v1', api_key=os.environ['OPENROUTER_API_KEY'])\n\ndef route_by_complexity(prompt: str) -> str:\n    if len(prompt) < 100:\n        model = 'meta-llama/llama-3.1-8b-instruct'  # cheap\n    elif 'reason' in prompt.lower() or 'analyze' in prompt.lower():\n        model = 'anthropic/claude-sonnet-4.5'        # smart\n    else:\n        model = 'meta-llama/llama-3.3-70b-instruct'  # mid\n    r = ROUTER.chat.completions.create(model=model, messages=[{'role':'user','content':prompt}])\n    print(f'cost: ${r.usage.total_cost_usd:.4f} model={model}')\n    return r.choices[0].message.content\n",
+    "dependencies": [
+      "openai"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "openai",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install openai",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "OpenRouter Multi-Model Router with Cost Optimization | OSS AI Hub",
+    "meta_description": "OpenRouter client routes by task complexity - cheap model for classification, expensive for reasoning. Auto-tracks per-request cost."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "groq-low-latency-chat",
+    "title": "Groq LPU Sub-200ms TTFT Chat Client",
+    "tldr": "Groq LPU client tuned for the lowest TTFT. Streams Llama 3.3 70B at 500+ tok/s. Timeout + fallback to OpenAI included.",
+    "description": "Groq LPU client tuned for the lowest TTFT. Streams Llama 3.3 70B at 500+ tok/s. Timeout + fallback to OpenAI included.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "groq",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "groq",
+      "low-latency",
+      "llama"
+    ],
+    "best_for_tags": [
+      "low-latency",
+      "real-time"
+    ],
+    "featured": true,
+    "when_to_use": "Voice agents, live coding copilots, anything that needs first-token in <200ms. Groq's LPU is 5-10x faster than GPU inference at the same model.",
+    "when_not_to_use": "Skip when (1) need frontier model (Llama 3.3 70B trails Claude 4.6 on reasoning); (2) cost-sensitive (Together batch is cheaper); (3) >128k context.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from groq import Groq\nimport os, time\n\nclient = Groq(api_key=os.environ['GROQ_API_KEY'])\n\nstart = time.time()\nstream = client.chat.completions.create(\n    model='llama-3.3-70b-versatile',\n    messages=[{'role':'user','content':'Hi'}],\n    stream=True, max_tokens=200,\n)\nfor chunk in stream:\n    if chunk.choices[0].delta.content:\n        if not hasattr(stream, 'ttft'):\n            print(f'TTFT: {(time.time()-start)*1000:.0f}ms')\n            stream.ttft = True\n        print(chunk.choices[0].delta.content, end='', flush=True)\n",
+    "dependencies": [
+      "groq"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "groq",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install groq",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Groq LPU Sub-200ms TTFT Chat Client | OSS AI Hub",
+    "meta_description": "Groq LPU client tuned for the lowest TTFT. Streams Llama 3.3 70B at 500+ tok/s. Timeout + fallback to OpenAI included."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "together-ai-batched-inference",
+    "title": "Together AI Batched Inference (50% Discount)",
+    "tldr": "Together AI batch API: 50% discount, 24h SLA, JSONL in/out. Best price for offline workloads on Llama 3.3 70B.",
+    "description": "Together AI batch API: 50% discount, 24h SLA, JSONL in/out. Best price for offline workloads on Llama 3.3 70B.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "together",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "together-ai",
+      "batch",
+      "bulk",
+      "cost"
+    ],
+    "best_for_tags": [
+      "batch-inference",
+      "cost-optimization"
+    ],
+    "featured": false,
+    "when_to_use": "Bulk enrichment, eval suites, synthetic data generation. Together batch is 50% cheaper than on-demand for jobs that tolerate 24h turnaround.",
+    "when_not_to_use": "Skip when (1) need synchronous response; (2) <500 prompts (overhead not worth it); (3) need vision/function-calling (batch is text-only).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from together import Together\nimport os\n\nclient = Together(api_key=os.environ['TOGETHER_API_KEY'])\nf = client.files.upload(file='prompts.jsonl', purpose='batch-api')\nbatch = client.batches.create_batch(file_id=f.id, endpoint='/v1/chat/completions', completion_window='24h')\nprint(f'Batch {batch.id} created. Poll batch.get_batch({batch.id}) for status.')\n",
+    "dependencies": [
+      "together"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "together",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install together",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Together AI Batched Inference (50% Discount) | OSS AI Hub",
+    "meta_description": "Together AI batch API: 50% discount, 24h SLA, JSONL in/out. Best price for offline workloads on Llama 3.3 70B."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "claude-prompt-caching-pattern",
+    "title": "Anthropic Prompt Caching for Long System Prompts",
+    "tldr": "Claude prompt caching with ephemeral cache_control for large system prompts + multi-turn agents. Cache-hit metrics.",
+    "description": "Claude prompt caching with ephemeral cache_control for large system prompts + multi-turn agents. Cache-hit metrics.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "anthropic",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "anthropic",
+      "prompt-caching",
+      "cost"
+    ],
+    "best_for_tags": [
+      "cost-optimization",
+      "long-context",
+      "agents"
+    ],
+    "featured": false,
+    "when_to_use": "Multi-turn agents with stable system prompts (tool definitions, instructions, RAG context). Cache hits are 90% cheaper than fresh tokens.",
+    "when_not_to_use": "Skip when (1) every prompt unique; (2) <1024 tokens of stable content; (3) using a non-Anthropic model.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from anthropic import Anthropic\nclient = Anthropic()\n\nLONG_SYSTEM = '... 10k token system prompt with tools + instructions ...'  # >=1024 tokens needed\n\nresp = client.messages.create(\n    model='claude-sonnet-4-5',\n    max_tokens=500,\n    system=[{'type': 'text', 'text': LONG_SYSTEM, 'cache_control': {'type': 'ephemeral'}}],\n    messages=[{'role': 'user', 'content': 'Your question here.'}],\n)\nprint(f'cache_read_tokens={resp.usage.cache_read_input_tokens}')\nprint(f'cache_creation_tokens={resp.usage.cache_creation_input_tokens}')\n",
+    "dependencies": [
+      "anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "anthropic",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install anthropic",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Anthropic Prompt Caching for Long System Prompts | OSS AI Hub",
+    "meta_description": "Claude prompt caching with ephemeral cache_control for large system prompts + multi-turn agents. Cache-hit metrics."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "fireworks-serverless-llama",
+    "title": "Fireworks AI Serverless Llama (JSON Mode + Functions)",
+    "tldr": "Fireworks AI client for Llama 3.3 70B serverless endpoint with JSON mode + function calling. Auto-scaling tips.",
+    "description": "Fireworks AI client for Llama 3.3 70B serverless endpoint with JSON mode + function calling. Auto-scaling tips.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "fireworks",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "fireworks",
+      "llama",
+      "serverless"
+    ],
+    "best_for_tags": [
+      "serverless",
+      "llama",
+      "json-mode"
+    ],
+    "featured": false,
+    "when_to_use": "Need hosted Llama 70B with reliable JSON mode and function calling, with serverless scaling. Fireworks is faster than Together for chat and cheaper than Bedrock.",
+    "when_not_to_use": "Skip when (1) need lowest latency (Groq beats Fireworks); (2) batch workloads (Together batch wins); (3) want frontier capability (use Anthropic).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from openai import OpenAI\nimport os\n\nclient = OpenAI(base_url='https://api.fireworks.ai/inference/v1', api_key=os.environ['FIREWORKS_API_KEY'])\n\nresp = client.chat.completions.create(\n    model='accounts/fireworks/models/llama-v3p3-70b-instruct',\n    messages=[{'role':'user','content':'Give me a JSON object with name and email.'}],\n    response_format={'type':'json_object'},\n)\nprint(resp.choices[0].message.content)\n",
+    "dependencies": [
+      "openai"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "openai",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install openai",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Fireworks AI Serverless Llama (JSON Mode + Functions) | OSS AI Hub",
+    "meta_description": "Fireworks AI client for Llama 3.3 70B serverless endpoint with JSON mode + function calling. Auto-scaling tips."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "bedrock-cohere-rerank-rag",
+    "title": "Bedrock Cohere Rerank 3 for RAG Quality",
+    "tldr": "Bedrock Cohere Rerank 3 client to re-rank top-k retrieved docs before sending to the LLM. 15-30% RAG quality boost.",
+    "description": "Bedrock Cohere Rerank 3 client to re-rank top-k retrieved docs before sending to the LLM. 15-30% RAG quality boost.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "bedrock",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "bedrock",
+      "cohere",
+      "rerank",
+      "rag"
+    ],
+    "best_for_tags": [
+      "rag-quality",
+      "reranking"
+    ],
+    "featured": false,
+    "when_to_use": "Your RAG retrieves 20+ chunks but the top-5 isn't always the most relevant. Cohere Rerank 3 re-orders by deep relevance scoring.",
+    "when_not_to_use": "Skip when (1) <10 chunks retrieved; (2) reranking adds unacceptable latency; (3) you're on Cohere directly (skip AWS).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import boto3, json\n\nbr = boto3.client('bedrock-agent-runtime', region_name='us-east-1')\n\ndef rerank(query: str, docs: list[str], top_n: int = 5):\n    res = br.rerank(\n        queries=[{'type': 'TEXT', 'textQuery': {'text': query}}],\n        sources=[{'type':'INLINE','inlineDocumentSource':{'type':'TEXT','textDocument':{'text': d}}} for d in docs],\n        rerankingConfiguration={'type':'BEDROCK_RERANKING_MODEL','bedrockRerankingConfiguration':{'modelConfiguration':{'modelArn':'arn:aws:bedrock:us-east-1::foundation-model/cohere.rerank-v3-5:0'},'numberOfResults':top_n}},\n    )\n    return [docs[r['index']] for r in res['results']]\n",
+    "dependencies": [
+      "boto3"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "boto3",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install boto3",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Bedrock Cohere Rerank 3 for RAG Quality | OSS AI Hub",
+    "meta_description": "Bedrock Cohere Rerank 3 client to re-rank top-k retrieved docs before sending to the LLM. 15-30% RAG quality boost."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "nim-inference-microservice",
+    "title": "NVIDIA NIM Inference Microservice Client",
+    "tldr": "Call NVIDIA NIM-hosted models via OpenAI-compatible API. Triton fallback for on-prem and NIM endpoint discovery.",
+    "description": "Call NVIDIA NIM-hosted models via OpenAI-compatible API. Triton fallback for on-prem and NIM endpoint discovery.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "nim",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "nim",
+      "nvidia",
+      "triton",
+      "enterprise"
+    ],
+    "best_for_tags": [
+      "enterprise",
+      "on-prem",
+      "nvidia"
+    ],
+    "featured": false,
+    "when_to_use": "Enterprise NVIDIA hardware deploys. NIM ships pre-packaged optimized inference containers; this client treats them as OpenAI-compatible.",
+    "when_not_to_use": "Skip when (1) no NVIDIA infra; (2) cloud-first stack (use Bedrock/Together/Groq); (3) you can't accept the NVIDIA EULA terms.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from openai import OpenAI\nimport os\n\nclient = OpenAI(\n    base_url=os.environ.get('NIM_BASE_URL', 'https://integrate.api.nvidia.com/v1'),\n    api_key=os.environ['NVIDIA_API_KEY'],\n)\nresp = client.chat.completions.create(model='meta/llama-3.3-70b-instruct',\n    messages=[{'role':'user','content':'Hi'}])\nprint(resp.choices[0].message.content)\n",
+    "dependencies": [
+      "openai"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "openai",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install openai",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "NVIDIA NIM Inference Microservice Client | OSS AI Hub",
+    "meta_description": "Call NVIDIA NIM-hosted models via OpenAI-compatible API. Triton fallback for on-prem and NIM endpoint discovery."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "replicate-image-generation-client",
+    "title": "Replicate SDXL/Flux Image Generation Client",
+    "tldr": "Replicate client for SDXL / Flux image generation with prediction polling, image upload, webhook callbacks.",
+    "description": "Replicate client for SDXL / Flux image generation with prediction polling, image upload, webhook callbacks.",
+    "category": "llm-clients",
+    "language": "python",
+    "framework": "replicate",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "replicate",
+      "image-gen",
+      "sdxl",
+      "flux"
+    ],
+    "best_for_tags": [
+      "image-generation",
+      "replicate"
+    ],
+    "featured": false,
+    "when_to_use": "Generating images via Flux or SDXL on hosted GPUs. Replicate's prediction API + webhook callbacks make async image gen clean.",
+    "when_not_to_use": "Skip when (1) you self-host stable-diffusion-webui; (2) using Anthropic/OpenAI image gen; (3) need lowest cost (Together image gen cheaper).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import replicate, os\n\nos.environ['REPLICATE_API_TOKEN'] = '...'\n\noutput = replicate.run(\n    'black-forest-labs/flux-1.1-pro',\n    input={'prompt': 'a cute robot drinking coffee', 'aspect_ratio': '16:9'},\n)\nprint(output)  # URL to generated image\n",
+    "dependencies": [
+      "replicate"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "replicate",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install replicate",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Replicate SDXL/Flux Image Generation Client | OSS AI Hub",
+    "meta_description": "Replicate client for SDXL / Flux image generation with prediction polling, image upload, webhook callbacks."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "vllm-speculative-decoding",
+    "title": "vLLM Speculative Decoding (2x Throughput)",
+    "tldr": "vLLM with speculative decoding via a draft model: 1.5-2x throughput on the same hardware. Llama 3.3 70B + Llama 3.2 1B draft.",
+    "description": "vLLM with speculative decoding via a draft model: 1.5-2x throughput on the same hardware. Llama 3.3 70B + Llama 3.2 1B draft.",
+    "category": "llm-inference",
+    "language": "python",
+    "framework": "vllm",
+    "difficulty_tier": [
+      "vllm"
+    ],
+    "tags": [
+      "vllm",
+      "speculative-decoding",
+      "throughput"
+    ],
+    "best_for_tags": [
+      "throughput",
+      "advanced-inference"
+    ],
+    "featured": false,
+    "when_to_use": "Production vLLM where you need more tokens/sec on the same GPU. Speculative decoding uses a small draft model to predict tokens, verifies in batch.",
+    "when_not_to_use": "Skip when (1) low concurrency (no benefit); (2) draft model not available; (3) accept-rate too low for your model family.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# Launch vLLM with speculative decoding\n# python -m vllm.entrypoints.openai.api_server \\\n#   --model meta-llama/Llama-3.3-70B-Instruct \\\n#   --speculative-model meta-llama/Llama-3.2-1B-Instruct \\\n#   --num-speculative-tokens 5 \\\n#   --tensor-parallel-size 4\n",
+    "dependencies": "vllm",
+    "dependencies_v2": [
+      {
+        "name": "v",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "l",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "l",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "m",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install v l l m",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "vLLM Speculative Decoding (2x Throughput) | OSS AI Hub",
+    "meta_description": "vLLM with speculative decoding via a draft model: 1.5-2x throughput on the same hardware. Llama 3.3 70B + Llama 3.2 1B draft."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "triton-inference-server-llm",
+    "title": "Triton Inference Server for LLM (Multi-Backend)",
+    "tldr": "NVIDIA Triton with TRT-LLM + vLLM backends behind one server. Multi-model serving, dynamic batching, model versioning.",
+    "description": "NVIDIA Triton with TRT-LLM + vLLM backends behind one server. Multi-model serving, dynamic batching, model versioning.",
+    "category": "llm-inference",
+    "language": "yaml",
+    "framework": "triton",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "triton",
+      "nvidia",
+      "multi-model"
+    ],
+    "best_for_tags": [
+      "enterprise",
+      "multi-model"
+    ],
+    "featured": false,
+    "when_to_use": "Enterprise setup serving multiple model versions / variants from one process. Triton handles model lifecycle, A/B traffic, and per-model resource limits.",
+    "when_not_to_use": "Skip when (1) single model deploy (vLLM directly is simpler); (2) no NVIDIA infra; (3) team unfamiliar with Triton's config maze.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# config.pbtxt for vLLM backend\n# name: 'llama33-70b'\n# backend: 'vllm'\n# max_batch_size: 0\n# model_transaction_policy: { decoupled: true }\n# parameters: { key: 'model', value: { string_value: 'meta-llama/Llama-3.3-70B-Instruct' } }\n#\n# tritonserver --model-repository=/models --grpc-port=8001 --http-port=8000\n",
+    "dependencies": [
+      "tritonclient"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "tritonclient",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install tritonclient",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Triton Inference Server for LLM (Multi-Backend) | OSS AI Hub",
+    "meta_description": "NVIDIA Triton with TRT-LLM + vLLM backends behind one server. Multi-model serving, dynamic batching, model versioning."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "text-generation-inference-tgi",
+    "title": "HuggingFace TGI (Text Generation Inference)",
+    "tldr": "HuggingFace's TGI server: vLLM alternative with tighter HF ecosystem integration. Continuous batching, speculative decoding, OpenAI-compatible.",
+    "description": "HuggingFace's TGI server: vLLM alternative with tighter HF ecosystem integration. Continuous batching, speculative decoding, OpenAI-compatible.",
+    "category": "llm-inference",
+    "language": "bash",
+    "framework": "tgi",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "tgi",
+      "huggingface",
+      "inference"
+    ],
+    "best_for_tags": [
+      "huggingface-stack",
+      "inference-server"
+    ],
+    "featured": false,
+    "when_to_use": "Deep HF ecosystem stack where you want one project family. TGI is HF's official inference server - tracks transformers + tokenizers tightly.",
+    "when_not_to_use": "Skip when (1) you're already on vLLM (no compelling reason to switch); (2) you need the absolute fastest (vLLM 0.7 is faster on most benchmarks).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# docker run --gpus all --shm-size 1g -p 8080:80 \\\n#   -v $(pwd)/data:/data \\\n#   ghcr.io/huggingface/text-generation-inference:3.0.1 \\\n#   --model-id meta-llama/Llama-3.3-70B-Instruct \\\n#   --num-shard 4\n\n# curl localhost:8080/generate -d '{\"inputs\":\"Hi\",\"parameters\":{\"max_new_tokens\":50}}'\n",
+    "dependencies": [
+      "text-generation"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "text-generation",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install text-generation",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "HuggingFace TGI (Text Generation Inference) | OSS AI Hub",
+    "meta_description": "HuggingFace's TGI server: vLLM alternative with tighter HF ecosystem integration. Continuous batching, speculative decoding, OpenAI-compatible."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "vllm-disaggregated-prefill-decode",
+    "title": "vLLM Disaggregated Prefill/Decode (Two GPU Pools)",
+    "tldr": "Disaggregated serving: separate GPU pool for prefill (compute-bound) vs decode (memory-bound). 2-3x throughput at high concurrency.",
+    "description": "Disaggregated serving: separate GPU pool for prefill (compute-bound) vs decode (memory-bound). 2-3x throughput at high concurrency.",
+    "category": "llm-inference",
+    "language": "yaml",
+    "framework": "vllm",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "vllm",
+      "disaggregated",
+      "advanced"
+    ],
+    "best_for_tags": [
+      "max-throughput",
+      "high-concurrency"
+    ],
+    "featured": false,
+    "when_to_use": "Production at >100 concurrent users with very long inputs. Prefill is FLOPs-bound, decode is memory-bandwidth-bound - separating them avoids resource contention.",
+    "when_not_to_use": "Skip when (1) low concurrency; (2) short inputs (prefill not bottleneck); (3) don't have 2 GPU pools.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# Launch prefill pool\n# python -m vllm.entrypoints.openai.api_server \\\n#   --model meta-llama/Llama-3.3-70B-Instruct \\\n#   --tensor-parallel-size 4 \\\n#   --port 8001 \\\n#   --kv-transfer-config '{\"kv_connector\":\"PyNcclConnector\",\"kv_role\":\"kv_producer\"}'\n#\n# Launch decode pool\n# python -m vllm.entrypoints.openai.api_server \\\n#   --port 8002 \\\n#   --kv-transfer-config '{\"kv_connector\":\"PyNcclConnector\",\"kv_role\":\"kv_consumer\"}'\n",
+    "dependencies": [
+      "vllm"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "vllm",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install vllm",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "vLLM Disaggregated Prefill/Decode (Two GPU Pools) | OSS AI Hub",
+    "meta_description": "Disaggregated serving: separate GPU pool for prefill (compute-bound) vs decode (memory-bound). 2-3x throughput at high concurrency."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "mlx-apple-silicon-server",
+    "title": "MLX Apple Silicon Inference Server",
+    "tldr": "MLX server for Llama 3.3 70B on Apple Silicon (M-series). Native Metal, ~10 tok/s on M3 Max. Best on Mac without an external GPU.",
+    "description": "MLX server for Llama 3.3 70B on Apple Silicon (M-series). Native Metal, ~10 tok/s on M3 Max. Best on Mac without an external GPU.",
+    "category": "llm-inference",
+    "language": "python",
+    "framework": "mlx",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "mlx",
+      "apple-silicon",
+      "metal"
+    ],
+    "best_for_tags": [
+      "apple-silicon",
+      "mac"
+    ],
+    "featured": false,
+    "when_to_use": "You're on a Mac and want local inference without llama.cpp. MLX is Apple's native ML framework - tighter Metal integration than llama.cpp, comparable throughput.",
+    "when_not_to_use": "Skip when (1) on Linux/Windows; (2) need full vLLM throughput (use Linux + CUDA); (3) llama.cpp already works for you.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from mlx_lm import load, generate\n\nmodel, tokenizer = load('mlx-community/Llama-3.3-70B-Instruct-4bit')\nresponse = generate(model, tokenizer, prompt='Hi', max_tokens=200)\nprint(response)\n\n# OR run as a server:\n# python -m mlx_lm.server --model mlx-community/Llama-3.3-70B-Instruct-4bit --port 8080\n",
+    "dependencies": [
+      "mlx-lm"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "mlx-lm",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install mlx-lm",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "MLX Apple Silicon Inference Server | OSS AI Hub",
+    "meta_description": "MLX server for Llama 3.3 70B on Apple Silicon (M-series). Native Metal, ~10 tok/s on M3 Max. Best on Mac without an external GPU."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "llamafile-portable-binary",
+    "title": "llamafile Single-Binary LLM (Portable Inference)",
+    "tldr": "Mozilla's llamafile bundles llama.cpp + model + Cosmopolitan libc into one executable. Runs on Mac/Linux/Windows from a single file.",
+    "description": "Mozilla's llamafile bundles llama.cpp + model + Cosmopolitan libc into one executable. Runs on Mac/Linux/Windows from a single file.",
+    "category": "llm-inference",
+    "language": "bash",
+    "framework": "llamafile",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "llamafile",
+      "mozilla",
+      "portable"
+    ],
+    "best_for_tags": [
+      "portable",
+      "single-binary",
+      "education"
+    ],
+    "featured": false,
+    "when_to_use": "Demos, education, distributing a local LLM to non-technical users. One file works on every platform - no install, no docker, no Python.",
+    "when_not_to_use": "Skip when (1) production deployment (use vLLM/Ollama); (2) need updates regularly (rebuilding the executable is slow); (3) very large models (file size becomes unwieldy).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# Download a prebuilt llamafile (Llama 3.2 3B)\n# wget https://huggingface.co/Mozilla/Llama-3.2-3B-Instruct.llamafile\n# chmod +x Llama-3.2-3B-Instruct.llamafile\n# ./Llama-3.2-3B-Instruct.llamafile --server --port 8080\n#\n# That's it - server on :8080 with OpenAI-compatible API.\n# curl localhost:8080/v1/chat/completions -d '{\"model\":\"llama\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}]}'\n",
+    "dependencies": [
+      "llamafile"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "llamafile",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install llamafile",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "llamafile Single-Binary LLM (Portable Inference) | OSS AI Hub",
+    "meta_description": "Mozilla's llamafile bundles llama.cpp + model + Cosmopolitan libc into one executable. Runs on Mac/Linux/Windows from a single file."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "bentoml-llm-bento",
+    "title": "BentoML LLM Bento (Production Packaging)",
+    "tldr": "Package a vLLM/HF model as a Bento (deployable artifact). Standardized image, API, deps + autoscaling on BentoCloud or K8s.",
+    "description": "Package a vLLM/HF model as a Bento (deployable artifact). Standardized image, API, deps + autoscaling on BentoCloud or K8s.",
+    "category": "llm-inference",
+    "language": "python",
+    "framework": "bentoml",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "bentoml",
+      "packaging"
+    ],
+    "best_for_tags": [
+      "productionization",
+      "bentoml"
+    ],
+    "featured": false,
+    "when_to_use": "Standardizing model deploys across an ML platform team. Bento gives you reproducible packaging + deploy targets (BentoCloud, K8s, AWS, GCP).",
+    "when_not_to_use": "Skip when (1) one-off deploys (Docker direct is fine); (2) you're already on K8s + Helm; (3) BentoCloud lock-in is a concern.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import bentoml\nfrom bentoml.io import JSON\nfrom vllm import LLM, SamplingParams\n\n@bentoml.service(resources={'gpu': 1})\nclass LlamaService:\n    @bentoml.api\n    def generate(self, prompt: str) -> dict:\n        llm = LLM(model='meta-llama/Llama-3.1-8B-Instruct')\n        out = llm.generate([prompt], SamplingParams(max_tokens=500))\n        return {'text': out[0].outputs[0].text}\n\n# bentoml build && bentoml containerize llama_service:latest\n",
+    "dependencies": [
+      "bentoml",
+      "vllm"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "bentoml",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "vllm",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install bentoml vllm",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "BentoML LLM Bento (Production Packaging) | OSS AI Hub",
+    "meta_description": "Package a vLLM/HF model as a Bento (deployable artifact). Standardized image, API, deps + autoscaling on BentoCloud or K8s."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "lmstudio-headless-server",
+    "title": "LM Studio Headless Server (Local Mac/Win)",
+    "tldr": "LM Studio's headless CLI mode: GUI-grade model management + OpenAI-compatible server. Auto-detects best quant for your GPU.",
+    "description": "LM Studio's headless CLI mode: GUI-grade model management + OpenAI-compatible server. Auto-detects best quant for your GPU.",
+    "category": "llm-inference",
+    "language": "bash",
+    "framework": "lm-studio",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "lm-studio",
+      "local-llm",
+      "headless"
+    ],
+    "best_for_tags": [
+      "mac",
+      "windows",
+      "local-llm"
+    ],
+    "featured": false,
+    "when_to_use": "Solo dev on Mac/Windows wanting friendliest local model serving. LM Studio is the easiest install + has the best model browser.",
+    "when_not_to_use": "Skip when (1) Linux (run llama.cpp or Ollama directly); (2) team/production deploy; (3) need automation (LM Studio less scriptable than Ollama).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# Install LM Studio from lmstudio.ai\n# Then enable Local Server (Server tab in UI), or headless:\n#\n# lms server start --port 1234\n# lms load llama-3.1-8b-instruct-q4_k_m\n#\n# Then OpenAI-compatible:\n# curl localhost:1234/v1/chat/completions -d '{\"model\":\"llama-3.1-8b-instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}]}'\n",
+    "dependencies": [
+      "lmstudio-cli"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "lmstudio-cli",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install lmstudio-cli",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "LM Studio Headless Server (Local Mac/Win) | OSS AI Hub",
+    "meta_description": "LM Studio's headless CLI mode: GUI-grade model management + OpenAI-compatible server. Auto-detects best quant for your GPU."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "ray-serve-llm-multi-replica",
+    "title": "Ray Serve LLM Deployment (Multi-Replica + Autoscale)",
+    "tldr": "Ray Serve deployment: multiple vLLM replicas behind one endpoint, autoscaling, traffic splitting, A/B testing.",
+    "description": "Ray Serve deployment: multiple vLLM replicas behind one endpoint, autoscaling, traffic splitting, A/B testing.",
+    "category": "llm-inference",
+    "language": "python",
+    "framework": "ray-serve",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "ray",
+      "ray-serve",
+      "autoscale"
+    ],
+    "best_for_tags": [
+      "multi-replica",
+      "autoscale"
+    ],
+    "featured": false,
+    "when_to_use": "You need K8s-like LLM serving but want to stay in Ray's distributed-Python world. Ray Serve handles replicas, scaling, fractional GPUs, and request-level metrics.",
+    "when_not_to_use": "Skip when (1) Single-replica deploys (vLLM directly is simpler); (2) deep K8s shop (Helm chart wins); (3) team unfamiliar with Ray.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from ray import serve\nfrom vllm import LLM, SamplingParams\n\n@serve.deployment(num_replicas=2, ray_actor_options={'num_gpus': 4})\nclass LlamaService:\n    def __init__(self):\n        self.llm = LLM(model='meta-llama/Llama-3.3-70B-Instruct', tensor_parallel_size=4)\n    async def __call__(self, request):\n        body = await request.json()\n        out = self.llm.generate([body['prompt']], SamplingParams(max_tokens=500))\n        return {'text': out[0].outputs[0].text}\n\nserve.run(LlamaService.bind())\n",
+    "dependencies": [
+      "ray[serve]",
+      "vllm"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "ray[serve]",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "vllm",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install ray[serve] vllm",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Ray Serve LLM Deployment (Multi-Replica + Autoscale) | OSS AI Hub",
+    "meta_description": "Ray Serve deployment: multiple vLLM replicas behind one endpoint, autoscaling, traffic splitting, A/B testing."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "huggingface-text-embeddings-inference",
+    "title": "HuggingFace TEI (Text Embeddings Inference Server)",
+    "tldr": "HuggingFace TEI server for BGE / Jina / Cohere-style embedders. 30k tok/s on H100, OpenAI-compatible embeddings endpoint.",
+    "description": "HuggingFace TEI server for BGE / Jina / Cohere-style embedders. 30k tok/s on H100, OpenAI-compatible embeddings endpoint.",
+    "category": "llm-inference",
+    "language": "bash",
+    "framework": "tei",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "tei",
+      "embeddings",
+      "huggingface"
+    ],
+    "best_for_tags": [
+      "embeddings",
+      "throughput"
+    ],
+    "featured": false,
+    "when_to_use": "Need to embed millions of docs/queries fast. TEI is HF's optimized embedding server - sharded batching, GPU + CPU, comparable to OpenAI cost-wise but local.",
+    "when_not_to_use": "Skip when (1) you only need ~100 embeddings/sec (FastEmbed in-process is fine); (2) you're on hosted (use OpenAI/Cohere directly).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# docker run --gpus all -p 8080:80 -v $(pwd)/data:/data \\\n#   ghcr.io/huggingface/text-embeddings-inference:1.6 \\\n#   --model-id BAAI/bge-m3 --revision main --port 80\n#\n# OpenAI-compatible embeddings:\n# curl localhost:8080/embed -d '{\"inputs\":\"hello\"}'\n# OR /v1/embeddings to use openai SDK directly\n",
+    "dependencies": [
+      "text-embeddings-inference"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "text-embeddings-inference",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install text-embeddings-inference",
+      "Configure credentials",
+      "Run + verify"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log latency + cost per call.",
+      "Run smoke tests in CI.",
+      "Monitor error rates."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "HuggingFace TEI (Text Embeddings Inference Server) | OSS AI Hub",
+    "meta_description": "HuggingFace TEI server for BGE / Jina / Cohere-style embedders. 30k tok/s on H100, OpenAI-compatible embeddings endpoint."
   }
 ]
