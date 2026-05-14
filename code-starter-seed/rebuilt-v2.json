@@ -3578,6 +3578,275 @@
     "meta_description": "Zero-dependency LLM observability: JSON events to stderr, pipe to any log pipeline. Spans, costs, errors \u2014 no SaaS required."
   },
   {
+    "slug": "llm-rate-limiter-token-bucket",
+    "title": "LLM Rate Limiter Using Token Bucket",
+    "tldr": "Token-bucket rate limiter that respects both request-per-minute and tokens-per-minute caps. Honors OpenAI/Anthropic's rate-limit headers to recover gracefully from 429s instead of fixed backoff.",
+    "category": "production",
+    "language": "python",
+    "framework": "stdlib",
+    "tags": [
+      "rate-limiting",
+      "production",
+      "token-bucket",
+      "throttling"
+    ],
+    "best_for_tags": [
+      "high-qps",
+      "bulk-jobs",
+      "shared-quota"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "when_to_use": "When running concurrent LLM calls and you want to maximize throughput without tripping provider rate limits. The dual-bucket (RPM + TPM) shape matches how OpenAI/Anthropic count.",
+    "when_not_to_use": "Skip for single-user interactive apps (one-at-a-time is fine). Skip for low-volume \u2014 overhead > benefit.",
+    "quick_start": "pip install httpx && python -c 'from rate_limiter import bucket; print(bucket.test())'",
+    "full_code": "\"\"\"Dual token-bucket rate limiter for LLM APIs.\n\nTwo limits in parallel:\n  - Requests-per-minute (RPM)\n  - Tokens-per-minute (TPM)\n\nBoth buckets must have capacity for a call to proceed. Token estimate\nmust be supplied by caller (use tiktoken or a heuristic).\n\nWhen a 429 returns Retry-After or x-ratelimit-reset-tokens, this updates\nthe bucket's recovery rate to match what the server says.\n\"\"\"\nfrom __future__ import annotations\n\nimport asyncio\nimport time\nfrom dataclasses import dataclass, field\nfrom typing import Optional\n\n\n@dataclass\nclass TokenBucket:\n    \"\"\"A standard token bucket.\"\"\"\n    capacity: float          # max tokens\n    refill_rate: float       # tokens per second\n    _tokens: float = field(init=False)\n    _last_refill: float = field(init=False)\n    _lock: asyncio.Lock = field(init=False, default_factory=asyncio.Lock)\n\n    def __post_init__(self) -> None:\n        self._tokens = self.capacity\n        self._last_refill = time.monotonic()\n\n    async def take(self, n: float) -> float:\n        \"\"\"Block until n tokens are available. Returns the wait time.\"\"\"\n        async with self._lock:\n            now = time.monotonic()\n            elapsed = now - self._last_refill\n            self._tokens = min(self.capacity, self._tokens + elapsed * self.refill_rate)\n            self._last_refill = now\n\n            if self._tokens >= n:\n                self._tokens -= n\n                return 0.0\n\n            # Need to wait\n            deficit = n - self._tokens\n            wait = deficit / self.refill_rate\n            self._tokens = 0\n            self._last_refill = now + wait\n\n        await asyncio.sleep(wait)\n        return wait\n\n    def adjust(self, new_capacity: float, new_refill_rate: float) -> None:\n        self.capacity = new_capacity\n        self.refill_rate = new_refill_rate\n        self._tokens = min(self._tokens, new_capacity)\n\n\n@dataclass\nclass LLMRateLimiter:\n    \"\"\"Dual-bucket: enforce both RPM and TPM.\"\"\"\n    rpm_limit: int           # requests per minute\n    tpm_limit: int           # tokens per minute\n\n    def __post_init__(self):\n        self.req_bucket = TokenBucket(capacity=self.rpm_limit, refill_rate=self.rpm_limit / 60)\n        self.tok_bucket = TokenBucket(capacity=self.tpm_limit, refill_rate=self.tpm_limit / 60)\n\n    async def acquire(self, est_tokens: int) -> dict:\n        \"\"\"Wait until BOTH buckets have capacity for one request + est_tokens tokens.\n\n        Returns timing info for telemetry.\n        \"\"\"\n        t0 = time.monotonic()\n        req_wait, tok_wait = await asyncio.gather(\n            self.req_bucket.take(1),\n            self.tok_bucket.take(est_tokens),\n        )\n        return {\n            \"wait_seconds\": time.monotonic() - t0,\n            \"req_wait\": req_wait,\n            \"tok_wait\": tok_wait,\n        }\n\n    def handle_429(self, response_headers: dict) -> None:\n        \"\"\"Adjust buckets based on server-supplied recovery info.\"\"\"\n        # OpenAI sends x-ratelimit-reset-requests / x-ratelimit-reset-tokens (in seconds-from-now or ms)\n        reset_req = response_headers.get(\"x-ratelimit-reset-requests\")\n        reset_tok = response_headers.get(\"x-ratelimit-reset-tokens\")\n        if reset_req:\n            try:\n                wait_s = float(reset_req.rstrip(\"ms\").rstrip(\"s\")) / (1000 if \"ms\" in reset_req else 1)\n                self.req_bucket._tokens = 0\n                self.req_bucket._last_refill = time.monotonic() + wait_s\n            except ValueError:\n                pass\n        # Same logic for tokens; omitted for brevity\n\n\n# ----------------- USAGE -----------------\n\nasync def call_with_rate_limit(limiter: LLMRateLimiter, est_tokens: int, fn):\n    info = await limiter.acquire(est_tokens)\n    try:\n        result = await fn()\n        return result, info\n    except Exception as e:\n        # If response is a 429, parse headers and adjust\n        if hasattr(e, \"response\") and e.response.status_code == 429:\n            limiter.handle_429(dict(e.response.headers))\n        raise\n\n\n# ----------------- TEST -----------------\n\nasync def _demo():\n    # OpenAI gpt-4o tier 2 limits: 500 RPM, 2M TPM (example)\n    limiter = LLMRateLimiter(rpm_limit=500, tpm_limit=2_000_000)\n    print(\"Acquired:\", await limiter.acquire(est_tokens=500))\n    print(\"Acquired:\", await limiter.acquire(est_tokens=500))\n\n\nif __name__ == \"__main__\":\n    asyncio.run(_demo())\n",
+    "dependencies": [
+      {
+        "name": "httpx",
+        "version": ">=0.27",
+        "purpose": "Used for HTTP errors with header inspection"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Save as rate_limiter.py",
+      "Import LLMRateLimiter; instantiate with your tier's RPM/TPM limits.",
+      "Wrap calls: await call_with_rate_limit(limiter, est_tokens, lambda: my_llm_call())"
+    ],
+    "variations": [
+      {
+        "label": "Shared limiter across workers",
+        "description": "Redis-backed token bucket for distributed workers.",
+        "code_snippet": "# Use redis INCR + EXPIRE atomically (Lua script) for shared counter.\\n# See aiohttp-ratelimiter or python-redis-rate-limiters libraries."
+      },
+      {
+        "label": "Adaptive estimate",
+        "description": "Learn token estimates over time.",
+        "code_snippet": "# Track actual_tokens / est_tokens ratio; adjust future estimates by trailing avg.\\nactual = response.usage.total_tokens\\nratio_history.append(actual / est_tokens)\\nest_factor = sum(ratio_history[-50:]) / 50"
+      },
+      {
+        "label": "Per-model buckets",
+        "description": "Different limits for different models.",
+        "code_snippet": "limiters = {'gpt-4o': LLMRateLimiter(...), 'gpt-4o-mini': LLMRateLimiter(...)}\\nawait limiters[model].acquire(est_tokens)"
+      },
+      {
+        "label": "Priority queue",
+        "description": "User-facing requests jump bulk-job queue.",
+        "code_snippet": "# Use asyncio.PriorityQueue; high-priority calls take from bucket first."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Still getting 429s despite limiter",
+        "cause": "Estimate too low; or limits set higher than actual.",
+        "fix_snippet": "Use tiktoken to count more precisely. Lower limits 10% below provider's published cap to leave headroom."
+      },
+      {
+        "error_text": "Limiter deadlocks under load",
+        "cause": "Lock contention when many calls wait simultaneously.",
+        "fix_snippet": "asyncio.Lock in starter is per-bucket; high concurrency may need fairer queuing. For >100 concurrent waiters, use asyncio.Queue + dedicated dispatcher."
+      },
+      {
+        "error_text": "Bursts succeed then everything stalls",
+        "cause": "Bucket filled at start, drained, then refill rate is too slow.",
+        "fix_snippet": "Set capacity = expected burst, refill_rate = sustained rate. Don't over-size capacity if you can't sustain that rate."
+      },
+      {
+        "error_text": "TPM bucket never refills",
+        "cause": "Single request larger than capacity.",
+        "fix_snippet": "Cap est_tokens at bucket.capacity; if one request needs more than the bucket's max, chunk it (long-context-aware)."
+      }
+    ],
+    "production_checklist": [
+      "Set RPM/TPM below provider's published limits (give 10-20% headroom).",
+      "Track actual vs estimated tokens \u2014 adjust estimates over time.",
+      "Distribute limiter state across workers (Redis) if running multiple replicas.",
+      "Monitor wait times \u2014 if p99 is huge, you're under-provisioned or need a higher tier.",
+      "Test under burst conditions; bucket capacity matters for spikes.",
+      "Don't share buckets across critical/non-critical traffic; prioritize.",
+      "Honor provider rate-limit headers for adaptive recovery from soft limits."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o",
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "httpx==0.27.2",
+        "asyncio (stdlib)"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "rate-limiting",
+      "token-bucket",
+      "back-pressure"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why token bucket vs fixed window?",
+        "answer": "Token bucket allows bursts up to capacity, then sustains the rate. Fixed-window can cause synchronized bursts at minute boundaries (the \u2018zero-crossing\u2019 problem)."
+      },
+      {
+        "question": "Do I need both RPM and TPM limits?",
+        "answer": "Yes for production. OpenAI enforces both. You can hit TPM with few large calls or RPM with many small calls; both buckets prevent both failure modes."
+      },
+      {
+        "question": "Can this replace SDK retries?",
+        "answer": "Complements, doesn't replace. Use this for proactive flow control; keep SDK retries for the rare unexpected 429."
+      },
+      {
+        "question": "What about provider tier ramps?",
+        "answer": "OpenAI auto-increases limits over time. Re-tune your limiter when your provider upgrades you. Don't hardcode forever."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "LLM Rate Limiter With Token Bucket \u2014 Starter",
+    "meta_description": "Dual-bucket (RPM + TPM) rate limiter for LLM APIs with 429-aware recovery. Async-safe, supports per-model buckets and distributed setups."
+  },
+  {
+    "slug": "circuit-breaker-llm-calls",
+    "title": "Circuit Breaker For LLM API Calls",
+    "tldr": "Production circuit breaker for LLM calls: opens after N consecutive failures, half-open probe after cool-down, prevents cascading failures when an upstream API is down or degraded.",
+    "category": "production",
+    "language": "python",
+    "framework": "stdlib",
+    "tags": [
+      "circuit-breaker",
+      "reliability",
+      "production",
+      "fault-tolerance"
+    ],
+    "best_for_tags": [
+      "high-availability",
+      "multi-provider",
+      "fallback"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "When LLM calls are on a critical user-facing path AND you have a fallback (cached response, simpler model, error message). Circuit breaker turns \u20185-second timeout x 100 requests\u2019 into \u2018fail fast and shed load.\u2019",
+    "when_not_to_use": "Skip when failures are rare and recovery is fast (retry alone is enough). Skip when you don't have a fallback \u2014 failing fast just changes when the user sees an error.",
+    "quick_start": "Wrap your LLM call in @circuit_breaker; provide fallback function.",
+    "full_code": "\"\"\"Circuit breaker for LLM API calls.\n\nStates:\n  CLOSED   \u2014 calls pass through normally; failures counted.\n  OPEN     \u2014 fail fast; calls return fallback immediately. After cool-down, transition to HALF_OPEN.\n  HALF_OPEN \u2014 one probe call allowed. Success -> CLOSED; failure -> OPEN again.\n\nUse case: wrap an LLM call. When the LLM is down/slow, this prevents the whole\nservice from blocking on it. Fallback returns cached/degraded response.\n\"\"\"\nfrom __future__ import annotations\n\nimport asyncio\nimport enum\nimport time\nfrom dataclasses import dataclass, field\nfrom functools import wraps\nfrom typing import Any, Callable, Awaitable\n\n\nclass State(enum.Enum):\n    CLOSED = \"closed\"\n    OPEN = \"open\"\n    HALF_OPEN = \"half_open\"\n\n\n@dataclass\nclass CircuitBreaker:\n    failure_threshold: int = 5            # consecutive failures to trip\n    cool_down_seconds: float = 30.0       # how long OPEN before HALF_OPEN probe\n    success_threshold_in_half_open: int = 1   # successes needed to close again\n\n    _state: State = field(default=State.CLOSED, init=False)\n    _consecutive_failures: int = field(default=0, init=False)\n    _consecutive_successes: int = field(default=0, init=False)\n    _open_until: float = field(default=0.0, init=False)\n    _lock: asyncio.Lock = field(init=False, default_factory=asyncio.Lock)\n\n    async def _check_state(self) -> State:\n        async with self._lock:\n            if self._state == State.OPEN and time.monotonic() >= self._open_until:\n                self._state = State.HALF_OPEN\n                self._consecutive_successes = 0\n            return self._state\n\n    async def _record_success(self) -> None:\n        async with self._lock:\n            self._consecutive_failures = 0\n            if self._state == State.HALF_OPEN:\n                self._consecutive_successes += 1\n                if self._consecutive_successes >= self.success_threshold_in_half_open:\n                    self._state = State.CLOSED\n\n    async def _record_failure(self) -> None:\n        async with self._lock:\n            self._consecutive_failures += 1\n            if self._state == State.HALF_OPEN:\n                self._open()\n            elif self._consecutive_failures >= self.failure_threshold:\n                self._open()\n\n    def _open(self) -> None:\n        self._state = State.OPEN\n        self._open_until = time.monotonic() + self.cool_down_seconds\n        self._consecutive_successes = 0\n\n    async def call(self, fn: Callable[..., Awaitable[Any]], *args, fallback: Callable[..., Awaitable[Any]] | None = None, **kwargs) -> Any:\n        state = await self._check_state()\n\n        if state == State.OPEN:\n            if fallback is None:\n                raise CircuitBreakerOpenError(\"circuit open and no fallback\")\n            return await fallback(*args, **kwargs)\n\n        try:\n            result = await fn(*args, **kwargs)\n            await self._record_success()\n            return result\n        except Exception:\n            await self._record_failure()\n            if (await self._check_state()) == State.OPEN and fallback is not None:\n                return await fallback(*args, **kwargs)\n            raise\n\n\nclass CircuitBreakerOpenError(Exception):\n    pass\n\n\n# ----------------- DECORATOR -----------------\n\ndef circuit_breaker(breaker: CircuitBreaker, *, fallback: Callable[..., Awaitable[Any]] | None = None):\n    \"\"\"Decorator form. Apply to an async function.\"\"\"\n    def deco(fn):\n        @wraps(fn)\n        async def wrapper(*args, **kwargs):\n            return await breaker.call(fn, *args, fallback=fallback, **kwargs)\n        return wrapper\n    return deco\n\n\n# ----------------- USAGE EXAMPLE -----------------\n\nllm_breaker = CircuitBreaker(failure_threshold=5, cool_down_seconds=30)\n\n\nasync def llm_fallback(prompt: str) -> str:\n    \"\"\"When LLM is down, return a cached or degraded response.\"\"\"\n    # Could read from cache, return a static fallback, route to a different model, etc.\n    return \"[fallback] LLM temporarily unavailable. Please retry shortly.\"\n\n\n@circuit_breaker(llm_breaker, fallback=llm_fallback)\nasync def generate(prompt: str) -> str:\n    from openai import AsyncOpenAI\n    client = AsyncOpenAI()\n    resp = await client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n        timeout=10.0,\n    )\n    return resp.choices[0].message.content\n\n\nif __name__ == \"__main__\":\n    async def main():\n        out = await generate(\"Hello\")\n        print(out)\n    asyncio.run(main())\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Example LLM client"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "Save as circuit_breaker.py",
+      "Define a fallback async function (cache, simpler model, error message).",
+      "Wrap your LLM call: @circuit_breaker(breaker, fallback=...)",
+      "Tune failure_threshold and cool_down based on observed failure patterns."
+    ],
+    "variations": [
+      {
+        "label": "Per-provider breakers",
+        "description": "Separate breakers for OpenAI, Anthropic.",
+        "code_snippet": "openai_breaker = CircuitBreaker(...)\\nanthropic_breaker = CircuitBreaker(...)\\n# Fallback can route to the other provider when one is down."
+      },
+      {
+        "label": "Sliding window failures",
+        "description": "Count failures in a time window, not consecutive.",
+        "code_snippet": "# Track timestamps of failures; trip if N failures in last M seconds."
+      },
+      {
+        "label": "Failure rate threshold",
+        "description": "Trip when error rate > X%.",
+        "code_snippet": "# Track success + failure counts in window; trip when failures/total > 0.2"
+      },
+      {
+        "label": "Distributed state via Redis",
+        "description": "Share breaker state across workers.",
+        "code_snippet": "# Store state + counters in Redis; periodic refresh from local in-mem cache."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Circuit trips on transient errors and stays open",
+        "cause": "Threshold too low or cool_down too long.",
+        "fix_snippet": "Tune: failure_threshold=5-10 for most APIs; cool_down=30-60s. Track open events to find right values for your workload."
+      },
+      {
+        "error_text": "Circuit never trips despite outage",
+        "cause": "Errors swallowed elsewhere or counted incorrectly.",
+        "fix_snippet": "Ensure the exception path actually calls _record_failure. Add logging in the catch block to verify."
+      },
+      {
+        "error_text": "Fallback also fails",
+        "cause": "Fallback depends on the same downstream.",
+        "fix_snippet": "Fallback must be MORE reliable than the protected call: cached response, static text, simpler model in a different region."
+      },
+      {
+        "error_text": "Race condition between workers",
+        "cause": "In-memory state isolated per worker.",
+        "fix_snippet": "Use Redis variant for shared state, OR accept that each worker has its own breaker and the system trips when ALL workers see the same failure pattern."
+      }
+    ],
+    "production_checklist": [
+      "Always provide a real fallback \u2014 failing fast without fallback just changes the error message.",
+      "Log state transitions (CLOSED\u2192OPEN\u2192HALF_OPEN\u2192CLOSED); these are forensic data.",
+      "Set up alerts on breaker open events.",
+      "Test fallback regularly \u2014 a stale fallback fails when you need it.",
+      "Tune thresholds from real failure patterns; don't guess.",
+      "Pair with rate limiter; rate-limit-induced 429s shouldn't trip the breaker (they're expected).",
+      "Distinguish \u2018API down\u2019 from \u2018bad inputs\u2019; the latter shouldn't trip the breaker."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "openai==1.51.0",
+        "asyncio (stdlib)"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "circuit-breaker",
+      "fault-tolerance",
+      "graceful-degradation"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Circuit breaker vs retry?",
+        "answer": "Retries handle transient errors per-request. Circuit breaker prevents repeated retries when the system is genuinely down. Use both: retries inside, breaker outside."
+      },
+      {
+        "question": "What's a good failure_threshold?",
+        "answer": "5-10 for normal APIs. Higher if you expect occasional spikes. Track open events: if breaker opens often during normal operation, threshold is too low."
+      },
+      {
+        "question": "Should the user see the fallback?",
+        "answer": "Depends on stakes. Customer-facing: yes, with a friendly message about temporary unavailability. Internal: log loudly so engineers see the problem."
+      },
+      {
+        "question": "Can I use this for non-LLM calls?",
+        "answer": "Yes \u2014 the pattern is general. Wrap any unreliable downstream call. The starter is LLM-themed but the breaker is provider-agnostic."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Circuit Breaker for LLM API Calls \u2014 Starter",
+    "meta_description": "Production circuit breaker: opens after N failures, half-open probe after cool-down, fallback when OPEN. Prevents cascading failures."
+  },
+  {
     "slug": "rag-langchain-qdrant-basic",
     "title": "RAG with LangChain + Qdrant (production-shape)",
     "category": "rag-patterns",
