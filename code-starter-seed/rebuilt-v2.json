@@ -8177,5 +8177,695 @@
     ],
     "meta_title": "Healthcheck + Readiness for LLM Pods | OSS AI Hub",
     "meta_description": "Production K8s /healthz + /readyz for LLM services: model-loaded + dep-reachable + GPU-mem checks. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "modal-gpu-llm-deploy",
+    "title": "Modal Serverless GPU LLM Deploy (Llama 3.3 70B)",
+    "tldr": "Deploy Llama 3.3 70B as a serverless GPU endpoint on Modal with cold-start optimization (model layer caching) and per-request billing.",
+    "description": "Production Modal app: 4xH100 image, vLLM-backed endpoint, model weights cached on a Modal Volume to cut cold-starts from 8min to 90s.",
+    "category": "deployment",
+    "language": "python",
+    "framework": "modal",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "modal",
+      "serverless-gpu",
+      "llama",
+      "vllm"
+    ],
+    "best_for_tags": [
+      "serverless",
+      "gpu",
+      "modal"
+    ],
+    "featured": true,
+    "when_to_use": "Sporadic-traffic LLM endpoint (1-1000 QPS bursts) where you want GPU serverless. Modal's per-request billing + scale-to-zero is meaningfully cheaper than an always-on H100 box when traffic is < 30% of full utilization.",
+    "when_not_to_use": "Skip Modal when (1) sustained high QPS - dedicated infra is cheaper at >50% utilization; (2) you need <100ms TTFT every time - cold starts add 60-90s; (3) you're price-sensitive to overall cost - hosted Groq/Together is cheaper end-to-end.",
+    "quick_start": "1) `pip install modal`  2) `modal token new`  3) `modal deploy llama_app.py`  4) Hit the deployed URL with curl.",
+    "full_code": "\"\"\"Modal serverless deployment of Llama 3.3 70B with vLLM.\"\"\"\nfrom __future__ import annotations\n\nimport modal\n\n\nMODEL = \"meta-llama/Llama-3.3-70B-Instruct\"\nAPP = \"ossai-llama-server\"\n\n\n# 1. Image: CUDA 12.4 + vLLM 0.7\nimage = (\n    modal.Image.debian_slim(python_version=\"3.11\")\n    .pip_install(\"vllm==0.7.0\", \"huggingface_hub[hf_transfer]==0.27.0\", extra_options=\"--extra-index-url=https://download.pytorch.org/whl/cu124\")\n    .env({\"HF_HUB_ENABLE_HF_TRANSFER\": \"1\"})\n)\n\n# 2. Volume: persist model weights across container starts\nvol = modal.Volume.from_name(\"llama33-weights\", create_if_missing=True)\n\napp = modal.App(APP, image=image)\n\n\n@app.function(\n    gpu=\"H100:4\",                      # 4 H100s\n    volumes={\"/cache\": vol},\n    secrets=[modal.Secret.from_name(\"hf-token\")],\n    timeout=3600,\n    keep_warm=1,                       # 1 instance kept warm to cut cold starts further\n    allow_concurrent_inputs=64,        # batch inference within instance\n)\n@modal.web_endpoint(method=\"POST\")\nasync def generate(payload: dict) -> dict:\n    import os\n    os.environ[\"HF_HOME\"] = \"/cache/hf\"\n\n    from vllm import LLM, SamplingParams\n\n    llm = _get_or_init_llm()\n    sampling = SamplingParams(\n        temperature=payload.get(\"temperature\", 0.4),\n        max_tokens=payload.get(\"max_tokens\", 500),\n    )\n    prompts = [payload[\"prompt\"]]\n    outputs = llm.generate(prompts, sampling)\n    return {\"text\": outputs[0].outputs[0].text, \"model\": MODEL}\n\n\n_LLM: object | None = None\n\n\ndef _get_or_init_llm():\n    global _LLM\n    if _LLM is None:\n        from vllm import LLM\n        _LLM = LLM(model=MODEL, tensor_parallel_size=4, gpu_memory_utilization=0.92, max_num_seqs=64)\n    return _LLM\n\n\n# Local entrypoint for testing: `modal run llama_app.py::main --prompt \"Hello\"`\n@app.local_entrypoint()\ndef main(prompt: str = \"Explain Modal in one sentence.\"):\n    print(generate.remote({\"prompt\": prompt, \"max_tokens\": 100}))\n",
+    "code": "import modal\n\nimage = modal.Image.debian_slim(python_version='3.11').pip_install('vllm==0.7.0')\nvol = modal.Volume.from_name('llama33-weights', create_if_missing=True)\napp = modal.App('ossai-llama', image=image)\n\n@app.function(gpu='H100:4', volumes={'/cache': vol}, keep_warm=1)\n@modal.web_endpoint(method='POST')\nasync def generate(payload: dict) -> dict:\n    from vllm import LLM, SamplingParams\n    llm = LLM(model='meta-llama/Llama-3.3-70B-Instruct', tensor_parallel_size=4)\n    out = llm.generate([payload['prompt']], SamplingParams(max_tokens=500))\n    return {'text': out[0].outputs[0].text}\n",
+    "dependencies": [
+      "modal"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "modal",
+        "version": ">=0.65.0",
+        "purpose": "Serverless GPU platform SDK."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Stored as Modal Secret named 'hf-token'."
+      }
+    ],
+    "setup_steps": [
+      "Sign up at modal.com (free $30/mo credit).",
+      "`pip install modal>=0.65.0`",
+      "`modal token new` to authenticate locally.",
+      "Create the HF token secret: `modal secret create hf-token HF_TOKEN=hf_xxx`",
+      "Save the script as `llama_app.py`.",
+      "First run: `modal run llama_app.py::main --prompt 'hi'` (downloads + caches weights, ~10 min first time).",
+      "Deploy: `modal deploy llama_app.py` - returns a public URL you can curl."
+    ],
+    "variations": [
+      {
+        "label": "Pre-download weights at build time",
+        "description": "Bake weights into the image - no cold-start download.",
+        "code_snippet": "def _download():\n    from huggingface_hub import snapshot_download\n    snapshot_download(MODEL, local_dir='/cache/hf', token=os.environ['HF_TOKEN'])\n\nimage = image.run_function(_download, secrets=[modal.Secret.from_name('hf-token')], volumes={'/cache': vol})"
+      },
+      {
+        "label": "Smaller GPU pool (A100 or single H100 FP8)",
+        "description": "Lower cost for less throughput.",
+        "code_snippet": "@app.function(gpu='A100-80GB:2')  # ~half the price of 4xH100\n# OR single H100 + FP8 quantization\n@app.function(gpu='H100:1')\n# vLLM args: quantization='fp8', max_num_seqs=32"
+      },
+      {
+        "label": "Bedrock-style autoscaling with min/max",
+        "description": "Tune capacity for predictable load.",
+        "code_snippet": "@app.function(gpu='H100:4', concurrency_limit=10, max_inputs=1, scaledown_window=60)\n# max 10 concurrent containers, each processes 1 input at a time"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Cold start ~8 minutes",
+        "cause": "Weights re-downloading every cold start.",
+        "fix_snippet": "# Always mount the Volume + set HF_HOME=/cache/hf:\nvol = modal.Volume.from_name('llama33-weights', create_if_missing=True)\n@app.function(volumes={'/cache': vol})"
+      },
+      {
+        "error_text": "ImportError: vllm requires Python 3.10+",
+        "cause": "Default image is Python 3.9.",
+        "fix_snippet": "image = modal.Image.debian_slim(python_version='3.11')"
+      },
+      {
+        "error_text": "OOM on 4xH100 with 70B FP16",
+        "cause": "gpu_memory_utilization or KV cache budget wrong.",
+        "fix_snippet": "LLM(..., gpu_memory_utilization=0.92, max_num_seqs=32, max_model_len=4096)"
+      }
+    ],
+    "production_checklist": [
+      "Persist weights to a Modal Volume - re-downloading on every cold start is the #1 cost mistake.",
+      "Use keep_warm=1 for predictable latency - one instance always live.",
+      "Set scaledown_window=60-300s to avoid thrashing on sporadic traffic.",
+      "Pin vLLM + Modal versions in the Image - avoid silent breakage on upgrade.",
+      "Bake the HF download into the image when latency is critical (no first-request delay).",
+      "Monitor Modal billing dashboard - serverless can surprise on sudden traffic spikes.",
+      "Have a Together AI / Groq fallback URL for outage recovery."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.3-70B-Instruct"
+      ],
+      "library_versions": [
+        "modal==0.65.0",
+        "vllm==0.7.0",
+        "4xH100 SXM"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "modal",
+      "vllm"
+    ],
+    "related_glossary_slugs": [
+      "serverless-gpu",
+      "cold-start",
+      "modal-volume"
+    ],
+    "related_learn_slugs": [
+      "serverless-llm-101"
+    ],
+    "faq": [
+      {
+        "question": "Modal vs RunPod serverless?",
+        "answer": "Modal: deep Python integration, great DX, slightly more expensive. RunPod: cheaper GPU rates, container-only (you bring a Dockerfile), less Python-native. For pure cost optimization with bursty workloads, RunPod wins. For developer experience + complex apps, Modal wins."
+      },
+      {
+        "question": "When is Modal cheaper than an always-on H100?",
+        "answer": "Roughly when utilization is < 30% (i.e. fewer than ~7 hours/day of active inference). Above that, dedicated H100 from Lambda/Crusoe/Coreweave wins on dollars-per-token."
+      }
+    ],
+    "meta_title": "Modal Serverless GPU LLM Deploy (Llama 3.3 70B) | OSS AI Hub",
+    "meta_description": "Production Modal recipe: Llama 3.3 70B on 4xH100, model layer caching, keep_warm, web endpoint. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "kubernetes-vllm-helm",
+    "title": "Kubernetes Helm Chart for vLLM (GPU + HPA + PDB)",
+    "tldr": "Helm chart deploying vLLM with GPU node affinity, HPA on tokens-per-sec, PDB, persistent model cache PVC, and Prometheus ServiceMonitor.",
+    "description": "Production vLLM K8s deployment: GPU pool node affinity, HPA on custom Prometheus metric (vllm:num_requests_waiting), PDB, model-cache PVC, ServiceMonitor.",
+    "category": "deployment",
+    "language": "yaml",
+    "framework": "helm",
+    "difficulty_tier": "expert",
+    "tags": [
+      "kubernetes",
+      "helm",
+      "vllm",
+      "gpu"
+    ],
+    "best_for_tags": [
+      "k8s",
+      "helm",
+      "gpu-pod"
+    ],
+    "when_to_use": "You self-host LLMs in K8s and want a reusable Helm chart. The recipe handles GPU node affinity (nvidia.com/gpu.product), PVC for model cache (avoid 140GB redownload on every pod), HPA on real LLM signals (queue depth, not CPU), and PodDisruptionBudget for graceful rolling updates.",
+    "when_not_to_use": "Skip Helm + K8s when (1) you have <3 GPU nodes - the orchestration overhead isn't worth it; (2) you're early-stage - serverless (Modal/RunPod) is faster to iterate; (3) you don't have K8s expertise on the team.",
+    "quick_start": "1) Provision a GPU node pool with nvidia-device-plugin  2) Save the chart files  3) `helm install vllm . -f values.yaml`",
+    "full_code": "# values.yaml -- vLLM Helm chart for Llama 3.3 70B\nreplicaCount: 1\nimage:\n  repository: vllm/vllm-openai\n  tag: \"v0.7.0\"\n\nresources:\n  limits:\n    nvidia.com/gpu: 4\n    memory: 256Gi\n  requests:\n    nvidia.com/gpu: 4\n    memory: 128Gi\n\nnodeSelector:\n  nvidia.com/gpu.product: NVIDIA-H100-80GB-HBM3\n\n# Persistent model cache (avoid re-downloading 140GB on pod restart)\nmodelCache:\n  enabled: true\n  size: 200Gi\n  storageClass: gp3   # or fast-ssd, depending on cloud\n\nenv:\n  - name: HUGGING_FACE_HUB_TOKEN\n    valueFrom: {secretKeyRef: {name: hf-token, key: token}}\n  - name: HF_HOME\n    value: /cache/hf\n\nargs:\n  - \"--model\"\n  - \"meta-llama/Llama-3.3-70B-Instruct\"\n  - \"--tensor-parallel-size\"\n  - \"4\"\n  - \"--max-num-seqs\"\n  - \"256\"\n  - \"--enable-prefix-caching\"\n  - \"--gpu-memory-utilization\"\n  - \"0.92\"\n\nservice:\n  type: ClusterIP\n  port: 8000\n\n# HPA based on vLLM's request queue depth (Prometheus custom metric)\nautoscaling:\n  enabled: true\n  minReplicas: 1\n  maxReplicas: 4\n  customMetrics:\n    - type: Pods\n      pods:\n        metric: {name: vllm_num_requests_waiting}\n        target: {type: AverageValue, averageValue: \"5\"}\n\n# PodDisruptionBudget for safe rolling updates\npodDisruptionBudget:\n  enabled: true\n  minAvailable: 1\n\n# Prometheus ServiceMonitor (Prometheus Operator)\nserviceMonitor:\n  enabled: true\n  interval: 15s\n  path: /metrics\n",
+    "code": "# values.yaml (excerpt)\nreplicaCount: 1\nresources:\n  limits: {nvidia.com/gpu: 4, memory: 256Gi}\nnodeSelector: {nvidia.com/gpu.product: NVIDIA-H100-80GB-HBM3}\nmodelCache: {enabled: true, size: 200Gi}\nautoscaling:\n  enabled: true\n  customMetrics:\n    - type: Pods\n      pods:\n        metric: {name: vllm_num_requests_waiting}\n        target: {type: AverageValue, averageValue: '5'}\n",
+    "dependencies": [
+      "helm",
+      "kubernetes"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "helm",
+        "version": ">=3.16.0",
+        "purpose": "K8s package manager."
+      },
+      {
+        "name": "kubectl",
+        "version": ">=1.31.0",
+        "purpose": "K8s CLI."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Stored as K8s secret 'hf-token'."
+      }
+    ],
+    "setup_steps": [
+      "Provision K8s cluster with GPU node pool (EKS+karpenter, GKE, AKS, or self-managed).",
+      "Install nvidia-device-plugin: `kubectl apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0.17.0/nvidia-device-plugin.yml`",
+      "Install Prometheus Operator (for HPA on custom metrics).",
+      "Create HF secret: `kubectl create secret generic hf-token --from-literal=token=hf_xxx`",
+      "Save values.yaml + Helm chart skeleton (templates/deployment.yaml, hpa.yaml, etc.).",
+      "Install: `helm install vllm ./vllm-chart -f values.yaml -n llm-system --create-namespace`",
+      "Verify: `kubectl get pods -n llm-system -w` (first pod takes 10+ min to download weights)."
+    ],
+    "variations": [
+      {
+        "label": "GKE Autopilot with custom node pool",
+        "description": "Spotless GKE setup with GPU node affinity.",
+        "code_snippet": "# gcloud container node-pools create gpu-pool \\\n#   --cluster=ossai --machine-type=a3-highgpu-8g \\\n#   --accelerator type=nvidia-h100-80gb,count=8 \\\n#   --enable-autoscaling --min-nodes=0 --max-nodes=4"
+      },
+      {
+        "label": "Spot/preemptible GPUs for cost",
+        "description": "60-80% cost savings with tolerations + PDB.",
+        "code_snippet": "tolerations:\n- key: cloud.google.com/gke-preemptible\n  operator: Equal\n  value: 'true'\n  effect: NoSchedule\npodDisruptionBudget:\n  minAvailable: 0  # accept eviction"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Pod stuck in Pending due to insufficient GPU",
+        "cause": "Wrong nodeSelector label or no GPU nodes available.",
+        "fix_snippet": "kubectl get nodes -L nvidia.com/gpu.product\n# Match the label EXACTLY in nodeSelector"
+      },
+      {
+        "error_text": "Model download takes 15+ min on every restart",
+        "cause": "Missing PVC for HF cache.",
+        "fix_snippet": "# Mount the model-cache PVC at /cache and set HF_HOME=/cache/hf in env"
+      },
+      {
+        "error_text": "HPA doesn't scale despite high queue",
+        "cause": "Custom metric not registered with HPA controller.",
+        "fix_snippet": "# Install prometheus-adapter to expose Prometheus metrics to HPA:\n# helm install prometheus-adapter prometheus-community/prometheus-adapter \\\n#   --set prometheus.url=http://prometheus.monitoring.svc"
+      }
+    ],
+    "production_checklist": [
+      "Always mount model-cache PVC - 140GB downloads on every restart are expensive + slow.",
+      "Use HPA on real LLM signal (queue depth) not CPU - LLM serving is GPU-bound not CPU-bound.",
+      "Set PodDisruptionBudget minAvailable=1 (or higher) - K8s rolling updates can otherwise drop all replicas.",
+      "Use spot/preemptible GPUs only when paired with PDB + retries - eviction is the norm not exception.",
+      "Pin vLLM image tag - latest is moving + occasionally regresses.",
+      "Enable startupProbe with 600s threshold - first start downloads weights.",
+      "Pre-warm HF cache via a Job that runs before the Deployment - clean cold-start story."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.3-70B-Instruct"
+      ],
+      "library_versions": [
+        "vllm==0.7.0",
+        "Kubernetes 1.31",
+        "Helm 3.16"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "vllm",
+      "kubernetes",
+      "helm"
+    ],
+    "related_glossary_slugs": [
+      "k8s-hpa",
+      "pod-disruption-budget",
+      "gpu-node-pool"
+    ],
+    "related_learn_slugs": [
+      "k8s-llm-deployment"
+    ],
+    "faq": [
+      {
+        "question": "Why HPA on queue depth instead of GPU utilization?",
+        "answer": "GPU util doesn't drop when requests pile up - vLLM batches continuously, so util can be 95% with deep queues. Queue depth (vllm:num_requests_waiting) is the direct latency signal."
+      },
+      {
+        "question": "Spot GPUs - worth the savings?",
+        "answer": "Yes if you have 3+ replicas + PDB + retry logic. Eviction is frequent (10-30% chance per hour on H100 spot). For 1-2 replicas, on-demand is the right call - eviction = outage."
+      }
+    ],
+    "meta_title": "Kubernetes Helm Chart for vLLM (GPU + HPA) | OSS AI Hub",
+    "meta_description": "Production K8s Helm chart for vLLM: GPU node affinity, HPA on queue depth, PDB, model-cache PVC, ServiceMonitor. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "docker-multi-stage-llm-image",
+    "title": "Docker Multi-Stage LLM Image (Slim, Secure)",
+    "tldr": "Multi-stage Dockerfile separating builder (PyTorch + CUDA) from runtime (slim Python + .whl artifacts). 60% smaller final image.",
+    "description": "Two-stage build: stage 1 compiles wheels, stage 2 is a slim CUDA runtime that only contains the wheels + non-root user. Saves ~5GB on a vLLM image.",
+    "category": "deployment",
+    "language": "dockerfile",
+    "framework": "docker",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "docker",
+      "multi-stage",
+      "image-size"
+    ],
+    "best_for_tags": [
+      "docker",
+      "image-size",
+      "security"
+    ],
+    "when_to_use": "You're shipping an LLM container to K8s, ECS, or Modal and want fast pull times + minimal attack surface. Multi-stage cuts a typical vLLM image from 18GB to 7GB, drops the build toolchain, and runs as non-root.",
+    "when_not_to_use": "Skip when (1) you're using a vendor image (vllm/vllm-openai) directly - just pin the tag; (2) build time matters more than image size - single-stage is faster; (3) you're prototyping.",
+    "quick_start": "1) Save the Dockerfile  2) `docker build -t ossai/vllm:0.7.0 .`  3) Push to registry.",
+    "full_code": "# Multi-stage LLM Docker image: slim + secure + reproducible.\n#\n# build:   docker build -t ossai/vllm:0.7.0 .\n# run dev: docker run --gpus all -p 8000:8000 -v $(pwd)/cache:/cache ossai/vllm:0.7.0\n\n# ============================================================\n# Stage 1: Builder - has full toolchain\n# ============================================================\nFROM nvidia/cuda:12.4.1-devel-ubuntu22.04 AS builder\n\nENV DEBIAN_FRONTEND=noninteractive \\\n    PIP_NO_CACHE_DIR=1 \\\n    PIP_DISABLE_PIP_VERSION_CHECK=1\n\nRUN apt-get update && apt-get install -y --no-install-recommends \\\n    python3.11 python3.11-dev python3-pip build-essential git \\\n    && rm -rf /var/lib/apt/lists/*\n\nWORKDIR /build\nCOPY requirements.txt .\n\n# Build a wheelhouse so the runtime stage doesn't need a compiler\nRUN python3.11 -m pip wheel --wheel-dir /wheels -r requirements.txt\n\n# ============================================================\n# Stage 2: Runtime - slim, non-root, no build toolchain\n# ============================================================\nFROM nvidia/cuda:12.4.1-runtime-ubuntu22.04 AS runtime\n\nENV DEBIAN_FRONTEND=noninteractive \\\n    PYTHONUNBUFFERED=1 \\\n    PIP_NO_CACHE_DIR=1 \\\n    HF_HOME=/cache/hf\n\nRUN apt-get update && apt-get install -y --no-install-recommends \\\n    python3.11 python3-pip ca-certificates \\\n    && rm -rf /var/lib/apt/lists/* \\\n    && groupadd -r app && useradd -r -g app -d /app -s /sbin/nologin app \\\n    && mkdir -p /app /cache && chown -R app:app /app /cache\n\n# Install pre-built wheels from the builder stage\nCOPY --from=builder /wheels /wheels\nRUN python3.11 -m pip install --no-index --find-links=/wheels vllm==0.7.0 \\\n    && rm -rf /wheels\n\nWORKDIR /app\nCOPY --chown=app:app serve.py .\nUSER app\n\nEXPOSE 8000\nHEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD curl -fsS http://localhost:8000/health || exit 1\n\nCMD [\"python3.11\", \"-m\", \"vllm.entrypoints.openai.api_server\", \\\n     \"--model\", \"meta-llama/Llama-3.1-8B-Instruct\", \\\n     \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n",
+    "code": "FROM nvidia/cuda:12.4.1-devel-ubuntu22.04 AS builder\nRUN apt-get update && apt-get install -y python3.11 python3-pip build-essential\nCOPY requirements.txt .\nRUN python3.11 -m pip wheel --wheel-dir /wheels -r requirements.txt\n\nFROM nvidia/cuda:12.4.1-runtime-ubuntu22.04\nRUN apt-get update && apt-get install -y python3.11 python3-pip && useradd -r app\nCOPY --from=builder /wheels /wheels\nRUN pip install --no-index --find-links=/wheels vllm==0.7.0\nUSER app\nCMD [\"python3.11\", \"-m\", \"vllm.entrypoints.openai.api_server\", \"--model\", \"meta-llama/Llama-3.1-8B-Instruct\"]\n",
+    "dependencies": [
+      "docker"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "docker",
+        "version": ">=25.0.0",
+        "purpose": "Container build/runtime."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "For gated models at runtime."
+      }
+    ],
+    "setup_steps": [
+      "Create `requirements.txt` with your pinned deps (vllm==0.7.0, transformers, etc.).",
+      "Save the Dockerfile.",
+      "Build: `docker build -t ossai/vllm:0.7.0 .`",
+      "Verify size: `docker images ossai/vllm` - should be ~7GB (vs ~18GB single-stage).",
+      "Test: `docker run --gpus all -p 8000:8000 -e HF_TOKEN=$HF_TOKEN ossai/vllm:0.7.0`",
+      "Push: `docker push your-registry/ossai/vllm:0.7.0`",
+      "(Optional) Run trivy scan: `trivy image ossai/vllm:0.7.0` - the slim runtime has fewer CVEs."
+    ],
+    "variations": [
+      {
+        "label": "BuildKit cache mounts for faster rebuilds",
+        "description": "Cache pip + apt across builds.",
+        "code_snippet": "# syntax=docker/dockerfile:1.7\nRUN --mount=type=cache,target=/root/.cache/pip \\\n    --mount=type=cache,target=/var/cache/apt \\\n    apt-get update && apt-get install -y python3.11 \\\n    && python3.11 -m pip install vllm==0.7.0"
+      },
+      {
+        "label": "Distroless final stage",
+        "description": "Even smaller, even more secure.",
+        "code_snippet": "FROM gcr.io/distroless/python3-debian12 AS runtime\nCOPY --from=builder /wheels /wheels\nCOPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11\nUSER nonroot:nonroot\nCMD [\"-m\", \"vllm.entrypoints.openai.api_server\"]"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Final image still huge (~15GB)",
+        "cause": "Used `-devel` instead of `-runtime` CUDA in stage 2.",
+        "fix_snippet": "FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04   # NOT -devel"
+      },
+      {
+        "error_text": "Build fails: 'No matching distribution found for vllm'",
+        "cause": "Wheelhouse build failed silently in stage 1.",
+        "fix_snippet": "# Debug stage 1 alone:\ndocker build --target builder -t test .\ndocker run --rm test ls /wheels  # check wheels exist"
+      },
+      {
+        "error_text": "Container fails at runtime: 'cannot open shared library cuDNN'",
+        "cause": "Runtime image doesn't include cuDNN that the dev image had.",
+        "fix_snippet": "# Install cuDNN explicitly in runtime stage:\nRUN apt-get update && apt-get install -y --no-install-recommends libcudnn8 && rm -rf /var/lib/apt/lists/*"
+      }
+    ],
+    "production_checklist": [
+      "Always use `:runtime` base in the final stage, never `:devel`.",
+      "Run as non-root - the LLM doesn't need root and it's a CVE-mitigation no-brainer.",
+      "Pin EVERY base image tag - `:latest` will break you eventually.",
+      "Use BuildKit cache mounts in CI - 5-10x faster rebuilds.",
+      "Trivy-scan the image in CI - LLM stacks have many transitive deps + occasional CVEs.",
+      "Set HEALTHCHECK so orchestrators detect bad pods.",
+      "Multi-arch build (amd64 + arm64) via docker buildx for mac dev parity."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "N/A - infra"
+      ],
+      "library_versions": [
+        "docker==27.0",
+        "BuildKit",
+        "CUDA 12.4"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "docker",
+      "vllm"
+    ],
+    "related_glossary_slugs": [
+      "multi-stage-build",
+      "distroless",
+      "buildkit"
+    ],
+    "related_learn_slugs": [
+      "docker-llm-101"
+    ],
+    "faq": [
+      {
+        "question": "Should I use the official vllm/vllm-openai image instead?",
+        "answer": "For most cases yes - it's pinned, slim, maintained. Roll your own when (a) you need additional deps in the same image (your own server code, monitoring agents), (b) you want distroless for security, (c) you're stacking custom kernels."
+      },
+      {
+        "question": "Why not just bake the model weights in?",
+        "answer": "70B is 140GB - far too big for an image. PVC/Volume at runtime is the right pattern. Bake weights for small models (<10GB) where image pull beats download."
+      }
+    ],
+    "meta_title": "Docker Multi-Stage LLM Image (Slim, Secure) | OSS AI Hub",
+    "meta_description": "Production multi-stage Dockerfile for vLLM: 60% smaller, non-root, CUDA runtime, healthcheck. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "runpod-serverless-vllm",
+    "title": "RunPod Serverless vLLM Endpoint (Scale-to-Zero)",
+    "tldr": "RunPod serverless container running vLLM. Scale-to-zero, ~30s cold start, pay-per-second GPU. Cheaper than always-on for sporadic traffic.",
+    "description": "RunPod serverless template: vLLM container + handler.py + Dockerfile. Per-second GPU billing; 30-60s cold start; scales to zero when idle.",
+    "category": "deployment",
+    "language": "dockerfile",
+    "framework": "runpod",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "runpod",
+      "serverless-gpu",
+      "vllm"
+    ],
+    "best_for_tags": [
+      "scale-to-zero",
+      "sporadic-traffic",
+      "cost-optimization"
+    ],
+    "when_to_use": "Sporadic LLM traffic (eval pipelines, internal tools, demos). RunPod serverless GPUs bill per-second, scale to zero at idle, and routinely cost 30-60% less than Modal for the same workload. Best fit when you don't need <500ms cold-start latency.",
+    "when_not_to_use": "Skip RunPod when (1) you need <30s cold start - Modal's keep_warm is better; (2) you need a vendor-managed model registry; (3) you're not comfortable writing Dockerfiles.",
+    "quick_start": "1) Write a handler.py + Dockerfile  2) Push to a container registry  3) Create a Serverless endpoint in the RunPod console  4) Call via the RunPod API.",
+    "full_code": "# Dockerfile -- RunPod serverless vLLM template\nFROM nvidia/cuda:12.4.1-runtime-ubuntu22.04\n\nENV DEBIAN_FRONTEND=noninteractive \\\n    PYTHONUNBUFFERED=1 \\\n    HF_HOME=/runpod-volume/hf\n\nRUN apt-get update && apt-get install -y --no-install-recommends \\\n    python3.11 python3-pip ca-certificates \\\n    && rm -rf /var/lib/apt/lists/*\n\nRUN python3.11 -m pip install --no-cache-dir \\\n    runpod>=1.7.0 \\\n    vllm==0.7.0\n\nWORKDIR /app\nCOPY handler.py .\n\nCMD [\"python3.11\", \"-u\", \"handler.py\"]\n\n# ============================================================\n# handler.py -- Save this alongside the Dockerfile\n# ============================================================\n# import os\n# import runpod\n# from vllm import LLM, SamplingParams\n#\n# llm = LLM(\n#     model=os.environ.get(\"MODEL\", \"meta-llama/Llama-3.1-8B-Instruct\"),\n#     gpu_memory_utilization=0.92,\n#     enable_prefix_caching=True,\n#     max_num_seqs=int(os.environ.get(\"MAX_SEQS\", \"64\")),\n# )\n#\n# def handler(event):\n#     payload = event.get(\"input\", {})\n#     prompts = payload.get(\"prompts\") or [payload.get(\"prompt\", \"\")]\n#     params = SamplingParams(\n#         temperature=payload.get(\"temperature\", 0.4),\n#         max_tokens=payload.get(\"max_tokens\", 500),\n#     )\n#     outputs = llm.generate(prompts, params)\n#     return [{\"text\": o.outputs[0].text, \"tokens_out\": len(o.outputs[0].token_ids)} for o in outputs]\n#\n# runpod.serverless.start({\"handler\": handler})\n",
+    "code": "# Dockerfile\nFROM nvidia/cuda:12.4.1-runtime-ubuntu22.04\nRUN apt-get update && apt-get install -y python3.11 python3-pip\nRUN pip install runpod>=1.7.0 vllm==0.7.0\nCOPY handler.py .\nCMD [\"python3.11\", \"-u\", \"handler.py\"]\n",
+    "dependencies": [
+      "runpod",
+      "vllm"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "runpod",
+        "version": ">=1.7.0",
+        "purpose": "RunPod Serverless SDK."
+      },
+      {
+        "name": "vllm",
+        "version": "==0.7.0",
+        "purpose": "Inference engine."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Stored as RunPod secret."
+      },
+      {
+        "name": "MODEL",
+        "required": false,
+        "description": "HF model ID (default meta-llama/Llama-3.1-8B-Instruct)."
+      }
+    ],
+    "setup_steps": [
+      "Sign up at runpod.io and add credit.",
+      "Save the Dockerfile + handler.py.",
+      "Push to a registry: `docker buildx build --platform linux/amd64 -t your-registry/vllm-serverless:1 --push .`",
+      "In RunPod console: Serverless -> New Endpoint -> Custom container -> point at your image.",
+      "Attach a Network Volume for HF cache (mount at /runpod-volume).",
+      "Configure: workers 0-3, GPU type (A100 80GB), idle timeout 5s, max execution time 600s.",
+      "Test via the RunPod API: `curl -X POST https://api.runpod.ai/v2/<endpoint_id>/runsync -H 'Authorization: Bearer ...' -d '{\"input\": {\"prompt\": \"hi\"}}'`"
+    ],
+    "variations": [
+      {
+        "label": "Multi-prompt batch handler",
+        "description": "Process N prompts in one request - amortizes cold start.",
+        "code_snippet": "def handler(event):\n    prompts = event['input']['prompts']  # list of strings\n    outputs = llm.generate(prompts, params)\n    return [{'text': o.outputs[0].text} for o in outputs]"
+      },
+      {
+        "label": "Persistent endpoint with min_workers=1",
+        "description": "Trade cost for always-warm latency.",
+        "code_snippet": "# In RunPod console: workers min=1 max=5, idle timeout 60s\n# Always 1 worker ready - eliminates cold start at higher cost"
+      },
+      {
+        "label": "OpenAI-compatible endpoint",
+        "description": "Use RunPod's built-in OpenAI compat for vLLM.",
+        "code_snippet": "# Skip handler.py entirely - use the RunPod 'vLLM' preset template\n# Then call: openai.OpenAI(base_url='https://api.runpod.ai/v2/<id>/openai/v1', api_key='...')"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Worker fails immediately: 'cannot import name LLM'",
+        "cause": "Image built for wrong platform (arm64 on amd64 host).",
+        "fix_snippet": "docker buildx build --platform linux/amd64 -t ... --push ."
+      },
+      {
+        "error_text": "Cold start exceeds 2 minutes",
+        "cause": "Model weights re-downloaded.",
+        "fix_snippet": "# Attach a Network Volume in RunPod console; mount at /runpod-volume.\n# Set HF_HOME=/runpod-volume/hf in env."
+      },
+      {
+        "error_text": "Request times out at 600s",
+        "cause": "Default max execution time.",
+        "fix_snippet": "# RunPod console -> Endpoint -> Settings -> 'Execution Timeout' -> bump to 1800s (max 30 min)"
+      }
+    ],
+    "production_checklist": [
+      "Attach Network Volume + HF_HOME=/runpod-volume/hf - avoids the 140GB redownload.",
+      "Build images for linux/amd64 explicitly - apple silicon builds will fail at runtime.",
+      "Set idle timeout 5-30s - longer = warmer cache, higher cost.",
+      "Use the RunPod OpenAI-compatible vLLM template if you don't need custom handler code.",
+      "Pin vLLM + runpod versions in the Dockerfile.",
+      "Test cold start latency from your actual region - east/west pricing + latency differs.",
+      "Monitor the RunPod billing page - serverless costs can balloon with bad cold-start patterns."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.1-8B-Instruct"
+      ],
+      "library_versions": [
+        "runpod==1.7.0",
+        "vllm==0.7.0",
+        "A100 80GB"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "runpod",
+      "vllm",
+      "modal"
+    ],
+    "related_glossary_slugs": [
+      "serverless-gpu",
+      "cold-start",
+      "scale-to-zero"
+    ],
+    "related_learn_slugs": [
+      "serverless-llm-101"
+    ],
+    "faq": [
+      {
+        "question": "RunPod vs Modal vs Lambda Labs?",
+        "answer": "RunPod: cheapest serverless GPU per second, container-only DX. Modal: best Python DX, slightly pricier. Lambda Labs: best for always-on instances, no serverless. For cost-sensitive bursty workloads RunPod wins; for developer experience Modal does."
+      },
+      {
+        "question": "Network volume vs baking weights in image?",
+        "answer": "Network volume: pulls weights once, shared across workers, cheaper. Baking weights in image: faster cold start (no download), bigger image pull. For 8B models bake them in; for 70B+ use volumes."
+      }
+    ],
+    "meta_title": "RunPod Serverless vLLM Endpoint | OSS AI Hub",
+    "meta_description": "Production RunPod serverless vLLM template: per-second GPU billing, scale-to-zero, ~30s cold start. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "cloudflare-workers-ai-edge",
+    "title": "Cloudflare Workers AI Edge Deploy (Llama 3.1 8B Global)",
+    "tldr": "Cloudflare Workers AI deploy of Llama 3.1 8B at the edge. Global latency <100ms. Free-tier limits + paid-tier billing config.",
+    "description": "TypeScript Worker that runs Llama 3.1 8B via the Workers AI binding. Edge-replicated globally; streams via SSE; per-request billing.",
+    "category": "deployment",
+    "language": "typescript",
+    "framework": "cloudflare-workers",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "cloudflare",
+      "edge",
+      "workers-ai"
+    ],
+    "best_for_tags": [
+      "edge",
+      "global-latency",
+      "low-traffic"
+    ],
+    "when_to_use": "Global apps that need sub-100ms TTFT for users worldwide. Cloudflare Workers AI runs models at every PoP - your Tokyo users hit Tokyo, your Berlin users hit Berlin. Great for chat widgets, side-projects, and demos. Free tier covers ~10k requests/day.",
+    "when_not_to_use": "Skip Workers AI when (1) you need Llama 3.3 70B - WAI runs smaller models (8B-13B); (2) you need fine-tuned weights - WAI is base models only; (3) sustained high QPS - paid tier rates beat hosted Groq above ~100k req/day.",
+    "quick_start": "1) `npm create cloudflare@latest my-worker -- --type=hello-world`  2) Add `[ai] binding='AI'` to wrangler.toml  3) `npx wrangler deploy`",
+    "full_code": "// src/index.ts -- Cloudflare Worker streaming Llama 3.1 8B\n//\n// wrangler.toml:\n//   name = \"ossai-edge\"\n//   main = \"src/index.ts\"\n//   compatibility_date = \"2024-11-01\"\n//   [ai]\n//   binding = \"AI\"\n//\n// deploy: npx wrangler deploy\n\nexport interface Env {\n  AI: any;  // Cloudflare AI binding (type from @cloudflare/workers-types)\n}\n\nexport default {\n  async fetch(request: Request, env: Env): Promise<Response> {\n    const url = new URL(request.url);\n    if (url.pathname !== \"/chat\" || request.method !== \"POST\") {\n      return new Response(\"POST /chat\", { status: 404 });\n    }\n    const { prompt, stream = true } = await request.json<{ prompt: string; stream?: boolean }>();\n    if (!prompt) return new Response(\"missing prompt\", { status: 400 });\n\n    const aiArgs = {\n      messages: [{ role: \"user\", content: prompt }],\n      stream,\n      max_tokens: 500,\n      temperature: 0.4,\n    };\n\n    if (!stream) {\n      const result = await env.AI.run(\"@cf/meta/llama-3.1-8b-instruct\", aiArgs);\n      return new Response(JSON.stringify(result), { headers: { \"Content-Type\": \"application/json\" } });\n    }\n\n    // Streamed: returns a ReadableStream of SSE events\n    const aiStream = await env.AI.run(\"@cf/meta/llama-3.1-8b-instruct\", aiArgs);\n    return new Response(aiStream, {\n      headers: {\n        \"Content-Type\": \"text/event-stream\",\n        \"Cache-Control\": \"no-cache\",\n        \"Connection\": \"keep-alive\",\n      },\n    });\n  },\n} satisfies ExportedHandler<Env>;\n",
+    "code": "// src/index.ts\nexport default {\n  async fetch(request, env) {\n    const { prompt } = await request.json();\n    const aiStream = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {\n      messages: [{ role: 'user', content: prompt }],\n      stream: true,\n    });\n    return new Response(aiStream, { headers: { 'Content-Type': 'text/event-stream' } });\n  },\n};\n",
+    "dependencies": [
+      "@cloudflare/workers-types",
+      "wrangler"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "wrangler",
+        "version": ">=3.90.0",
+        "purpose": "Cloudflare Workers CLI."
+      },
+      {
+        "name": "@cloudflare/workers-types",
+        "version": ">=4.20240900.0",
+        "purpose": "TypeScript types for Workers."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "CLOUDFLARE_API_TOKEN",
+        "required": true,
+        "description": "From dash.cloudflare.com -> My Profile -> API Tokens. Workers AI scope."
+      }
+    ],
+    "setup_steps": [
+      "Sign up for a Cloudflare account (free).",
+      "`npm create cloudflare@latest my-worker -- --type=hello-world` then `cd my-worker`",
+      "Edit `wrangler.toml` to add the `[ai]` binding.",
+      "Replace `src/index.ts` with the full_code.",
+      "Test locally: `npx wrangler dev` and curl localhost:8787/chat.",
+      "Deploy: `npx wrangler deploy` - rolls to all Cloudflare PoPs globally.",
+      "Test global latency: from different regions, hit https://your-worker.workers.dev/chat."
+    ],
+    "variations": [
+      {
+        "label": "Workers AI gateway (rate limit + cache)",
+        "description": "Add Cloudflare AI Gateway for rate-limiting + response caching.",
+        "code_snippet": "// In wrangler.toml:\n// [ai]\n// binding = \"AI\"\n// gateway = { id = \"your-gateway-id\", skipCache = false, cacheTtl = 300 }"
+      },
+      {
+        "label": "Larger model via remote inference",
+        "description": "Workers can call hosted Llama 70B via vLLM/Groq, not just edge.",
+        "code_snippet": "// Just fetch() a hosted endpoint from the worker:\nconst r = await fetch('https://api.groq.com/openai/v1/chat/completions', {\n  method: 'POST',\n  headers: { Authorization: `Bearer ${env.GROQ_API_KEY}` },\n  body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [...] })\n});"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "AI binding undefined",
+        "cause": "Missing [ai] block in wrangler.toml.",
+        "fix_snippet": "# wrangler.toml\n[ai]\nbinding = \"AI\""
+      },
+      {
+        "error_text": "Streaming not actually streaming (full response after delay)",
+        "cause": "Forgot stream:true in aiArgs.",
+        "fix_snippet": "env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages: [...], stream: true })"
+      },
+      {
+        "error_text": "429 Too Many Requests on free tier",
+        "cause": "Free tier ~10k neurons/day; Llama 3.1 8B costs ~50 neurons per request.",
+        "fix_snippet": "// Upgrade to Workers Paid ($5/mo) OR move to AI Gateway with caching to deduplicate\n// AND throttle clients with rate-limit binding"
+      }
+    ],
+    "production_checklist": [
+      "Use AI Gateway in front for caching, observability, rate limits - free.",
+      "Always set max_tokens - unbounded outputs eat the neuron budget.",
+      "Pin compatibility_date in wrangler.toml - prevents silent API breakage.",
+      "Use the `@cf/meta/llama-3.1-8b-instruct` ID format - generic model names aren't supported.",
+      "For high-traffic: Workers Paid ($5/mo) + AI Gateway. Caching alone often hits 50-70% hit rate on FAQ chat.",
+      "Test global latency from your top-3 regions before claiming 'global' performance.",
+      "Don't run sensitive prompts through WAI - Cloudflare sees them; use your own VPC for that."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "@cf/meta/llama-3.1-8b-instruct"
+      ],
+      "library_versions": [
+        "wrangler==3.90.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "cloudflare-workers"
+    ],
+    "related_glossary_slugs": [
+      "edge-computing",
+      "cloudflare-workers",
+      "streaming"
+    ],
+    "related_learn_slugs": [
+      "edge-llm-101"
+    ],
+    "faq": [
+      {
+        "question": "Workers AI vs Anthropic / OpenAI API?",
+        "answer": "Workers AI: edge-replicated (low latency globally), one-binding setup, smaller models only (8B-13B). Anthropic/OpenAI: bigger models, US-centric latency, paid-from-call-1. For chat widgets + global apps with simple needs, Workers AI is hard to beat. For frontier capability, hosted APIs."
+      },
+      {
+        "question": "Can I use my own fine-tuned model?",
+        "answer": "Not directly on Workers AI. Workarounds: (a) host the fine-tune on Hugging Face Endpoints / Replicate and fetch() from the Worker, (b) use AI Gateway as a proxy to your own endpoint, (c) wait - Cloudflare keeps adding model support."
+      }
+    ],
+    "meta_title": "Cloudflare Workers AI Edge Deploy | OSS AI Hub",
+    "meta_description": "Production Cloudflare Workers AI: Llama 3.1 8B at the edge, streaming, AI Gateway, <100ms global TTFT. MIT."
   }
 ]
