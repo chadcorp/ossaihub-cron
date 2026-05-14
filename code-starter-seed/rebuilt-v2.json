@@ -574,6 +574,1027 @@
     "meta_description": "Plain-Python ReAct loop with Thought-Action-Observation parsing, step budget, and tool dispatch \u2014 no frameworks, the pattern frameworks wrap."
   },
   {
+    "slug": "llm-as-judge-pairwise",
+    "title": "LLM-as-Judge Pairwise Evaluator With Position Bias Mitigation",
+    "tldr": "Pairwise LLM judge for comparing two model outputs against the same prompt. Mitigates position bias by running both orderings and detecting flips. Includes rubric-based scoring.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "OpenAI SDK",
+    "tags": [
+      "evaluation",
+      "llm-judge",
+      "pairwise",
+      "regression"
+    ],
+    "best_for_tags": [
+      "prompt-evaluation",
+      "model-comparison",
+      "regression-tests"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "When you need to evaluate which of two LLM outputs is better, without ground-truth labels. Useful for prompt iteration (\u2018did my new prompt do better than the old one?\u2019) and model comparison.",
+    "when_not_to_use": "Skip when ground-truth answers exist (use exact-match or numerical metrics). Skip for safety-critical eval \u2014 LLM judges have biases and shouldn't be the final word.",
+    "quick_start": "pip install openai && OPENAI_API_KEY=sk-... python judge.py",
+    "full_code": "\"\"\"Pairwise LLM-as-judge with position bias mitigation.\n\nFor each (prompt, response_A, response_B) tuple, we ask the judge twice:\n  1. (A, B) -> verdict_1\n  2. (B, A) -> verdict_2\n\nIf verdicts disagree, that's a 'flip' \u2014 judge is order-dependent on this case\nand should be treated as a tie.\n\nReturns aggregate win rates across many cases, with confidence intervals.\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport math\nimport os\nfrom dataclasses import dataclass\nfrom typing import Literal\n\nfrom openai import OpenAI\n\nclient = OpenAI()\n\nVerdict = Literal[\"A\", \"B\", \"tie\"]\n\nJUDGE_SYSTEM = \"\"\"You are evaluating two responses to the same prompt.\n\nUse this rubric, in order:\n1. CORRECTNESS \u2014 does the response actually answer the prompt?\n2. COMPLETENESS \u2014 does it cover what was asked?\n3. CLARITY \u2014 is it well-organized and easy to follow?\n4. STYLE \u2014 appropriate tone and length?\n\nReturn exactly: VERDICT: A / B / tie, plus a one-line reason.\nA means Response A is better. tie means they're effectively equal.\"\"\"\n\n\n@dataclass\nclass Case:\n    prompt: str\n    response_a: str\n    response_b: str\n\n\n@dataclass\nclass Result:\n    case_index: int\n    verdict_ab: Verdict\n    verdict_ba: Verdict\n    flipped: bool\n    final: Verdict  # tie if flipped, otherwise the consistent verdict\n\n\ndef _judge(prompt: str, first: str, second: str, *, model: str = \"gpt-4o-mini\") -> Verdict:\n    user = f\"\"\"PROMPT:\n{prompt}\n\nRESPONSE A:\n{first}\n\nRESPONSE B:\n{second}\"\"\"\n\n    resp = client.chat.completions.create(\n        model=model,\n        temperature=0,\n        messages=[\n            {\"role\": \"system\", \"content\": JUDGE_SYSTEM},\n            {\"role\": \"user\", \"content\": user},\n        ],\n    )\n    text = (resp.choices[0].message.content or \"\").upper()\n    if \"VERDICT: A\" in text or \"VERDICT:A\" in text:\n        return \"A\"\n    if \"VERDICT: B\" in text or \"VERDICT:B\" in text:\n        return \"B\"\n    return \"tie\"\n\n\ndef evaluate(cases: list[Case], *, model: str = \"gpt-4o-mini\") -> dict:\n    results: list[Result] = []\n    for i, c in enumerate(cases):\n        v1 = _judge(c.prompt, c.response_a, c.response_b, model=model)  # A first\n        v2 = _judge(c.prompt, c.response_b, c.response_a, model=model)  # B first\n        # Translate v2 back to A/B perspective\n        v2_translated: Verdict = {\"A\": \"B\", \"B\": \"A\", \"tie\": \"tie\"}[v2]\n        flipped = v1 != v2_translated\n        final = \"tie\" if flipped else v1\n        results.append(Result(i, v1, v2_translated, flipped, final))\n\n    # Aggregate\n    n = len(results)\n    wins_a = sum(1 for r in results if r.final == \"A\")\n    wins_b = sum(1 for r in results if r.final == \"B\")\n    ties = sum(1 for r in results if r.final == \"tie\")\n    flips = sum(1 for r in results if r.flipped)\n\n    # Wilson 95% CI for A's win rate (only over non-tie cases)\n    non_tie = wins_a + wins_b\n    a_rate = wins_a / non_tie if non_tie else 0.0\n    ci_low, ci_high = _wilson_ci(wins_a, non_tie) if non_tie else (0.0, 0.0)\n\n    return {\n        \"n_cases\": n,\n        \"wins_a\": wins_a,\n        \"wins_b\": wins_b,\n        \"ties\": ties,\n        \"flips_position_bias\": flips,\n        \"a_win_rate_over_non_ties\": round(a_rate, 3),\n        \"ci_95\": (round(ci_low, 3), round(ci_high, 3)),\n        \"verdict\": \"A is meaningfully better\" if ci_low > 0.55 else\n                   \"B is meaningfully better\" if ci_high < 0.45 else\n                   \"no significant difference\",\n        \"details\": [r.__dict__ for r in results],\n    }\n\n\ndef _wilson_ci(wins: int, n: int, *, z: float = 1.96) -> tuple[float, float]:\n    if n == 0:\n        return (0, 0)\n    p = wins / n\n    denom = 1 + z * z / n\n    center = (p + z * z / (2 * n)) / denom\n    margin = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom\n    return (max(0, center - margin), min(1, center + margin))\n\n\nif __name__ == \"__main__\":\n    cases = [\n        Case(\n            prompt=\"Explain Reciprocal Rank Fusion in one paragraph.\",\n            response_a=\"RRF combines ranked lists by adding 1/(k+rank) scores.\",\n            response_b=\"Reciprocal Rank Fusion (RRF) merges ranking from multiple retrievers. Each document's final score is the sum of 1/(k+rank) across all lists; k is a smoothing constant, often 60. It's robust because it works on ranks rather than raw scores, so heterogeneous retrievers can be fused without normalization.\"\n        ),\n    ]\n    print(json.dumps(evaluate(cases), indent=2, default=str))\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Judge LLM client"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI API key for judge",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai",
+      "export OPENAI_API_KEY=sk-...",
+      "Build a list[Case] with your prompt and the two responses to compare.",
+      "python judge.py"
+    ],
+    "variations": [
+      {
+        "label": "Use Claude as judge",
+        "description": "Different judge may bias differently.",
+        "code_snippet": "# In production, run with two different judges (gpt-4o + claude-3-7-sonnet); only count agreement as 'meaningful'."
+      },
+      {
+        "label": "Stronger judge",
+        "description": "Use gpt-4o for the judge, not -mini.",
+        "code_snippet": "evaluate(cases, model='gpt-4o')  # ~2-3x cost, more reliable on subjective rubrics"
+      },
+      {
+        "label": "Custom rubric per task",
+        "description": "Different judge prompt for different tasks.",
+        "code_snippet": "JUDGE_SYSTEM_CODE = '''You are evaluating code. Rubric: correctness > readability > efficiency. ...'''"
+      },
+      {
+        "label": "Parallel evaluation",
+        "description": "Run judgments concurrently with asyncio.",
+        "code_snippet": "import asyncio\\nfrom openai import AsyncOpenAI\\n# Use asyncio.gather to run all _judge calls in parallel; respect rate limits."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "All verdicts come back as 'tie'",
+        "cause": "Rubric not focused enough; judge defaults to safe-tie.",
+        "fix_snippet": "Tighten rubric: prefer rubric items the responses MEASURABLY differ on. Add: 'If both responses are competent, pick the one with more concrete detail.'"
+      },
+      {
+        "error_text": "Position bias rate > 30%",
+        "cause": "Judge model is too weak to evaluate this task.",
+        "fix_snippet": "Switch to gpt-4o or claude-3-7-sonnet as judge. Position bias correlates with judge weakness."
+      },
+      {
+        "error_text": "Judge keeps disagreeing with humans",
+        "cause": "Rubric criteria mismatch human preferences.",
+        "fix_snippet": "Calibrate: hand-judge 20 cases, compare to LLM judge. Adjust rubric to match human verdicts; re-run."
+      },
+      {
+        "error_text": "Cannot parse verdict from judge response",
+        "cause": "Judge wrote prose instead of structured output.",
+        "fix_snippet": "Add to JUDGE_SYSTEM: 'YOUR LAST LINE MUST BE: VERDICT: A or VERDICT: B or VERDICT: tie'. Or use structured outputs (json_schema)."
+      }
+    ],
+    "production_checklist": [
+      "Always run both orderings \u2014 never trust a one-shot pairwise judgment.",
+      "Use Wilson CI not normal-approximation; small samples need it.",
+      "Track flip rate as a quality metric of the judge itself.",
+      "Calibrate against a human-judged sample before trusting aggregate results.",
+      "Different judge for different task types; one rubric doesn't fit all.",
+      "Save raw judge responses for audit \u2014 verdicts alone hide why.",
+      "Never use the same model as both response generator AND judge for production decisions."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o",
+        "claude-3-7-sonnet"
+      ],
+      "library_versions": [
+        "openai==1.51.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "promptfoo",
+      "langfuse"
+    ],
+    "related_glossary_slugs": [
+      "llm-as-judge",
+      "evaluation",
+      "position-bias"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Is LLM-judging reliable?",
+        "answer": "Reliable enough to detect large quality differences (10%+ gap in win rate). Less reliable for small differences. Always calibrate against humans for important decisions."
+      },
+      {
+        "question": "How many cases do I need?",
+        "answer": "30 minimum for any meaningful CI. 100+ if you expect small differences. Run preliminary 30; if CI is wide, run more."
+      },
+      {
+        "question": "Why pairwise vs absolute scoring?",
+        "answer": "LLMs are much better at comparing two outputs than at scoring one. Pairwise eliminates calibration drift across rubric items."
+      },
+      {
+        "question": "Can I use this for A/B testing prompts in production?",
+        "answer": "Use it offline against a held-out test set first. In production, use real user metrics \u2014 LLM judges are proxies, not ground truth."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "LLM-as-Judge Pairwise Evaluator \u2014 Starter",
+    "meta_description": "Pairwise LLM judge with position-bias mitigation (both orderings), Wilson CIs, and a flip-rate quality metric for the judge itself."
+  },
+  {
+    "slug": "ragas-eval-quickstart",
+    "title": "RAGAS RAG Evaluation Quickstart",
+    "tldr": "Evaluate a RAG pipeline on faithfulness, answer relevance, context precision, and context recall using RAGAS \u2014 automated metrics that don't require ground-truth answers.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "RAGAS",
+    "tags": [
+      "ragas",
+      "rag-evaluation",
+      "faithfulness",
+      "metrics"
+    ],
+    "best_for_tags": [
+      "rag-quality",
+      "regression-suite",
+      "model-comparison"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "After building a RAG pipeline, when you need to track whether changes improve or regress quality. RAGAS gives you reproducible metrics that catch drift over time.",
+    "when_not_to_use": "Skip for one-off prototypes \u2014 overhead isn't worth it. Skip for streaming chat eval (RAGAS is batch). Skip when you have abundant labeled QA pairs \u2014 use straight retrieval metrics (Recall@k).",
+    "quick_start": "pip install ragas datasets openai && OPENAI_API_KEY=sk-... python ragas_eval.py",
+    "full_code": "\"\"\"RAGAS evaluation: faithfulness, answer relevancy, context precision/recall.\n\nThese metrics use LLMs internally (gpt-4o by default). They're sensitive to\nthe eval model choice \u2014 use the strongest model your budget allows for eval,\neven if your production RAG uses a smaller one.\n\"\"\"\nfrom __future__ import annotations\n\nimport os\n\nfrom datasets import Dataset\nfrom ragas import evaluate\nfrom ragas.metrics import (\n    faithfulness,\n    answer_relevancy,\n    context_precision,\n    context_recall,\n)\n\n\ndef build_dataset(questions: list[str], answers: list[str], contexts: list[list[str]], ground_truths: list[str]) -> Dataset:\n    \"\"\"RAGAS expects a Dataset with columns: question, answer, contexts, ground_truth.\n\n    contexts is a list of lists \u2014 multiple retrieved passages per question.\n    \"\"\"\n    return Dataset.from_dict({\n        \"question\": questions,\n        \"answer\": answers,\n        \"contexts\": contexts,\n        \"ground_truth\": ground_truths,\n    })\n\n\ndef run_eval(dataset: Dataset, *, llm_model: str = \"gpt-4o-mini\") -> dict:\n    from langchain_openai import ChatOpenAI\n    from ragas.llms import LangchainLLMWrapper\n\n    llm = LangchainLLMWrapper(ChatOpenAI(model=llm_model, temperature=0))\n\n    result = evaluate(\n        dataset=dataset,\n        metrics=[\n            faithfulness,           # Are the answer claims supported by contexts?\n            answer_relevancy,       # Does the answer address the question?\n            context_precision,      # Are retrieved contexts relevant to the question?\n            context_recall,         # Were the needed contexts retrieved?\n        ],\n        llm=llm,\n    )\n\n    return result.to_pandas().to_dict(orient=\"records\")\n\n\nif __name__ == \"__main__\":\n    # Replace with your actual RAG outputs\n    questions = [\n        \"What is reciprocal rank fusion?\",\n        \"When should I use HNSW vs IVFFlat?\",\n    ]\n    answers = [\n        \"Reciprocal Rank Fusion combines ranked lists by summing 1/(k+rank) scores.\",\n        \"Use HNSW for faster queries; IVFFlat for lower RAM usage on huge corpora.\",\n    ]\n    contexts = [\n        [\"RRF: each doc's score = sum(1/(k+rank)) across all retriever output lists. Standard k=60.\"],\n        [\"HNSW indexes are fast but RAM-heavy. IVFFlat uses less RAM but slower queries and needs REINDEX after bulk inserts.\"],\n    ]\n    ground_truths = [\n        \"Reciprocal Rank Fusion merges results from multiple retrievers via rank reciprocals.\",\n        \"HNSW for query speed; IVFFlat for memory-constrained large corpora.\",\n    ]\n\n    ds = build_dataset(questions, answers, contexts, ground_truths)\n    rows = run_eval(ds)\n    for r in rows:\n        print(f\"\\nQ: {r['question'][:60]}\")\n        for k in (\"faithfulness\", \"answer_relevancy\", \"context_precision\", \"context_recall\"):\n            v = r.get(k)\n            print(f\"  {k}: {v:.3f}\" if isinstance(v, float) else f\"  {k}: {v}\")\n",
+    "dependencies": [
+      {
+        "name": "ragas",
+        "version": ">=0.2",
+        "purpose": "RAG evaluation framework"
+      },
+      {
+        "name": "datasets",
+        "version": ">=2.18",
+        "purpose": "Dataset wrapper RAGAS expects"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Underlying LLM for eval"
+      },
+      {
+        "name": "langchain-openai",
+        "version": ">=0.2",
+        "purpose": "LangChain LLM wrapper"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI API key for eval LLM",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install ragas datasets openai langchain-openai",
+      "export OPENAI_API_KEY=sk-...",
+      "Capture (question, answer, contexts, ground_truth) tuples from your RAG.",
+      "python ragas_eval.py"
+    ],
+    "variations": [
+      {
+        "label": "Without ground truths",
+        "description": "Skip context_recall (needs ground_truth) for unlabeled eval.",
+        "code_snippet": "evaluate(dataset=ds, metrics=[faithfulness, answer_relevancy, context_precision], llm=llm)\\n# Omit context_recall when no ground truth available"
+      },
+      {
+        "label": "Custom metrics",
+        "description": "Define your own LLM-judged metric.",
+        "code_snippet": "from ragas.metrics import Metric\\nclass DomainAccuracy(Metric):\\n    name = 'domain_accuracy'\\n    # implement _ascore using self.llm"
+      },
+      {
+        "label": "Local LLM as eval model",
+        "description": "Run RAGAS with Ollama-served Llama.",
+        "code_snippet": "from langchain_ollama import ChatOllama\\nllm = LangchainLLMWrapper(ChatOllama(model='llama3.1:70b'))\\n# Smaller models give noisier metrics; use 70B+ for usable signal."
+      },
+      {
+        "label": "Save eval results to disk",
+        "description": "Track metrics over time.",
+        "code_snippet": "result.to_pandas().to_csv(f'evals/{datetime.now().isoformat()}.csv', index=False)\\n# diff against prior runs to detect regressions"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "TimeoutError during eval",
+        "cause": "RAGAS makes many LLM calls per row.",
+        "fix_snippet": "Reduce dataset size for iterative testing. For full eval, run async / increase timeout. Use a faster eval model (gpt-4o-mini) for development."
+      },
+      {
+        "error_text": "Faithfulness scores are all 1.0",
+        "cause": "Eval model can't distinguish supported from unsupported claims (often gpt-3.5 or smaller local models).",
+        "fix_snippet": "Use gpt-4o or claude-3-7-sonnet as eval LLM. Smaller models give uninformative scores."
+      },
+      {
+        "error_text": "context_recall: ground_truth column missing",
+        "cause": "Forgot to provide ground_truth.",
+        "fix_snippet": "context_recall requires ground_truth. Either provide it or omit the metric."
+      },
+      {
+        "error_text": "RAGAS scores conflict with human judgment",
+        "cause": "Metrics misalign with your quality bar.",
+        "fix_snippet": "RAGAS metrics are proxies. Run a calibration pass: 20 hand-judged samples, compute RAGAS vs human score; trust RAGAS only on metrics that correlate."
+      }
+    ],
+    "production_checklist": [
+      "Use a stronger eval model than your RAG generation model (smaller eval = noisier metrics).",
+      "Build a stable test set with diverse query types; don't shuffle between eval runs.",
+      "Store eval results with timestamps + commit hashes for regression tracking.",
+      "Set fail thresholds in CI (e.g., faithfulness < 0.85 fails the build).",
+      "Cache embeddings + retrieval results during eval iterations; only re-run generation.",
+      "Sample 5-10 outputs and read them; metrics can drift from human judgment."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "ragas==0.2.4",
+        "datasets==3.0.1",
+        "langchain-openai==0.2.5"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "ragas"
+    ],
+    "related_glossary_slugs": [
+      "rag-evaluation",
+      "faithfulness",
+      "answer-relevancy"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why these four metrics?",
+        "answer": "They cover the RAG quality matrix: retrieval (context_precision/recall) and generation (faithfulness/answer_relevancy). Skipping any of the four leaves a known failure mode unmeasured."
+      },
+      {
+        "question": "Does RAGAS work without ground truths?",
+        "answer": "Yes for faithfulness, answer_relevancy, and context_precision. context_recall requires ground truth. Most teams start without and add ground truth incrementally."
+      },
+      {
+        "question": "How expensive is a full eval run?",
+        "answer": "~5-20 LLM calls per row depending on metrics. 100 rows with all 4 metrics \u2248 $1-5 with gpt-4o-mini. Budget accordingly."
+      },
+      {
+        "question": "When should I use this vs Promptfoo?",
+        "answer": "RAGAS is RAG-specific with established metrics. Promptfoo is general prompt eval with broader features (assertions, model comparison, web UI). They're complementary."
+      }
+    ],
+    "github_url": "https://github.com/explodinggradients/ragas",
+    "meta_title": "RAGAS RAG Evaluation Quickstart \u2014 Starter",
+    "meta_description": "Automated RAG eval with faithfulness, answer relevancy, context precision/recall \u2014 track quality over time without manual labels."
+  },
+  {
+    "slug": "promptfoo-regression-suite",
+    "title": "Promptfoo Regression Test Suite",
+    "tldr": "YAML-config prompt regression testing with assertions (exact match, contains, semantic similarity, LLM-rubric, latency). Runs across multiple models and providers in parallel \u2014 perfect for CI.",
+    "category": "evaluation",
+    "language": "yaml",
+    "framework": "Promptfoo",
+    "tags": [
+      "promptfoo",
+      "regression-tests",
+      "ci",
+      "model-comparison"
+    ],
+    "best_for_tags": [
+      "regression-suite",
+      "ci-cd",
+      "prompt-iteration"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "When iterating prompts in a repo and you need to know: \u2018did this change break anything?\u2019 \u2014 CI-friendly, multi-provider, assertion-rich.",
+    "when_not_to_use": "Skip for one-off testing \u2014 overhead of YAML config isn't worth it. Use Promptfoo when you have a STABLE prompt that changes regularly.",
+    "quick_start": "npm install -g promptfoo && promptfoo init && promptfoo eval",
+    "full_code": "# promptfooconfig.yaml\n# Test that your customer support prompt holds quality across model/provider changes.\ndescription: \"Customer support reply quality regression suite\"\n\n# Tested across multiple providers \u2014 flag any divergence\nproviders:\n  - openai:gpt-4o-mini\n  - openai:gpt-4o\n  - anthropic:claude-3-5-haiku-latest\n  - anthropic:claude-3-7-sonnet-latest\n\n# The prompt under test (could also be a file)\nprompts:\n  - id: \"support-v3\"\n    raw: |\n      You are a customer support agent for Acme SaaS.\n      Tone: warm, direct, never condescending. Match the customer's energy.\n      If unsure, defer to escalation rather than guessing.\n\n      Customer message: {{message}}\n\n      Reply in 60-120 words. Format: greeting, acknowledgment, action, close.\n\n# Test cases \u2014 vary by message types you'll see in production\ntests:\n  - description: \"Refund request with calm tone\"\n    vars:\n      message: \"Hi, I was charged twice for last month's subscription. Could you refund the duplicate? My account email is jane@example.com.\"\n    assert:\n      - type: contains\n        value: \"jane@example.com\"\n      - type: javascript\n        value: |\n          const wordCount = output.split(/\\s+/).length;\n          return wordCount >= 50 && wordCount <= 130 ? true : `word count ${wordCount} out of 50-130`;\n      - type: llm-rubric\n        value: \"Reply acknowledges the duplicate charge, indicates next steps (refund or investigation), and does not promise anything outside policy.\"\n      - type: not-contains\n        value: \"I apologize for\"  # banned filler phrase\n\n  - description: \"Angry customer threatening cancellation\"\n    vars:\n      message: \"This is the THIRD time your stupid software lost my data. I'm done. Cancel everything and refund the last 6 months or I'm calling my lawyer.\"\n    assert:\n      - type: llm-rubric\n        value: \"Reply takes the data loss seriously, doesn't dismiss anger, offers a concrete next step (escalation, investigation). Does NOT immediately agree to 6-month refund (out of policy).\"\n      - type: not-contains\n        value: \"I understand your frustration\"  # cliche\n      - type: similar\n        value: \"I can connect you with our retention team to review the data-loss incidents and discuss appropriate compensation.\"\n        threshold: 0.6  # cosine similarity to ideal response\n\n  - description: \"Technical question outside agent's lane\"\n    vars:\n      message: \"Can you change the API rate limit on my account to 10,000 requests per minute?\"\n    assert:\n      - type: llm-rubric\n        value: \"Reply defers to engineering/escalation; does NOT promise rate limit changes.\"\n      - type: contains-any\n        value: [\"engineering\", \"escalat\", \"ticket\"]\n\n# Optional: run against your CI on push\n# defaultTest:\n#   threshold: 0.7  # 70% of assertions must pass\n\n# Output formats: write HTML for browse, JSON for CI parsing\noutputPath: \"./promptfoo-results.json\"\n",
+    "dependencies": [
+      {
+        "name": "promptfoo",
+        "version": ">=0.96",
+        "purpose": "Prompt regression test runner (npm package, runs the YAML)"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      },
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Anthropic key",
+        "example": "sk-ant-..."
+      }
+    ],
+    "setup_steps": [
+      "npm install -g promptfoo  # or: npx promptfoo@latest",
+      "Save the YAML as promptfooconfig.yaml",
+      "export OPENAI_API_KEY=sk-... ANTHROPIC_API_KEY=sk-ant-...",
+      "promptfoo eval  # runs all tests",
+      "promptfoo view  # opens browser UI"
+    ],
+    "variations": [
+      {
+        "label": "Test custom HTTP endpoint",
+        "description": "Test your deployed service.",
+        "code_snippet": "providers:\\n  - id: my-prod-api\\n    config:\\n      url: https://api.acme.com/v1/chat\\n      method: POST\\n      headers: { Authorization: 'Bearer {{env.MY_API_TOKEN}}' }\\n      body: '{ \\\"message\\\": \\\"{{message}}\\\" }'"
+      },
+      {
+        "label": "CSV-driven test cases",
+        "description": "Pull test cases from a spreadsheet.",
+        "code_snippet": "tests: file://tests.csv  # columns: message,expected_keywords"
+      },
+      {
+        "label": "Threshold-based pass/fail",
+        "description": "Set CI failure threshold.",
+        "code_snippet": "defaultTest:\\n  threshold: 0.75  # CI fails if <75% pass\\n# Combine with `promptfoo eval --share` to get a shareable link"
+      },
+      {
+        "label": "Red-team variant",
+        "description": "Adversarial test cases.",
+        "code_snippet": "redteam:\\n  plugins:\\n    - harmful\\n    - politics\\n    - jailbreak\\n# Generates adversarial inputs automatically"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Error: No assertion passed",
+        "cause": "Strict threshold + flaky assertions.",
+        "fix_snippet": "Use type: llm-rubric for subjective quality; use type: similar with threshold \u22480.6 for ideal responses; pin temperature 0 for determinism."
+      },
+      {
+        "error_text": "Provider not initialized: anthropic",
+        "cause": "ANTHROPIC_API_KEY not set.",
+        "fix_snippet": "export ANTHROPIC_API_KEY=sk-ant-... before running."
+      },
+      {
+        "error_text": "Tests pass locally but fail in CI",
+        "cause": "Non-deterministic output (temperature > 0 or model version drift).",
+        "fix_snippet": "Pin temperature: 0 in provider config; pin model versions explicitly (gpt-4o-mini-2024-07-18); add similarity thresholds rather than exact matches."
+      },
+      {
+        "error_text": "LLM-rubric assertions are flaky",
+        "cause": "Judge model interprets rubric differently across runs.",
+        "fix_snippet": "Switch judge to gpt-4o (set in eval-llm.provider). Tighten rubric language to remove ambiguity. Run N=3 and require all to pass."
+      }
+    ],
+    "production_checklist": [
+      "Run on every PR via GitHub Actions; fail the build on threshold drops.",
+      "Pin model versions (not just families) for reproducibility.",
+      "Store eval results JSON in your repo or artifact store for trend tracking.",
+      "Use llm-rubric judiciously; exact-match and contains are cheaper and more reliable.",
+      "Include adversarial cases (red-team) once per release cycle.",
+      "Review failing cases before bumping thresholds; bumping silently is how regressions hide."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o",
+        "claude-3-7-sonnet",
+        "claude-3-5-haiku"
+      ],
+      "library_versions": [
+        "promptfoo==0.96.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "promptfoo"
+    ],
+    "related_glossary_slugs": [
+      "prompt-evaluation",
+      "regression-testing",
+      "llm-rubric"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Promptfoo vs RAGAS?",
+        "answer": "Promptfoo is general prompt eval \u2014 works on chat, completion, function calling, any output. RAGAS is RAG-specific. Use both: Promptfoo for general regression, RAGAS for RAG-specific metrics."
+      },
+      {
+        "question": "Do I need ground truths?",
+        "answer": "No \u2014 llm-rubric assertions evaluate quality without them. But if you have them, exact-match and similarity assertions are cheaper and more reliable."
+      },
+      {
+        "question": "How do I integrate with CI?",
+        "answer": "Run `promptfoo eval --output results.json` in your CI. Set thresholds in defaultTest. Fail the build on threshold breach. Promptfoo emits standard exit codes."
+      },
+      {
+        "question": "Can it test agents?",
+        "answer": "Yes \u2014 define a custom provider that runs your agent loop and returns the final answer. Test multi-step agent quality the same way you test prompts."
+      }
+    ],
+    "github_url": "https://github.com/promptfoo/promptfoo",
+    "meta_title": "Promptfoo Regression Test Suite \u2014 Starter",
+    "meta_description": "YAML-config prompt regression tests with assertions, multi-provider, LLM-rubric judging \u2014 ready for CI."
+  },
+  {
+    "slug": "openai-function-calling-parallel",
+    "title": "OpenAI Parallel Function Calling With Validation",
+    "tldr": "OpenAI's parallel tool calling pattern with Pydantic-validated arguments, automatic retry on validation failures, and explicit handling of the \u2018no tool needed\u2019 case. ~100 lines of production-grade scaffolding.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "OpenAI SDK",
+    "tags": [
+      "openai",
+      "function-calling",
+      "parallel",
+      "pydantic"
+    ],
+    "best_for_tags": [
+      "production-tools",
+      "structured-actions",
+      "agents"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "When you need the model to call one or more tools per turn with strict argument validation. Pydantic schemas catch type mismatches before your tool functions run.",
+    "when_not_to_use": "Skip for simple yes/no decisions (just use response_format=json_object). Skip if your provider isn't OpenAI-compatible; Anthropic uses a similar but distinct API.",
+    "quick_start": "pip install openai pydantic && OPENAI_API_KEY=sk-... python parallel_tools.py",
+    "full_code": "\"\"\"Parallel function calling with Pydantic validation.\n\nOpenAI may return multiple tool_calls in one assistant message. We:\n  1. Validate each call's arguments against a Pydantic schema.\n  2. Dispatch to the matching Python function.\n  3. Return results in matching tool_call_id order.\n  4. Let the model continue until it stops calling tools (final answer).\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nfrom typing import Any, Callable\n\nfrom openai import OpenAI\nfrom pydantic import BaseModel, Field, ValidationError\n\nclient = OpenAI()\n\n\n# ---- Tool schemas (Pydantic) ----\n\nclass GetWeatherArgs(BaseModel):\n    location: str = Field(description=\"City and country, e.g., 'Lisbon, PT'\")\n    unit: str = Field(default=\"celsius\", description=\"celsius or fahrenheit\")\n\n\nclass SearchProductsArgs(BaseModel):\n    query: str = Field(description=\"Search keywords\")\n    max_price: float | None = Field(default=None, description=\"Max price filter\")\n    in_stock_only: bool = Field(default=True)\n\n\n# ---- Tool implementations ----\n\ndef get_weather(args: GetWeatherArgs) -> dict:\n    # Stub: replace with real API call\n    return {\"location\": args.location, \"temp\": 22, \"unit\": args.unit, \"condition\": \"clear\"}\n\n\ndef search_products(args: SearchProductsArgs) -> list[dict]:\n    # Stub\n    return [{\"name\": \"Widget Pro\", \"price\": 19.99, \"in_stock\": True}]\n\n\n# ---- Tool registry ----\n\nTOOLS: dict[str, tuple[type[BaseModel], Callable]] = {\n    \"get_weather\": (GetWeatherArgs, get_weather),\n    \"search_products\": (SearchProductsArgs, search_products),\n}\n\n\ndef pydantic_to_openai_tool(name: str, schema_cls: type[BaseModel], description: str) -> dict:\n    \"\"\"Convert a Pydantic model to OpenAI tool format.\"\"\"\n    schema = schema_cls.model_json_schema()\n    return {\n        \"type\": \"function\",\n        \"function\": {\n            \"name\": name,\n            \"description\": description,\n            \"parameters\": schema,\n        },\n    }\n\n\nTOOL_DESCRIPTIONS = {\n    \"get_weather\": \"Get current weather for a city. Use only when the user asks about weather.\",\n    \"search_products\": \"Search the product catalog. Use when the user wants to find/buy something.\",\n}\n\n\ndef build_tool_specs() -> list[dict]:\n    return [\n        pydantic_to_openai_tool(name, schema_cls, TOOL_DESCRIPTIONS[name])\n        for name, (schema_cls, _) in TOOLS.items()\n    ]\n\n\n# ---- Main loop ----\n\ndef chat(user_message: str, *, model: str = \"gpt-4o-mini\", max_iters: int = 5) -> str:\n    messages: list[dict] = [\n        {\"role\": \"system\", \"content\": \"You are a helpful assistant. Use tools when relevant.\"},\n        {\"role\": \"user\", \"content\": user_message},\n    ]\n    tools = build_tool_specs()\n\n    for it in range(max_iters):\n        resp = client.chat.completions.create(\n            model=model, messages=messages, tools=tools, temperature=0\n        )\n        msg = resp.choices[0].message\n\n        if not msg.tool_calls:\n            return msg.content\n\n        # Append assistant's tool-call message\n        messages.append({\n            \"role\": \"assistant\",\n            \"content\": msg.content,\n            \"tool_calls\": [tc.model_dump() for tc in msg.tool_calls],\n        })\n\n        # Dispatch all tool calls (parallel-call shape)\n        for tc in msg.tool_calls:\n            name = tc.function.name\n            schema_cls, fn = TOOLS.get(name, (None, None))\n            if not schema_cls:\n                tool_result = {\"error\": f\"Unknown tool: {name}\"}\n            else:\n                try:\n                    args = schema_cls.model_validate_json(tc.function.arguments)\n                    tool_result = fn(args)\n                except ValidationError as e:\n                    tool_result = {\"error\": \"ValidationError\", \"details\": e.errors()}\n                except Exception as e:\n                    tool_result = {\"error\": str(e)}\n\n            messages.append({\n                \"role\": \"tool\",\n                \"tool_call_id\": tc.id,\n                \"content\": json.dumps(tool_result, default=str),\n            })\n\n    return \"ERROR: max iterations exceeded\"\n\n\nif __name__ == \"__main__\":\n    print(chat(\"What's the weather in Tokyo and Lisbon? Also find me widgets under $30.\"))\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "OpenAI client"
+      },
+      {
+        "name": "pydantic",
+        "version": ">=2.0",
+        "purpose": "Schema validation"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI API key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai pydantic",
+      "export OPENAI_API_KEY=sk-...",
+      "python parallel_tools.py"
+    ],
+    "variations": [
+      {
+        "label": "Streaming with tool calls",
+        "description": "Stream the assistant's reply; assemble tool_calls from deltas.",
+        "code_snippet": "stream = client.chat.completions.create(..., stream=True)\\nfor chunk in stream:\\n    if chunk.choices[0].delta.tool_calls:\\n        # accumulate; emit on chunk.choices[0].finish_reason='tool_calls'"
+      },
+      {
+        "label": "Strict mode",
+        "description": "Enable strict JSON schema enforcement.",
+        "code_snippet": "tool_spec['function']['strict'] = True\\n# Then parameters must use additionalProperties=False and required for all fields."
+      },
+      {
+        "label": "Force a specific tool",
+        "description": "Make the model call a particular tool.",
+        "code_snippet": "tool_choice={'type': 'function', 'function': {'name': 'get_weather'}}"
+      },
+      {
+        "label": "Disable parallel calls",
+        "description": "Some models / cases benefit from sequential.",
+        "code_snippet": "parallel_tool_calls=False"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "openai.BadRequestError: Invalid 'tools[0].function.parameters'",
+        "cause": "Pydantic schema includes Python-specific types (e.g., 'date', custom classes) not in JSON Schema.",
+        "fix_snippet": "Use only JSON-Schema-compatible types: str, int, float, bool, list, dict, datetime as ISO string. Add json_schema_extra hints where needed."
+      },
+      {
+        "error_text": "ValidationError: location is required",
+        "cause": "Model called the tool without all required args.",
+        "fix_snippet": "Starter returns the validation error to the model; it usually retries correctly. If persistent, sharpen tool descriptions to make required args obvious."
+      },
+      {
+        "error_text": "Tool result not appearing in final answer",
+        "cause": "Forgot to append role=tool with tool_call_id matching.",
+        "fix_snippet": "Each tool_call needs a corresponding tool message with matching tool_call_id BEFORE the next API call."
+      },
+      {
+        "error_text": "Model never calls the tool",
+        "cause": "Description doesn't make it clear when to use this tool.",
+        "fix_snippet": "Improve description: include 'Use when the user asks about X' and 'Do not use when ...'. Specific guidance beats abstract."
+      }
+    ],
+    "production_checklist": [
+      "Add timeouts to tool function calls; one slow tool blocks the whole reply.",
+      "Validate ALL tool inputs with Pydantic \u2014 don't trust the model's JSON.",
+      "Set max_iters based on observed p99 of converging conversations.",
+      "Cache deterministic tools (same input \u2192 same output) per conversation.",
+      "Log tool name + arg hash for every call; tool selection drift is the most common production bug.",
+      "Use 'strict' mode in OpenAI tool schemas when supported; it eliminates malformed JSON.",
+      "Test with fast and slow models; tool behavior shifts between gpt-4o-mini and gpt-4o."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "openai==1.51.0",
+        "pydantic==2.9.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "function-calling",
+      "tool-use",
+      "json-schema"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "What's parallel function calling?",
+        "answer": "The model can return multiple tool_calls in a single response. The starter dispatches all of them and feeds all results back together \u2014 fewer round-trips than sequential."
+      },
+      {
+        "question": "Pydantic or raw JSON schema?",
+        "answer": "Pydantic for both validation and schema generation. Less duplication; one source of truth for tool args."
+      },
+      {
+        "question": "When should I use strict mode?",
+        "answer": "When malformed JSON has been a problem. Strict mode (with required+additionalProperties=False) eliminates most issues. It's more restrictive on what schemas are allowed."
+      },
+      {
+        "question": "How is this different from LangChain's bind_tools?",
+        "answer": "Same underlying OpenAI API. This starter is closer to the metal \u2014 fewer dependencies, less indirection. Use it when you want full control or are minimizing deps."
+      }
+    ],
+    "github_url": "https://github.com/openai/openai-python",
+    "meta_title": "OpenAI Parallel Function Calling Starter",
+    "meta_description": "Production-shape OpenAI tool calling: parallel dispatch, Pydantic-validated args, validation-error retries, strict mode hook."
+  },
+  {
+    "slug": "anthropic-tool-use-claude",
+    "title": "Anthropic Claude Tool Use With Streaming",
+    "tldr": "Claude's tool-use pattern with streaming \u2014 handles tool_use blocks and tool_result blocks correctly, supports parallel tool calls in a single response, and streams the assistant's text as it arrives.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "Anthropic SDK",
+    "tags": [
+      "anthropic",
+      "claude",
+      "tool-use",
+      "streaming"
+    ],
+    "best_for_tags": [
+      "claude-agents",
+      "streaming-ui",
+      "tool-use"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "When building with Claude and need tool use plus a responsive UI. Streaming lets you show text as Claude reasons, then pause and dispatch tools.",
+    "when_not_to_use": "Skip for batch processing where streaming is overhead. Skip if you need OpenAI-compatible API; Claude's response shape differs significantly.",
+    "quick_start": "pip install anthropic && ANTHROPIC_API_KEY=sk-ant-... python claude_tools.py",
+    "full_code": "\"\"\"Claude tool use with streaming.\n\nDifferences vs OpenAI:\n  - Tools defined as {'name', 'description', 'input_schema'} (not nested 'function').\n  - Assistant response has 'content' as a list of blocks (text + tool_use).\n  - Tool results passed in a user message with content=[{'type': 'tool_result', ...}].\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nfrom typing import Any, Callable\n\nfrom anthropic import Anthropic\n\nclient = Anthropic()\n\nTOOLS_SCHEMA = [\n    {\n        \"name\": \"get_weather\",\n        \"description\": \"Get current weather for a city. Use only when the user asks about weather.\",\n        \"input_schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"location\": {\"type\": \"string\", \"description\": \"City and country\"},\n                \"unit\": {\"type\": \"string\", \"enum\": [\"celsius\", \"fahrenheit\"], \"default\": \"celsius\"},\n            },\n            \"required\": [\"location\"],\n        },\n    },\n    {\n        \"name\": \"search_products\",\n        \"description\": \"Search the product catalog.\",\n        \"input_schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"query\": {\"type\": \"string\"},\n                \"max_price\": {\"type\": \"number\"},\n                \"in_stock_only\": {\"type\": \"boolean\", \"default\": True},\n            },\n            \"required\": [\"query\"],\n        },\n    },\n]\n\n\ndef get_weather(location: str, unit: str = \"celsius\") -> dict:\n    return {\"location\": location, \"temp\": 22, \"unit\": unit, \"condition\": \"clear\"}\n\n\ndef search_products(query: str, max_price: float | None = None, in_stock_only: bool = True):\n    return [{\"name\": \"Widget Pro\", \"price\": 19.99, \"in_stock\": True}]\n\n\nTOOLS: dict[str, Callable] = {\n    \"get_weather\": get_weather,\n    \"search_products\": search_products,\n}\n\n\ndef chat(user_message: str, *, model: str = \"claude-3-7-sonnet-latest\", max_iters: int = 5) -> str:\n    messages: list[dict] = [{\"role\": \"user\", \"content\": user_message}]\n\n    for _ in range(max_iters):\n        print(\"\\n--- assistant ---\")\n        assistant_content: list[dict] = []  # We'll reconstruct from stream events.\n        with client.messages.stream(\n            model=model,\n            max_tokens=1024,\n            tools=TOOLS_SCHEMA,\n            messages=messages,\n        ) as stream:\n            for event in stream:\n                if event.type == \"content_block_start\":\n                    block = event.content_block\n                    if block.type == \"tool_use\":\n                        print(f\"\\n[tool_use: {block.name}]\", end=\" \", flush=True)\n                        assistant_content.append({\n                            \"type\": \"tool_use\",\n                            \"id\": block.id,\n                            \"name\": block.name,\n                            \"input\": {},  # Filled in delta events\n                        })\n                    else:\n                        assistant_content.append({\"type\": \"text\", \"text\": \"\"})\n                elif event.type == \"content_block_delta\":\n                    delta = event.delta\n                    if delta.type == \"text_delta\":\n                        assistant_content[-1][\"text\"] += delta.text\n                        print(delta.text, end=\"\", flush=True)\n                    elif delta.type == \"input_json_delta\":\n                        # tool input arrives as partial JSON\n                        existing = assistant_content[-1].get(\"_partial_json\", \"\")\n                        assistant_content[-1][\"_partial_json\"] = existing + delta.partial_json\n            # finalize tool_use inputs\n            for block in assistant_content:\n                if block[\"type\"] == \"tool_use\" and \"_partial_json\" in block:\n                    try:\n                        block[\"input\"] = json.loads(block[\"_partial_json\"])\n                    except json.JSONDecodeError:\n                        block[\"input\"] = {}\n                    block.pop(\"_partial_json\", None)\n\n        messages.append({\"role\": \"assistant\", \"content\": assistant_content})\n\n        tool_use_blocks = [b for b in assistant_content if b[\"type\"] == \"tool_use\"]\n        if not tool_use_blocks:\n            # No more tool calls; assistant finalized.\n            return \"\".join(b[\"text\"] for b in assistant_content if b[\"type\"] == \"text\")\n\n        # Dispatch tools, build tool_result content\n        tool_results = []\n        for block in tool_use_blocks:\n            fn = TOOLS.get(block[\"name\"])\n            try:\n                result = fn(**block[\"input\"]) if fn else {\"error\": f\"Unknown tool {block['name']}\"}\n            except Exception as e:\n                result = {\"error\": str(e)}\n            tool_results.append({\n                \"type\": \"tool_result\",\n                \"tool_use_id\": block[\"id\"],\n                \"content\": json.dumps(result, default=str),\n            })\n\n        messages.append({\"role\": \"user\", \"content\": tool_results})\n\n    return \"ERROR: max iters exceeded\"\n\n\nif __name__ == \"__main__\":\n    print(\"\\n=== final ===\")\n    print(chat(\"What's the weather in Tokyo? And find widgets under $30.\"))\n",
+    "dependencies": [
+      {
+        "name": "anthropic",
+        "version": ">=0.39",
+        "purpose": "Anthropic SDK"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Anthropic API key",
+        "example": "sk-ant-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install anthropic",
+      "export ANTHROPIC_API_KEY=sk-ant-...",
+      "python claude_tools.py"
+    ],
+    "variations": [
+      {
+        "label": "Tool choice forced",
+        "description": "Require a specific tool.",
+        "code_snippet": "tool_choice={'type': 'tool', 'name': 'get_weather'}"
+      },
+      {
+        "label": "Disable parallel tools",
+        "description": "Force sequential tool calls.",
+        "code_snippet": "tool_choice={'type': 'auto', 'disable_parallel_tool_use': True}"
+      },
+      {
+        "label": "With prompt caching",
+        "description": "Cache TOOLS_SCHEMA + system prompt for cost savings.",
+        "code_snippet": "system=[{'type': 'text', 'text': 'You are...', 'cache_control': {'type': 'ephemeral'}}]"
+      },
+      {
+        "label": "Synchronous (no streaming)",
+        "description": "If you don't need to show progress.",
+        "code_snippet": "resp = client.messages.create(model=..., tools=..., messages=..., max_tokens=...)\\nassistant_content = [b.model_dump() for b in resp.content]"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "BadRequestError: tool_use_id ... does not match",
+        "cause": "tool_result has wrong tool_use_id.",
+        "fix_snippet": "Every tool_use block returned by Claude has an 'id'. The corresponding tool_result must use that exact id in 'tool_use_id'."
+      },
+      {
+        "error_text": "BadRequestError: input_schema is not valid JSON Schema",
+        "cause": "Schema uses unsupported keywords (e.g., 'definitions').",
+        "fix_snippet": "Use a subset: type, properties, required, enum, default, description, items. Don't use $ref or definitions."
+      },
+      {
+        "error_text": "Tool input is empty / partial JSON in stream",
+        "cause": "Forgot to accumulate input_json_delta events.",
+        "fix_snippet": "Starter handles this; the key is parsing the assembled partial_json string when content_block_stop arrives (or after the stream ends)."
+      },
+      {
+        "error_text": "Model returns plain text instead of using tools",
+        "cause": "Tool descriptions vague or system prompt encourages explanation.",
+        "fix_snippet": "Sharpen tool descriptions. System prompt: 'When a tool can answer the question, use it; do not explain what you would do \u2014 just do it.'"
+      }
+    ],
+    "production_checklist": [
+      "Use prompt caching on TOOLS_SCHEMA \u2014 Claude charges full price every call without it.",
+      "Stream in UI-facing flows; batch in pipelines.",
+      "Validate tool_use.input with Pydantic before dispatching (Claude can produce arg drift).",
+      "Set max_tokens per response; Claude doesn't auto-cap.",
+      "Use claude-3-haiku for simple tools; claude-3-7-sonnet for complex reasoning. Cost difference is significant.",
+      "Log every tool_use block; tool selection is where most issues happen."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-3-7-sonnet-latest",
+        "claude-3-5-haiku-latest"
+      ],
+      "library_versions": [
+        "anthropic==0.39.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "anthropic"
+    ],
+    "related_glossary_slugs": [
+      "tool-use",
+      "function-calling",
+      "streaming"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why is the response shape different from OpenAI?",
+        "answer": "Claude uses content blocks (text, tool_use, image) as a typed array; OpenAI uses string content + separate tool_calls. Claude's model maps better to multi-modal inputs."
+      },
+      {
+        "question": "How do I pass tool errors back?",
+        "answer": "Wrap the error in the tool_result content; add 'is_error': True to the tool_result block for explicit signaling. Claude will try to recover or ask the user."
+      },
+      {
+        "question": "Does Claude support strict mode like OpenAI?",
+        "answer": "Not currently. Validate with Pydantic on your side. Claude's tool-use is generally robust without strict mode."
+      },
+      {
+        "question": "Can I mix tools and vision in the same call?",
+        "answer": "Yes. Include image blocks in the user message alongside text; Claude can both read images and call tools in the same turn."
+      }
+    ],
+    "github_url": "https://github.com/anthropics/anthropic-sdk-python",
+    "meta_title": "Anthropic Claude Tool Use with Streaming",
+    "meta_description": "Claude tool_use pattern with streaming: assemble tool_use blocks from delta events, dispatch, and continue. Production-shape."
+  },
+  {
+    "slug": "instructor-structured-extraction",
+    "title": "Structured Extraction With Instructor (Pydantic + Retry)",
+    "tldr": "Use the `instructor` library to coerce LLM output into Pydantic models with automatic retries on validation failure. Cleaner than raw JSON mode for any non-trivial schema.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "Instructor",
+    "tags": [
+      "instructor",
+      "pydantic",
+      "structured-output",
+      "extraction"
+    ],
+    "best_for_tags": [
+      "data-extraction",
+      "structured-output",
+      "retries"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": true,
+    "when_to_use": "Whenever you need the LLM output as a specific Pydantic model \u2014 extraction tasks, classifier output, multi-field structured responses. Instructor handles validation + retries.",
+    "when_not_to_use": "Skip for streaming text output (instructor streams partial models, but most consumers want the final). Skip when you need very tight control over prompt structure.",
+    "quick_start": "pip install instructor openai && OPENAI_API_KEY=sk-... python extract.py",
+    "full_code": "\"\"\"Structured extraction with Instructor.\n\n- Pydantic schema = response format.\n- Instructor auto-retries on ValidationError (up to max_retries times).\n- Works across providers (OpenAI, Anthropic, Gemini, Ollama, ...) \u2014 same code,\n  swap client.\n\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom typing import Literal\n\nimport instructor\nfrom openai import OpenAI\nfrom pydantic import BaseModel, Field, EmailStr, field_validator\n\n\n# ---- Define the target shape ----\n\nclass Address(BaseModel):\n    street: str\n    city: str\n    state: str = Field(description=\"2-letter US state code\")\n    zip_code: str\n\n    @field_validator(\"state\")\n    @classmethod\n    def state_uppercase(cls, v: str) -> str:\n        v = v.upper()\n        if len(v) != 2:\n            raise ValueError(\"state must be a 2-letter code\")\n        return v\n\n\nclass Customer(BaseModel):\n    name: str\n    email: EmailStr | None = None\n    phone: str | None = None\n    address: Address | None = None\n    customer_type: Literal[\"individual\", \"business\"] = \"individual\"\n    notes: str | None = Field(default=None, description=\"Anything the system should know\")\n\n\n# ---- Set up Instructor ----\n\nclient = instructor.from_openai(OpenAI())\n\n\ndef extract_customer(unstructured_text: str) -> Customer:\n    return client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        response_model=Customer,\n        max_retries=3,\n        messages=[\n            {\"role\": \"system\", \"content\":\n                \"Extract customer details from the user's message. \"\n                \"Leave fields null if not mentioned. Do not invent values.\"},\n            {\"role\": \"user\", \"content\": unstructured_text},\n        ],\n    )\n\n\nif __name__ == \"__main__\":\n    text = \"\"\"Hey, can you set up an account for Acme Corp?\n    Main contact is Jane Doe (jane@acme.example). They're at\n    123 Main St, Springfield IL, 62701. Phone is 555-0100.\n    Note: they need NET-60 payment terms.\"\"\"\n    cust = extract_customer(text)\n    print(cust.model_dump_json(indent=2))\n",
+    "dependencies": [
+      {
+        "name": "instructor",
+        "version": ">=1.5",
+        "purpose": "Structured output for LLM responses"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Underlying client (or anthropic, etc.)"
+      },
+      {
+        "name": "pydantic",
+        "version": ">=2.0",
+        "purpose": "Schema definitions"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI API key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install instructor openai pydantic",
+      "export OPENAI_API_KEY=sk-...",
+      "python extract.py"
+    ],
+    "variations": [
+      {
+        "label": "Anthropic instead of OpenAI",
+        "description": "Same code, different client.",
+        "code_snippet": "from anthropic import Anthropic\\nclient = instructor.from_anthropic(Anthropic())\\n# rest unchanged"
+      },
+      {
+        "label": "Streaming partial models",
+        "description": "Get partial fills as they generate.",
+        "code_snippet": "for partial in client.chat.completions.create_partial(model=..., response_model=Customer, messages=...):\\n    print(partial.model_dump())"
+      },
+      {
+        "label": "List of items",
+        "description": "Extract a list of records.",
+        "code_snippet": "from typing import Iterable\\nfor item in client.chat.completions.create_iterable(model=..., response_model=LineItem, messages=...):\\n    process(item)"
+      },
+      {
+        "label": "Local LLM via Ollama",
+        "description": "Use a self-hosted model.",
+        "code_snippet": "client = instructor.from_openai(OpenAI(base_url='http://localhost:11434/v1', api_key='ollama'), mode=instructor.Mode.JSON)\\n# Smaller models may need higher max_retries."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "InstructorRetryException: Max retries exceeded",
+        "cause": "Model can't satisfy the schema (validator too strict or context insufficient).",
+        "fix_snippet": "Inspect the last attempt's output. Common: 1) relax validators, 2) make schema fields Optional, 3) give the model more context in the system prompt."
+      },
+      {
+        "error_text": "ValidationError: value_error.email",
+        "cause": "Source text has malformed email.",
+        "fix_snippet": "Either accept str | None and validate downstream, or sharpen the system prompt: \u2018leave email null if no clear valid email present.\u2019"
+      },
+      {
+        "error_text": "Schema fields unfilled when info is present",
+        "cause": "System prompt too lax; model is conservative.",
+        "fix_snippet": "Add explicit instruction: \u2018fill every field for which evidence exists in the source.\u2019 Use Field(description=...) to hint at what counts as evidence."
+      },
+      {
+        "error_text": "Schema with deeply nested models fails for small models",
+        "cause": "Smaller models struggle with multi-level nesting.",
+        "fix_snippet": "Flatten the schema for smaller models, or switch to a stronger model. Use the largest model your latency/cost budget allows for complex extraction."
+      }
+    ],
+    "production_checklist": [
+      "Pin instructor and openai versions \u2014 both evolve quickly.",
+      "Log every retry; recurring retries on the same shape signals schema/prompt mismatch.",
+      "Set max_retries based on stakes; 1 for non-critical, 3 for important, 5 for must-extract.",
+      "Use validators (field_validator) to catch obvious errors without LLM round-trips.",
+      "For list extraction, prefer create_iterable to streaming \u2014 easier to handle partial results.",
+      "Test the schema with edge cases: empty strings, mixed languages, redacted PII."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o",
+        "claude-3-7-sonnet"
+      ],
+      "library_versions": [
+        "instructor==1.5.2",
+        "openai==1.51.0",
+        "pydantic==2.9.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "instructor"
+    ],
+    "related_glossary_slugs": [
+      "structured-output",
+      "function-calling",
+      "pydantic"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Instructor vs raw OpenAI JSON mode?",
+        "answer": "Instructor wraps JSON mode + Pydantic + automatic retry. Raw JSON mode requires you to manage all three manually. Instructor wins for any non-trivial schema."
+      },
+      {
+        "question": "Does it work with local models?",
+        "answer": "Yes \u2014 via Ollama's OpenAI-compatible API. Smaller models need higher max_retries and simpler schemas; larger ones (Llama 3.1 70B) work nearly as well as gpt-4o."
+      },
+      {
+        "question": "What about provider lock-in?",
+        "answer": "Instructor wraps OpenAI, Anthropic, Gemini, Cohere, Groq, Ollama, etc. Your schema code stays the same; you swap the client."
+      },
+      {
+        "question": "Can I use this for classification?",
+        "answer": "Yes \u2014 Literal[...] types are perfect for classification. response_model=Category where Category: Literal['a', 'b', 'c']."
+      }
+    ],
+    "github_url": "https://github.com/jxnl/instructor",
+    "meta_title": "Structured Extraction with Instructor \u2014 Starter",
+    "meta_description": "Pydantic-based LLM extraction with automatic validation retries \u2014 clean schema \u2192 guaranteed structured output across providers."
+  },
+  {
+    "slug": "json-mode-with-schema-validation",
+    "title": "Pure JSON Mode With Schema Validation",
+    "tldr": "Minimal-dependency structured output: use OpenAI's response_format=json_object plus a jsonschema validator. Same effect as Instructor in 30 lines, no extra library.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "OpenAI SDK + jsonschema",
+    "tags": [
+      "json-mode",
+      "structured-output",
+      "validation"
+    ],
+    "best_for_tags": [
+      "minimal-deps",
+      "no-framework",
+      "simple-extraction"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": false,
+    "when_to_use": "When you want JSON output, have a JSON Schema already, and don't want to add Pydantic + Instructor. Common in services where the schema lives in a config file already.",
+    "when_not_to_use": "Skip for complex nested schemas \u2014 Pydantic/Instructor's better validators and retry logic pay off. Skip when you need streaming partial structured output.",
+    "quick_start": "pip install openai jsonschema && OPENAI_API_KEY=sk-... python json_mode.py",
+    "full_code": "\"\"\"Pure JSON mode with jsonschema validation and manual retries.\n\nThis is the lowest-dependency way to get structured output.\nFor complex schemas or rich validation, use Instructor instead.\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\n\nfrom jsonschema import Draft7Validator\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n# Define your JSON Schema (could load from file)\nINVOICE_SCHEMA = {\n    \"type\": \"object\",\n    \"required\": [\"vendor\", \"total\", \"currency\", \"line_items\"],\n    \"additionalProperties\": False,\n    \"properties\": {\n        \"vendor\": {\"type\": \"string\"},\n        \"invoice_date\": {\"type\": \"string\", \"format\": \"date\"},\n        \"total\": {\"type\": \"number\"},\n        \"currency\": {\"type\": \"string\", \"enum\": [\"USD\", \"EUR\", \"GBP\", \"JPY\", \"CAD\"]},\n        \"line_items\": {\n            \"type\": \"array\",\n            \"minItems\": 1,\n            \"items\": {\n                \"type\": \"object\",\n                \"required\": [\"description\", \"amount\"],\n                \"properties\": {\n                    \"description\": {\"type\": \"string\"},\n                    \"quantity\": {\"type\": \"number\"},\n                    \"amount\": {\"type\": \"number\"},\n                },\n            },\n        },\n    },\n}\n\nvalidator = Draft7Validator(INVOICE_SCHEMA)\n\n\ndef extract(text: str, *, max_retries: int = 3) -> dict:\n    messages = [\n        {\"role\": \"system\", \"content\":\n            \"You extract invoice data into JSON matching this schema:\\n\"\n            + json.dumps(INVOICE_SCHEMA, indent=2)\n            + \"\\n\\nReturn ONLY valid JSON, no prose.\"},\n        {\"role\": \"user\", \"content\": text},\n    ]\n\n    last_error = None\n    for attempt in range(max_retries):\n        resp = client.chat.completions.create(\n            model=\"gpt-4o-mini\",\n            messages=messages,\n            response_format={\"type\": \"json_object\"},\n            temperature=0,\n        )\n        raw = resp.choices[0].message.content\n        try:\n            data = json.loads(raw)\n        except json.JSONDecodeError as e:\n            last_error = f\"JSON parse error: {e}\"\n        else:\n            errors = sorted(validator.iter_errors(data), key=lambda e: e.path)\n            if not errors:\n                return data\n            last_error = \"; \".join(f\"{list(e.path)}: {e.message}\" for e in errors[:3])\n\n        # Retry with feedback\n        messages.append({\"role\": \"assistant\", \"content\": raw})\n        messages.append({\n            \"role\": \"user\",\n            \"content\": f\"That output failed validation: {last_error}. \"\n                       f\"Return JSON matching the schema.\"\n        })\n\n    raise RuntimeError(f\"Failed to produce valid JSON after {max_retries} retries: {last_error}\")\n\n\nif __name__ == \"__main__\":\n    text = \"\"\"Invoice from Acme Corp, 2026-05-10. Subtotal $234.50.\n    1 widget at $19.99, 2 thingamajigs at $107.25 each.\"\"\"\n    print(json.dumps(extract(text), indent=2))\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "OpenAI client"
+      },
+      {
+        "name": "jsonschema",
+        "version": ">=4.20",
+        "purpose": "JSON Schema Draft 7 validator"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI API key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai jsonschema",
+      "export OPENAI_API_KEY=sk-...",
+      "python json_mode.py"
+    ],
+    "variations": [
+      {
+        "label": "Use response_format with strict json_schema",
+        "description": "OpenAI's enforced structured outputs (gpt-4o+ models).",
+        "code_snippet": "response_format={\\n    'type': 'json_schema',\\n    'json_schema': {'name': 'invoice', 'schema': INVOICE_SCHEMA, 'strict': True}\\n}\\n# When strict=True, model guarantees valid JSON matching schema."
+      },
+      {
+        "label": "Load schema from file",
+        "description": "Schema lives outside code.",
+        "code_snippet": "INVOICE_SCHEMA = json.loads(Path('schemas/invoice.schema.json').read_text())"
+      },
+      {
+        "label": "With Anthropic",
+        "description": "Anthropic doesn't have JSON mode; use a system-prompted equivalent.",
+        "code_snippet": "client.messages.create(model='claude-3-7-sonnet-latest', system='Return only valid JSON...', messages=...)\\n# parse + validate same as starter."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "json.JSONDecodeError",
+        "cause": "Model returned markdown-wrapped JSON or partial output.",
+        "fix_snippet": "Strip markdown fences: raw = raw.strip().removeprefix('```json').removesuffix('```'). For gpt-4o, use the strict json_schema variant to eliminate this entirely."
+      },
+      {
+        "error_text": "jsonschema validation: ['line_items']: too few items",
+        "cause": "Model didn't extract line items from the source text.",
+        "fix_snippet": "Either relax minItems or improve prompt: \u2018list every individual charge as a line item, even if the source only shows a total.\u2019"
+      },
+      {
+        "error_text": "Validation: enum mismatch on currency",
+        "cause": "Source text used a currency outside the enum.",
+        "fix_snippet": "Either expand the enum or treat unrecognized currency as \u2018USD\u2019 with a flag in another field. Don't widen the enum globally for a single edge case."
+      },
+      {
+        "error_text": "Model output uses null when schema disallows it",
+        "cause": "Schema specifies a type but model wrote null.",
+        "fix_snippet": "Use type: ['string', 'null'] explicitly in JSON Schema to allow null."
+      }
+    ],
+    "production_checklist": [
+      "If using gpt-4o+, prefer json_schema strict mode \u2014 eliminates parse failures.",
+      "Version your schemas; changes can silently break downstream consumers.",
+      "Log the raw model output on validation failure; needed for debugging schema drift.",
+      "Cap max_retries \u2014 don't loop infinitely on impossible schemas.",
+      "Make validation errors specific in the retry message; \u2018invalid\u2019 alone isn't helpful.",
+      "Test the schema against real source text variations; cover edge cases."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "openai==1.51.0",
+        "jsonschema==4.23.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "json-mode",
+      "structured-output",
+      "json-schema"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "When should I use json_schema strict mode vs json_object?",
+        "answer": "Strict json_schema (gpt-4o+) GUARANTEES valid output matching schema \u2014 no parse/validation retries needed. json_object only guarantees valid JSON, not matching shape. Use strict mode when available."
+      },
+      {
+        "question": "Why not just always use Instructor?",
+        "answer": "If your schema already exists as JSON Schema (e.g., OpenAPI spec, JSON file in repo), instructor requires translating to Pydantic. Pure JSON mode skips that step."
+      },
+      {
+        "question": "Can I stream partial JSON?",
+        "answer": "Technically yes (stream + concat), but parsing partials requires a streaming JSON parser. Use Instructor's create_partial if you need streaming structured output."
+      },
+      {
+        "question": "How do I handle multi-language extraction?",
+        "answer": "Schema doesn't change \u2014 but make the system prompt explicit about source language(s). The model handles translation+extraction in one call when prompted."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Pure JSON Mode With Schema Validation \u2014 Starter",
+    "meta_description": "Minimal-dependency structured output: OpenAI JSON mode + jsonschema validation + retry-with-feedback. ~30 lines, no Pydantic."
+  },
+  {
     "slug": "groq-low-latency-chat",
     "title": "Groq LPU Sub-200ms Streaming Chat",
     "category": "llm-clients",
@@ -11593,160 +12614,6 @@
     ],
     "meta_title": "GaLore Full Fine-Tune on 24GB GPU | OSS AI Hub",
     "meta_description": "Production GaLore: full-parameter fine-tune of Llama 7B on a single 24GB consumer GPU via gradient projection. MIT."
-  },
-  {
-    "license": "MIT",
-    "attribution": "OSS AI Hub - original work, MIT-licensed.",
-    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
-    "status": "approved",
-    "archived": false,
-    "submitter_email": "seed@ossaihub.com",
-    "submitter_name": "OSS Hub",
-    "slug": "llm-as-judge-pairwise",
-    "title": "LLM-as-Judge Pairwise Eval with Bradley-Terry ELO",
-    "tldr": "Pairwise comparison eval where a stronger judge model picks the better of two responses. Bradley-Terry ELO computation included.",
-    "description": "Pairwise judging avoids absolute-score variance: judge picks A or B per matchup, BT regression computes stable ELOs across N models from M pairs.",
-    "category": "evaluation",
-    "language": "python",
-    "framework": "vanilla",
-    "difficulty_tier": "intermediate",
-    "tags": [
-      "llm-judge",
-      "pairwise",
-      "elo",
-      "bradley-terry"
-    ],
-    "best_for_tags": [
-      "llm-judge",
-      "ranking",
-      "model-selection"
-    ],
-    "when_to_use": "You're choosing between 3+ models/prompts on subjective tasks (writing, summarization, chat). Pairwise judging has lower variance than absolute scoring + the Bradley-Terry ELO gives stable rankings across model versions.",
-    "when_not_to_use": "Skip when (1) absolute quality matters more than ranking; (2) you have exact-match metrics that work; (3) judging cost is prohibitive (N*N pairs at scale).",
-    "quick_start": "1) `pip install anthropic numpy scipy`  2) Generate completions  3) Judge pairs  4) Fit BT.",
-    "full_code": "\"\"\"Pairwise LLM-as-judge + Bradley-Terry ELO computation.\"\"\"\nfrom __future__ import annotations\nimport json, random, itertools\nfrom anthropic import Anthropic\nimport numpy as np\nfrom scipy.optimize import minimize\n\n\ndef judge_pair(judge_client, prompt: str, resp_a: str, resp_b: str) -> int:\n    \"\"\"Returns 0 if A wins, 1 if B wins, -1 if tie.\"\"\"\n    out = judge_client.messages.create(\n        model=\"claude-sonnet-4-5\", max_tokens=10, temperature=0,\n        messages=[{\"role\": \"user\", \"content\": f\"Question: {prompt}\\n\\nAnswer A: {resp_a}\\n\\nAnswer B: {resp_b}\\n\\nWhich answer is better? Reply with exactly 'A', 'B', or 'TIE'.\"}],\n    ).content[0].text.strip().upper()\n    return {\"A\": 0, \"B\": 1}.get(out, -1)\n\n\ndef bradley_terry_elo(wins: dict[tuple, int], models: list[str]) -> dict[str, float]:\n    \"\"\"Fit BT model: P(i beats j) = sigmoid(theta_i - theta_j). Returns ELOs anchored at 1000.\"\"\"\n    n = len(models)\n    idx = {m: i for i, m in enumerate(models)}\n\n    def nll(theta):\n        s = 0.0\n        for (a, b), wins_a in wins.items():\n            i, j = idx[a], idx[b]\n            losses_a = wins.get((b, a), 0)\n            total = wins_a + losses_a\n            if total == 0: continue\n            p = 1 / (1 + np.exp(-(theta[i] - theta[j])))\n            p = np.clip(p, 1e-6, 1 - 1e-6)\n            s -= wins_a * np.log(p) + losses_a * np.log(1 - p)\n        return s\n\n    res = minimize(nll, np.zeros(n), method=\"L-BFGS-B\")\n    theta = res.x - res.x.mean()\n    return {m: 1000 + 400 / np.log(10) * theta[idx[m]] for m in models}\n\n\ndef run_arena(judge, prompt: str, completions: dict[str, str], n_pairs: int = 5) -> dict[tuple, int]:\n    \"\"\"For one prompt, sample pairs and judge them.\"\"\"\n    wins: dict[tuple, int] = {}\n    models = list(completions.keys())\n    pairs = random.sample(list(itertools.combinations(models, 2)), min(n_pairs, len(models)*(len(models)-1)//2))\n    for a, b in pairs:\n        verdict = judge_pair(judge, prompt, completions[a], completions[b])\n        if verdict == 0:   wins[(a, b)] = wins.get((a, b), 0) + 1\n        elif verdict == 1: wins[(b, a)] = wins.get((b, a), 0) + 1\n    return wins\n\n\nif __name__ == \"__main__\":\n    judge = Anthropic()\n    # Example: 3 models, 10 prompts, 3 pairs per prompt\n    all_wins = {}\n    for prompt in [\"Summarize photosynthesis in one sentence.\", \"Write a haiku about Python.\"]:\n        completions = {\"claude-haiku\": \"...\", \"gpt-4o-mini\": \"...\", \"llama-3.3\": \"...\"}  # fill with real outputs\n        for k, v in run_arena(judge, prompt, completions).items():\n            all_wins[k] = all_wins.get(k, 0) + v\n\n    elos = bradley_terry_elo(all_wins, [\"claude-haiku\", \"gpt-4o-mini\", \"llama-3.3\"])\n    for m, elo in sorted(elos.items(), key=lambda kv: -kv[1]):\n        print(f\"{m:20s} ELO {elo:.0f}\")\n",
-    "code": "from anthropic import Anthropic\n\ndef judge_pair(client, prompt, a, b):\n    out = client.messages.create(model='claude-sonnet-4-5', max_tokens=10, temperature=0,\n        messages=[{'role': 'user', 'content': f'Q: {prompt}\\nA: {a}\\nB: {b}\\nWhich is better? Reply A, B, or TIE.'}]).content[0].text.strip()\n    return {'A': 0, 'B': 1}.get(out, -1)\n",
-    "dependencies": [
-      {
-        "name": "anthropic",
-        "version": "latest",
-        "purpose": "Anthropic Claude SDK"
-      },
-      {
-        "name": "numpy",
-        "version": "latest",
-        "purpose": "Numerical computing"
-      },
-      {
-        "name": "scipy",
-        "version": "latest",
-        "purpose": "Required scipy library"
-      }
-    ],
-    "dependencies_v2": [
-      {
-        "name": "anthropic",
-        "version": ">=0.40.0",
-        "purpose": "Judge model."
-      },
-      {
-        "name": "numpy",
-        "version": ">=1.26.0",
-        "purpose": "Math for BT fit."
-      },
-      {
-        "name": "scipy",
-        "version": ">=1.14.0",
-        "purpose": "L-BFGS-B optimizer."
-      }
-    ],
-    "env_vars": [
-      {
-        "name": "ANTHROPIC_API_KEY",
-        "required": true,
-        "description": "Judge model."
-      }
-    ],
-    "setup_steps": [
-      "`pip install anthropic numpy scipy`",
-      "Generate completions from each model on the same prompt set.",
-      "Run pairwise judging with the same judge model + temperature=0.",
-      "Fit Bradley-Terry to get stable ELO rankings.",
-      "Bootstrap N times for confidence intervals on the ELOs."
-    ],
-    "variations": [
-      {
-        "label": "Symmetric judging to defeat order bias",
-        "description": "Judge each pair in both orders (A,B) AND (B,A); average.",
-        "code_snippet": "v1 = judge_pair(j, p, a, b)\nv2 = judge_pair(j, p, b, a)\nif v1 == v2 and v1 != -1:   # consistent\n    record_win(v1)\nelse:\n    record_tie()"
-      },
-      {
-        "label": "Multiple judges for variance reduction",
-        "description": "Average across 3 judge models.",
-        "code_snippet": "judges = ['claude-sonnet-4-5', 'gpt-5', 'gemini-2.5']\nvotes = [judge_pair(client, p, a, b, model=j) for j in judges]\nverdict = max(set(votes), key=votes.count)"
-      }
-    ],
-    "common_errors": [
-      {
-        "error_text": "BT solver gives wildly different ELOs run-to-run",
-        "cause": "Sparse wins matrix - not enough pairs per model.",
-        "fix_snippet": "# Need at least 30 pairs per pair-of-models for stable BT"
-      },
-      {
-        "error_text": "All models score 1000",
-        "cause": "Judge declared TIE on every pair (often signs of prompt issues).",
-        "fix_snippet": "# Strengthen judge prompt: 'Pick A or B even if very close.'"
-      },
-      {
-        "error_text": "Order bias - A always wins because it's listed first",
-        "cause": "LLM judges have position bias.",
-        "fix_snippet": "# Always randomize order + symmetric judging (see variation)"
-      }
-    ],
-    "production_checklist": [
-      "Use temperature=0 on the judge - non-zero adds variance.",
-      "Randomize A/B order per pair - judges have strong first-position bias.",
-      "Bootstrap ELOs over the matchups for confidence intervals.",
-      "Use a STRONGER model as judge than the models being judged (e.g. Claude Opus judging Haiku/Sonnet).",
-      "Never use a model to judge itself - confirmation bias.",
-      "Collect 30+ pairs per pair-of-models for stable BT estimates.",
-      "Save matchup logs - lets you re-fit when adding a new model later."
-    ],
-    "tested_with": {
-      "model_versions": [
-        "claude-sonnet-4-5 as judge"
-      ],
-      "library_versions": [
-        "anthropic==0.40.0",
-        "scipy==1.14.0",
-        "numpy==1.26.4"
-      ],
-      "last_verified_date": "2026-05-13"
-    },
-    "related_tool_slugs": [
-      "anthropic"
-    ],
-    "related_glossary_slugs": [
-      "llm-as-judge",
-      "bradley-terry",
-      "elo-rating",
-      "pairwise-comparison"
-    ],
-    "related_learn_slugs": [
-      "llm-eval-101"
-    ],
-    "faq": [
-      {
-        "question": "Pairwise vs absolute scoring?",
-        "answer": "Pairwise: lower variance, better at relative ordering, requires N*(N-1)/2 calls. Absolute (1-5 Likert): higher variance, easier to scale, prone to scale drift. For model selection: pairwise. For absolute quality dashboards: rubric scoring."
-      },
-      {
-        "question": "How many prompts + pairs do I need?",
-        "answer": "50-100 prompts * 3-5 pairs per prompt = 150-500 total judgments for stable ELOs across 3-5 models. Scale linearly with more models. Always bootstrap to confirm rankings are not driven by chance."
-      }
-    ],
-    "meta_title": "LLM-as-Judge Pairwise Eval with Bradley-Terry ELO | OSS AI Hub",
-    "meta_description": "Production pairwise LLM judging + BT ELO computation. Order-bias mitigation, bootstrap CIs, multi-judge averaging. MIT."
   },
   {
     "license": "MIT",
