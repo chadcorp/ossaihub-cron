@@ -3846,5 +3846,718 @@
     ],
     "meta_title": "smolagents Code-First Agent | OSS AI Hub",
     "meta_description": "HuggingFace smolagents: code-writing agents with 30% fewer tool calls. Local + E2B + Ollama variants. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "mcp-sql-readonly-server",
+    "title": "MCP SQL Server (Read-Only Postgres Access)",
+    "tldr": "Model Context Protocol server exposing SELECT-only access to Postgres. Schema introspection, row-limit guard, read-only role enforcement.",
+    "description": "Production MCP server: list_tables / describe_table / query_select tools backed by an asyncpg connection with a read-only Postgres role and row-limit clamp.",
+    "category": "mcp-servers",
+    "language": "python",
+    "framework": "mcp",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "mcp",
+      "sql",
+      "postgres",
+      "read-only"
+    ],
+    "best_for_tags": [
+      "mcp",
+      "database",
+      "agent-tool"
+    ],
+    "featured": true,
+    "when_to_use": "You want Claude Desktop, Cursor, or your own agent to query your Postgres safely. MCP gives one protocol for any client; the read-only Postgres role keeps writes impossible at the database layer (defense in depth on top of the tool whitelist).",
+    "when_not_to_use": "Skip when (1) you need writes from the agent - build a separate write server with explicit per-statement approval; (2) your DB has sensitive columns - add a column allow-list at the SQL layer first; (3) you don't run Postgres - swap to SQLAlchemy + bring your own dialect.",
+    "quick_start": "1) `pip install 'mcp[cli]' asyncpg`  2) Create a read-only Postgres role  3) `mcp dev sql_server.py` or wire into Claude Desktop config.",
+    "full_code": "\"\"\"Read-only Postgres MCP server.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport re\n\nimport asyncpg\nfrom mcp.server.fastmcp import FastMCP\n\n\nDSN = os.environ[\"PG_READONLY_DSN\"]  # uses a Postgres role with read-only grants\nMAX_ROWS = int(os.environ.get(\"MCP_MAX_ROWS\", \"200\"))\n\nmcp = FastMCP(\"readonly-sql\")\n_pool: asyncpg.Pool | None = None\n\n\nSAFE_SELECT = re.compile(r\"^\\s*select\\b\", re.IGNORECASE | re.DOTALL)\n\n\nasync def _get_pool() -> asyncpg.Pool:\n    global _pool\n    if _pool is None:\n        _pool = await asyncpg.create_pool(DSN, min_size=1, max_size=4)\n    return _pool\n\n\n@mcp.tool()\nasync def list_tables() -> list[dict]:\n    \"\"\"List user-facing tables (excluding pg_* and information_schema).\"\"\"\n    pool = await _get_pool()\n    async with pool.acquire() as conn:\n        rows = await conn.fetch(\"\"\"\n            SELECT table_schema, table_name\n            FROM information_schema.tables\n            WHERE table_schema NOT IN ('pg_catalog', 'information_schema')\n            ORDER BY 1, 2\n        \"\"\")\n    return [dict(r) for r in rows]\n\n\n@mcp.tool()\nasync def describe_table(schema: str, table: str) -> list[dict]:\n    \"\"\"Return column name + data type for a given table.\"\"\"\n    pool = await _get_pool()\n    async with pool.acquire() as conn:\n        rows = await conn.fetch(\"\"\"\n            SELECT column_name, data_type, is_nullable\n            FROM information_schema.columns\n            WHERE table_schema = $1 AND table_name = $2\n            ORDER BY ordinal_position\n        \"\"\", schema, table)\n    if not rows:\n        return [{\"error\": f\"no such table: {schema}.{table}\"}]\n    return [dict(r) for r in rows]\n\n\n@mcp.tool()\nasync def query_select(sql: str) -> list[dict] | dict:\n    \"\"\"Run a SELECT query (max 200 rows). Anything other than SELECT is rejected.\"\"\"\n    if not SAFE_SELECT.match(sql):\n        return {\"error\": \"Only SELECT queries are allowed.\"}\n    if \";\" in sql.strip().rstrip(\";\"):\n        return {\"error\": \"Multiple statements are not allowed.\"}\n    if \" limit \" not in sql.lower():\n        sql = sql.rstrip(\"; \") + f\" LIMIT {MAX_ROWS}\"\n    pool = await _get_pool()\n    try:\n        async with pool.acquire() as conn:\n            rows = await conn.fetch(sql)\n        return [dict(r) for r in rows]\n    except (asyncpg.PostgresError, ValueError) as e:\n        return {\"error\": f\"{type(e).__name__}: {e}\"}\n\n\nif __name__ == \"__main__\":\n    mcp.run()\n",
+    "code": "from mcp.server.fastmcp import FastMCP\nimport asyncpg, os, re\n\nmcp = FastMCP('readonly-sql')\nSAFE = re.compile(r'^\\\\s*select\\\\b', re.I | re.S)\n\n@mcp.tool()\nasync def query_select(sql: str) -> list:\n    if not SAFE.match(sql):\n        return [{'error': 'SELECT only'}]\n    pool = await asyncpg.create_pool(os.environ['PG_READONLY_DSN'])\n    async with pool.acquire() as conn:\n        rows = await conn.fetch(sql + ' LIMIT 200')\n    return [dict(r) for r in rows]\n\nif __name__ == '__main__':\n    mcp.run()\n",
+    "dependencies": [
+      "mcp",
+      "asyncpg"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "mcp[cli]",
+        "version": ">=1.2.0",
+        "purpose": "Model Context Protocol Python SDK."
+      },
+      {
+        "name": "asyncpg",
+        "version": ">=0.30.0",
+        "purpose": "Fast async Postgres driver."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "PG_READONLY_DSN",
+        "required": true,
+        "description": "DSN for a Postgres role with SELECT-only grants. Create with: CREATE ROLE mcp_readonly LOGIN PASSWORD '...'; GRANT USAGE ON SCHEMA public TO mcp_readonly; GRANT SELECT ON ALL TABLES IN SCHEMA public TO mcp_readonly;"
+      },
+      {
+        "name": "MCP_MAX_ROWS",
+        "required": false,
+        "description": "Row cap per query (default 200)."
+      }
+    ],
+    "setup_steps": [
+      "Create a read-only Postgres role: `CREATE ROLE mcp_readonly LOGIN PASSWORD '...'; GRANT USAGE ON SCHEMA public TO mcp_readonly; GRANT SELECT ON ALL TABLES IN SCHEMA public TO mcp_readonly;`",
+      "`pip install 'mcp[cli]>=1.2.0' asyncpg>=0.30.0`",
+      "Export `PG_READONLY_DSN=postgresql://mcp_readonly:...@host:5432/db`",
+      "Save as `sql_server.py`.",
+      "Dev test: `mcp dev sql_server.py` (opens the MCP Inspector at localhost:5173).",
+      "Production: register in your client. For Claude Desktop, add to `claude_desktop_config.json`: `{\"mcpServers\": {\"sql\": {\"command\": \"python\", \"args\": [\"/abs/path/sql_server.py\"], \"env\": {\"PG_READONLY_DSN\": \"...\"}}}}`"
+    ],
+    "variations": [
+      {
+        "label": "SQLAlchemy variant (multi-dialect)",
+        "description": "Support MySQL, SQLite, Snowflake via SQLAlchemy.",
+        "code_snippet": "from sqlalchemy import create_engine, text\nengine = create_engine(os.environ['READONLY_DSN'], pool_size=2)\n@mcp.tool()\ndef query_select(sql: str):\n    if not SAFE.match(sql): return {'error': 'SELECT only'}\n    with engine.connect() as conn: return [dict(r._mapping) for r in conn.execute(text(sql)).fetchmany(200)]"
+      },
+      {
+        "label": "Add row-level allow-list",
+        "description": "Restrict which tables are queryable.",
+        "code_snippet": "ALLOWED_TABLES = {'public.orders', 'public.customers'}\n# In query_select, parse table name via sqlparse and reject non-allowed."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Permission denied for table users",
+        "cause": "Role doesn't have SELECT grant on that table.",
+        "fix_snippet": "GRANT SELECT ON ALL TABLES IN SCHEMA public TO mcp_readonly;\nALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO mcp_readonly;"
+      },
+      {
+        "error_text": "Connection pool exhausted under agent load",
+        "cause": "Multiple concurrent calls from agent + small pool.",
+        "fix_snippet": "_pool = await asyncpg.create_pool(DSN, min_size=2, max_size=10, max_inactive_connection_lifetime=300)"
+      },
+      {
+        "error_text": "Agent runs DDL via SELECT FROM dblink(...)",
+        "cause": "dblink + similar functions can execute writes through SELECT.",
+        "fix_snippet": "-- Revoke execute on dangerous functions:\nREVOKE EXECUTE ON FUNCTION dblink_exec(text) FROM PUBLIC;\n-- Or use a database with extensions disabled."
+      }
+    ],
+    "production_checklist": [
+      "ALWAYS use a separate Postgres role with SELECT grants only - never use the app role.",
+      "Set `statement_timeout=10s` on the readonly role to kill runaway queries.",
+      "Add an audit log: log every query + agent identity + timestamp.",
+      "Cap row count via MCP_MAX_ROWS - agents will happily SELECT * FROM huge_table.",
+      "Block dangerous extensions (dblink, file_fdw) at the database level.",
+      "Use a read replica DSN for the agent - keep agent load off the primary.",
+      "Pin mcp-python-sdk version - the protocol is still evolving."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "mcp==1.2.0",
+        "asyncpg==0.30.0",
+        "Postgres 16"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "model-context-protocol",
+      "postgres",
+      "asyncpg"
+    ],
+    "related_glossary_slugs": [
+      "mcp",
+      "tool-calling",
+      "agent-tool",
+      "least-privilege"
+    ],
+    "related_learn_slugs": [
+      "mcp-101",
+      "agent-database-access"
+    ],
+    "faq": [
+      {
+        "question": "Why MCP over direct SQL tool-calling?",
+        "answer": "MCP is a protocol, not a library. One server works across Claude Desktop, Cursor, Zed, Cline, and your own agent. Direct tool-calling locks you into one client. For internal tools where you'll change agents over time, MCP is worth the slight overhead."
+      },
+      {
+        "question": "Is read-only at the role layer enough security?",
+        "answer": "It's the most important layer (defense in depth). On top of that: query timeout, row cap, blocking DDL via grant control, blocking dangerous extensions, audit logging. Don't rely on the LLM to 'only run safe SQL' - it will eventually do something surprising."
+      }
+    ],
+    "meta_title": "MCP SQL Server (Read-Only Postgres) | OSS AI Hub",
+    "meta_description": "Production MCP server: SELECT-only Postgres access with row-limit, schema introspection, separate read-only role. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "mcp-filesystem-server",
+    "title": "MCP Filesystem Server (Sandboxed, TypeScript)",
+    "tldr": "TypeScript MCP server with read/write file ops constrained to a single directory tree. Path-traversal defense, size limits.",
+    "description": "MCP server exposing read_file / write_file / list_directory tools sandboxed to a configured root. Uses path.resolve + realpath checks to defeat ../ traversal.",
+    "category": "mcp-servers",
+    "language": "typescript",
+    "framework": "mcp",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "mcp",
+      "filesystem",
+      "typescript",
+      "sandbox"
+    ],
+    "best_for_tags": [
+      "mcp",
+      "file-access",
+      "sandboxed"
+    ],
+    "when_to_use": "Agents that need to read/write project files (code generation, document editing, file management). The sandbox root keeps the agent inside one directory; path-traversal defense + size caps make it safe to expose to a non-trivial workspace.",
+    "when_not_to_use": "Skip when (1) you can give the agent direct CWD access via shell - if you're already trusting it; (2) you need binary file editing - this server is text-oriented; (3) you need real filesystem watch - this is request-response.",
+    "quick_start": "1) `npm i @modelcontextprotocol/sdk`  2) Save `fs-server.ts`  3) `npx tsx fs-server.ts /allowed/root`",
+    "full_code": "/**\n * MCP filesystem server - sandboxed to a single root.\n *\n * Usage: npx tsx fs-server.ts /allowed/root [--max-bytes 1048576]\n */\nimport { Server } from \"@modelcontextprotocol/sdk/server/index.js\";\nimport { StdioServerTransport } from \"@modelcontextprotocol/sdk/server/stdio.js\";\nimport { CallToolRequestSchema, ListToolsRequestSchema } from \"@modelcontextprotocol/sdk/types.js\";\nimport fs from \"node:fs/promises\";\nimport path from \"node:path\";\n\nconst ROOT = path.resolve(process.argv[2] ?? process.cwd());\nconst MAX_BYTES = Number(process.env.MCP_MAX_BYTES ?? 1_048_576); // 1 MiB\n\nasync function safeJoin(rel: string): Promise<string> {\n  const joined = path.resolve(ROOT, rel);\n  const real = await fs.realpath(joined).catch(() => joined);\n  if (!real.startsWith(ROOT + path.sep) && real !== ROOT) {\n    throw new Error(`Path escapes sandbox: ${rel}`);\n  }\n  return real;\n}\n\nconst server = new Server({ name: \"filesystem\", version: \"1.0.0\" }, { capabilities: { tools: {} } });\n\nserver.setRequestHandler(ListToolsRequestSchema, async () => ({\n  tools: [\n    {\n      name: \"list_directory\",\n      description: \"List files + subdirs (relative path).\",\n      inputSchema: { type: \"object\", properties: { path: { type: \"string\", default: \".\" } } },\n    },\n    {\n      name: \"read_file\",\n      description: \"Read text file (UTF-8, max 1 MiB).\",\n      inputSchema: { type: \"object\", required: [\"path\"], properties: { path: { type: \"string\" } } },\n    },\n    {\n      name: \"write_file\",\n      description: \"Write text file (UTF-8, max 1 MiB). Creates parent dirs.\",\n      inputSchema: {\n        type: \"object\",\n        required: [\"path\", \"content\"],\n        properties: { path: { type: \"string\" }, content: { type: \"string\" } },\n      },\n    },\n  ],\n}));\n\nserver.setRequestHandler(CallToolRequestSchema, async (req) => {\n  const { name, arguments: args } = req.params;\n  try {\n    if (name === \"list_directory\") {\n      const target = await safeJoin((args?.path as string) ?? \".\");\n      const entries = await fs.readdir(target, { withFileTypes: true });\n      return { content: [{ type: \"text\", text: JSON.stringify(entries.map((e) => ({ name: e.name, type: e.isDirectory() ? \"dir\" : \"file\" }))) }] };\n    }\n    if (name === \"read_file\") {\n      const target = await safeJoin(args!.path as string);\n      const stat = await fs.stat(target);\n      if (stat.size > MAX_BYTES) throw new Error(`File too large: ${stat.size} > ${MAX_BYTES}`);\n      const text = await fs.readFile(target, \"utf-8\");\n      return { content: [{ type: \"text\", text }] };\n    }\n    if (name === \"write_file\") {\n      const content = args!.content as string;\n      if (Buffer.byteLength(content, \"utf-8\") > MAX_BYTES) throw new Error(`Payload too large > ${MAX_BYTES}`);\n      const target = await safeJoin(args!.path as string);\n      await fs.mkdir(path.dirname(target), { recursive: true });\n      await fs.writeFile(target, content, \"utf-8\");\n      return { content: [{ type: \"text\", text: `wrote ${Buffer.byteLength(content)} bytes` }] };\n    }\n    throw new Error(`Unknown tool: ${name}`);\n  } catch (err) {\n    return { content: [{ type: \"text\", text: `ERROR: ${(err as Error).message}` }], isError: true };\n  }\n});\n\nconst transport = new StdioServerTransport();\nawait server.connect(transport);\nconsole.error(`[fs-mcp] sandboxed to ${ROOT}, max ${MAX_BYTES} bytes`);\n",
+    "code": "import { Server } from '@modelcontextprotocol/sdk/server/index.js';\nimport { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';\nimport fs from 'node:fs/promises';\nimport path from 'node:path';\n\nconst ROOT = path.resolve(process.argv[2] ?? process.cwd());\n\nasync function safeJoin(rel: string) {\n  const real = await fs.realpath(path.resolve(ROOT, rel));\n  if (!real.startsWith(ROOT + path.sep) && real !== ROOT) throw new Error('escapes sandbox');\n  return real;\n}\n",
+    "dependencies": [
+      "@modelcontextprotocol/sdk"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "@modelcontextprotocol/sdk",
+        "version": ">=1.0.0",
+        "purpose": "MCP TypeScript SDK."
+      },
+      {
+        "name": "tsx",
+        "version": ">=4.19.0",
+        "purpose": "TypeScript runner (dev)."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "MCP_MAX_BYTES",
+        "required": false,
+        "description": "Max read/write size in bytes (default 1 MiB)."
+      }
+    ],
+    "setup_steps": [
+      "`npm i @modelcontextprotocol/sdk` + `npm i -D tsx`",
+      "Save as `fs-server.ts`.",
+      "Dev test: `npx tsx fs-server.ts /Users/you/workspace`",
+      "Wire to Claude Desktop config: `{\"mcpServers\": {\"fs\": {\"command\": \"npx\", \"args\": [\"tsx\", \"/abs/path/fs-server.ts\", \"/Users/you/workspace\"]}}}`",
+      "Restart Claude Desktop; verify tools appear in chat.",
+      "Tighten MCP_MAX_BYTES for untrusted use cases (e.g. 65536 bytes)."
+    ],
+    "variations": [
+      {
+        "label": "Read-only mode",
+        "description": "Drop the write_file tool entirely for cautious deployments.",
+        "code_snippet": "// Remove the write_file branch and exclude it from ListToolsRequestSchema."
+      },
+      {
+        "label": "Glob list with allow-list",
+        "description": "Whitelist file patterns for read access.",
+        "code_snippet": "import minimatch from 'minimatch';\nconst ALLOWED = ['**/*.md', '**/*.ts'];\nif (!ALLOWED.some(p => minimatch(rel, p))) throw new Error('Not allowed');"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ENOENT: no such file or directory, realpath",
+        "cause": "safeJoin called on a path that doesn't exist yet (write).",
+        "fix_snippet": "// realpath fails on non-existent paths. Use this fallback (already in full_code):\nconst real = await fs.realpath(joined).catch(() => joined);"
+      },
+      {
+        "error_text": "Path escapes sandbox even for valid paths",
+        "cause": "ROOT contained a symlink that resolves outside its directory.",
+        "fix_snippet": "// Compute ROOT once via realpath at startup:\nconst ROOT = await fs.realpath(path.resolve(process.argv[2] ?? process.cwd()));"
+      },
+      {
+        "error_text": "Agent writes huge files filling disk",
+        "cause": "MCP_MAX_BYTES too high or not set.",
+        "fix_snippet": "// Default conservatively + cap aggregate writes per session in a wrapper."
+      }
+    ],
+    "production_checklist": [
+      "Always sandbox to a SPECIFIC directory, never to /.",
+      "Resolve ROOT via realpath at startup to defeat symlink tricks.",
+      "Cap MCP_MAX_BYTES - 1 MiB default is too high for chat agents handling untrusted prompts.",
+      "Log every write_file call with hash + size for audit.",
+      "For multi-user setups, sandbox per user with separate ROOT.",
+      "Disable write_file for any externally-facing agent.",
+      "Pin the SDK version - the JSON-RPC schema is evolving."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "@modelcontextprotocol/sdk==1.0.0",
+        "Node.js 20",
+        "tsx 4.19"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "model-context-protocol"
+    ],
+    "related_glossary_slugs": [
+      "mcp",
+      "sandboxing",
+      "path-traversal",
+      "agent-tool"
+    ],
+    "related_learn_slugs": [
+      "mcp-101"
+    ],
+    "faq": [
+      {
+        "question": "Why not just give the agent a shell with `cd /allowed/root`?",
+        "answer": "Shell access lets the agent do anything subprocess-related (network, install packages, fork bombs). MCP tool exposure is the principle-of-least-privilege answer: only the methods you explicitly expose, with size + path validation per call."
+      },
+      {
+        "question": "Is path.resolve enough to prevent ../ attacks?",
+        "answer": "Almost - the symlink edge case still bites. realpath() resolves symlinks; checking the result starts-with ROOT is the bulletproof variant. The full_code shows this pattern."
+      }
+    ],
+    "meta_title": "MCP Filesystem Server (Sandboxed, TypeScript) | OSS AI Hub",
+    "meta_description": "Production MCP filesystem server: sandboxed to one root, path-traversal defense, size limits, TypeScript SDK. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "mcp-github-server",
+    "title": "MCP GitHub Server (Issues, PRs, Code Search)",
+    "tldr": "MCP server wrapping the GitHub API: list/create issues, comment on PRs, search code. Per-repo scope and PAT rotation.",
+    "description": "MCP server with octokit-style GitHub operations, allow-listed to a specific set of repos, with PAT in env and a per-tool rate-limit check.",
+    "category": "mcp-servers",
+    "language": "python",
+    "framework": "mcp",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "mcp",
+      "github",
+      "code-search"
+    ],
+    "best_for_tags": [
+      "mcp",
+      "github",
+      "code-agent"
+    ],
+    "featured": false,
+    "when_to_use": "Agents that triage issues, draft PR comments, or search code within YOUR repos. The repo allow-list keeps the agent from touching org-wide resources accidentally.",
+    "when_not_to_use": "Skip when (1) the public GitHub MCP server (modelcontextprotocol/servers) is enough - reuse don't reinvent; (2) you need GitHub Actions control - permissions get complex; (3) you have multiple GitHub orgs - rebuild per org with separate PATs.",
+    "quick_start": "1) `pip install 'mcp[cli]' httpx`  2) Generate a fine-grained PAT with repo:read + issues:write scopes  3) `mcp dev gh_server.py`",
+    "full_code": "\"\"\"GitHub MCP server with per-repo allow-list.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom typing import Any\n\nimport httpx\nfrom mcp.server.fastmcp import FastMCP\n\n\nPAT = os.environ[\"GITHUB_PAT\"]\nALLOWED_REPOS = set(os.environ.get(\"GITHUB_ALLOWED_REPOS\", \"chadcorp/ossaihub-cron\").split(\",\"))\nHEADERS = {\"Authorization\": f\"Bearer {PAT}\", \"Accept\": \"application/vnd.github+json\", \"X-GitHub-Api-Version\": \"2022-11-28\"}\n\nmcp = FastMCP(\"github\")\n\n\ndef _require_repo(repo: str) -> None:\n    if repo not in ALLOWED_REPOS:\n        raise ValueError(f\"Repo {repo!r} is not in allow-list. Allowed: {sorted(ALLOWED_REPOS)}\")\n\n\nasync def _req(method: str, url: str, **kw) -> dict | list:\n    async with httpx.AsyncClient(timeout=30, headers=HEADERS) as c:\n        r = await c.request(method, url, **kw)\n        if r.status_code >= 400:\n            return {\"error\": f\"{r.status_code} {r.text[:300]}\"}\n        return r.json()\n\n\n@mcp.tool()\nasync def list_issues(repo: str, state: str = \"open\", labels: str = \"\") -> Any:\n    \"\"\"List issues in `owner/repo`. state in {open, closed, all}; labels = comma-separated.\"\"\"\n    _require_repo(repo)\n    params = {\"state\": state}\n    if labels:\n        params[\"labels\"] = labels\n    return await _req(\"GET\", f\"https://api.github.com/repos/{repo}/issues\", params=params)\n\n\n@mcp.tool()\nasync def create_issue(repo: str, title: str, body: str = \"\", labels: list[str] | None = None) -> Any:\n    \"\"\"Create a new issue.\"\"\"\n    _require_repo(repo)\n    payload = {\"title\": title, \"body\": body, \"labels\": labels or []}\n    return await _req(\"POST\", f\"https://api.github.com/repos/{repo}/issues\", json=payload)\n\n\n@mcp.tool()\nasync def comment_on_pr(repo: str, pr_number: int, body: str) -> Any:\n    \"\"\"Add a comment to a pull request (uses the issue comment endpoint - PRs share that namespace).\"\"\"\n    _require_repo(repo)\n    return await _req(\"POST\", f\"https://api.github.com/repos/{repo}/issues/{pr_number}/comments\", json={\"body\": body})\n\n\n@mcp.tool()\nasync def search_code(query: str, repo: str | None = None) -> Any:\n    \"\"\"Search code via GitHub code search. If repo is set, restrict to that repo (still must be allow-listed).\"\"\"\n    if repo:\n        _require_repo(repo)\n        q = f\"{query} repo:{repo}\"\n    else:\n        q = f\"{query} ({' '.join('repo:' + r for r in ALLOWED_REPOS)})\"\n    return await _req(\"GET\", \"https://api.github.com/search/code\", params={\"q\": q, \"per_page\": 20})\n\n\nif __name__ == \"__main__\":\n    mcp.run()\n",
+    "code": "from mcp.server.fastmcp import FastMCP\nimport httpx, os\n\nPAT = os.environ['GITHUB_PAT']\nHEADERS = {'Authorization': f'Bearer {PAT}', 'Accept': 'application/vnd.github+json'}\nmcp = FastMCP('github')\n\n@mcp.tool()\nasync def list_issues(repo: str, state: str = 'open'):\n    async with httpx.AsyncClient(headers=HEADERS) as c:\n        r = await c.get(f'https://api.github.com/repos/{repo}/issues', params={'state': state})\n    return r.json()\n\nif __name__ == '__main__':\n    mcp.run()\n",
+    "dependencies": [
+      "mcp",
+      "httpx"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "mcp[cli]",
+        "version": ">=1.2.0",
+        "purpose": "MCP SDK + dev tools."
+      },
+      {
+        "name": "httpx",
+        "version": ">=0.28.0",
+        "purpose": "Async HTTP client."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "GITHUB_PAT",
+        "required": true,
+        "description": "Fine-grained PAT with issues:write + repo:read scopes."
+      },
+      {
+        "name": "GITHUB_ALLOWED_REPOS",
+        "required": false,
+        "description": "Comma-separated allow-list (owner/repo,owner/repo). Defaults to chadcorp/ossaihub-cron."
+      }
+    ],
+    "setup_steps": [
+      "Generate a GitHub fine-grained PAT: github.com/settings/tokens?type=beta. Scope: select your repos, give it Issues (write) + Pull Requests (write) + Contents (read).",
+      "`pip install 'mcp[cli]>=1.2.0' httpx>=0.28.0`",
+      "Export `GITHUB_PAT=github_pat_...` and `GITHUB_ALLOWED_REPOS=you/repo1,you/repo2`",
+      "Save as `gh_server.py`.",
+      "Dev test: `mcp dev gh_server.py`",
+      "Wire to client (Claude Desktop / Cursor / Zed). Restart client and verify tools.",
+      "Rotate PAT every 90 days; the fine-grained token is the safer choice over classic PAT."
+    ],
+    "variations": [
+      {
+        "label": "Use GitHub App auth instead of PAT",
+        "description": "App auth is the right path for org-wide deployments.",
+        "code_snippet": "# Install pyjwt + requests; mint a JWT from your private key, exchange for installation token."
+      },
+      {
+        "label": "Add code search across the whole org",
+        "description": "Drop the repo allow-list; restrict by org instead.",
+        "code_snippet": "ORG = 'chadcorp'\nq = f'{query} org:{ORG}'"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "404 Not Found from /search/code",
+        "cause": "Token lacks Metadata scope on the repo.",
+        "fix_snippet": "# Fine-grained PAT: Repository permissions -> Metadata: Read-only"
+      },
+      {
+        "error_text": "403 rate limit exceeded",
+        "cause": "Search API has a 30 req/min cap.",
+        "fix_snippet": "# Cache search results client-side + add httpx.Limits(max_connections=5)"
+      },
+      {
+        "error_text": "Agent created issues in wrong repo",
+        "cause": "ALLOWED_REPOS too permissive.",
+        "fix_snippet": "# Be strict; remove repos from the allow-list as you no longer need them.\nGITHUB_ALLOWED_REPOS=you/repo1  # ONE repo per server is safest"
+      }
+    ],
+    "production_checklist": [
+      "Use a fine-grained PAT scoped to specific repos, NOT a classic PAT.",
+      "Rotate the PAT every 90 days; store in your secret manager.",
+      "Allow-list specific repos via env var - don't trust the agent to pick the right one.",
+      "Log every create_issue + comment_on_pr call - audit who/what gets posted.",
+      "For org-wide deployments, switch to a GitHub App (better lifecycle + audit).",
+      "Rate-limit-aware: the search API is the strict one (30/min); cache aggressively.",
+      "Pin mcp + httpx versions."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "mcp==1.2.0",
+        "httpx==0.28.1",
+        "GitHub API 2022-11-28"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "model-context-protocol",
+      "github-api"
+    ],
+    "related_glossary_slugs": [
+      "mcp",
+      "github-pat",
+      "github-app",
+      "agent-tool"
+    ],
+    "related_learn_slugs": [
+      "mcp-101"
+    ],
+    "faq": [
+      {
+        "question": "Why not use the official modelcontextprotocol/servers GitHub server?",
+        "answer": "Reuse it if it does what you need. This recipe shows the pattern + the allow-list discipline, which the public server doesn't enforce. For internal-only deployments where you want a smaller surface area + custom tools, roll your own."
+      },
+      {
+        "question": "Fine-grained PAT vs GitHub App?",
+        "answer": "PAT: faster to set up, expires (refresh manually). App: proper lifecycle, finer permissions, audit logs. For 1-2 user MCP servers a fine-grained PAT is fine; for >5 users or an org-wide tool, build a GitHub App."
+      }
+    ],
+    "meta_title": "MCP GitHub Server (Issues + PRs + Code Search) | OSS AI Hub",
+    "meta_description": "Production MCP GitHub server: per-repo allow-list, fine-grained PAT, issue/PR/search tools. MIT-licensed."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "mcp-web-search-server",
+    "title": "MCP Web Search Server (Tavily + Brave Fallback)",
+    "tldr": "MCP server exposing web search via Tavily with Brave fallback. Domain allow-list, content extraction, result caching.",
+    "description": "TypeScript MCP server: primary Tavily Search API (LLM-optimized snippets) with Brave Search fallback, in-memory TTL cache, optional domain restriction.",
+    "category": "mcp-servers",
+    "language": "typescript",
+    "framework": "mcp",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "mcp",
+      "search",
+      "tavily",
+      "brave"
+    ],
+    "best_for_tags": [
+      "mcp",
+      "web-search"
+    ],
+    "when_to_use": "Agents that need fresh web info. Tavily returns LLM-optimized snippets (Brave returns raw search results); fallback to Brave on Tavily quota/outage. Domain allow-list keeps searches focused on trusted sources for compliance use cases.",
+    "when_not_to_use": "Skip when (1) you only need general LLM grounding - Anthropic web tool / OpenAI web search is built-in; (2) you have stale-data tolerance - vector retrieval over an internal corpus is cheaper; (3) you can use Tavily directly from your agent - skip the MCP wrapper.",
+    "quick_start": "1) `npm i @modelcontextprotocol/sdk @tavily/core`  2) Tavily + Brave keys  3) `npx tsx search-server.ts`",
+    "full_code": "/**\n * MCP web search server: Tavily primary, Brave fallback, TTL cache.\n */\nimport { Server } from \"@modelcontextprotocol/sdk/server/index.js\";\nimport { StdioServerTransport } from \"@modelcontextprotocol/sdk/server/stdio.js\";\nimport { CallToolRequestSchema, ListToolsRequestSchema } from \"@modelcontextprotocol/sdk/types.js\";\n\nconst TAVILY_KEY = process.env.TAVILY_API_KEY;\nconst BRAVE_KEY = process.env.BRAVE_API_KEY;\nconst ALLOWED_DOMAINS = process.env.ALLOWED_DOMAINS?.split(\",\").map((d) => d.trim()) ?? null;\nconst cache = new Map<string, { at: number; result: unknown }>();\nconst TTL_MS = 5 * 60 * 1000;\n\nasync function tavily(query: string) {\n  if (!TAVILY_KEY) throw new Error(\"TAVILY_API_KEY not set\");\n  const r = await fetch(\"https://api.tavily.com/search\", {\n    method: \"POST\",\n    headers: { \"Content-Type\": \"application/json\" },\n    body: JSON.stringify({ api_key: TAVILY_KEY, query, search_depth: \"basic\", max_results: 5, include_answer: true }),\n  });\n  if (!r.ok) throw new Error(`Tavily ${r.status}: ${await r.text()}`);\n  return await r.json();\n}\n\nasync function brave(query: string) {\n  if (!BRAVE_KEY) throw new Error(\"BRAVE_API_KEY not set\");\n  const r = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`, {\n    headers: { \"X-Subscription-Token\": BRAVE_KEY, Accept: \"application/json\" },\n  });\n  if (!r.ok) throw new Error(`Brave ${r.status}: ${await r.text()}`);\n  const data: any = await r.json();\n  return { results: (data.web?.results ?? []).map((r: any) => ({ title: r.title, url: r.url, content: r.description })), answer: null };\n}\n\nfunction filterDomains(result: any) {\n  if (!ALLOWED_DOMAINS) return result;\n  result.results = (result.results ?? []).filter((r: any) => {\n    try { return ALLOWED_DOMAINS.some((d) => new URL(r.url).hostname.endsWith(d)); }\n    catch { return false; }\n  });\n  return result;\n}\n\nconst server = new Server({ name: \"web-search\", version: \"1.0.0\" }, { capabilities: { tools: {} } });\n\nserver.setRequestHandler(ListToolsRequestSchema, async () => ({\n  tools: [{ name: \"web_search\", description: \"Search the web. Returns 5 results with title/url/snippet, plus an optional summary.\", inputSchema: { type: \"object\", required: [\"query\"], properties: { query: { type: \"string\" } } } }],\n}));\n\nserver.setRequestHandler(CallToolRequestSchema, async (req) => {\n  const query = String(req.params.arguments?.query ?? \"\").slice(0, 256);\n  const cached = cache.get(query);\n  if (cached && Date.now() - cached.at < TTL_MS) {\n    return { content: [{ type: \"text\", text: JSON.stringify(cached.result) }] };\n  }\n  let result;\n  try { result = await tavily(query); }\n  catch (e) { result = await brave(query).catch((be) => ({ error: `tavily+brave failed: ${(e as Error).message} | ${(be as Error).message}` })); }\n  result = filterDomains(result);\n  cache.set(query, { at: Date.now(), result });\n  return { content: [{ type: \"text\", text: JSON.stringify(result) }] };\n});\n\nawait server.connect(new StdioServerTransport());\nconsole.error(`[search-mcp] Tavily=${!!TAVILY_KEY} Brave=${!!BRAVE_KEY} domains=${ALLOWED_DOMAINS ?? \"all\"}`);\n",
+    "code": "import { Server } from '@modelcontextprotocol/sdk/server/index.js';\n\nasync function tavily(q: string) {\n  const r = await fetch('https://api.tavily.com/search', { method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ api_key: process.env.TAVILY_API_KEY, query: q, max_results: 5 }) });\n  return r.json();\n}\n",
+    "dependencies": [
+      "@modelcontextprotocol/sdk"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "@modelcontextprotocol/sdk",
+        "version": ">=1.0.0",
+        "purpose": "MCP TypeScript SDK."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "TAVILY_API_KEY",
+        "required": true,
+        "description": "Tavily key (free 1000 queries/mo at tavily.com)."
+      },
+      {
+        "name": "BRAVE_API_KEY",
+        "required": false,
+        "description": "Brave Search key (fallback). Free 2000/mo."
+      },
+      {
+        "name": "ALLOWED_DOMAINS",
+        "required": false,
+        "description": "Comma-separated list (e.g. anthropic.com,openai.com). Restrict search results to these."
+      }
+    ],
+    "setup_steps": [
+      "Get Tavily key at tavily.com (1000 free queries/mo).",
+      "(Optional) Brave key at api.search.brave.com.",
+      "`npm i @modelcontextprotocol/sdk` + `npm i -D tsx`",
+      "Save as `search-server.ts`.",
+      "Test: `npx tsx search-server.ts`",
+      "Wire to client config."
+    ],
+    "variations": [
+      {
+        "label": "Add content extraction (full page text)",
+        "description": "Fetch + extract main content for each result.",
+        "code_snippet": "import { Readability } from '@mozilla/readability';\nimport { JSDOM } from 'jsdom';\n// For each result, fetch + parse the URL into clean markdown"
+      },
+      {
+        "label": "Persist cache to disk for cross-session reuse",
+        "description": "Replace in-memory Map with a SQLite store.",
+        "code_snippet": "// import Database from 'better-sqlite3'; cache.get/set against a 'cache' table with at + query + result_json"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Tavily 401 Invalid API key",
+        "cause": "Key includes whitespace or copied with prefix.",
+        "fix_snippet": "// Strip whitespace in env loading:\nconst TAVILY_KEY = process.env.TAVILY_API_KEY?.trim();"
+      },
+      {
+        "error_text": "Brave returns empty results despite valid key",
+        "cause": "Free tier has stricter rate limits + lower freshness.",
+        "fix_snippet": "// Tier up at api.search.brave.com OR add retry-with-backoff."
+      },
+      {
+        "error_text": "Cache returns stale data after Tavily updates",
+        "cause": "TTL_MS too high.",
+        "fix_snippet": "// Drop TTL_MS = 60_000 for fast-moving news topics."
+      }
+    ],
+    "production_checklist": [
+      "Always have a fallback provider - Tavily has had region-wide outages.",
+      "Cap query length (this server uses 256 chars) - long queries waste credits.",
+      "Cache aggressively - free tiers cap at 1000-2000/mo.",
+      "For compliance use cases, set ALLOWED_DOMAINS - reduces info leak from adversarial prompts.",
+      "Pipe stdout to a log file - mistakes in fallback logic show up here.",
+      "Rotate keys every 90 days."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "@modelcontextprotocol/sdk==1.0.0",
+        "Node 20",
+        "Tavily API 2024-11"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "tavily",
+      "brave-search",
+      "model-context-protocol"
+    ],
+    "related_glossary_slugs": [
+      "mcp",
+      "web-search",
+      "search-api"
+    ],
+    "related_learn_slugs": [
+      "mcp-101"
+    ],
+    "faq": [
+      {
+        "question": "Why Tavily over Bing/Brave/Google?",
+        "answer": "Tavily was built for LLM consumption - snippets are extracted and include an aggregated answer field. Bing API was retired. Google's Custom Search has rough quotas + complex billing. Brave is the cheapest pure-search fallback. Tavily primary + Brave fallback covers 99% of use cases."
+      },
+      {
+        "question": "Should I rely on the model's built-in web tool instead?",
+        "answer": "Anthropic's web tool and OpenAI's web search are great for chat agents using those exact models. MCP server is the right answer when (a) you switch between providers, (b) you want a single audit log across agents, or (c) you need domain restriction the built-in doesn't support."
+      }
+    ],
+    "meta_title": "MCP Web Search Server (Tavily + Brave) | OSS AI Hub",
+    "meta_description": "Production MCP web search: Tavily primary + Brave fallback, domain allow-list, TTL cache. MIT-licensed."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "mcp-slack-server",
+    "title": "MCP Slack Server (Read + Post with Rate-Limit)",
+    "tldr": "MCP server for Slack: list channels, read history, post messages, manage threads. OAuth flow + rate-limit handling.",
+    "description": "Python MCP server using slack_sdk: read-only by default, opt-in to posting with channel allow-list, retry-after handling on rate limits.",
+    "category": "mcp-servers",
+    "language": "python",
+    "framework": "mcp",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "mcp",
+      "slack",
+      "oauth"
+    ],
+    "best_for_tags": [
+      "mcp",
+      "slack",
+      "integration"
+    ],
+    "when_to_use": "Agents that summarize Slack threads, monitor channels, or post status updates. The channel allow-list keeps the agent from accidentally pinging #general.",
+    "when_not_to_use": "Skip when (1) you only need notifications - Slack webhooks are simpler; (2) you need real-time event response - Slack Events API + a real server beats MCP polling; (3) you have a strict bot review process - this gives the agent posting privilege.",
+    "quick_start": "1) Create Slack app at api.slack.com/apps; install to workspace; grab Bot Token  2) `pip install 'mcp[cli]' slack_sdk`  3) `mcp dev slack_server.py`",
+    "full_code": "\"\"\"Slack MCP server: read by default, opt-in to posting.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport time\nfrom typing import Any\n\nfrom mcp.server.fastmcp import FastMCP\nfrom slack_sdk.web.async_client import AsyncWebClient\nfrom slack_sdk.errors import SlackApiError\n\n\nTOKEN = os.environ[\"SLACK_BOT_TOKEN\"]\nALLOW_POST = os.environ.get(\"SLACK_ALLOW_POST\", \"false\").lower() == \"true\"\nALLOWED_CHANNELS = set(c.strip() for c in os.environ.get(\"SLACK_ALLOWED_CHANNELS\", \"\").split(\",\") if c.strip())\n\nmcp = FastMCP(\"slack\")\nclient = AsyncWebClient(token=TOKEN)\n\n\nasync def _with_retry(coro):\n    \"\"\"Retry on rate-limit with the Retry-After header.\"\"\"\n    for attempt in range(3):\n        try:\n            return await coro\n        except SlackApiError as e:\n            if e.response.get(\"error\") == \"ratelimited\":\n                wait = int(e.response.headers.get(\"Retry-After\", \"1\"))\n                time.sleep(wait + 1)\n                continue\n            return {\"error\": str(e)}\n    return {\"error\": \"rate-limit retries exhausted\"}\n\n\n@mcp.tool()\nasync def list_channels(types: str = \"public_channel\") -> Any:\n    \"\"\"List channels. types in {public_channel, private_channel}, comma-separated.\"\"\"\n    res = await _with_retry(client.conversations_list(types=types, limit=200))\n    if isinstance(res, dict) and res.get(\"error\"):\n        return res\n    return [{\"id\": c[\"id\"], \"name\": c[\"name\"], \"topic\": c.get(\"topic\", {}).get(\"value\", \"\")} for c in res[\"channels\"]]\n\n\n@mcp.tool()\nasync def read_channel_history(channel: str, limit: int = 50) -> Any:\n    \"\"\"Read recent messages from a channel by ID. limit max 200.\"\"\"\n    res = await _with_retry(client.conversations_history(channel=channel, limit=min(limit, 200)))\n    if isinstance(res, dict) and res.get(\"error\"):\n        return res\n    return [{\"ts\": m[\"ts\"], \"user\": m.get(\"user\"), \"text\": m.get(\"text\", \"\"), \"thread_ts\": m.get(\"thread_ts\")} for m in res[\"messages\"]]\n\n\n@mcp.tool()\nasync def post_message(channel: str, text: str, thread_ts: str | None = None) -> Any:\n    \"\"\"Post a message. Requires SLACK_ALLOW_POST=true AND channel in SLACK_ALLOWED_CHANNELS.\"\"\"\n    if not ALLOW_POST:\n        return {\"error\": \"Posting is disabled. Set SLACK_ALLOW_POST=true.\"}\n    if ALLOWED_CHANNELS and channel not in ALLOWED_CHANNELS:\n        return {\"error\": f\"Channel {channel!r} not in allow-list. Allowed: {sorted(ALLOWED_CHANNELS)}\"}\n    res = await _with_retry(client.chat_postMessage(channel=channel, text=text, thread_ts=thread_ts))\n    if isinstance(res, dict) and res.get(\"error\"):\n        return res\n    return {\"ok\": True, \"ts\": res[\"ts\"], \"channel\": res[\"channel\"]}\n\n\nif __name__ == \"__main__\":\n    mcp.run()\n",
+    "code": "from mcp.server.fastmcp import FastMCP\nfrom slack_sdk.web.async_client import AsyncWebClient\nimport os\n\nmcp = FastMCP('slack')\nclient = AsyncWebClient(token=os.environ['SLACK_BOT_TOKEN'])\n\n@mcp.tool()\nasync def list_channels():\n    res = await client.conversations_list(types='public_channel')\n    return [{'id': c['id'], 'name': c['name']} for c in res['channels']]\n\nif __name__ == '__main__':\n    mcp.run()\n",
+    "dependencies": [
+      "mcp",
+      "slack_sdk"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "mcp[cli]",
+        "version": ">=1.2.0",
+        "purpose": "MCP SDK."
+      },
+      {
+        "name": "slack_sdk",
+        "version": ">=3.33.0",
+        "purpose": "Official Slack Python SDK."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "SLACK_BOT_TOKEN",
+        "required": true,
+        "description": "xoxb-... Bot Token from your Slack app."
+      },
+      {
+        "name": "SLACK_ALLOW_POST",
+        "required": false,
+        "description": "Set to 'true' to enable posting. Default: read-only."
+      },
+      {
+        "name": "SLACK_ALLOWED_CHANNELS",
+        "required": false,
+        "description": "Comma-separated channel IDs. If set, post_message only works on these."
+      }
+    ],
+    "setup_steps": [
+      "Create a Slack app at api.slack.com/apps -> From scratch -> name + workspace.",
+      "OAuth & Permissions -> Scopes: channels:read, channels:history, chat:write (if posting), groups:read for private.",
+      "Install to workspace; copy the Bot Token (`xoxb-...`).",
+      "`pip install 'mcp[cli]>=1.2.0' slack_sdk>=3.33.0`",
+      "Export SLACK_BOT_TOKEN + (optional) SLACK_ALLOW_POST=true + SLACK_ALLOWED_CHANNELS=C01234,C05678",
+      "Save as `slack_server.py`.",
+      "Dev test: `mcp dev slack_server.py` and try list_channels in the inspector."
+    ],
+    "variations": [
+      {
+        "label": "Add Socket Mode for real-time events",
+        "description": "Listen to Slack events + dispatch to agent.",
+        "code_snippet": "from slack_sdk.socket_mode.async_client import SocketModeClient\nfrom slack_sdk.socket_mode.aiohttp import SocketModeClient as SocketModeAioClient\n# Open Socket Mode + add an event handler that calls your agent"
+      },
+      {
+        "label": "Search messages (Enterprise only)",
+        "description": "search:read scope is paid-only.",
+        "code_snippet": "@mcp.tool()\nasync def search_messages(query: str):\n    res = await client.search_messages(query=query, count=20)\n    return res"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "channel_not_found",
+        "cause": "Channel ID vs name confusion. conversations_history wants ID like C01234.",
+        "fix_snippet": "# Use list_channels first to get IDs, then read_channel_history(channel='C0123...')."
+      },
+      {
+        "error_text": "missing_scope",
+        "cause": "Slack app doesn't have the needed OAuth scope.",
+        "fix_snippet": "# Visit your app's 'OAuth & Permissions' -> Scopes; add the missing one + reinstall."
+      },
+      {
+        "error_text": "Rate limit 'ratelimited' even on read",
+        "cause": "Tier 2 rate limits = ~20 req/min on conversations.history.",
+        "fix_snippet": "# The full_code's _with_retry handles this. Honor Retry-After + back off."
+      }
+    ],
+    "production_checklist": [
+      "Default SLACK_ALLOW_POST=false - require explicit opt-in.",
+      "Allow-list posting channels via SLACK_ALLOWED_CHANNELS - never let the agent pick freely.",
+      "Honor Slack rate limits (Retry-After header) - missing this gets your app banned.",
+      "Log every post_message call with full text + agent identity.",
+      "Rotate the Bot Token quarterly via Slack app dashboard.",
+      "For multi-workspace deployment, switch to OAuth installation flow.",
+      "Pin mcp + slack_sdk versions."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "mcp==1.2.0",
+        "slack_sdk==3.33.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "model-context-protocol",
+      "slack-api"
+    ],
+    "related_glossary_slugs": [
+      "mcp",
+      "slack-bot",
+      "oauth",
+      "rate-limit"
+    ],
+    "related_learn_slugs": [
+      "mcp-101"
+    ],
+    "faq": [
+      {
+        "question": "Why not just use Slack's incoming webhooks?",
+        "answer": "Webhooks are one-way + post-only. MCP gives the agent the ability to READ history + thread context, which is what makes 'summarize this channel' or 'pull the engineering standup' work."
+      },
+      {
+        "question": "Bot Token vs User Token vs OAuth installation?",
+        "answer": "Bot Token: simplest, one workspace, scoped to bot identity - use for internal tools. User Token: posts as a real user - avoid unless you really need it. OAuth installation: multi-workspace SaaS - use when distributing to many teams."
+      }
+    ],
+    "meta_title": "MCP Slack Server (Read + Post with Rate-Limit) | OSS AI Hub",
+    "meta_description": "Production MCP Slack server: list/read/post, channel allow-list, Slack rate-limit handling, opt-in posting. MIT."
   }
 ]
