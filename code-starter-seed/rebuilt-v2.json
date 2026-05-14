@@ -574,6 +574,290 @@
     "meta_description": "Plain-Python ReAct loop with Thought-Action-Observation parsing, step budget, and tool dispatch \u2014 no frameworks, the pattern frameworks wrap."
   },
   {
+    "slug": "sandboxed-code-executor-docker",
+    "title": "Sandboxed Python Code Executor (Docker)",
+    "tldr": "Execute LLM-generated Python code in an isolated Docker container with CPU/memory/network limits, capturing stdout/stderr and a timeout. Production-shape sandbox for AI code agents.",
+    "category": "code-agents",
+    "language": "python",
+    "framework": "Docker",
+    "tags": [
+      "sandbox",
+      "code-execution",
+      "docker",
+      "isolation"
+    ],
+    "best_for_tags": [
+      "code-agents",
+      "ai-tools",
+      "execution-safety"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "when_to_use": "When you want an LLM agent to run Python it generated \u2014 data analysis, calculations, plotting \u2014 without trusting the code. Docker isolation prevents accidental or malicious damage.",
+    "when_not_to_use": "Skip in environments without Docker (use restricted Python sandbox or remote execution service). Skip for very low-latency needs (~500ms Docker startup is the floor).",
+    "quick_start": "docker pull python:3.11-slim && python sandbox.py 'print(2+2)'",
+    "full_code": "\"\"\"Run untrusted Python code in a sandboxed Docker container.\n\nLimits:\n  - CPU: 1.0 share\n  - Memory: 256MB\n  - Network: disabled\n  - Time: 10 seconds\n  - No mounted volumes (no filesystem access outside container)\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport subprocess\nimport sys\nimport tempfile\nfrom dataclasses import dataclass\nfrom pathlib import Path\n\nDOCKER_IMAGE = \"python:3.11-slim\"\n\n\n@dataclass\nclass ExecResult:\n    stdout: str\n    stderr: str\n    return_code: int\n    timed_out: bool\n\n\ndef run_python_sandboxed(\n    code: str,\n    *,\n    timeout_seconds: int = 10,\n    cpu_share: float = 1.0,\n    memory_mb: int = 256,\n    allow_network: bool = False,\n    packages: list[str] | None = None,\n) -> ExecResult:\n    \"\"\"Run `code` in an isolated Docker container.\"\"\"\n\n    if packages:\n        # Build a wrapper script that installs packages first\n        installer = (\n            \"import subprocess, sys; \"\n            \"subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--quiet'] + \"\n            + json.dumps(packages)\n            + \")\\n\"\n        )\n        full_code = installer + code\n    else:\n        full_code = code\n\n    with tempfile.NamedTemporaryFile(mode=\"w\", suffix=\".py\", delete=False) as f:\n        f.write(full_code)\n        script_path = Path(f.name)\n\n    try:\n        cmd = [\n            \"docker\", \"run\", \"--rm\",\n            \"--cpus\", str(cpu_share),\n            \"--memory\", f\"{memory_mb}m\",\n            \"--security-opt\", \"no-new-privileges\",\n            \"--read-only\",\n            \"--tmpfs\", \"/tmp:rw,size=10m,mode=1777\",\n            \"-v\", f\"{script_path}:/script.py:ro\",\n            \"-w\", \"/tmp\",\n        ]\n        if not allow_network:\n            cmd += [\"--network\", \"none\"]\n        cmd += [DOCKER_IMAGE, \"python\", \"/script.py\"]\n\n        try:\n            result = subprocess.run(\n                cmd,\n                capture_output=True,\n                text=True,\n                timeout=timeout_seconds,\n            )\n            return ExecResult(\n                stdout=result.stdout,\n                stderr=result.stderr,\n                return_code=result.returncode,\n                timed_out=False,\n            )\n        except subprocess.TimeoutExpired:\n            # Kill the container; subprocess.run already returned\n            return ExecResult(\n                stdout=\"\",\n                stderr=f\"TIMEOUT after {timeout_seconds}s\",\n                return_code=-1,\n                timed_out=True,\n            )\n\n    finally:\n        script_path.unlink(missing_ok=True)\n\n\n# ----------------- INTEGRATION WITH AN LLM AGENT -----------------\n\ndef llm_with_python_tool(user_request: str):\n    \"\"\"Skeleton showing how an LLM agent calls this sandbox as a tool.\"\"\"\n    from openai import OpenAI\n    client = OpenAI()\n\n    TOOLS = [{\n        \"type\": \"function\",\n        \"function\": {\n            \"name\": \"run_python\",\n            \"description\": \"Execute Python code in a sandboxed environment. Returns stdout, stderr, and return code.\",\n            \"parameters\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"code\": {\"type\": \"string\"},\n                    \"packages\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}, \"description\": \"pip packages to install\"},\n                },\n                \"required\": [\"code\"],\n            },\n        },\n    }]\n\n    messages = [\n        {\"role\": \"system\", \"content\": \"You can run Python code via the run_python tool. Use it for math, data, or any computation.\"},\n        {\"role\": \"user\", \"content\": user_request},\n    ]\n\n    while True:\n        resp = client.chat.completions.create(model=\"gpt-4o-mini\", messages=messages, tools=TOOLS)\n        msg = resp.choices[0].message\n        if not msg.tool_calls:\n            return msg.content\n        messages.append(msg.model_dump())\n        for tc in msg.tool_calls:\n            args = json.loads(tc.function.arguments)\n            result = run_python_sandboxed(args[\"code\"], packages=args.get(\"packages\"))\n            messages.append({\n                \"role\": \"tool\",\n                \"tool_call_id\": tc.id,\n                \"content\": json.dumps({\n                    \"stdout\": result.stdout, \"stderr\": result.stderr,\n                    \"return_code\": result.return_code, \"timed_out\": result.timed_out,\n                }),\n            })\n\n\nif __name__ == \"__main__\":\n    code = sys.argv[1] if len(sys.argv) > 1 else \"print(2+2)\"\n    print(run_python_sandboxed(code))\n",
+    "dependencies": [
+      {
+        "name": "docker",
+        "version": ">=24.0",
+        "purpose": "Containerization runtime (host-side)"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Example LLM integration"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install Docker.",
+      "docker pull python:3.11-slim",
+      "Save as sandbox.py.",
+      "python sandbox.py 'print(\\\"hi\\\")'",
+      "Integrate with an LLM agent by wrapping run_python_sandboxed as a tool."
+    ],
+    "variations": [
+      {
+        "label": "With matplotlib output",
+        "description": "Capture plots as base64.",
+        "code_snippet": "# Add to packages: ['matplotlib']\\n# In code, save plot to /tmp/plot.png; mount /tmp as a result volume\\n# Read /tmp/plot.png, encode as b64, return alongside stdout"
+      },
+      {
+        "label": "Persistent kernel (like Jupyter)",
+        "description": "Variables persist across calls.",
+        "code_snippet": "# Use jupyter_kernel_gateway in container; start kernel once, send code via WebSocket.\\n# Trades latency for state persistence."
+      },
+      {
+        "label": "Use Modal for the sandbox",
+        "description": "Cloud-based sandbox instead of local Docker.",
+        "code_snippet": "import modal\\n@modal.function(image=modal.Image.debian_slim().pip_install('numpy'), timeout=10)\\ndef run(code): exec(code)  # Modal handles isolation"
+      },
+      {
+        "label": "Pre-built image with common libs",
+        "description": "Avoid pip install on every run.",
+        "code_snippet": "# Dockerfile that installs numpy, pandas, matplotlib at build time\\n# DOCKER_IMAGE = 'your-registry/sandbox:latest'\\n# Skip the installer wrapper"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "docker: command not found",
+        "cause": "Docker daemon not running or not installed.",
+        "fix_snippet": "Install Docker Desktop (Mac/Win) or docker-ce (Linux). Verify with: docker run --rm hello-world."
+      },
+      {
+        "error_text": "Code that works locally fails in sandbox",
+        "cause": "Missing packages or network access.",
+        "fix_snippet": "Pass `packages=[]` to install at runtime, OR build custom image with packages preinstalled. For network-dependent code, set allow_network=True (review the security implications)."
+      },
+      {
+        "error_text": "Slow execution (~500ms minimum)",
+        "cause": "Docker container startup overhead.",
+        "fix_snippet": "Use persistent-kernel variation for batched calls. Or use a pre-warmed container pool. Or accept the overhead for safety."
+      },
+      {
+        "error_text": "Container can write to host filesystem",
+        "cause": "Misconfigured mount.",
+        "fix_snippet": "Starter uses :ro (read-only) for script + tmpfs for /tmp. Verify no -v mounts grant write to host paths."
+      }
+    ],
+    "production_checklist": [
+      "Run Docker daemon with rootless mode where possible.",
+      "Set CPU/memory limits tight; don't allow runaway resources.",
+      "Disable network by default; allow only when task requires it (and log).",
+      "Audit pip install behavior \u2014 packages can do arbitrary things on install.",
+      "Strip secrets from environment before passing to container.",
+      "Log every code execution with the exact code; useful for debugging and abuse detection.",
+      "Set a hard daily quota per user to prevent abuse.",
+      "Test with adversarial code: infinite loops, fork bombs, large allocations."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "docker (engine 24.0+)",
+        "python==3.11"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "docker"
+    ],
+    "related_glossary_slugs": [
+      "sandbox",
+      "code-execution",
+      "isolation"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How safe is this?",
+        "answer": "Docker with these flags blocks most common attacks: filesystem isolation, no network, memory cap. NOT a security boundary for nation-state actors. For high-stakes, use Firecracker microVMs or remote services (Modal, E2B)."
+      },
+      {
+        "question": "Why no network by default?",
+        "answer": "Network = exfiltration. If the agent doesn't need it, off. Enable only for tasks that genuinely need (web requests, fetching data)."
+      },
+      {
+        "question": "Can the code persist files?",
+        "answer": "Only in /tmp (in-memory). Filesystem is read-only otherwise. To persist outputs, mount a specific output directory or capture from stdout."
+      },
+      {
+        "question": "What about other languages?",
+        "answer": "Same pattern \u2014 different Docker image. JavaScript: node:20-slim. Bash: alpine. The sandbox flags are language-agnostic."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Sandboxed Python Code Executor (Docker) \u2014 Starter",
+    "meta_description": "Run LLM-generated Python in an isolated Docker container with CPU/memory/network limits, timeout, and clean stdout/stderr capture."
+  },
+  {
+    "slug": "git-ops-agent-with-pr",
+    "title": "Git Ops Agent (Branch, Edit, Commit, PR)",
+    "tldr": "Python helper for code agents to make changes via git: creates branch, applies file edits, commits, opens PR. Includes safety guards (no force push, no main-branch edits, mandatory PR title).",
+    "category": "code-agents",
+    "language": "python",
+    "framework": "GitPython + gh CLI",
+    "tags": [
+      "git",
+      "code-agent",
+      "pull-request",
+      "automation"
+    ],
+    "best_for_tags": [
+      "coding-agents",
+      "automation",
+      "ci-cd"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "When an LLM agent edits code and you want changes to flow through PR review (not direct main commits). Useful for AI-assisted refactors, bug fixes, dependency updates.",
+    "when_not_to_use": "Skip for production-blocking automated commits (use a CODEOWNER + branch protection instead). Skip when you don't want PRs (just use git directly in a working copy).",
+    "quick_start": "pip install GitPython && gh auth login && python git_agent.py 'refactor pricing module'",
+    "full_code": "\"\"\"Git operations for a code agent: branch, edit, commit, PR.\n\nSafety guards:\n  - Refuses to edit main/master directly\n  - Refuses force pushes\n  - Requires PR title and body (non-empty)\n  - Validates branch name conforms to convention\n\"\"\"\nfrom __future__ import annotations\n\nimport re\nimport subprocess\nfrom pathlib import Path\n\nfrom git import Repo\n\n\nPROTECTED_BRANCHES = {\"main\", \"master\", \"production\", \"release\"}\nBRANCH_NAME_RE = re.compile(r\"^(feat|fix|chore|refactor|docs|test)/[a-z0-9-]+$\")\n\n\nclass GitAgentError(Exception):\n    pass\n\n\nclass GitAgent:\n    def __init__(self, repo_path: str | Path):\n        self.repo = Repo(str(repo_path))\n        if self.repo.bare:\n            raise GitAgentError(\"repo is bare\")\n        if self.repo.head.is_detached:\n            raise GitAgentError(\"HEAD is detached; check out a branch first\")\n\n    def current_branch(self) -> str:\n        return self.repo.active_branch.name\n\n    def is_protected(self, branch: str) -> bool:\n        return branch in PROTECTED_BRANCHES\n\n    def create_branch(self, name: str, *, from_branch: str = \"main\") -> None:\n        \"\"\"Create and check out a new branch.\"\"\"\n        if not BRANCH_NAME_RE.match(name):\n            raise GitAgentError(\n                f\"branch name '{name}' must match {BRANCH_NAME_RE.pattern}\"\n            )\n        if name in [b.name for b in self.repo.branches]:\n            raise GitAgentError(f\"branch {name} already exists\")\n        if self.is_protected(self.current_branch()):\n            # Don't branch from current if protected \u2014 pull latest first\n            origin = self.repo.remotes.origin\n            origin.fetch()\n        self.repo.git.checkout(\"-b\", name, from_branch)\n\n    def apply_edits(self, edits: list[dict]) -> list[Path]:\n        \"\"\"Apply a list of file edits. Each edit: {path, content}.\n\n        Refuses to write outside the repo dir.\n        \"\"\"\n        if self.is_protected(self.current_branch()):\n            raise GitAgentError(f\"cannot edit on protected branch {self.current_branch()}\")\n\n        repo_root = Path(self.repo.working_tree_dir).resolve()\n        written = []\n        for edit in edits:\n            target = (repo_root / edit[\"path\"]).resolve()\n            if not str(target).startswith(str(repo_root)):\n                raise GitAgentError(f\"path escapes repo: {edit['path']}\")\n            target.parent.mkdir(parents=True, exist_ok=True)\n            target.write_text(edit[\"content\"], encoding=\"utf-8\")\n            written.append(target.relative_to(repo_root))\n        return written\n\n    def commit(self, message: str, *, files: list[Path] | None = None) -> str:\n        \"\"\"Stage and commit. Returns commit hash.\"\"\"\n        if self.is_protected(self.current_branch()):\n            raise GitAgentError(\"cannot commit to protected branch\")\n        if not message.strip():\n            raise GitAgentError(\"commit message cannot be empty\")\n        if files:\n            self.repo.index.add([str(f) for f in files])\n        else:\n            self.repo.git.add(\"-A\")\n        if not self.repo.index.diff(\"HEAD\"):\n            raise GitAgentError(\"nothing to commit\")\n        commit = self.repo.index.commit(message)\n        return commit.hexsha\n\n    def push(self, branch: str | None = None) -> None:\n        \"\"\"Push current or specified branch. Never force.\"\"\"\n        b = branch or self.current_branch()\n        if self.is_protected(b):\n            raise GitAgentError(f\"refusing to push to protected branch {b}\")\n        # Explicit refspec, no force flag accepted\n        self.repo.git.push(\"origin\", b, set_upstream=True)\n\n    def open_pr(self, title: str, body: str, *, base: str = \"main\") -> str:\n        \"\"\"Open PR via gh CLI. Returns PR URL.\"\"\"\n        if not title.strip() or not body.strip():\n            raise GitAgentError(\"PR title and body both required\")\n        result = subprocess.run(\n            [\"gh\", \"pr\", \"create\", \"--title\", title, \"--body\", body, \"--base\", base],\n            cwd=self.repo.working_tree_dir,\n            capture_output=True,\n            text=True,\n            check=True,\n        )\n        return result.stdout.strip()\n\n\n# ----------------- USAGE -----------------\n\nif __name__ == \"__main__\":\n    import sys\n\n    agent = GitAgent(\".\")\n    description = sys.argv[1] if len(sys.argv) > 1 else \"demo refactor\"\n\n    branch = f\"refactor/agent-{description.replace(' ', '-')[:30]}\"\n    agent.create_branch(branch)\n\n    # Apply edits (in real use, these come from the LLM)\n    agent.apply_edits([\n        {\"path\": \"AGENT_RAN.md\", \"content\": f\"# Agent ran\\n\\nTask: {description}\\n\"},\n    ])\n\n    commit_hash = agent.commit(f\"refactor: {description}\")\n    print(f\"committed {commit_hash[:7]}\")\n    agent.push()\n    pr_url = agent.open_pr(\n        title=f\"refactor: {description}\",\n        body=f\"Automated PR from agent.\\n\\nTask: {description}\",\n    )\n    print(f\"opened PR: {pr_url}\")\n",
+    "dependencies": [
+      {
+        "name": "GitPython",
+        "version": ">=3.1",
+        "purpose": "Git operations"
+      },
+      {
+        "name": "gh (CLI)",
+        "version": ">=2.30",
+        "purpose": "PR creation"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "GH_TOKEN",
+        "required": false,
+        "description": "GitHub token if gh CLI not interactively authed",
+        "example": "ghp_..."
+      }
+    ],
+    "setup_steps": [
+      "pip install GitPython",
+      "Install gh CLI: brew install gh (mac) or apt install gh (Linux)",
+      "gh auth login",
+      "Save as git_agent.py in your repo root",
+      "Test: python git_agent.py 'small test'"
+    ],
+    "variations": [
+      {
+        "label": "With diff-only commit",
+        "description": "Receive a unified diff, apply it.",
+        "code_snippet": "import subprocess\\n# Write diff to /tmp/edit.patch then: subprocess.run(['git', 'apply', '/tmp/edit.patch'], cwd=repo_path)"
+      },
+      {
+        "label": "Auto-close after merge",
+        "description": "Track PR; close branch after merge.",
+        "code_snippet": "# Poll gh CLI for PR state: gh pr view <num> --json state\\n# When merged, gh pr close <num> --delete-branch"
+      },
+      {
+        "label": "Required CODEOWNER review",
+        "description": "Tag specific reviewers.",
+        "code_snippet": "# In open_pr, after gh pr create:\\nsubprocess.run(['gh', 'pr', 'edit', pr_num, '--add-reviewer', 'team/backend'])"
+      },
+      {
+        "label": "Multi-file edit transaction",
+        "description": "Roll back if any edit fails.",
+        "code_snippet": "# Wrap apply_edits with try/except + git restore; if any edit raises, restore all to HEAD state."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "GitAgentError: branch name must match ...",
+        "cause": "Branch name doesn't follow convention.",
+        "fix_snippet": "Use feat/fix/chore/refactor/docs/test prefix + lowercase-with-hyphens. Adjust BRANCH_NAME_RE if your convention differs."
+      },
+      {
+        "error_text": "gh: command not found",
+        "cause": "GitHub CLI not installed.",
+        "fix_snippet": "Install: brew install gh OR apt install gh OR see cli.github.com."
+      },
+      {
+        "error_text": "Push fails: protected branch",
+        "cause": "Trying to push to main/master directly.",
+        "fix_snippet": "By design \u2014 agent must work on feature branches. Check current_branch() before pushing."
+      },
+      {
+        "error_text": "Commit empty (nothing to commit)",
+        "cause": "Edits didn't actually change files.",
+        "fix_snippet": "Check file contents before apply_edits; comparing intended-content vs current."
+      }
+    ],
+    "production_checklist": [
+      "Set up branch protection on main/master in GitHub repo settings.",
+      "Require PR review (1+ reviewer) for any branch merging to main.",
+      "Add CI checks that must pass; agents can fail tests too.",
+      "Use a bot account for agent commits (separate from human accounts).",
+      "Log every agent commit + PR for audit.",
+      "Set a daily PR limit per agent to prevent spam.",
+      "Test with a fork before pointing at production repo."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "GitPython==3.1.43",
+        "gh (2.55.0)"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "code-agent",
+      "git-operations",
+      "pull-request"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why not just use the GitHub API directly?",
+        "answer": "gh CLI handles auth + edge cases. For complex PR flows (drafts, milestones, labels), gh is faster than building the REST calls. Switch to PyGitHub if you outgrow gh CLI."
+      },
+      {
+        "question": "Can agents merge their own PRs?",
+        "answer": "Don't. Always require human review on AI-authored changes. The cost of a wrong merge is much higher than the savings of skipping review."
+      },
+      {
+        "question": "How do I scope what files the agent can edit?",
+        "answer": "Add an allowlist of paths in apply_edits; reject if edit path isn't in allowlist. Most safety lapses come from agents touching unexpected files."
+      },
+      {
+        "question": "What about merge conflicts?",
+        "answer": "Out of scope for this starter. Detect via git status after fetch; if conflicts, fail the agent and require human resolution."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Git Ops Agent (Branch, Edit, Commit, PR) \u2014 Starter",
+    "meta_description": "Code agent helper for git operations: create branch, apply edits, commit, push, open PR. Safety guards: no force push, no main edits."
+  },
+  {
     "slug": "modal-llm-serverless-deploy",
     "title": "Modal Serverless LLM Service With GPU",
     "tldr": "Deploy an LLM-backed FastAPI service to Modal in one file. GPU autoscaling, secrets management, request-scoped cold-start optimization, and 0.5s warm starts.",
@@ -3111,6 +3395,298 @@
     "github_url": "https://github.com/jlowin/fastmcp",
     "meta_title": "MCP Server Over HTTP With Bearer Auth \u2014 Starter",
     "meta_description": "Internal MCP server with HTTP/SSE transport and bearer-token auth \u2014 shared team tools, no per-machine install."
+  },
+  {
+    "slug": "conversation-memory-summarizer",
+    "title": "Conversation Memory With Rolling Summary",
+    "tldr": "Long-conversation memory pattern: keep the last N turns verbatim, summarize earlier turns into a running \u2018what we've established\u2019 block. Stays under context limit indefinitely.",
+    "category": "memory-systems",
+    "language": "python",
+    "framework": "OpenAI SDK",
+    "tags": [
+      "memory",
+      "long-context",
+      "summarization",
+      "conversation"
+    ],
+    "best_for_tags": [
+      "chat-applications",
+      "long-conversations",
+      "context-management"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Any chat application where conversations may exceed the model's context window (or where cost of sending the full history is undesirable). Pattern keeps the conversation feeling continuous without unbounded growth.",
+    "when_not_to_use": "Skip for single-turn or very short interactions. Skip for tasks requiring perfect recall of every exchanged token (legal, compliance) \u2014 summarization is lossy.",
+    "quick_start": "pip install openai && OPENAI_API_KEY=sk-... python convo_memory.py",
+    "full_code": "\"\"\"Rolling-summary conversation memory.\n\nLayout:\n  system_prompt + summary_so_far + last_N_verbatim_turns + new_user_message\n\nWhen the verbatim window exceeds N, oldest turns are merged into summary.\nThe summary is regenerated with the new content; never grows unbounded.\n\"\"\"\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass, field\nfrom typing import Literal\n\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n\n@dataclass\nclass Turn:\n    role: Literal[\"user\", \"assistant\"]\n    content: str\n\n\n@dataclass\nclass ConversationMemory:\n    system_prompt: str\n    verbatim_window: int = 8           # keep this many recent turns word-for-word\n    summary_so_far: str = \"\"           # rolling summary of older turns\n    turns: list[Turn] = field(default_factory=list)\n    max_summary_chars: int = 2000      # cap on summary so it doesn't bloat\n\n    def append(self, role: Literal[\"user\", \"assistant\"], content: str) -> None:\n        self.turns.append(Turn(role=role, content=content))\n        self._maybe_summarize()\n\n    def _maybe_summarize(self) -> None:\n        \"\"\"When verbatim turns exceed window, summarize oldest into rolling summary.\"\"\"\n        if len(self.turns) <= self.verbatim_window:\n            return\n        overflow = self.turns[: -self.verbatim_window]\n        self.turns = self.turns[-self.verbatim_window :]\n\n        new_content = \"\\n\".join(f\"{t.role}: {t.content}\" for t in overflow)\n        prompt = f\"\"\"You maintain a running summary of a conversation.\n\nPREVIOUS SUMMARY:\n{self.summary_so_far or '(empty)'}\n\nNEW TURNS TO INCORPORATE:\n{new_content}\n\nUpdate the summary to include the new information. Keep it under {self.max_summary_chars} characters.\nPreserve:\n  - Facts the user shared (preferences, identifiers, decisions)\n  - Open questions or commitments\n  - Anything the user later referenced (\"as I said earlier\")\nDiscard:\n  - Pleasantries, filler\n  - Old reasoning that's been superseded\n\nOutput ONLY the new summary, no preamble.\"\"\"\n\n        resp = client.chat.completions.create(\n            model=\"gpt-4o-mini\",\n            temperature=0,\n            messages=[{\"role\": \"user\", \"content\": prompt}],\n        )\n        self.summary_so_far = resp.choices[0].message.content.strip()\n\n    def build_messages(self, new_user_message: str) -> list[dict]:\n        \"\"\"Construct the messages array to send to the LLM.\"\"\"\n        msgs: list[dict] = [{\"role\": \"system\", \"content\": self.system_prompt}]\n        if self.summary_so_far:\n            msgs.append({\n                \"role\": \"system\",\n                \"content\": f\"# Conversation summary so far\\n\\n{self.summary_so_far}\",\n            })\n        for t in self.turns:\n            msgs.append({\"role\": t.role, \"content\": t.content})\n        msgs.append({\"role\": \"user\", \"content\": new_user_message})\n        return msgs\n\n\n# ----------------- USAGE -----------------\n\ndef chat_loop():\n    memory = ConversationMemory(\n        system_prompt=\"You are a helpful assistant who remembers what the user has shared.\",\n        verbatim_window=6,\n    )\n    print(\"Chat (Ctrl+C to exit)\")\n    while True:\n        try:\n            user_msg = input(\"\\nyou: \").strip()\n            if not user_msg:\n                continue\n            messages = memory.build_messages(user_msg)\n            resp = client.chat.completions.create(\n                model=\"gpt-4o-mini\", messages=messages, temperature=0.7\n            )\n            reply = resp.choices[0].message.content\n            print(f\"\\nbot: {reply}\")\n            memory.append(\"user\", user_msg)\n            memory.append(\"assistant\", reply)\n            print(f\"\\n(memory: summary={len(memory.summary_so_far)} chars, verbatim={len(memory.turns)} turns)\")\n        except KeyboardInterrupt:\n            break\n\n\nif __name__ == \"__main__\":\n    chat_loop()\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "LLM for both chat and summarization"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai",
+      "export OPENAI_API_KEY=sk-...",
+      "python convo_memory.py",
+      "Try a long conversation; watch the summary grow as verbatim turns get rolled in."
+    ],
+    "variations": [
+      {
+        "label": "Per-user persistent",
+        "description": "Save memory to disk per user.",
+        "code_snippet": "import json, pathlib\\ndef save(memory, user_id): pathlib.Path(f'memory/{user_id}.json').write_text(json.dumps({'summary': memory.summary_so_far, 'turns': [t.__dict__ for t in memory.turns]}))"
+      },
+      {
+        "label": "Async summarization",
+        "description": "Don't block on summary.",
+        "code_snippet": "# Summarize in background; if next turn arrives before summary done, use stale summary + extra verbatim turns."
+      },
+      {
+        "label": "Fact extraction in addition",
+        "description": "Pull structured facts alongside summary.",
+        "code_snippet": "# Second prompt to extract: {'user_facts': {...}, 'commitments': [...]}\\n# Maintain alongside summary; surface in system prompt for downstream tasks."
+      },
+      {
+        "label": "Different model for summarization",
+        "description": "Use cheaper model for summary, expensive for chat.",
+        "code_snippet": "# In _maybe_summarize, use 'gpt-4o-mini' or even local Llama. Chat uses 'gpt-4o'."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Summary forgets important info",
+        "cause": "Summarization prompt too aggressive.",
+        "fix_snippet": "Tune the summarization prompt to preserve specific categories (preferences, decisions, IDs). Test with a synthetic conversation that includes a fact stated early."
+      },
+      {
+        "error_text": "Latency spike when window overflows",
+        "cause": "Sync summarization blocks the next reply.",
+        "fix_snippet": "Use async variation, OR summarize only when window overflows by 2+ (don't summarize every single turn after threshold)."
+      },
+      {
+        "error_text": "Summary grows past max_summary_chars",
+        "cause": "Summarizer ignores the limit.",
+        "fix_snippet": "Enforce in code: if len(new_summary) > max_summary_chars: truncate or re-summarize. Re-pin the limit in the prompt."
+      },
+      {
+        "error_text": "User contradicts something in summary",
+        "cause": "Stale facts in summary.",
+        "fix_snippet": "Add to summarization prompt: \u2018when new turns contradict prior summary, the new turns win.\u2019 Or maintain a separate \u2018corrections\u2019 log."
+      }
+    ],
+    "production_checklist": [
+      "Persist memory per user; in-memory only fails on process restart.",
+      "Set sane max_summary_chars; uncapped summaries balloon token cost.",
+      "Cache the summary; only regenerate on window overflow.",
+      "Log summary changes for debugging surprise behavior.",
+      "Consider: what's lost when summarizing? Test on real conversations.",
+      "Run summarizer with deterministic temperature (0) for consistency."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "openai==1.51.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "conversation-memory",
+      "summarization",
+      "context-window"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why summarize instead of just sending the full history?",
+        "answer": "Cost + context limits. A 100-turn conversation hits both. Summarization keeps the conversation feeling continuous while staying bounded."
+      },
+      {
+        "question": "Will summaries lose nuance?",
+        "answer": "Yes \u2014 that's the trade. For most chat use cases, structural memory is fine; only specific facts and decisions need preservation. For compliance/legal use cases, store full transcripts separately."
+      },
+      {
+        "question": "How big should verbatim_window be?",
+        "answer": "6-12 turns. Smaller = aggressive summarization (cheaper, more loss). Larger = better recall (more tokens, more cost). Tune per app."
+      },
+      {
+        "question": "How does this compare to Mem0 / Letta?",
+        "answer": "Those are richer (structured facts + episodic memory + queries). This is the simple pattern. For complex apps, Mem0/Letta. For most chat: this is sufficient."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Conversation Memory With Rolling Summary \u2014 Starter",
+    "meta_description": "Long-conversation memory pattern: keep N recent turns verbatim, summarize older turns into a rolling \u2018context so far\u2019 block. Bounded forever."
+  },
+  {
+    "slug": "mem0-personal-assistant-memory",
+    "title": "Mem0 Personal Assistant Memory",
+    "tldr": "Use Mem0 to give an assistant per-user memory: stores facts the user shared, retrieves relevant ones per query, with explicit fact-update vs fact-add semantics.",
+    "category": "memory-systems",
+    "language": "python",
+    "framework": "Mem0",
+    "tags": [
+      "mem0",
+      "memory",
+      "personal-assistant",
+      "facts"
+    ],
+    "best_for_tags": [
+      "personal-assistants",
+      "user-preferences",
+      "long-term-memory"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "When building a personal assistant that needs to remember facts about the user across sessions \u2014 preferences, history, named entities. Mem0 handles the storage and retrieval; you connect it to your LLM.",
+    "when_not_to_use": "Skip for stateless apps (Q&A, search). Skip for multi-user / multi-tenant scenarios without proper user isolation (Mem0 supports it, but you need to wire user_id correctly).",
+    "quick_start": "pip install mem0ai openai && MEM0_API_KEY=... OPENAI_API_KEY=sk-... python assistant.py",
+    "full_code": "\"\"\"Mem0-powered personal assistant.\n\nPattern:\n  1. Before each LLM call, query Mem0 for relevant memories about the user.\n  2. Inject memories into system prompt.\n  3. After the response, ask Mem0 to update memories based on the conversation.\n\nMem0 handles:\n  - Fact extraction from natural conversation\n  - Updates ('user changed their job' overrides old)\n  - Vector search to retrieve relevant memories per query\n\"\"\"\nfrom __future__ import annotations\n\nimport os\n\nfrom mem0 import MemoryClient\nfrom openai import OpenAI\n\nclient = OpenAI()\nmemory = MemoryClient(api_key=os.environ[\"MEM0_API_KEY\"])\n\n\nSYSTEM_PROMPT = \"\"\"You are a personal assistant. Use the user's stored memories to provide personalized responses.\nIf the user shares new information (preferences, plans, facts), the memory layer will store it automatically.\nDon't ask the user to repeat things they've already told you.\"\"\"\n\n\ndef chat(user_id: str, user_message: str) -> str:\n    # 1. Retrieve relevant memories\n    relevant = memory.search(query=user_message, user_id=user_id, limit=5)\n    memory_block = \"\\n\".join(f\"- {m['memory']}\" for m in relevant) if relevant else \"(none)\"\n\n    # 2. Build prompt with memories\n    messages = [\n        {\"role\": \"system\", \"content\": SYSTEM_PROMPT},\n        {\"role\": \"system\", \"content\": f\"# Known about this user\\n{memory_block}\"},\n        {\"role\": \"user\", \"content\": user_message},\n    ]\n\n    # 3. Generate response\n    resp = client.chat.completions.create(\n        model=\"gpt-4o-mini\", messages=messages, temperature=0.7\n    )\n    assistant_reply = resp.choices[0].message.content\n\n    # 4. Let Mem0 extract any new facts from the conversation\n    memory.add(\n        messages=[\n            {\"role\": \"user\", \"content\": user_message},\n            {\"role\": \"assistant\", \"content\": assistant_reply},\n        ],\n        user_id=user_id,\n    )\n\n    return assistant_reply\n\n\ndef get_all_memories(user_id: str) -> list[dict]:\n    \"\"\"For debugging or user-facing \u2018what do you know about me?\u2019.\"\"\"\n    return memory.get_all(user_id=user_id)\n\n\ndef delete_memory(memory_id: str) -> None:\n    \"\"\"User-initiated forgetting.\"\"\"\n    memory.delete(memory_id=memory_id)\n\n\nif __name__ == \"__main__\":\n    user_id = \"user_demo_1\"\n\n    # Session 1\n    print(chat(user_id, \"Hi! I'm Jane. I'm a software engineer and I'm vegan.\"))\n    print(chat(user_id, \"Tomorrow is my birthday.\"))\n\n    # Pretend session ended; new session\n    print(\"\\n--- new session ---\")\n    print(chat(user_id, \"Suggest a celebratory meal for tomorrow.\"))\n    # Should suggest a vegan birthday meal \u2014 uses both stored memories.\n\n    # User wants to see what's stored\n    print(\"\\n--- memories ---\")\n    for m in get_all_memories(user_id):\n        print(f\"- {m.get('memory')}\")\n",
+    "dependencies": [
+      {
+        "name": "mem0ai",
+        "version": ">=0.1.40",
+        "purpose": "Memory layer"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Underlying LLM"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "MEM0_API_KEY",
+        "required": true,
+        "description": "Mem0 API key (or self-host)",
+        "example": "mem0-..."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "Sign up at mem0.ai or self-host.",
+      "pip install mem0ai openai",
+      "export MEM0_API_KEY=... OPENAI_API_KEY=sk-...",
+      "python assistant.py",
+      "Watch memories accumulate across sessions."
+    ],
+    "variations": [
+      {
+        "label": "Self-hosted with Qdrant + Postgres",
+        "description": "No managed service.",
+        "code_snippet": "from mem0 import Memory\\nmemory = Memory.from_config({\\n  'vector_store': {'provider': 'qdrant', 'config': {'host': 'localhost', 'port': 6333}},\\n  'graph_store': {'provider': 'neo4j', 'config': {...}},\\n  'llm': {'provider': 'openai', 'config': {'model': 'gpt-4o-mini'}}\\n})"
+      },
+      {
+        "label": "Memory categories",
+        "description": "Categorize memories at write.",
+        "code_snippet": "memory.add(messages=..., user_id=user_id, metadata={'category': 'preferences'})\\nrelevant = memory.search(query=..., user_id=..., filters={'category': 'preferences'})"
+      },
+      {
+        "label": "Agent memory (team / project)",
+        "description": "Team-scoped, not just user.",
+        "code_snippet": "memory.add(messages=..., agent_id='team_acme', user_id=user_id)\\n# Retrieves both user-specific and team-shared memories"
+      },
+      {
+        "label": "Memory expiration",
+        "description": "Stale memories auto-delete.",
+        "code_snippet": "memory.add(..., metadata={'expires_at': '2026-12-31T00:00:00Z'})\\n# Custom cron or middleware removes expired entries."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Memory layer extracts wrong facts",
+        "cause": "User said 'I might be vegan' \u2014 got stored as 'user is vegan'.",
+        "fix_snippet": "Tune the extraction prompt or post-process. Add user-facing review: surface new memories, let user confirm/edit before persisting."
+      },
+      {
+        "error_text": "Latency spikes",
+        "cause": "Search + add both make LLM calls.",
+        "fix_snippet": "Run memory.add() async in the background after responding. Cache memory.search() for common queries."
+      },
+      {
+        "error_text": "Memories contradict each other",
+        "cause": "User changes their mind; old memory not superseded.",
+        "fix_snippet": "Mem0 handles updates; verify it's working. Check memory.get_all() periodically for stale contradictions; can prune manually."
+      },
+      {
+        "error_text": "Privacy concerns",
+        "cause": "PII stored in cloud memory service.",
+        "fix_snippet": "Self-host Mem0 with your own vector + graph store. Or restrict what kinds of memories can be stored (filter PII before memory.add)."
+      }
+    ],
+    "production_checklist": [
+      "Set user_id consistently \u2014 confused user IDs = leaked memories.",
+      "Show users what's stored (transparency); let them delete.",
+      "Audit memory contents periodically for stale or wrong facts.",
+      "Run memory.add async; don't block the user's response.",
+      "Self-host if you handle sensitive PII.",
+      "Test \u2018forget me\u2019 flow end-to-end before promising privacy guarantees.",
+      "Cache common memory searches to control LLM cost."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "mem0ai==0.1.45",
+        "openai==1.51.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "mem0"
+    ],
+    "related_glossary_slugs": [
+      "memory-system",
+      "personal-assistant",
+      "long-term-memory"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Mem0 vs Letta vs raw vector store?",
+        "answer": "Mem0: opinionated, fact extraction built-in. Letta (MemGPT): more agent-focused, multi-tier memory. Raw vector store: full control, more glue code. Pick based on whether you want batteries-included."
+      },
+      {
+        "question": "How do I handle \u2018forget me\u2019 requests?",
+        "answer": "memory.delete_all(user_id=...) removes all entries for that user. Audit downstream consumers (cached searches, derived data) to ensure no leftover state."
+      },
+      {
+        "question": "Will it work across multiple agents?",
+        "answer": "Yes \u2014 Mem0 supports user_id + agent_id scopes. Same user, different agents = different memory views. Or shared memory by agent_id."
+      },
+      {
+        "question": "What about cost?",
+        "answer": "Mem0 makes LLM calls for fact extraction and search. ~2-3x per turn vs without memory. Cheaper than re-sending full history every turn for long conversations."
+      }
+    ],
+    "github_url": "https://github.com/mem0ai/mem0",
+    "meta_title": "Mem0 Personal Assistant Memory \u2014 Starter",
+    "meta_description": "Per-user memory for chat agents: store facts the user shares, retrieve relevant ones per query, update vs add semantics handled by Mem0."
   },
   {
     "slug": "langfuse-tracing-decorator",
