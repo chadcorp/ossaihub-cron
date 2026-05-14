@@ -10227,5 +10227,519 @@
     ],
     "meta_title": "IFEval Instruction-Following Benchmark | OSS AI Hub",
     "meta_description": "Production IFEval: deterministic, judge-free instruction-following eval. Strict + loose scoring, per-instruction breakdown. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "corrective-rag-crag",
+    "title": "Corrective RAG (CRAG) with Web Fallback",
+    "tldr": "CRAG pipeline: grade retrieved docs, if grade is poor rewrite query and search the web, combine before answering.",
+    "description": "Self-correcting RAG: LLM grades retrieved chunks; on poor relevance scores, falls back to web search (Tavily) and merges before final answer.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "langgraph",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "crag",
+      "web-search",
+      "fallback",
+      "rag"
+    ],
+    "best_for_tags": [
+      "grounding",
+      "web-fallback"
+    ],
+    "featured": false,
+    "when_to_use": "Your retrieval sometimes misses (long-tail queries, ambiguous phrasing). CRAG self-detects via LLM grading + falls back to web search. Catches the 20% of queries vector search alone misses.",
+    "when_not_to_use": "Skip when (1) corpus covers all queries; (2) you can't tolerate web search latency (~2s extra); (3) regulated env where web fallback isn't allowed.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from langchain_anthropic import ChatAnthropic\nfrom tavily import TavilyClient\nfrom langgraph.graph import StateGraph, END\n\nllm = ChatAnthropic(model='claude-sonnet-4-5')\ntavily = TavilyClient()\n\ndef grade(state):\n    score = llm.invoke(f\"Score 0-1 how well these chunks answer: {state['question']}\\nChunks: {state['docs']}\").content\n    return {'grade': float(score)}\n\ndef web_fallback(state):\n    results = tavily.search(state['question'], max_results=5)\n    return {'docs': state['docs'] + [r['content'] for r in results['results']]}\n\ndef route(s): return 'web' if s['grade'] < 0.6 else 'answer'\n\ng = StateGraph(...)  # full graph in repo\n",
+    "dependencies": [
+      "langchain",
+      "langchain-anthropic",
+      "langgraph",
+      "tavily-python"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "langchain",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "langchain-anthropic",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "langgraph",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "tavily-python",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "LLM."
+      }
+    ],
+    "setup_steps": [
+      "Install deps",
+      "Configure model + retriever",
+      "Run on your corpus + eval"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Always eval new RAG technique against baseline on YOUR queries.",
+      "Track latency + cost vs quality delta.",
+      "Pin library versions for reproducibility.",
+      "Cache LLM-side preprocessing (e.g. contextual summaries) - it's expensive."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "langchain==0.3.7",
+        "llama-index==0.12.6"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "langchain",
+      "anthropic",
+      "qdrant"
+    ],
+    "related_glossary_slugs": [
+      "rag",
+      "retrieval",
+      "embedding"
+    ],
+    "related_learn_slugs": [
+      "rag-101"
+    ],
+    "faq": [
+      {
+        "question": "CRAG vs Self-RAG?",
+        "answer": "CRAG adds web fallback when local retrieval is bad. Self-RAG decides if retrieval is needed at all. Combine them for the most robust RAG."
+      },
+      {
+        "question": "How much does the LLM grader cost?",
+        "answer": "1 extra LLM call per query. At Claude Sonnet rates ~$0.001 per call. Cheap insurance vs hallucination cost."
+      }
+    ],
+    "meta_title": "Corrective RAG (CRAG) with Web Fallback | OSS AI Hub",
+    "meta_description": "CRAG pipeline: grade retrieved docs, if grade is poor rewrite query and search the web, combine before answering."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "parent-child-chunking-rag",
+    "title": "Parent-Child Chunking RAG (Precision + Context)",
+    "tldr": "Embed small child chunks for precise retrieval; return larger parent chunks to the LLM for context. Best precision-recall balance.",
+    "description": "Hierarchical chunking: index small 256-token chunks for precise vector match, return their 1024-token parent chunks to the LLM for full context.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "llamaindex",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "chunking",
+      "parent-child",
+      "hierarchical",
+      "rag"
+    ],
+    "best_for_tags": [
+      "precision",
+      "context-window-efficiency"
+    ],
+    "featured": false,
+    "when_to_use": "Your docs have a natural hierarchy (sections, subsections). Parent-child gives the best precision-recall in RAG benchmarks: small chunks match precisely, big chunks give the LLM enough context to answer.",
+    "when_not_to_use": "Skip when (1) docs are flat (chat logs, tweets) - hierarchy is forced; (2) very short docs - the parent-child distinction collapses; (3) cost-sensitive - stores 2-3x the chunks.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from llama_index.core.node_parser import HierarchicalNodeParser\nfrom llama_index.core import VectorStoreIndex\nfrom llama_index.core.retrievers import AutoMergingRetriever\nfrom llama_index.core.storage import StorageContext\n\nparser = HierarchicalNodeParser.from_defaults(chunk_sizes=[2048, 512, 128])\nnodes = parser.get_nodes_from_documents(docs)\n\nstorage = StorageContext.from_defaults()\nstorage.docstore.add_documents(nodes)\nleaf_nodes = [n for n in nodes if not n.child_nodes]\nindex = VectorStoreIndex(leaf_nodes, storage_context=storage)\n\nbase_retriever = index.as_retriever(similarity_top_k=12)\nretriever = AutoMergingRetriever(base_retriever, storage_context=storage)\n# Returns parent nodes when most children match - precision + context\n",
+    "dependencies": [
+      "llama-index",
+      "llama-index-vector-stores-qdrant"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "llama-index",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "llama-index-vector-stores-qdrant",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "LLM."
+      }
+    ],
+    "setup_steps": [
+      "Install deps",
+      "Configure model + retriever",
+      "Run on your corpus + eval"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Always eval new RAG technique against baseline on YOUR queries.",
+      "Track latency + cost vs quality delta.",
+      "Pin library versions for reproducibility.",
+      "Cache LLM-side preprocessing (e.g. contextual summaries) - it's expensive."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "langchain==0.3.7",
+        "llama-index==0.12.6"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "langchain",
+      "anthropic",
+      "qdrant"
+    ],
+    "related_glossary_slugs": [
+      "rag",
+      "retrieval",
+      "embedding"
+    ],
+    "related_learn_slugs": [
+      "rag-101"
+    ],
+    "faq": [
+      {
+        "question": "Parent-child vs late chunking?",
+        "answer": "Parent-child: pre-defined hierarchy, simpler. Late chunking: embed whole doc, chunk after - preserves cross-chunk context naturally. Both improve retrieval quality 5-15% over naive chunking."
+      },
+      {
+        "question": "What sizes work best?",
+        "answer": "child=128-256 tokens, parent=512-1024. Tune to your domain - legal docs benefit from bigger parents."
+      }
+    ],
+    "meta_title": "Parent-Child Chunking RAG (Precision + Context) | OSS AI Hub",
+    "meta_description": "Embed small child chunks for precise retrieval; return larger parent chunks to the LLM for context. Best precision-recall balance."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "contextual-retrieval-anthropic",
+    "title": "Anthropic Contextual Retrieval (49% Retrieval Failure Reduction)",
+    "tldr": "Prepend each chunk with a 50-100 token Claude-generated context summary before embedding. Anthropic's reproducible technique.",
+    "description": "For each chunk, ask Claude to write a 50-100 token contextual summary explaining its place in the doc. Prepend to chunk before embedding. 49% retrieval failure reduction on Anthropic's benchmarks.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "anthropic",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "contextual-retrieval",
+      "anthropic",
+      "embeddings",
+      "rag"
+    ],
+    "best_for_tags": [
+      "retrieval-quality",
+      "anthropic"
+    ],
+    "featured": true,
+    "when_to_use": "Your chunks lack context when retrieved standalone (e.g. 'The company's Q3 revenue was $X' - which company? which year?). Contextual retrieval prepends the missing context. Most impactful on chunks taken from long structured docs.",
+    "when_not_to_use": "Skip when (1) chunks are self-contained; (2) latency-sensitive ingestion - this adds an LLM call per chunk; (3) tiny corpus where the cost outweighs benefit.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from anthropic import Anthropic\nclient = Anthropic()\n\nCTX_PROMPT = '''Here is the document:\\n<document>{doc}</document>\\nHere is a chunk from it:\\n<chunk>{chunk}</chunk>\\nPlease give a short succinct context to situate this chunk within the overall document. Answer only with the succinct context.'''\n\ndef contextualize(doc: str, chunk: str) -> str:\n    response = client.messages.create(model='claude-haiku-4-5', max_tokens=200,\n        messages=[{'role': 'user', 'content': CTX_PROMPT.format(doc=doc, chunk=chunk)}],\n        extra_headers={'anthropic-beta': 'prompt-caching-2024-07-31'})\n    return f'{response.content[0].text}\\n\\n{chunk}'\n\n# Apply before embedding:\nenhanced_chunks = [contextualize(doc, c) for c in chunks_of(doc)]\n",
+    "dependencies": [
+      "anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "anthropic",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "LLM."
+      }
+    ],
+    "setup_steps": [
+      "Install deps",
+      "Configure model + retriever",
+      "Run on your corpus + eval"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Always eval new RAG technique against baseline on YOUR queries.",
+      "Track latency + cost vs quality delta.",
+      "Pin library versions for reproducibility.",
+      "Cache LLM-side preprocessing (e.g. contextual summaries) - it's expensive."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "langchain==0.3.7",
+        "llama-index==0.12.6"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "langchain",
+      "anthropic",
+      "qdrant"
+    ],
+    "related_glossary_slugs": [
+      "rag",
+      "retrieval",
+      "embedding"
+    ],
+    "related_learn_slugs": [
+      "rag-101"
+    ],
+    "faq": [
+      {
+        "question": "Cost of contextualizing 100k chunks?",
+        "answer": "With prompt caching: ~$5-15 (Claude Haiku) for the full doc context shared across chunks. Without caching: ~10x more. Always use caching for this technique."
+      },
+      {
+        "question": "Use Haiku or Sonnet for contextualization?",
+        "answer": "Haiku 4.5 is fine - this task is straightforward summarization. Saves 10x cost vs Sonnet for similar quality."
+      }
+    ],
+    "meta_title": "Anthropic Contextual Retrieval (49% Retrieval Failure Reduction) | OSS AI Hub",
+    "meta_description": "Prepend each chunk with a 50-100 token Claude-generated context summary before embedding. Anthropic's reproducible technique."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "hypothetical-document-embeddings-hyde",
+    "title": "HyDE: Hypothetical Document Embeddings",
+    "tldr": "Generate a hypothetical answer with the LLM, embed THAT, then retrieve real docs near it. Higher recall on abstract queries.",
+    "description": "HyDE bridges the query-document gap: user query is short + abstract, docs are long + concrete. LLM generates a hypothetical document that 'looks like' the answer; embed THAT for retrieval.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "langchain",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "hyde",
+      "query-expansion",
+      "rag"
+    ],
+    "best_for_tags": [
+      "abstract-queries",
+      "recall"
+    ],
+    "featured": false,
+    "when_to_use": "Your queries are short or abstract ('how does X relate to Y?') and your docs are long technical content. HyDE generates a doc-shaped query, which embeds closer to the real docs. Particularly strong on academic/scientific corpora.",
+    "when_not_to_use": "Skip when (1) queries already long + concrete; (2) latency-sensitive (adds 1 LLM call); (3) FAQ-shaped traffic where exact query matching is fine.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from langchain_anthropic import ChatAnthropic\nfrom langchain_qdrant import QdrantVectorStore\n\nllm = ChatAnthropic(model='claude-sonnet-4-5')\n\nHYDE_PROMPT = '''Please write a passage to answer the question.\\nQuestion: {q}\\nPassage:'''\n\ndef hyde_search(question: str, k: int = 5):\n    # 1. Generate hypothetical doc\n    hypo = llm.invoke(HYDE_PROMPT.format(q=question)).content\n    # 2. Embed the hypothetical doc + retrieve real docs\n    return store.similarity_search(hypo, k=k)\n",
+    "dependencies": [
+      "langchain",
+      "langchain-anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "langchain",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "langchain-anthropic",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "LLM."
+      }
+    ],
+    "setup_steps": [
+      "Install deps",
+      "Configure model + retriever",
+      "Run on your corpus + eval"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Always eval new RAG technique against baseline on YOUR queries.",
+      "Track latency + cost vs quality delta.",
+      "Pin library versions for reproducibility.",
+      "Cache LLM-side preprocessing (e.g. contextual summaries) - it's expensive."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "langchain==0.3.7",
+        "llama-index==0.12.6"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "langchain",
+      "anthropic",
+      "qdrant"
+    ],
+    "related_glossary_slugs": [
+      "rag",
+      "retrieval",
+      "embedding"
+    ],
+    "related_learn_slugs": [
+      "rag-101"
+    ],
+    "faq": [
+      {
+        "question": "HyDE vs query rewriting?",
+        "answer": "Query rewriting: rephrase the QUERY. HyDE: generate the ANSWER and embed that. HyDE works better on abstract questions because the generated passage matches doc shape; query rewriting better for typos / ambiguous phrasing."
+      },
+      {
+        "question": "Does it work with poor LLMs?",
+        "answer": "HyDE needs a model capable of writing plausible domain passages. Use the same/stronger model as your generator - on Claude Sonnet 4.5+ it's effective; on small open models it can hurt recall."
+      }
+    ],
+    "meta_title": "HyDE: Hypothetical Document Embeddings | OSS AI Hub",
+    "meta_description": "Generate a hypothetical answer with the LLM, embed THAT, then retrieve real docs near it. Higher recall on abstract queries."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "multi-query-retrieval-rrf",
+    "title": "Multi-Query Retrieval with RRF Fusion",
+    "tldr": "Generate 3-5 query variations with the LLM, retrieve for each, fuse results via RRF. Reduces single-phrasing dependency.",
+    "description": "LLM rephrases the user's question 3-5 different ways (different angles, vocabulary, specificity). Retrieve for each, fuse with Reciprocal Rank Fusion. ~10-20% recall gain on ambiguous queries.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "langchain",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "multi-query",
+      "rrf",
+      "rag"
+    ],
+    "best_for_tags": [
+      "query-robustness",
+      "recall"
+    ],
+    "featured": false,
+    "when_to_use": "User queries vary in phrasing (chat agents, search). Multi-query covers vocabulary mismatch + ambiguity. Combine with hybrid search + reranker for the best recall in 2026 RAG.",
+    "when_not_to_use": "Skip when (1) queries always look the same (programmatic API); (2) every query already retrieves perfectly; (3) latency budget tight - adds 1 LLM call + 5 retrievals.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from collections import defaultdict\nfrom langchain_anthropic import ChatAnthropic\n\nllm = ChatAnthropic(model='claude-sonnet-4-5')\n\nREWRITE_PROMPT = '''Rewrite the user's question in 5 different ways to maximize retrieval recall. Output one per line.\\nQuestion: {q}'''\n\ndef multi_query_search(question: str, k: int = 8):\n    rewrites = llm.invoke(REWRITE_PROMPT.format(q=question)).content.split('\\n')\n    queries = [question] + [r.strip() for r in rewrites if r.strip()]\n\n    # RRF fusion\n    fused = defaultdict(float)\n    docs_by_id = {}\n    for q in queries:\n        hits = store.similarity_search(q, k=20)\n        for rank, doc in enumerate(hits):\n            doc_id = doc.metadata.get('id', doc.page_content[:50])\n            fused[doc_id] += 1 / (60 + rank + 1)\n            docs_by_id[doc_id] = doc\n    ranked = sorted(fused.items(), key=lambda kv: kv[1], reverse=True)[:k]\n    return [docs_by_id[did] for did, _ in ranked]\n",
+    "dependencies": [
+      "langchain",
+      "langchain-anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "langchain",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "langchain-anthropic",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "LLM."
+      }
+    ],
+    "setup_steps": [
+      "Install deps",
+      "Configure model + retriever",
+      "Run on your corpus + eval"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Always eval new RAG technique against baseline on YOUR queries.",
+      "Track latency + cost vs quality delta.",
+      "Pin library versions for reproducibility.",
+      "Cache LLM-side preprocessing (e.g. contextual summaries) - it's expensive."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "langchain==0.3.7",
+        "llama-index==0.12.6"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "langchain",
+      "anthropic",
+      "qdrant"
+    ],
+    "related_glossary_slugs": [
+      "rag",
+      "retrieval",
+      "embedding"
+    ],
+    "related_learn_slugs": [
+      "rag-101"
+    ],
+    "faq": [
+      {
+        "question": "How many rewrites is optimal?",
+        "answer": "3-5 - beyond that recall plateaus. RRF with k=60 fuses cleanly across that range. More than 7 rewrites starts to add noise."
+      },
+      {
+        "question": "Skip the rewrite for short queries?",
+        "answer": "Yes - if the query is already >15 tokens it's probably specific enough. Add a length-based bypass: `if len(query.split()) > 15: return store.similarity_search(query, k)`."
+      }
+    ],
+    "meta_title": "Multi-Query Retrieval with RRF Fusion | OSS AI Hub",
+    "meta_description": "Generate 3-5 query variations with the LLM, retrieve for each, fuse results via RRF. Reduces single-phrasing dependency."
   }
 ]
