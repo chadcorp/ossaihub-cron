@@ -144,7 +144,12 @@ def main():
             status, resp = post_with_retry(args.url, api_key, body)
             ok = resp.get("upserted", len(chunk)) if isinstance(resp, dict) else len(chunk)
             total_ok += ok
-            print(f"chunk {ci}/{len(chunks)} -> HTTP {status} upserted={ok}", flush=True)
+            slugs_in_chunk = [r.get("slug", "?") for r in chunk]
+            extra = ""
+            if isinstance(resp, dict) and ok == 0:
+                # Diagnostic — dump entire response when nothing landed
+                extra = f" RESP={json.dumps(resp)[:500]} SLUGS={slugs_in_chunk[:3]}..."
+            print(f"chunk {ci}/{len(chunks)} -> HTTP {status} upserted={ok}{extra}", flush=True)
         except Exception as e:
             total_failed += len(chunk)
             print(f"chunk {ci}/{len(chunks)} FAILED: {e}", file=sys.stderr, flush=True)
