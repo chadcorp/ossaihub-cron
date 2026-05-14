@@ -14245,5 +14245,1089 @@
     "faq": [],
     "meta_title": "MCP Test Harness (Verify Servers Conform to Spec) | OSS AI Hub",
     "meta_description": "Test harness that exercises an MCP server: list_tools / call_tool / error responses. Catches spec drift early."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "weights-biases-llm-tracking",
+    "title": "Weights & Biases LLM Run Tracking",
+    "tldr": "Track fine-tuning runs + inference experiments in W&B with custom panels for token throughput, GPU memory, loss curves.",
+    "description": "Track fine-tuning runs + inference experiments in W&B with custom panels for token throughput, GPU memory, loss curves.",
+    "category": "observability",
+    "language": "python",
+    "framework": "wandb",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "wandb",
+      "training-tracking"
+    ],
+    "best_for_tags": [
+      "training",
+      "wandb"
+    ],
+    "featured": false,
+    "when_to_use": "ML team tracking fine-tunes + eval runs systematically. W&B's run-comparison UI + sweep API + Tables for sample inspection are the standard for training observability.",
+    "when_not_to_use": "Skip when (1) only inference monitoring (Langfuse/Phoenix better); (2) you can't accept cloud-only; (3) team already on MLflow.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import wandb\nwandb.init(project='ossai-finetune', config={'lr': 2e-4, 'model': 'llama-3.1-8b'})\nfor step in range(1000):\n    loss = train_step()\n    wandb.log({'loss': loss, 'tokens_per_sec': 12500, 'gpu_mem_gb': 22.4})\nwandb.finish()\n",
+    "dependencies": [
+      "wandb"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "wandb",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install wandb"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Weights & Biases LLM Run Tracking | OSS AI Hub",
+    "meta_description": "Track fine-tuning runs + inference experiments in W&B with custom panels for token throughput, GPU memory, loss curves."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "prometheus-vllm-metrics",
+    "title": "Prometheus + Grafana for vLLM Production",
+    "tldr": "Prometheus scrape config + Grafana dashboard JSON for vLLM /metrics. Tracks tokens/sec, GPU mem, queue depth, P99 latency.",
+    "description": "Prometheus scrape config + Grafana dashboard JSON for vLLM /metrics. Tracks tokens/sec, GPU mem, queue depth, P99 latency.",
+    "category": "observability",
+    "language": "yaml",
+    "framework": "prometheus",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "prometheus",
+      "grafana",
+      "vllm"
+    ],
+    "best_for_tags": [
+      "vllm-prod",
+      "monitoring"
+    ],
+    "featured": false,
+    "when_to_use": "Running vLLM in production. The /metrics endpoint exposes detailed counters; this recipe gives you the scrape config + Grafana dashboard ready to import.",
+    "when_not_to_use": "Skip when (1) using Langfuse/Phoenix only; (2) no Prometheus stack; (3) hosted model (no /metrics).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# prometheus.yml\nscrape_configs:\n  - job_name: vllm\n    static_configs:\n      - targets: ['vllm:8000']\n    metrics_path: /metrics\n    scrape_interval: 15s\n\n# Key metrics:\n# vllm:num_requests_running\n# vllm:num_requests_waiting   (alert if >10 for 5min)\n# vllm:time_per_output_token_seconds_bucket  (p99 latency)\n# vllm:e2e_request_latency_seconds_bucket\n",
+    "dependencies": [
+      "prometheus-client"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "prometheus-client",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install prometheus-client"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Prometheus + Grafana for vLLM Production | OSS AI Hub",
+    "meta_description": "Prometheus scrape config + Grafana dashboard JSON for vLLM /metrics. Tracks tokens/sec, GPU mem, queue depth, P99 latency."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "structured-logging-request-id",
+    "title": "Structured Logging with Request-ID Propagation",
+    "tldr": "structlog setup with auto-propagated request_id + user_id context. Pipes to JSON for Loki / Splunk / Datadog ingestion.",
+    "description": "structlog setup with auto-propagated request_id + user_id context. Pipes to JSON for Loki / Splunk / Datadog ingestion.",
+    "category": "observability",
+    "language": "python",
+    "framework": "structlog",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "structlog",
+      "json-logging"
+    ],
+    "best_for_tags": [
+      "logging",
+      "request-tracing"
+    ],
+    "featured": false,
+    "when_to_use": "Any production LLM service. Structured JSON logs let you slice by user/tenant/error type in your log aggregator; request_id ties all log lines across services.",
+    "when_not_to_use": "Skip when (1) prototype only; (2) you're full-OTel + don't want both; (3) deep custom logging system already.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import structlog\nfrom contextvars import ContextVar\n\nrequest_id_ctx = ContextVar('request_id', default='-')\n\nstructlog.configure(\n    processors=[\n        structlog.contextvars.merge_contextvars,\n        structlog.processors.add_log_level,\n        structlog.processors.TimeStamper(fmt='iso'),\n        structlog.processors.JSONRenderer(),\n    ],\n)\nlog = structlog.get_logger()\n\n# In middleware:\nimport uuid\nasync def middleware(request, call_next):\n    rid = request.headers.get('x-request-id') or str(uuid.uuid4())\n    structlog.contextvars.bind_contextvars(request_id=rid, user_id=request.user_id)\n    return await call_next(request)\n\nlog.info('llm.call', model='claude-sonnet-4-5', tokens_in=100, tokens_out=250)\n",
+    "dependencies": [
+      "structlog"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "structlog",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install structlog"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Structured Logging with Request-ID Propagation | OSS AI Hub",
+    "meta_description": "structlog setup with auto-propagated request_id + user_id context. Pipes to JSON for Loki / Splunk / Datadog ingestion."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "bAML-typed-prompts",
+    "title": "BAML Typed Prompts (DSL for Structured Prompts)",
+    "tldr": "BAML DSL: declarative type-safe prompt definitions with auto-generated Python/TypeScript clients. Test cases built-in.",
+    "description": "BAML DSL: declarative type-safe prompt definitions with auto-generated Python/TypeScript clients. Test cases built-in.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "baml",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "baml",
+      "typed-prompts"
+    ],
+    "best_for_tags": [
+      "type-safe",
+      "baml"
+    ],
+    "featured": false,
+    "when_to_use": "You want prompts + types + tests as first-class artifacts. BAML compiles .baml files to Python/TS clients - typed inputs/outputs, version-controlled, testable.",
+    "when_not_to_use": "Skip when (1) you prefer plain prompts; (2) team unfamiliar with DSL workflows; (3) Pydantic + Instructor already solves your need.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "// support_triage.baml\nclass TriageOutput {\n  category 'billing' | 'tech' | 'general'\n  urgency 'low' | 'medium' | 'high'\n  summary string\n}\n\nfunction TriageMessage(message: string) -> TriageOutput {\n  client Claude\n  prompt #\"Triage this support message: {{ message }}. Return as JSON.\"#\n}\n\n// generates: from baml_client import b; result = b.TriageMessage('my payment failed')\n",
+    "dependencies": [
+      "baml-py"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "baml-py",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install baml-py"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "BAML Typed Prompts (DSL for Structured Prompts) | OSS AI Hub",
+    "meta_description": "BAML DSL: declarative type-safe prompt definitions with auto-generated Python/TypeScript clients. Test cases built-in."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "tool-router-llm-decides",
+    "title": "LLM-Routed Tool Selection (Two-Stage)",
+    "tldr": "Two-stage pattern: small/cheap LLM picks the right 5 tools from your 50, capable model uses only those. Reduces hallucinated tool calls.",
+    "description": "Two-stage pattern: small/cheap LLM picks the right 5 tools from your 50, capable model uses only those. Reduces hallucinated tool calls.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "vanilla",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "routing",
+      "tool-selection"
+    ],
+    "best_for_tags": [
+      "many-tools",
+      "cost-routing"
+    ],
+    "featured": false,
+    "when_to_use": "You have 30+ tools but Claude/GPT degrades when you stuff them all into one prompt. Router picks the relevant subset (5-10 tools) before the main call.",
+    "when_not_to_use": "Skip when (1) you have <15 tools; (2) router overhead > savings; (3) tools are deeply context-dependent (router can't know without context).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from anthropic import Anthropic\nclient = Anthropic()\n\nALL_TOOLS = {...}  # 50 tool descriptions keyed by name\n\ndef select_tools(question: str, k: int = 5) -> list[dict]:\n    descs = '\\n'.join(f'- {n}: {t[\"description\"]}' for n, t in ALL_TOOLS.items())\n    out = client.messages.create(model='claude-haiku-4-5', max_tokens=200,\n        messages=[{'role':'user','content':f'Pick the {k} most relevant tools for:\\n{question}\\n\\nTools:\\n{descs}\\n\\nReply with names, one per line.'}],\n    ).content[0].text\n    names = [n.strip() for n in out.split('\\n') if n.strip() in ALL_TOOLS]\n    return [ALL_TOOLS[n] for n in names[:k]]\n",
+    "dependencies": [
+      "anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "anthropic",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install anthropic"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "LLM-Routed Tool Selection (Two-Stage) | OSS AI Hub",
+    "meta_description": "Two-stage pattern: small/cheap LLM picks the right 5 tools from your 50, capable model uses only those. Reduces hallucinated tool calls."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "guardrails-output-validator",
+    "title": "Guardrails-AI Structured Output Validator",
+    "tldr": "Guardrails-AI RAIL spec for output validation with auto-reasking on failure. PII detection + toxic-output blocking.",
+    "description": "Guardrails-AI RAIL spec for output validation with auto-reasking on failure. PII detection + toxic-output blocking.",
+    "category": "function-calling",
+    "language": "python",
+    "framework": "guardrails",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "guardrails",
+      "validation"
+    ],
+    "best_for_tags": [
+      "output-validation",
+      "safety"
+    ],
+    "featured": false,
+    "when_to_use": "You need richer validation than Pydantic - PII detection, toxic content, prompt-injection. Guardrails has built-in validators for these classes.",
+    "when_not_to_use": "Skip when (1) Pydantic + Instructor is enough; (2) you've outgrown Guardrails (the framework moves slow); (3) homemade validators are simpler.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from guardrails import Guard\nfrom guardrails.hub import ToxicLanguage, DetectPII\n\nguard = Guard().use_many(\n    DetectPII(['PHONE_NUMBER', 'EMAIL_ADDRESS'], on_fail='filter'),\n    ToxicLanguage(threshold=0.5, on_fail='exception'),\n)\nresult = guard(\n    llm_api=anthropic_client.messages.create,\n    model='claude-sonnet-4-5',\n    messages=[{'role':'user','content':'Tell me about LLMs.'}],\n)\nprint(result.validated_output)\n",
+    "dependencies": [
+      "guardrails-ai"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "guardrails-ai",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install guardrails-ai"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Guardrails-AI Structured Output Validator | OSS AI Hub",
+    "meta_description": "Guardrails-AI RAIL spec for output validation with auto-reasking on failure. PII detection + toxic-output blocking."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "celery-llm-task-queue",
+    "title": "Celery LLM Task Queue (Async Batch with Priority)",
+    "tldr": "Celery + Redis broker for async LLM tasks. Priority queues, retries, dead-letter queue, Flower monitoring.",
+    "description": "Celery + Redis broker for async LLM tasks. Priority queues, retries, dead-letter queue, Flower monitoring.",
+    "category": "production",
+    "language": "python",
+    "framework": "celery",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "celery",
+      "task-queue"
+    ],
+    "best_for_tags": [
+      "async-batch",
+      "task-queue"
+    ],
+    "featured": false,
+    "when_to_use": "You have async LLM workloads (overnight batch, user-triggered long jobs). Celery is the production-grade Python task queue - retries, scheduling, dead-letter handling.",
+    "when_not_to_use": "Skip when (1) async + asyncio is enough (no separate worker pool needed); (2) tiny app (Redis Streams or RQ simpler); (3) you're not on Python.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from celery import Celery\nfrom anthropic import Anthropic\n\napp = Celery('llm', broker='redis://localhost:6379/0', backend='redis://localhost:6379/0')\napp.conf.task_routes = {'llm.complete_high': {'queue': 'high_priority'}}\n\n@app.task(autoretry_for=(Exception,), retry_backoff=True, max_retries=3)\ndef llm_complete(prompt: str) -> str:\n    return Anthropic().messages.create(model='claude-sonnet-4-5', max_tokens=500,\n        messages=[{'role':'user','content':prompt}]).content[0].text\n\n# celery -A app worker -Q high_priority,default --concurrency=8\n",
+    "dependencies": [
+      "celery",
+      "redis",
+      "anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "celery",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "redis",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "anthropic",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install celery redis anthropic"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Celery LLM Task Queue (Async Batch with Priority) | OSS AI Hub",
+    "meta_description": "Celery + Redis broker for async LLM tasks. Priority queues, retries, dead-letter queue, Flower monitoring."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "queue-with-arq-async",
+    "title": "ARQ Async Task Queue (Redis-Native Asyncio)",
+    "tldr": "ARQ task queue: built on asyncio + Redis Streams. Lighter than Celery, fully async-native.",
+    "description": "ARQ task queue: built on asyncio + Redis Streams. Lighter than Celery, fully async-native.",
+    "category": "production",
+    "language": "python",
+    "framework": "arq",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "arq",
+      "async",
+      "redis"
+    ],
+    "best_for_tags": [
+      "async-native",
+      "simple-queue"
+    ],
+    "featured": false,
+    "when_to_use": "Modern Python (asyncio-first) where you want simpler-than-Celery. ARQ embraces async/await + Redis Streams natively.",
+    "when_not_to_use": "Skip when (1) Celery's ecosystem features (beat, flower, signals) matter; (2) sync-first codebase; (3) team already on Celery.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from arq import create_pool\nfrom arq.connections import RedisSettings\nfrom anthropic import AsyncAnthropic\n\nclaude = AsyncAnthropic()\n\nasync def llm_task(ctx, prompt):\n    msg = await claude.messages.create(model='claude-sonnet-4-5', max_tokens=500,\n        messages=[{'role':'user','content':prompt}])\n    return msg.content[0].text\n\nclass WorkerSettings:\n    functions = [llm_task]\n    redis_settings = RedisSettings(host='localhost', port=6379)\n\n# Run: arq worker.WorkerSettings\n# Enqueue: redis = await create_pool(RedisSettings()); await redis.enqueue_job('llm_task', 'hi')\n",
+    "dependencies": [
+      "arq"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "arq",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install arq"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "ARQ Async Task Queue (Redis-Native Asyncio) | OSS AI Hub",
+    "meta_description": "ARQ task queue: built on asyncio + Redis Streams. Lighter than Celery, fully async-native."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "openai-cost-calculator-middleware",
+    "title": "Cost-Tracking Middleware (Per-User Attribution)",
+    "tldr": "FastAPI middleware that logs every LLM call with model, tokens, computed cost, user_id. Outputs to Postgres or ClickHouse.",
+    "description": "FastAPI middleware that logs every LLM call with model, tokens, computed cost, user_id. Outputs to Postgres or ClickHouse.",
+    "category": "production",
+    "language": "python",
+    "framework": "fastapi",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "cost",
+      "attribution",
+      "multi-tenant"
+    ],
+    "best_for_tags": [
+      "cost-tracking",
+      "multi-tenant"
+    ],
+    "featured": false,
+    "when_to_use": "Multi-tenant LLM apps where you need to attribute costs to users / tenants. Middleware captures every call - the only reliable way to bill accurately.",
+    "when_not_to_use": "Skip when (1) single-tenant; (2) using Helicone/Langfuse for this; (3) all your traffic goes through OpenRouter (which provides per-key cost).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from fastapi import FastAPI, Request\nimport time, asyncpg, json\n\nPRICES = {\n    'claude-sonnet-4-5': {'in': 3.0/1e6, 'out': 15.0/1e6},\n    'gpt-5':            {'in': 5.0/1e6, 'out': 20.0/1e6},\n}\n\nasync def log_cost(pool, user_id, model, tokens_in, tokens_out):\n    p = PRICES.get(model, {'in':0,'out':0})\n    cost = tokens_in * p['in'] + tokens_out * p['out']\n    async with pool.acquire() as conn:\n        await conn.execute('INSERT INTO llm_costs (user_id, model, tokens_in, tokens_out, cost_usd, ts) VALUES ($1,$2,$3,$4,$5,now())',\n            user_id, model, tokens_in, tokens_out, cost)\n",
+    "dependencies": [
+      "fastapi",
+      "asyncpg"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "fastapi",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "asyncpg",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install fastapi asyncpg"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Cost-Tracking Middleware (Per-User Attribution) | OSS AI Hub",
+    "meta_description": "FastAPI middleware that logs every LLM call with model, tokens, computed cost, user_id. Outputs to Postgres or ClickHouse."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "graceful-shutdown-llm-server",
+    "title": "Graceful Shutdown for In-Flight LLM Requests",
+    "tldr": "FastAPI lifecycle handler that drains in-flight streaming responses before shutting down. Critical for blue-green deploys.",
+    "description": "FastAPI lifecycle handler that drains in-flight streaming responses before shutting down. Critical for blue-green deploys.",
+    "category": "production",
+    "language": "python",
+    "framework": "fastapi",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "graceful-shutdown",
+      "deploy"
+    ],
+    "best_for_tags": [
+      "zero-downtime",
+      "deploy"
+    ],
+    "featured": false,
+    "when_to_use": "Blue-green / rolling deploys of streaming LLM endpoints. Without draining, mid-stream responses are dropped and users see truncated text.",
+    "when_not_to_use": "Skip when (1) batch-only workloads; (2) you can tolerate truncated streams; (3) Kubernetes preStop hook handles it externally.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import asyncio, signal\nfrom contextlib import asynccontextmanager\nfrom fastapi import FastAPI\n\nactive: set = set()\n\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    yield\n    # Drain on shutdown\n    deadline = asyncio.get_event_loop().time() + 30\n    while active and asyncio.get_event_loop().time() < deadline:\n        await asyncio.sleep(0.5)\n    print(f'shutdown with {len(active)} active streams remaining')\n\napp = FastAPI(lifespan=lifespan)\n\nasync def streaming_endpoint():\n    task = asyncio.current_task()\n    active.add(task)\n    try:\n        async for chunk in your_llm_stream():\n            yield chunk\n    finally:\n        active.discard(task)\n",
+    "dependencies": [
+      "fastapi"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "fastapi",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install fastapi"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Graceful Shutdown for In-Flight LLM Requests | OSS AI Hub",
+    "meta_description": "FastAPI lifecycle handler that drains in-flight streaming responses before shutting down. Critical for blue-green deploys."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "secret-management-doppler",
+    "title": "Secret Management with Doppler (Per-Env Rotation)",
+    "tldr": "Doppler config for managing API keys across dev/staging/prod with audit log + rotation. Drop-in for any LLM stack.",
+    "description": "Doppler config for managing API keys across dev/staging/prod with audit log + rotation. Drop-in for any LLM stack.",
+    "category": "production",
+    "language": "bash",
+    "framework": "doppler",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "secrets",
+      "doppler"
+    ],
+    "best_for_tags": [
+      "secrets",
+      "security"
+    ],
+    "featured": false,
+    "when_to_use": "Multi-env LLM apps where keys must rotate + audit. Doppler is the simplest paid secret manager - way easier than Vault for small teams.",
+    "when_not_to_use": "Skip when (1) using AWS Secrets Manager / GCP Secret Manager (use those); (2) one env (just .env file is fine); (3) avoid SaaS for secrets.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# Install Doppler CLI: brew install dopplerhq/cli/doppler\n# doppler login\n# doppler setup --project ossai --config prod\n#\n# Run any app with secrets injected:\n# doppler run -- python my_app.py\n#\n# Rotation: doppler secrets set ANTHROPIC_API_KEY=new_value\n# Audit: Doppler dashboard shows who/when accessed.\n",
+    "dependencies": [
+      "doppler"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "doppler",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install doppler"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Secret Management with Doppler (Per-Env Rotation) | OSS AI Hub",
+    "meta_description": "Doppler config for managing API keys across dev/staging/prod with audit log + rotation. Drop-in for any LLM stack."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "bento-cloud-deploy",
+    "title": "BentoCloud One-Click LLM Deploy",
+    "tldr": "Package a vLLM model as a Bento + deploy to BentoCloud with autoscaling. CI/CD integration template.",
+    "description": "Package a vLLM model as a Bento + deploy to BentoCloud with autoscaling. CI/CD integration template.",
+    "category": "deployment",
+    "language": "python",
+    "framework": "bentoml",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "bentoml",
+      "bentocloud"
+    ],
+    "best_for_tags": [
+      "bentocloud",
+      "managed"
+    ],
+    "featured": false,
+    "when_to_use": "Your team standardized on BentoML for ML packaging. BentoCloud is the matching deploy target - autoscaling, observability, all configured.",
+    "when_not_to_use": "Skip when (1) not on BentoML; (2) prefer K8s ownership; (3) want vendor-neutral (use Docker + Modal/RunPod instead).",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# bentofile.yaml\nservice: 'service:LlamaService'\nlabels:\n  owner: ossai\ninclude:\n  - '*.py'\npython:\n  packages:\n    - vllm==0.7.0\ndocker:\n  python_version: '3.11'\n  cuda_version: '12.4'\n\n# Build + push + deploy:\n# bentoml build\n# bentoml cloud login\n# bentoml deploy service:latest --cluster default --name llama-prod\n",
+    "dependencies": [
+      "bentoml"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "bentoml",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install bentoml"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "BentoCloud One-Click LLM Deploy | OSS AI Hub",
+    "meta_description": "Package a vLLM model as a Bento + deploy to BentoCloud with autoscaling. CI/CD integration template."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "aws-bedrock-iac-cdk",
+    "title": "AWS Bedrock IaC with CDK (TypeScript)",
+    "tldr": "AWS CDK stack for Bedrock: model access provisioning, KMS-encrypted prompt cache, CloudWatch alarms, Lambda invoke wrapper.",
+    "description": "AWS CDK stack for Bedrock: model access provisioning, KMS-encrypted prompt cache, CloudWatch alarms, Lambda invoke wrapper.",
+    "category": "deployment",
+    "language": "typescript",
+    "framework": "aws-cdk",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "bedrock",
+      "cdk",
+      "iac"
+    ],
+    "best_for_tags": [
+      "aws-iac",
+      "bedrock"
+    ],
+    "featured": false,
+    "when_to_use": "AWS-first orgs deploying Bedrock. CDK gives you IaC for model access policy, KMS keys, IAM roles, alarms - all the boring infra around the LLM call.",
+    "when_not_to_use": "Skip when (1) not on AWS; (2) using Bedrock without IaC is fine for your team; (3) prefer Terraform.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "import { Stack, StackProps, aws_lambda as lambda, aws_iam as iam, aws_kms as kms } from 'aws-cdk-lib';\nimport { Construct } from 'constructs';\n\nexport class BedrockStack extends Stack {\n  constructor(scope: Construct, id: string, props?: StackProps) {\n    super(scope, id, props);\n\n    const key = new kms.Key(this, 'PromptCacheKey', { enableKeyRotation: true });\n\n    const fn = new lambda.Function(this, 'BedrockInvoke', {\n      runtime: lambda.Runtime.PYTHON_3_12,\n      handler: 'index.handler',\n      code: lambda.Code.fromAsset('./src'),\n      environment: { CACHE_KMS_KEY_ID: key.keyId },\n    });\n    fn.addToRolePolicy(new iam.PolicyStatement({\n      actions: ['bedrock:InvokeModel'],\n      resources: ['arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-5'],\n    }));\n  }\n}\n",
+    "dependencies": [
+      "aws-cdk-lib",
+      "constructs"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "aws-cdk-lib",
+        "version": "latest",
+        "purpose": "Core dep."
+      },
+      {
+        "name": "constructs",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install aws-cdk-lib constructs"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "AWS Bedrock IaC with CDK (TypeScript) | OSS AI Hub",
+    "meta_description": "AWS CDK stack for Bedrock: model access provisioning, KMS-encrypted prompt cache, CloudWatch alarms, Lambda invoke wrapper."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "gcp-vertex-ai-deploy",
+    "title": "GCP Vertex AI Endpoint Deploy (Custom Container)",
+    "tldr": "Deploy a custom container model to Vertex AI Endpoint with autoscaling, A/B traffic splitting, online prediction logging.",
+    "description": "Deploy a custom container model to Vertex AI Endpoint with autoscaling, A/B traffic splitting, online prediction logging.",
+    "category": "deployment",
+    "language": "python",
+    "framework": "vertex-ai",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "gcp",
+      "vertex-ai"
+    ],
+    "best_for_tags": [
+      "gcp",
+      "vertex"
+    ],
+    "featured": false,
+    "when_to_use": "GCP-first orgs deploying their own models. Vertex AI Endpoints handle autoscaling + traffic splitting + logging without you running K8s.",
+    "when_not_to_use": "Skip when (1) not on GCP; (2) using Vertex's hosted Gemini API (different product); (3) prefer GKE directly.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "from google.cloud import aiplatform\n\naiplatform.init(project='ossai', location='us-central1')\n\nmodel = aiplatform.Model.upload(\n    display_name='llama-3.3-70b-vllm',\n    serving_container_image_uri='gcr.io/ossai/vllm:0.7.0',\n    serving_container_ports=[8000],\n    serving_container_health_route='/health',\n    serving_container_predict_route='/v1/chat/completions',\n)\nendpoint = model.deploy(\n    machine_type='a3-highgpu-8g', accelerator_type='NVIDIA_H100_80GB', accelerator_count=4,\n    min_replica_count=1, max_replica_count=4,\n)\n",
+    "dependencies": [
+      "google-cloud-aiplatform"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "google-cloud-aiplatform",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install google-cloud-aiplatform"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "GCP Vertex AI Endpoint Deploy (Custom Container) | OSS AI Hub",
+    "meta_description": "Deploy a custom container model to Vertex AI Endpoint with autoscaling, A/B traffic splitting, online prediction logging."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "azure-ai-foundry-deploy",
+    "title": "Azure AI Foundry Deploy (Managed Online Endpoint)",
+    "tldr": "Azure AI Foundry deployment of a fine-tuned model: managed online endpoint, Application Insights, content-filter config.",
+    "description": "Azure AI Foundry deployment of a fine-tuned model: managed online endpoint, Application Insights, content-filter config.",
+    "category": "deployment",
+    "language": "yaml",
+    "framework": "azure-foundry",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "azure",
+      "foundry"
+    ],
+    "best_for_tags": [
+      "azure",
+      "enterprise"
+    ],
+    "featured": false,
+    "when_to_use": "Azure-first orgs (especially regulated industries). Foundry gives you managed endpoints + built-in content filters + Microsoft enterprise support.",
+    "when_not_to_use": "Skip when (1) not on Azure; (2) you can self-host with AKS (cheaper); (3) you don't need the content filter abstractions.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# endpoint.yaml\n$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineEndpoint.schema.json\nname: ossai-llama\nauth_mode: key\n\n# deployment.yaml\n$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json\nname: blue\nendpoint_name: ossai-llama\nmodel: azureml:llama-33-70b:1\ninstance_type: Standard_ND96isr_H100_v5\ninstance_count: 1\nliveness_probe:\n  failure_threshold: 30\n  period: 30\n\n# az ml online-endpoint create -f endpoint.yaml\n# az ml online-deployment create -f deployment.yaml --all-traffic\n",
+    "dependencies": [
+      "azure-ai-ml"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "azure-ai-ml",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install azure-ai-ml"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Azure AI Foundry Deploy (Managed Online Endpoint) | OSS AI Hub",
+    "meta_description": "Azure AI Foundry deployment of a fine-tuned model: managed online endpoint, Application Insights, content-filter config."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "fly-io-gpu-llm",
+    "title": "Fly.io GPU LLM Deploy (Simple, Multi-Region)",
+    "tldr": "fly.toml deploying an Ollama-based LLM to a Fly.io GPU machine. Volume mount for model cache + global app distribution.",
+    "description": "fly.toml deploying an Ollama-based LLM to a Fly.io GPU machine. Volume mount for model cache + global app distribution.",
+    "category": "deployment",
+    "language": "yaml",
+    "framework": "fly-io",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "fly-io",
+      "gpu"
+    ],
+    "best_for_tags": [
+      "fly-io",
+      "simple-gpu"
+    ],
+    "featured": false,
+    "when_to_use": "Solo dev / small team wanting GPU deploys without K8s. Fly.io GPU machines are simpler than K8s + give you global multi-region for free.",
+    "when_not_to_use": "Skip when (1) need autoscaling beyond Fly.io's machine model; (2) sustained heavy traffic (cheaper on Lambda Labs / Crusoe); (3) need Modal-style serverless.",
+    "quick_start": "See repo for full setup steps.",
+    "code": "# fly.toml\napp = 'ossai-llama'\nprimary_region = 'iad'\n\n[build]\n  image = 'ollama/ollama:latest'\n\n[mounts]\n  source = 'ollama_data'\n  destination = '/root/.ollama'\n\n[[vm]]\n  size = 'a100-40gb'\n  memory = '32gb'\n\n[services]\n  internal_port = 11434\n  protocol = 'tcp'\n  [[services.ports]]\n    port = 80\n    handlers = ['http']\n\n# fly volumes create ollama_data --size 100 --region iad\n# fly deploy\n",
+    "dependencies": [
+      "flyctl"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "flyctl",
+        "version": "latest",
+        "purpose": "Core dep."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Install: pip install flyctl"
+    ],
+    "common_errors": [],
+    "production_checklist": [
+      "Pin library versions.",
+      "Add retries + circuit breaker.",
+      "Log + monitor metrics.",
+      "Smoke test in CI."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "latest"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [],
+    "related_learn_slugs": [],
+    "faq": [],
+    "meta_title": "Fly.io GPU LLM Deploy (Simple, Multi-Region) | OSS AI Hub",
+    "meta_description": "fly.toml deploying an Ollama-based LLM to a Fly.io GPU machine. Volume mount for model cache + global app distribution."
   }
 ]
