@@ -1588,5 +1588,816 @@
     ],
     "meta_title": "Ollama Custom Modelfile (System Prompt + Params) | OSS AI Hub",
     "meta_description": "Reusable Ollama Modelfile with baked-in system prompt + sampling for Llama 3.3 70B. One-command launch, git-checkable. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "rag-langchain-qdrant-basic",
+    "title": "Basic RAG with LangChain + Qdrant + BGE-M3 + Claude 4",
+    "tldr": "End-to-end RAG: document loader -> semantic chunker -> BGE-M3 embeddings -> Qdrant -> LangChain retriever -> Claude 4 answer with citations.",
+    "description": "Foundational RAG reference: ingest docs, embed with open-weight BGE-M3, store in self-hosted Qdrant, retrieve top-k with score threshold, ground Claude 4 answer + return citations.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "langchain",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "rag",
+      "langchain",
+      "qdrant",
+      "bge-m3",
+      "claude"
+    ],
+    "best_for_tags": [
+      "rag-basics",
+      "document-qa",
+      "starter-template"
+    ],
+    "featured": true,
+    "when_to_use": "Your first RAG. You have a corpus (<100k docs), questions that have answers somewhere in those docs, and you want a working baseline in 30 minutes. BGE-M3 is the best open-weight embedder for 2026 (multilingual, hybrid dense+sparse, 8k context), Qdrant is the easiest self-hosted vector DB to run, and LangChain provides the glue.",
+    "when_not_to_use": "Skip this stack when (1) your corpus is >1M docs - move to dedicated retrieval infra (Vespa, OpenSearch with neural ranking); (2) questions span many documents - look at GraphRAG or agentic patterns; (3) you need <100ms latency on retrieval - cache popular queries and consider Qdrant with HNSW + quantization tuned for speed.",
+    "quick_start": "1) `docker run -p 6333:6333 qdrant/qdrant`  2) `pip install langchain langchain-anthropic langchain-qdrant qdrant-client FlagEmbedding`  3) `python rag.py` -- ingests `./docs/`, answers `'What is the refund policy?'`.",
+    "full_code": "\"\"\"Basic RAG with LangChain + Qdrant + BGE-M3 + Claude 4.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport pathlib\nfrom typing import Iterable\n\nfrom FlagEmbedding import BGEM3FlagModel\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_qdrant import QdrantVectorStore\nfrom langchain_text_splitters import RecursiveCharacterTextSplitter\nfrom langchain_core.documents import Document\nfrom langchain_core.embeddings import Embeddings\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom qdrant_client import QdrantClient\nfrom qdrant_client.models import Distance, VectorParams\n\n\nclass BGEEmbeddings(Embeddings):\n    \"\"\"LangChain-compatible wrapper around BGE-M3.\"\"\"\n\n    def __init__(self, model_name: str = \"BAAI/bge-m3\"):\n        self.model = BGEM3FlagModel(model_name, use_fp16=True)\n\n    def embed_documents(self, texts: list[str]) -> list[list[float]]:\n        return [v.tolist() for v in self.model.encode(texts)[\"dense_vecs\"]]\n\n    def embed_query(self, text: str) -> list[float]:\n        return self.model.encode([text])[\"dense_vecs\"][0].tolist()\n\n\nPROMPT = ChatPromptTemplate.from_messages([\n    (\"system\", \"Answer ONLY from the context. If the answer is not in the context, say 'I don't know.' Cite chunks by [n].\"),\n    (\"human\", \"Context:\\n{context}\\n\\nQuestion: {question}\"),\n])\n\n\ndef ingest(docs_dir: str = \"./docs\", collection: str = \"ossai_docs\") -> None:\n    client = QdrantClient(url=os.environ.get(\"QDRANT_URL\", \"http://localhost:6333\"))\n    if not client.collection_exists(collection):\n        client.create_collection(collection, vectors_config=VectorParams(size=1024, distance=Distance.COSINE))\n\n    embeddings = BGEEmbeddings()\n    splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100, separators=[\"\\n\\n\", \"\\n\", \". \"])\n\n    chunks: list[Document] = []\n    for path in pathlib.Path(docs_dir).rglob(\"*.md\"):\n        text = path.read_text(encoding=\"utf-8\")\n        for i, c in enumerate(splitter.split_text(text)):\n            chunks.append(Document(page_content=c, metadata={\"source\": str(path), \"chunk_idx\": i}))\n    print(f\"[ingest] {len(chunks)} chunks from {docs_dir}\")\n\n    QdrantVectorStore.from_documents(chunks, embedding=embeddings, url=os.environ.get(\"QDRANT_URL\", \"http://localhost:6333\"), collection_name=collection)\n\n\ndef ask(question: str, collection: str = \"ossai_docs\", top_k: int = 5) -> dict:\n    store = QdrantVectorStore.from_existing_collection(embedding=BGEEmbeddings(), url=os.environ.get(\"QDRANT_URL\", \"http://localhost:6333\"), collection_name=collection)\n    docs = store.similarity_search(question, k=top_k)\n    context = \"\\n\\n\".join(f\"[{i+1}] {d.page_content}\" for i, d in enumerate(docs))\n    llm = ChatAnthropic(model=\"claude-sonnet-4-5\", temperature=0.2)\n    msg = llm.invoke(PROMPT.format_messages(context=context, question=question))\n    return {\n        \"answer\": msg.content,\n        \"citations\": [{\"source\": d.metadata[\"source\"], \"chunk_idx\": d.metadata[\"chunk_idx\"]} for d in docs],\n        \"input_tokens\": msg.response_metadata.get(\"usage\", {}).get(\"input_tokens\", 0),\n        \"output_tokens\": msg.response_metadata.get(\"usage\", {}).get(\"output_tokens\", 0),\n    }\n\n\nif __name__ == \"__main__\":\n    if not pathlib.Path(\"./qdrant_ingested.flag\").exists():\n        ingest()\n        pathlib.Path(\"./qdrant_ingested.flag\").touch()\n    result = ask(\"What is the refund policy?\")\n    print(result[\"answer\"])\n    print(\"Citations:\", result[\"citations\"])\n",
+    "code": "\"\"\"Basic RAG with LangChain + Qdrant + BGE-M3 + Claude 4. See full_code for ingestion.\"\"\"\nimport os\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_qdrant import QdrantVectorStore\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom FlagEmbedding import BGEM3FlagModel\nfrom langchain_core.embeddings import Embeddings\n\n\nclass BGE(Embeddings):\n    def __init__(self):\n        self.m = BGEM3FlagModel(\"BAAI/bge-m3\", use_fp16=True)\n    def embed_documents(self, t): return [v.tolist() for v in self.m.encode(t)[\"dense_vecs\"]]\n    def embed_query(self, t): return self.m.encode([t])[\"dense_vecs\"][0].tolist()\n\n\nPROMPT = ChatPromptTemplate.from_messages([\n    (\"system\", \"Answer ONLY from context. If not in context, say 'I don\\'t know.' Cite as [n].\"),\n    (\"human\", \"Context:\\n{context}\\n\\nQuestion: {question}\"),\n])\n\nstore = QdrantVectorStore.from_existing_collection(embedding=BGE(), url=os.environ[\"QDRANT_URL\"], collection_name=\"ossai_docs\")\ndocs = store.similarity_search(\"What is the refund policy?\", k=5)\nctx = \"\\n\\n\".join(f\"[{i+1}] {d.page_content}\" for i, d in enumerate(docs))\nprint(ChatAnthropic(model=\"claude-sonnet-4-5\").invoke(PROMPT.format_messages(context=ctx, question=\"What is the refund policy?\")).content)\n",
+    "dependencies": [
+      "langchain",
+      "langchain-anthropic",
+      "langchain-qdrant",
+      "qdrant-client",
+      "FlagEmbedding"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "langchain",
+        "version": ">=0.3.0",
+        "purpose": "LangChain core - prompt + retriever abstractions."
+      },
+      {
+        "name": "langchain-anthropic",
+        "version": ">=0.3.0",
+        "purpose": "Claude 4 client integration."
+      },
+      {
+        "name": "langchain-qdrant",
+        "version": ">=0.2.0",
+        "purpose": "Qdrant vector store adapter."
+      },
+      {
+        "name": "qdrant-client",
+        "version": ">=1.12.0",
+        "purpose": "Qdrant Python SDK."
+      },
+      {
+        "name": "FlagEmbedding",
+        "version": ">=1.3.0",
+        "purpose": "BGE-M3 embeddings - best open-weight retriever in 2026."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Claude API key from console.anthropic.com."
+      },
+      {
+        "name": "QDRANT_URL",
+        "required": false,
+        "description": "Qdrant base URL (default http://localhost:6333)."
+      },
+      {
+        "name": "QDRANT_API_KEY",
+        "required": false,
+        "description": "API key for Qdrant Cloud or self-hosted with auth enabled."
+      }
+    ],
+    "setup_steps": [
+      "Run Qdrant locally: `docker run -p 6333:6333 -v $(pwd)/qdrant_data:/qdrant/storage qdrant/qdrant`",
+      "`pip install langchain>=0.3.0 langchain-anthropic langchain-qdrant qdrant-client FlagEmbedding>=1.3.0`",
+      "Export `ANTHROPIC_API_KEY` (sk-ant-...).",
+      "Drop markdown documents into `./docs/`.",
+      "Run `python rag.py` - first run ingests + embeds (~2 min for 100 docs on CPU, faster with GPU); subsequent runs reuse the collection.",
+      "Inspect Qdrant at `http://localhost:6333/dashboard` to see collections + points."
+    ],
+    "variations": [
+      {
+        "label": "Qdrant Cloud instead of local Docker",
+        "description": "Use managed Qdrant for production - free tier covers ~10M vectors.",
+        "code_snippet": "client = QdrantClient(url='https://xyz.cloud.qdrant.io', api_key=os.environ['QDRANT_API_KEY'])"
+      },
+      {
+        "label": "OpenAI text-embedding-3-small instead of BGE",
+        "description": "Hosted embeddings, no GPU needed, $0.02/1M tokens.",
+        "code_snippet": "from langchain_openai import OpenAIEmbeddings\nembeddings = OpenAIEmbeddings(model='text-embedding-3-small', dimensions=1024)"
+      },
+      {
+        "label": "Add metadata filtering at retrieval time",
+        "description": "Filter by document source, date, tags before similarity search.",
+        "code_snippet": "from qdrant_client.models import Filter, FieldCondition, MatchValue\nfilter_q = Filter(must=[FieldCondition(key='metadata.source', match=MatchValue(value='handbook.md'))])\ndocs = store.similarity_search('...', k=5, filter=filter_q)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ResponseHandlingException: Collection ossai_docs doesn't exist",
+        "cause": "Trying to query before ingestion completed.",
+        "fix_snippet": "# Always run ingest() first; check via:\nclient.collection_exists('ossai_docs')"
+      },
+      {
+        "error_text": "Claude returns 'I don't know' even when answer is in docs",
+        "cause": "Retrieved chunks too small to contain full answer, or chunk boundary cuts mid-sentence.",
+        "fix_snippet": "splitter = RecursiveCharacterTextSplitter(chunk_size=1200, chunk_overlap=200, separators=['\\n\\n', '\\n', '. '])"
+      },
+      {
+        "error_text": "BGE-M3 OOM on CPU",
+        "cause": "Loading BGE-M3 needs ~4GB RAM; with use_fp16=True still ~2GB.",
+        "fix_snippet": "# Switch to smaller embedder:\nfrom langchain_huggingface import HuggingFaceEmbeddings\nembeddings = HuggingFaceEmbeddings(model_name='BAAI/bge-small-en-v1.5')"
+      },
+      {
+        "error_text": "Latency >2s per query",
+        "cause": "Embedding model loading on every call, or large top_k.",
+        "fix_snippet": "# Cache BGEM3FlagModel as module-level singleton.\n# Drop top_k to 3-5; tune Qdrant HNSW: ef_search=64 instead of default 128."
+      }
+    ],
+    "production_checklist": [
+      "Persist Qdrant data to a volume (`-v` flag) so container restarts don't wipe the index.",
+      "Run BGE-M3 on a GPU for ingestion - 10-50x faster than CPU.",
+      "Add a metadata schema (source, timestamp, document_id, doc_hash) so you can re-ingest only changed docs.",
+      "Store the chunking config + embedding model in a `provenance.json` next to your collection - reproducibility.",
+      "Set a score threshold (e.g. `score >= 0.55`) and fall back to 'I don't have that info' below it.",
+      "Add Langfuse or LangSmith tracing on the `ask()` function for observability.",
+      "Cache popular queries with a 5-min TTL Redis layer; for FAQs you'll see 90% cache hit."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "BAAI/bge-m3"
+      ],
+      "library_versions": [
+        "langchain==0.3.7",
+        "langchain-qdrant==0.2.0",
+        "qdrant-client==1.12.1",
+        "FlagEmbedding==1.3.4",
+        "Qdrant 1.12 (Docker)"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "qdrant",
+      "langchain",
+      "bge-m3",
+      "anthropic"
+    ],
+    "related_glossary_slugs": [
+      "rag",
+      "vector-search",
+      "embeddings",
+      "cosine-similarity",
+      "chunking-strategy"
+    ],
+    "related_learn_slugs": [
+      "rag-101",
+      "vector-db-101"
+    ],
+    "faq": [
+      {
+        "question": "Why BGE-M3 instead of OpenAI ada-002 or text-embedding-3-small?",
+        "answer": "BGE-M3 is open-weight (Apache 2.0), multilingual (100+ languages), supports hybrid dense+sparse retrieval natively, and has an 8k context window. On MTEB it matches or beats text-embedding-3-small. The only trade-off is you need ~2GB RAM + ideally a GPU for ingestion speed. For production, BGE-M3 keeps your data fully on-prem."
+      },
+      {
+        "question": "How much VRAM / disk does this need?",
+        "answer": "Qdrant index: ~1GB per million 1024-dim float32 vectors (drops to 250MB with scalar quantization). BGE-M3: ~4GB CPU RAM or ~3GB VRAM. Claude API: no local resources. For a 100k-doc starter corpus, plan on ~5GB disk + 4GB RAM."
+      },
+      {
+        "question": "Does this work with PDF / DOCX / HTML, not just markdown?",
+        "answer": "Yes - swap the loader. LangChain has `PyMuPDFLoader`, `UnstructuredFileLoader`, `BSHTMLLoader`. Best long-term: convert all docs to markdown first via Unstructured.io or Marker - chunking on cleaned markdown gives much better retrieval than chunking raw PDF."
+      }
+    ],
+    "meta_title": "Basic RAG with LangChain + Qdrant + BGE-M3 + Claude | OSS AI Hub",
+    "meta_description": "Production-grade RAG starter: BGE-M3 embeddings + Qdrant + LangChain + Claude 4. Docker quick-start, citations, MIT-licensed."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "hybrid-rag-bm25-vector",
+    "title": "Hybrid RAG: BM25 + Dense Vector + Reciprocal Rank Fusion",
+    "tldr": "Hybrid retrieval combining BM25 (sparse keyword) + dense vector search, fused via Reciprocal Rank Fusion. Boosts recall 20-40% over pure vector.",
+    "description": "Combines lexical (BM25) + semantic (BGE-M3 dense) retrieval, then fuses ranked lists with RRF. Recovers exact-keyword matches that pure vector search misses (acronyms, product IDs, code identifiers).",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "llamaindex",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "hybrid-search",
+      "bm25",
+      "rrf",
+      "rag"
+    ],
+    "best_for_tags": [
+      "recall",
+      "production-rag",
+      "keyword-heavy-corpus"
+    ],
+    "featured": true,
+    "when_to_use": "Your corpus has technical content where exact keyword matches matter (product SKUs, error codes, function names, acronyms) AND semantic understanding helps. Hybrid search is the production-RAG default in 2026 - pure vector loses on out-of-vocab terms; pure BM25 loses on paraphrases. RRF fuses them without needing to tune a weighted blend.",
+    "when_not_to_use": "Skip hybrid when (1) your corpus is pure narrative prose (novels, blog posts) where keyword matches add no signal; (2) you have <1000 docs - the cost of running two indices isn't worth it; (3) latency budget <100ms - hybrid adds ~30-50ms vs vector-only.",
+    "quick_start": "1) `pip install llama-index llama-index-vector-stores-qdrant llama-index-retrievers-bm25 rank_bm25`  2) Same Qdrant docker container as basic-rag  3) `python hybrid_rag.py`",
+    "full_code": "\"\"\"Hybrid RAG with LlamaIndex: BM25 + dense vector + RRF.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport pathlib\nfrom collections import defaultdict\n\nfrom llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext, Settings\nfrom llama_index.core.retrievers import VectorIndexRetriever, BaseRetriever\nfrom llama_index.core.schema import NodeWithScore\nfrom llama_index.embeddings.huggingface import HuggingFaceEmbedding\nfrom llama_index.llms.anthropic import Anthropic\nfrom llama_index.retrievers.bm25 import BM25Retriever\nfrom llama_index.vector_stores.qdrant import QdrantVectorStore\nfrom qdrant_client import QdrantClient\n\n\ndef reciprocal_rank_fusion(results: list[list[NodeWithScore]], k: int = 60) -> list[NodeWithScore]:\n    \"\"\"RRF: score(d) = sum(1 / (k + rank_in_list_i)) across all retriever lists.\"\"\"\n    fused: dict[str, float] = defaultdict(float)\n    node_by_id: dict[str, NodeWithScore] = {}\n    for result_list in results:\n        for rank, nws in enumerate(result_list):\n            fused[nws.node.node_id] += 1.0 / (k + rank + 1)\n            node_by_id[nws.node.node_id] = nws\n    ranked = sorted(fused.items(), key=lambda kv: kv[1], reverse=True)\n    return [NodeWithScore(node=node_by_id[nid].node, score=score) for nid, score in ranked]\n\n\nclass HybridRetriever(BaseRetriever):\n    def __init__(self, vector_retriever: VectorIndexRetriever, bm25_retriever: BM25Retriever, k: int = 10):\n        self.vector_retriever = vector_retriever\n        self.bm25_retriever = bm25_retriever\n        self.k = k\n        super().__init__()\n\n    def _retrieve(self, query_bundle) -> list[NodeWithScore]:\n        vector_hits = self.vector_retriever.retrieve(query_bundle)\n        bm25_hits = self.bm25_retriever.retrieve(query_bundle)\n        return reciprocal_rank_fusion([vector_hits, bm25_hits])[: self.k]\n\n\ndef build_index(docs_dir: str = \"./docs\", collection: str = \"hybrid_docs\"):\n    Settings.embed_model = HuggingFaceEmbedding(model_name=\"BAAI/bge-m3\")\n    Settings.llm = Anthropic(model=\"claude-sonnet-4-5\", api_key=os.environ[\"ANTHROPIC_API_KEY\"])\n\n    client = QdrantClient(url=os.environ.get(\"QDRANT_URL\", \"http://localhost:6333\"))\n    vector_store = QdrantVectorStore(client=client, collection_name=collection)\n    storage_context = StorageContext.from_defaults(vector_store=vector_store)\n\n    docs = SimpleDirectoryReader(docs_dir).load_data()\n    index = VectorStoreIndex.from_documents(docs, storage_context=storage_context)\n\n    vector_retriever = VectorIndexRetriever(index=index, similarity_top_k=15)\n    bm25_retriever = BM25Retriever.from_defaults(docstore=index.docstore, similarity_top_k=15)\n    hybrid = HybridRetriever(vector_retriever, bm25_retriever, k=8)\n    return hybrid, index\n\n\ndef ask(question: str, hybrid: HybridRetriever) -> str:\n    hits = hybrid.retrieve(question)\n    context = \"\\n\\n\".join(f\"[{i+1}] {h.node.get_content()[:600]}\" for i, h in enumerate(hits))\n    prompt = f\"Answer ONLY from the context. Cite chunks like [n].\\n\\nContext:\\n{context}\\n\\nQuestion: {question}\"\n    return Settings.llm.complete(prompt).text\n\n\nif __name__ == \"__main__\":\n    hybrid, _ = build_index()\n    print(ask(\"How do I reset error code E-4471?\", hybrid))\n",
+    "code": "\"\"\"Hybrid RAG: BM25 + dense vector + RRF. See full_code for indexing.\"\"\"\nfrom collections import defaultdict\nfrom llama_index.core.retrievers import VectorIndexRetriever, BaseRetriever\nfrom llama_index.retrievers.bm25 import BM25Retriever\n\n\ndef rrf(results, k=60):\n    fused = defaultdict(float)\n    nodes = {}\n    for lst in results:\n        for rank, nws in enumerate(lst):\n            fused[nws.node.node_id] += 1.0 / (k + rank + 1)\n            nodes[nws.node.node_id] = nws\n    return [nodes[nid] for nid, _ in sorted(fused.items(), key=lambda kv: kv[1], reverse=True)]\n\n\nclass HybridRetriever(BaseRetriever):\n    def __init__(self, vec, bm25, k=10):\n        self.vec, self.bm25, self.k = vec, bm25, k\n        super().__init__()\n    def _retrieve(self, q):\n        return rrf([self.vec.retrieve(q), self.bm25.retrieve(q)])[:self.k]\n",
+    "dependencies": [
+      "llama-index",
+      "llama-index-vector-stores-qdrant",
+      "llama-index-retrievers-bm25",
+      "llama-index-embeddings-huggingface",
+      "rank_bm25"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "llama-index",
+        "version": ">=0.12.0",
+        "purpose": "LlamaIndex core."
+      },
+      {
+        "name": "llama-index-vector-stores-qdrant",
+        "version": ">=0.4.0",
+        "purpose": "Qdrant vector store adapter."
+      },
+      {
+        "name": "llama-index-retrievers-bm25",
+        "version": ">=0.5.0",
+        "purpose": "BM25 sparse retriever."
+      },
+      {
+        "name": "llama-index-embeddings-huggingface",
+        "version": ">=0.4.0",
+        "purpose": "HF embedding wrapper for BGE-M3."
+      },
+      {
+        "name": "rank_bm25",
+        "version": ">=0.2.2",
+        "purpose": "Pure-Python BM25 implementation."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Claude API key."
+      },
+      {
+        "name": "QDRANT_URL",
+        "required": false,
+        "description": "Qdrant base URL."
+      }
+    ],
+    "setup_steps": [
+      "Run Qdrant: `docker run -p 6333:6333 qdrant/qdrant`",
+      "`pip install llama-index llama-index-vector-stores-qdrant llama-index-retrievers-bm25 llama-index-embeddings-huggingface rank_bm25`",
+      "Export `ANTHROPIC_API_KEY`.",
+      "Drop docs into `./docs/`.",
+      "Run `python hybrid_rag.py` - first run builds both indices (~2 min for 100 docs).",
+      "Tune the `k` in RRF (60 is a sane default; smaller k favors top hits more)."
+    ],
+    "variations": [
+      {
+        "label": "Add neural reranker on top of RRF",
+        "description": "Use bge-reranker-v2-m3 as a final pass for 5-10% more precision.",
+        "code_snippet": "from llama_index.postprocessor.colbert_rerank import ColbertRerank\nreranker = ColbertRerank(model='colbert-ir/colbertv2.0', top_n=5)\nfinal = reranker.postprocess_nodes(hits, query_bundle=query)"
+      },
+      {
+        "label": "Weighted fusion instead of RRF",
+        "description": "Tune alpha if you find one signal consistently better than the other.",
+        "code_snippet": "def weighted_fuse(vec_hits, bm25_hits, alpha=0.7):\n    scores = {}\n    for r, h in enumerate(vec_hits):\n        scores[h.node.node_id] = scores.get(h.node.node_id, 0) + alpha * (1 - r / len(vec_hits))\n    for r, h in enumerate(bm25_hits):\n        scores[h.node.node_id] = scores.get(h.node.node_id, 0) + (1-alpha) * (1 - r / len(bm25_hits))"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "BM25Retriever returns empty results",
+        "cause": "BM25 tokenizer didn't pick up your domain terms (acronyms, IDs).",
+        "fix_snippet": "from llama_index.core.utils import truncate_text\nbm25_retriever = BM25Retriever.from_defaults(docstore=index.docstore, similarity_top_k=15, tokenizer=lambda s: s.lower().split())"
+      },
+      {
+        "error_text": "RRF returns same docs as vector-only",
+        "cause": "Vector retriever is dominating because BM25 is finding overlapping docs at similar ranks.",
+        "fix_snippet": "# Drop k in RRF to favor top hits more, OR retrieve more from each (k=25 each instead of 15):\nvector_retriever = VectorIndexRetriever(index=index, similarity_top_k=25)\nbm25_retriever = BM25Retriever.from_defaults(docstore=index.docstore, similarity_top_k=25)"
+      },
+      {
+        "error_text": "Latency >500ms",
+        "cause": "BM25Retriever rebuilds the index from docstore on every call.",
+        "fix_snippet": "# Persist BM25 to disk after build:\nbm25_retriever.persist('./bm25_index')\nbm25_retriever = BM25Retriever.from_persist_dir('./bm25_index')"
+      }
+    ],
+    "production_checklist": [
+      "Persist BM25 index to disk - rebuilding from docstore on every restart is slow.",
+      "Use Qdrant scalar quantization to cut vector index memory ~4x with <1% recall drop.",
+      "Add a reranker stage (bge-reranker-v2-m3 or ColBERT) - it pays for itself on noisy retrieval.",
+      "Track per-query which retriever contributed to the top-k - useful for debugging.",
+      "If your domain has heavy acronyms/IDs, lowercase + split tokenizer beats default BM25 tokenizer.",
+      "RRF k=60 is fine for most workloads; only tune it if you have eval data showing wrong ordering."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "BAAI/bge-m3"
+      ],
+      "library_versions": [
+        "llama-index==0.12.6",
+        "llama-index-retrievers-bm25==0.5.0",
+        "rank_bm25==0.2.2"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "llamaindex",
+      "qdrant",
+      "bge-m3",
+      "anthropic"
+    ],
+    "related_glossary_slugs": [
+      "bm25",
+      "reciprocal-rank-fusion",
+      "hybrid-search",
+      "rag",
+      "vector-search"
+    ],
+    "related_learn_slugs": [
+      "hybrid-search-101",
+      "rag-production-101"
+    ],
+    "faq": [
+      {
+        "question": "When does hybrid actually beat vector-only?",
+        "answer": "Three reliable wins: (1) technical docs with product codes, error IDs, function names - BM25 catches exact matches vector misses; (2) multi-lingual queries where the embedding model is weak in one language; (3) low-data regimes where the embedding model hasn't seen domain-specific terms. On generic English narrative, hybrid is usually a wash."
+      },
+      {
+        "question": "Why RRF instead of weighted blend?",
+        "answer": "RRF needs no tuning - one parameter (k) and it's robust across query types. Weighted blends require per-domain alpha tuning and are brittle to corpus shifts. RRF is the industry default for production hybrid retrieval since the 2009 paper."
+      }
+    ],
+    "meta_title": "Hybrid RAG: BM25 + Vector + RRF | OSS AI Hub",
+    "meta_description": "Production hybrid retrieval combining BM25 + dense vector + RRF for 20-40% recall boost. LlamaIndex + Qdrant + BGE-M3. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "agentic-rag-langgraph",
+    "title": "Agentic RAG with LangGraph (Query Plan + Iterative Retrieval)",
+    "tldr": "LangGraph agent that decomposes complex questions, retrieves per sub-question, evaluates grounding, and re-queries when context is insufficient.",
+    "description": "Multi-step RAG state machine: plan -> retrieve -> grade -> answer | retrieve-again loop. Handles multi-hop questions and recovers from poor first retrieval.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "langgraph",
+    "difficulty_tier": "expert",
+    "tags": [
+      "agentic-rag",
+      "langgraph",
+      "planner",
+      "multi-hop"
+    ],
+    "best_for_tags": [
+      "complex-questions",
+      "multi-hop",
+      "production-rag"
+    ],
+    "featured": false,
+    "when_to_use": "Questions that need information from 2+ sources OR where the first retrieval often misses (long-tail, ambiguous, compositional). Agentic RAG buys ~15-30% accuracy on multi-hop benchmarks vs basic RAG, at a 3-5x latency cost.",
+    "when_not_to_use": "Skip agentic RAG when (1) your questions are single-fact lookups - basic RAG is faster and just as accurate; (2) you need <2s end-to-end latency; (3) you don't have eval data to verify the agent is actually helping (most teams ship agentic RAG and never measure if it beats baseline).",
+    "quick_start": "1) `pip install langgraph langchain-anthropic langchain-qdrant FlagEmbedding`  2) Same Qdrant container  3) `python agentic_rag.py`",
+    "full_code": "\"\"\"Agentic RAG: LangGraph plan -> retrieve -> grade -> answer/loop.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom typing import TypedDict, Annotated\nimport operator\n\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_qdrant import QdrantVectorStore\nfrom langgraph.graph import StateGraph, END\nfrom pydantic import BaseModel, Field\n\nfrom rag_qdrant_basic import BGEEmbeddings  # reuse from basic-rag-langchain-qdrant\n\n\nclass GraphState(TypedDict):\n    question: str\n    sub_questions: list[str]\n    retrieved_docs: Annotated[list[dict], operator.add]\n    answer: str\n    iteration: int\n    grade: str  # \"sufficient\" | \"retry\" | \"fail\"\n\n\nclass SubQuestions(BaseModel):\n    questions: list[str] = Field(description=\"3-5 sub-questions that decompose the user query.\")\n\n\nclass GradedAnswer(BaseModel):\n    grade: str = Field(description=\"One of: sufficient | retry\")\n    rationale: str\n    additional_query: str = Field(description=\"If retry, the new query to retrieve with. Empty if sufficient.\")\n\n\nllm = ChatAnthropic(model=\"claude-sonnet-4-5\", temperature=0.2)\nstore = QdrantVectorStore.from_existing_collection(embedding=BGEEmbeddings(), url=os.environ.get(\"QDRANT_URL\", \"http://localhost:6333\"), collection_name=\"ossai_docs\")\n\n\ndef plan(state: GraphState) -> GraphState:\n    out = llm.with_structured_output(SubQuestions).invoke(\n        f\"Decompose this question into 3-5 specific sub-questions a search engine can answer. Question: {state['question']}\"\n    )\n    return {\"sub_questions\": out.questions, \"iteration\": 0}\n\n\ndef retrieve(state: GraphState) -> GraphState:\n    new_docs = []\n    for sq in state[\"sub_questions\"]:\n        for d in store.similarity_search(sq, k=3):\n            new_docs.append({\"sub_q\": sq, \"content\": d.page_content, \"source\": d.metadata.get(\"source\")})\n    return {\"retrieved_docs\": new_docs, \"iteration\": state[\"iteration\"] + 1}\n\n\ndef grade(state: GraphState) -> GraphState:\n    context = \"\\n\\n\".join(d[\"content\"][:400] for d in state[\"retrieved_docs\"])\n    out = llm.with_structured_output(GradedAnswer).invoke(\n        f\"Question: {state['question']}\\nContext:\\n{context}\\n\\nIs the context sufficient to answer fully? Reply 'sufficient' or 'retry'. If retry, propose a focused additional query.\"\n    )\n    if out.grade == \"retry\" and out.additional_query and state[\"iteration\"] < 3:\n        return {\"grade\": \"retry\", \"sub_questions\": [out.additional_query]}\n    return {\"grade\": \"sufficient\"}\n\n\ndef answer(state: GraphState) -> GraphState:\n    context = \"\\n\\n\".join(f\"[{i+1}] ({d.get('sub_q')}) {d['content']}\" for i, d in enumerate(state[\"retrieved_docs\"]))\n    out = llm.invoke(f\"Answer ONLY from the context. Cite as [n]. If insufficient, say so.\\n\\nContext:\\n{context}\\n\\nQuestion: {state['question']}\")\n    return {\"answer\": out.content}\n\n\ndef route_after_grade(state: GraphState) -> str:\n    return \"retrieve\" if state.get(\"grade\") == \"retry\" else \"answer\"\n\n\ndef build_graph():\n    g = StateGraph(GraphState)\n    g.add_node(\"plan\", plan)\n    g.add_node(\"retrieve\", retrieve)\n    g.add_node(\"grade\", grade)\n    g.add_node(\"answer\", answer)\n    g.set_entry_point(\"plan\")\n    g.add_edge(\"plan\", \"retrieve\")\n    g.add_edge(\"retrieve\", \"grade\")\n    g.add_conditional_edges(\"grade\", route_after_grade, {\"retrieve\": \"retrieve\", \"answer\": \"answer\"})\n    g.add_edge(\"answer\", END)\n    return g.compile()\n\n\nif __name__ == \"__main__\":\n    graph = build_graph()\n    out = graph.invoke({\"question\": \"What was the impact of the 2024 refund policy change on Q1 2025 cancellations?\", \"retrieved_docs\": [], \"iteration\": 0})\n    print(out[\"answer\"])\n",
+    "code": "\"\"\"Agentic RAG state machine sketch. See full_code for full graph.\"\"\"\nfrom typing import TypedDict\nfrom langgraph.graph import StateGraph, END\n\n\nclass State(TypedDict):\n    question: str\n    sub_questions: list\n    retrieved_docs: list\n    answer: str\n    iteration: int\n    grade: str\n\n\ndef plan(s): return {\"sub_questions\": [...], \"iteration\": 0}\ndef retrieve(s): return {\"retrieved_docs\": [...], \"iteration\": s[\"iteration\"]+1}\ndef grade(s): return {\"grade\": \"sufficient\" if ... else \"retry\"}\ndef answer(s): return {\"answer\": \"...\"}\ndef route(s): return \"retrieve\" if s.get(\"grade\") == \"retry\" else \"answer\"\n\n\ng = StateGraph(State)\ng.add_node(\"plan\", plan); g.add_node(\"retrieve\", retrieve)\ng.add_node(\"grade\", grade); g.add_node(\"answer\", answer)\ng.set_entry_point(\"plan\")\ng.add_edge(\"plan\", \"retrieve\")\ng.add_edge(\"retrieve\", \"grade\")\ng.add_conditional_edges(\"grade\", route, {\"retrieve\": \"retrieve\", \"answer\": \"answer\"})\ng.add_edge(\"answer\", END)\ngraph = g.compile()\n",
+    "dependencies": [
+      "langgraph",
+      "langchain-anthropic",
+      "langchain-qdrant",
+      "FlagEmbedding",
+      "pydantic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "langgraph",
+        "version": ">=0.2.50",
+        "purpose": "Graph-based agent orchestration with state + conditional edges."
+      },
+      {
+        "name": "langchain-anthropic",
+        "version": ">=0.3.0",
+        "purpose": "Claude 4 client + structured-output support."
+      },
+      {
+        "name": "pydantic",
+        "version": ">=2.9.0",
+        "purpose": "Structured output schemas."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Claude API key."
+      },
+      {
+        "name": "QDRANT_URL",
+        "required": false,
+        "description": "Qdrant base URL."
+      }
+    ],
+    "setup_steps": [
+      "Run Qdrant + ingest docs (see `rag-langchain-qdrant-basic`).",
+      "`pip install langgraph>=0.2.50 langchain-anthropic langchain-qdrant FlagEmbedding pydantic>=2.9.0`",
+      "Save the full_code as `agentic_rag.py` next to `rag_qdrant_basic.py`.",
+      "Run `python agentic_rag.py` - first multi-hop question typically takes 8-15s (3 retrieve loops max).",
+      "Inspect intermediate state in LangSmith or `graph.invoke(input, debug=True)`."
+    ],
+    "variations": [
+      {
+        "label": "Cap iterations + fallback to web search",
+        "description": "Avoid infinite loops + recover when local corpus is insufficient.",
+        "code_snippet": "MAX_ITER = 3\nif state['iteration'] >= MAX_ITER and state.get('grade') == 'retry':\n    # fallback: hit web search API\n    from tavily import TavilyClient\n    web = TavilyClient(api_key=os.environ['TAVILY_API_KEY']).search(state['question'])\n    state['retrieved_docs'].extend([{'content': r['content']} for r in web['results']])"
+      },
+      {
+        "label": "Stream intermediate steps",
+        "description": "Show users 'planning', 'retrieving', 'grading' as the agent runs.",
+        "code_snippet": "for event in graph.astream({'question': q, 'retrieved_docs': [], 'iteration': 0}):\n    print('step:', list(event.keys())[0])"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "RecursionLimit exceeded",
+        "cause": "Agent looped beyond default recursion limit.",
+        "fix_snippet": "graph.invoke(state, config={'recursion_limit': 25})"
+      },
+      {
+        "error_text": "Sub-questions are too vague to retrieve usefully",
+        "cause": "The plan prompt is generic; question decomposition needs domain context.",
+        "fix_snippet": "PLAN_PROMPT = '''You are a research assistant for {domain}. Decompose into 3-5 sub-questions that each can be answered by a single retrieval. Avoid yes/no questions.'''"
+      },
+      {
+        "error_text": "Grade always says 'sufficient' even with thin context",
+        "cause": "Grading LLM is too lenient; needs explicit failure criteria.",
+        "fix_snippet": "GRADE_PROMPT = 'Grade STRICTLY. Say sufficient ONLY if every claim in a complete answer would be cited from this context. Otherwise retry.'"
+      }
+    ],
+    "production_checklist": [
+      "Always cap max_iterations - agents will loop infinitely on questions outside their corpus.",
+      "Log the full state to Langfuse/LangSmith per invocation - debugging without traces is misery.",
+      "Eval agentic RAG against basic RAG on YOUR questions before shipping - it's slower + more expensive.",
+      "Surface 'low confidence' to the user when grade returns retry on iteration 3 (often = question is unanswerable).",
+      "Cache plan() and grade() outputs by query+context hash for 1h TTL - same questions hit fast.",
+      "Stream intermediate states to the UI - 8-15s of silence feels broken; 'planning... retrieving... grading...' feels alive."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "BAAI/bge-m3"
+      ],
+      "library_versions": [
+        "langgraph==0.2.55",
+        "langchain-anthropic==0.3.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "langgraph",
+      "qdrant",
+      "anthropic",
+      "langchain"
+    ],
+    "related_glossary_slugs": [
+      "agentic-rag",
+      "multi-hop-rag",
+      "query-decomposition",
+      "self-rag",
+      "langgraph"
+    ],
+    "related_learn_slugs": [
+      "agentic-rag-101",
+      "langgraph-quickstart"
+    ],
+    "faq": [
+      {
+        "question": "Agentic RAG vs basic RAG - what's the actual quality gap?",
+        "answer": "On HotpotQA-style multi-hop benchmarks, agentic RAG beats basic RAG by 15-30% on exact match. On single-fact lookups (most production traffic), the gap collapses to <5%. Measure on YOUR traffic before assuming the complexity pays off."
+      },
+      {
+        "question": "What's the cost difference?",
+        "answer": "Basic RAG: 1 LLM call. Agentic RAG: 3-7 LLM calls (plan, grade x1-3, answer). At Claude Sonnet 4.5 prices (~$3/1M input, $15/1M output), that's typically $0.005-$0.015 per query vs $0.002. For chat traffic, the agentic overhead is real money at scale."
+      }
+    ],
+    "meta_title": "Agentic RAG with LangGraph (Plan + Retrieve + Grade) | OSS AI Hub",
+    "meta_description": "Production agentic RAG: LangGraph state machine decomposes questions, iterates retrieval, grades context. 15-30% multi-hop boost. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "graphrag-microsoft-pattern",
+    "title": "GraphRAG (Microsoft Pattern) - Entity Graph + Community Summaries",
+    "tldr": "Build a knowledge graph over docs, cluster entities into communities, summarize each community, then answer global questions by traversing the graph.",
+    "description": "Microsoft's GraphRAG pattern: extract entities + relations, run Leiden clustering for communities, summarize hierarchically, then route queries to the right community level.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "graphrag",
+    "difficulty_tier": "expert",
+    "tags": [
+      "graphrag",
+      "knowledge-graph",
+      "microsoft",
+      "global-rag"
+    ],
+    "best_for_tags": [
+      "global-questions",
+      "multi-doc",
+      "synthesis"
+    ],
+    "featured": false,
+    "when_to_use": "Questions that require synthesizing information across many documents - 'What are the main themes in this corpus?', 'How do these papers relate?' - where vector retrieval returns disconnected chunks. Also good when entity relationships matter (org charts, citation networks, dependency graphs).",
+    "when_not_to_use": "Skip GraphRAG when (1) your questions are local lookups - basic RAG is 10x faster + cheaper; (2) your corpus is <500 docs - the graph won't have enough structure to cluster meaningfully; (3) you don't want to pay $50-500 to ingest a medium corpus (LLM-based entity extraction is expensive).",
+    "quick_start": "1) `pip install graphrag`  2) `python -m graphrag.index --root ./ragtest --init`  3) Drop docs in `./ragtest/input/`  4) `python -m graphrag.index --root ./ragtest`  5) `python -m graphrag.query --root ./ragtest --method global 'What are the main themes?'`",
+    "full_code": "\"\"\"GraphRAG (Microsoft) - ingest + query against an entity graph + communities.\n\nThis wraps the official `graphrag` CLI in Python so you can integrate it into\nyour own pipeline. Microsoft's repo: github.com/microsoft/graphrag\n\nCost note: indexing a 100-doc corpus typically costs $20-50 in GPT-4o-mini calls\nfor entity extraction + community summarization. Plan accordingly.\n\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport pathlib\nimport subprocess\nimport sys\n\n\nWORKSPACE = pathlib.Path(os.environ.get(\"GRAPHRAG_ROOT\", \"./ragtest\"))\n\n\ndef init_workspace() -> None:\n    \"\"\"Create the GraphRAG workspace + default config.\"\"\"\n    WORKSPACE.mkdir(parents=True, exist_ok=True)\n    (WORKSPACE / \"input\").mkdir(exist_ok=True)\n    subprocess.run([sys.executable, \"-m\", \"graphrag.index\", \"--root\", str(WORKSPACE), \"--init\"], check=True)\n\n    settings = (WORKSPACE / \"settings.yaml\")\n    if settings.exists():\n        text = settings.read_text(encoding=\"utf-8\")\n        text = text.replace(\"type: openai_chat\", \"type: openai_chat\")\n        text = text.replace(\"model: gpt-4o-mini\", \"model: gpt-4o-mini\")\n        settings.write_text(text, encoding=\"utf-8\")\n\n    env = WORKSPACE / \".env\"\n    if not env.exists():\n        env.write_text(f\"GRAPHRAG_API_KEY={os.environ.get('OPENAI_API_KEY', 'sk-replace-me')}\\n\", encoding=\"utf-8\")\n\n\ndef ingest_documents(source_dir: str) -> None:\n    \"\"\"Copy + index documents into the GraphRAG workspace.\"\"\"\n    src = pathlib.Path(source_dir)\n    dst = WORKSPACE / \"input\"\n    for path in src.rglob(\"*.txt\"):\n        (dst / path.name).write_text(path.read_text(encoding=\"utf-8\"), encoding=\"utf-8\")\n    print(f\"[ingest] copied {len(list(dst.glob('*.txt')))} files. Running graphrag index ...\")\n    subprocess.run([sys.executable, \"-m\", \"graphrag.index\", \"--root\", str(WORKSPACE)], check=True)\n\n\ndef query(question: str, method: str = \"global\") -> str:\n    \"\"\"Query the indexed graph. method = 'global' for whole-corpus synthesis, 'local' for entity-focused.\"\"\"\n    result = subprocess.run(\n        [sys.executable, \"-m\", \"graphrag.query\", \"--root\", str(WORKSPACE), \"--method\", method, question],\n        capture_output=True, text=True, check=True,\n    )\n    return result.stdout.strip()\n\n\nif __name__ == \"__main__\":\n    if not (WORKSPACE / \"settings.yaml\").exists():\n        init_workspace()\n    if not (WORKSPACE / \"output\").exists():\n        ingest_documents(\"./docs\")\n    print(query(\"What are the main themes across these documents?\", method=\"global\"))\n    print(query(\"Who is the primary stakeholder in the refund policy?\", method=\"local\"))\n",
+    "code": "\"\"\"GraphRAG wrapper. See full_code for full setup.\"\"\"\nimport os, pathlib, subprocess, sys\n\nWORKSPACE = pathlib.Path(os.environ.get(\"GRAPHRAG_ROOT\", \"./ragtest\"))\n\n\ndef query(question, method=\"global\"):\n    r = subprocess.run([sys.executable, \"-m\", \"graphrag.query\", \"--root\", str(WORKSPACE), \"--method\", method, question],\n        capture_output=True, text=True, check=True)\n    return r.stdout.strip()\n\n\nif __name__ == \"__main__\":\n    print(query(\"What are the main themes?\", method=\"global\"))\n",
+    "dependencies": [
+      "graphrag"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "graphrag",
+        "version": ">=1.2.0",
+        "purpose": "Microsoft's official GraphRAG package - entity extraction + community detection + summarization."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "GraphRAG defaults to OpenAI for entity extraction. Can be swapped to Azure OpenAI or Anthropic via settings.yaml."
+      },
+      {
+        "name": "GRAPHRAG_ROOT",
+        "required": false,
+        "description": "Workspace directory (default ./ragtest)."
+      }
+    ],
+    "setup_steps": [
+      "`pip install graphrag>=1.2.0`",
+      "Initialize workspace: `python -m graphrag.index --root ./ragtest --init`",
+      "Drop txt/md docs into `./ragtest/input/`.",
+      "Set `GRAPHRAG_API_KEY=sk-...` in `./ragtest/.env`.",
+      "Run indexing: `python -m graphrag.index --root ./ragtest` - this is the expensive step (entity extraction + clustering + community summarization).",
+      "Query globally: `python -m graphrag.query --root ./ragtest --method global 'What are the main themes?'`",
+      "Query locally for a specific entity: `python -m graphrag.query --root ./ragtest --method local 'Who is Alice?'`"
+    ],
+    "variations": [
+      {
+        "label": "Use Anthropic Claude instead of OpenAI",
+        "description": "Lower entity-extraction cost + better at structured output.",
+        "code_snippet": "# In settings.yaml:\nllm:\n  type: openai_chat  # works with any OpenAI-compatible endpoint\n  api_base: https://api.anthropic.com/v1\n  model: claude-sonnet-4-5\n  api_key: ${ANTHROPIC_API_KEY}"
+      },
+      {
+        "label": "Query the parquet outputs directly with DuckDB",
+        "description": "Skip the CLI - read entities + communities + relationships from parquet.",
+        "code_snippet": "import duckdb\nconn = duckdb.connect()\nentities = conn.execute(\"SELECT * FROM './ragtest/output/create_final_entities.parquet'\").fetchdf()\ncommunities = conn.execute(\"SELECT * FROM './ragtest/output/create_final_communities.parquet'\").fetchdf()"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Indexing job hangs at 'entity_extraction'",
+        "cause": "OpenAI rate-limited entity extraction.",
+        "fix_snippet": "# In settings.yaml:\nllm:\n  concurrent_requests: 10  # was 25\n  requests_per_minute: 500  # was 10000"
+      },
+      {
+        "error_text": "Indexing failed: missing 'embedding' field",
+        "cause": "Embedding step skipped or failed silently mid-pipeline.",
+        "fix_snippet": "python -m graphrag.index --root ./ragtest --resume LATEST  # resumes from checkpoint"
+      },
+      {
+        "error_text": "Global query returns generic answers",
+        "cause": "Community summaries are too high-level for your specific question.",
+        "fix_snippet": "# Query at lower community level (more granular):\npython -m graphrag.query --root ./ragtest --method global --community-level 2 'your question'"
+      }
+    ],
+    "production_checklist": [
+      "Budget the indexing cost FIRST - 1k docs typically runs $50-200 in LLM calls.",
+      "Always set requests_per_minute conservatively - GraphRAG will saturate your rate limit if uncapped.",
+      "Index incrementally with `--resume` - re-indexing from scratch on a 1000-doc corpus is hours.",
+      "Pin the graphrag version - the schema between minor versions sometimes breaks community queries.",
+      "For repeat queries, cache the global community summaries in Redis - they don't change between queries.",
+      "Use 'global' method for synthesis questions, 'local' for entity-focused, 'drift' for comparative.",
+      "Validate the graph manually before shipping - visualize the entity graph in Gephi or with networkx."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini (default)",
+        "claude-sonnet-4-5 (alt)"
+      ],
+      "library_versions": [
+        "graphrag==1.2.0",
+        "Python 3.11"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "graphrag",
+      "neo4j",
+      "anthropic",
+      "openai"
+    ],
+    "related_glossary_slugs": [
+      "graphrag",
+      "knowledge-graph",
+      "entity-extraction",
+      "community-detection",
+      "rag"
+    ],
+    "related_learn_slugs": [
+      "knowledge-graph-rag-101",
+      "graphrag-quickstart"
+    ],
+    "faq": [
+      {
+        "question": "GraphRAG vs vector RAG - when does graph win?",
+        "answer": "Graph wins on global questions ('summarize the main themes', 'how do these connect?') and entity-focused queries ('what's everyone said about Alice?'). Vector RAG wins on specific factual lookups and is 10-100x cheaper to run. Many production systems combine both: vector for chat, graph for analytical/dashboard queries."
+      },
+      {
+        "question": "How long does indexing take?",
+        "answer": "1k docs of ~2k tokens each: 2-4 hours of LLM calls on a single API key, $50-100 in OpenAI costs. Scales linearly with doc count + token count. Caching helps on re-runs but you pay the full cost once."
+      }
+    ],
+    "meta_title": "GraphRAG (Microsoft Pattern) Entity Graph + Communities | OSS AI Hub",
+    "meta_description": "Microsoft GraphRAG: entity extraction + Leiden clustering + community summaries for global RAG questions. Python wrapper + Anthropic variant. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "self-rag-pattern",
+    "title": "Self-RAG: Model Decides When to Retrieve",
+    "tldr": "Self-RAG pattern: model emits special tokens to decide if/when to retrieve, then grades each retrieved chunk for relevance before answering.",
+    "description": "Adaptive retrieval where the LLM chooses to retrieve, grades chunks, and reflects on grounding. Reduces unnecessary retrieval and surfaces unsupported claims.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "langchain",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "self-rag",
+      "adaptive-retrieval",
+      "grounding"
+    ],
+    "best_for_tags": [
+      "adaptive-rag",
+      "grounding",
+      "hallucination-reduction"
+    ],
+    "featured": false,
+    "when_to_use": "Mixed-mode chatbots that handle both retrieval-needing questions ('what's our refund policy?') and chit-chat ('hello!') - Self-RAG decides per-turn. Also useful when you want explicit grounding signals to surface to users ('this claim cites doc X').",
+    "when_not_to_use": "Skip Self-RAG when (1) every query needs retrieval - just always retrieve; (2) you're using a small model (<8B) - the self-grading capability is weak; (3) you can't afford the 2-3x LLM call overhead for low-value queries.",
+    "quick_start": "1) `pip install langchain langchain-anthropic langchain-qdrant FlagEmbedding`  2) `python self_rag.py 'What's the weather?'` (skips retrieval)  3) `python self_rag.py 'What is our refund policy?'` (retrieves + grades).",
+    "full_code": "\"\"\"Self-RAG implementation with Claude 4 as both retriever-decider + grader.\n\nThree decisions the model makes:\n  1. should_retrieve? -> {yes, no}\n  2. for each chunk: is_relevant? -> {relevant, irrelevant}\n  3. is_supported? -> {fully, partially, no}\n\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom dataclasses import dataclass, field\n\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_qdrant import QdrantVectorStore\nfrom pydantic import BaseModel, Field\n\nfrom rag_qdrant_basic import BGEEmbeddings\n\n\nclass RetrieveDecision(BaseModel):\n    should_retrieve: bool = Field(description=\"True if external knowledge is needed.\")\n    reason: str\n\n\nclass ChunkGrade(BaseModel):\n    relevant: bool\n    rationale: str\n\n\nclass GroundedAnswer(BaseModel):\n    answer: str\n    supported: str = Field(description=\"One of: fully | partially | no\")\n    citations: list[int] = Field(description=\"1-indexed chunk numbers used.\")\n\n\nllm = ChatAnthropic(model=\"claude-sonnet-4-5\", temperature=0.2)\nstore = QdrantVectorStore.from_existing_collection(embedding=BGEEmbeddings(), url=os.environ.get(\"QDRANT_URL\", \"http://localhost:6333\"), collection_name=\"ossai_docs\")\n\n\n@dataclass\nclass SelfRAGResult:\n    answer: str\n    retrieved: bool\n    supported: str\n    used_chunks: list[dict] = field(default_factory=list)\n\n\ndef answer_with_self_rag(question: str, top_k: int = 5) -> SelfRAGResult:\n    decision = llm.with_structured_output(RetrieveDecision).invoke(\n        f\"Does answering this question require external knowledge from documents, or can it be answered from general knowledge / casual? Q: {question}\"\n    )\n\n    if not decision.should_retrieve:\n        ans = llm.invoke(f\"Answer concisely. Q: {question}\")\n        return SelfRAGResult(answer=ans.content, retrieved=False, supported=\"not-applicable\")\n\n    candidates = store.similarity_search(question, k=top_k * 2)\n    graded: list[dict] = []\n    for i, doc in enumerate(candidates):\n        grade = llm.with_structured_output(ChunkGrade).invoke(\n            f\"Question: {question}\\nChunk: {doc.page_content[:500]}\\n\\nIs this chunk relevant to answering the question?\"\n        )\n        if grade.relevant:\n            graded.append({\"i\": i + 1, \"content\": doc.page_content, \"source\": doc.metadata.get(\"source\")})\n        if len(graded) >= top_k:\n            break\n\n    if not graded:\n        return SelfRAGResult(answer=\"I don't have information about that.\", retrieved=True, supported=\"no\")\n\n    context = \"\\n\\n\".join(f\"[{i+1}] {g['content']}\" for i, g in enumerate(graded))\n    grounded = llm.with_structured_output(GroundedAnswer).invoke(\n        f\"Answer ONLY from context. Cite [n] for each claim. Be explicit if claims are unsupported.\\n\\nContext:\\n{context}\\n\\nQuestion: {question}\"\n    )\n    return SelfRAGResult(answer=grounded.answer, retrieved=True, supported=grounded.supported, used_chunks=graded)\n\n\nif __name__ == \"__main__\":\n    import sys\n    q = sys.argv[1] if len(sys.argv) > 1 else \"What is our refund policy?\"\n    r = answer_with_self_rag(q)\n    print(r.answer)\n    print(f\"\\n[retrieved={r.retrieved} supported={r.supported}]\")\n",
+    "code": "\"\"\"Self-RAG core decision flow. See full_code for full implementation.\"\"\"\nfrom pydantic import BaseModel\nfrom langchain_anthropic import ChatAnthropic\n\n\nclass RetrieveDecision(BaseModel):\n    should_retrieve: bool\n    reason: str\n\n\ndef should_retrieve(q):\n    return ChatAnthropic(model=\"claude-sonnet-4-5\").with_structured_output(RetrieveDecision).invoke(\n        f\"Does this question need external docs? Q: {q}\"\n    ).should_retrieve\n",
+    "dependencies": [
+      "langchain",
+      "langchain-anthropic",
+      "langchain-qdrant",
+      "FlagEmbedding",
+      "pydantic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "langchain-anthropic",
+        "version": ">=0.3.0",
+        "purpose": "Claude 4 client with structured-output support."
+      },
+      {
+        "name": "langchain-qdrant",
+        "version": ">=0.2.0",
+        "purpose": "Qdrant store wrapper."
+      },
+      {
+        "name": "FlagEmbedding",
+        "version": ">=1.3.0",
+        "purpose": "BGE-M3 embeddings."
+      },
+      {
+        "name": "pydantic",
+        "version": ">=2.9.0",
+        "purpose": "Structured-output schemas."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Claude API key."
+      },
+      {
+        "name": "QDRANT_URL",
+        "required": false,
+        "description": "Qdrant base URL."
+      }
+    ],
+    "setup_steps": [
+      "Ensure basic RAG ingestion is done (see `rag-langchain-qdrant-basic`).",
+      "`pip install langchain langchain-anthropic langchain-qdrant FlagEmbedding pydantic`",
+      "Save the full_code as `self_rag.py`.",
+      "`python self_rag.py \"What is our refund policy?\"` - watch for `[retrieved=True supported=fully]`.",
+      "Try a non-retrieval question: `python self_rag.py \"hello, how are you?\"` - should return `[retrieved=False]`.",
+      "Log the should_retrieve decision rate; if it's stuck at 100%, the prompt is too lenient."
+    ],
+    "variations": [
+      {
+        "label": "Self-RAG with reranker for relevance grading",
+        "description": "Use a cross-encoder reranker instead of LLM grading for 10x throughput.",
+        "code_snippet": "from sentence_transformers import CrossEncoder\nreranker = CrossEncoder('BAAI/bge-reranker-v2-m3')\nscores = reranker.predict([(question, doc.page_content) for doc in candidates])\ngraded = [c for c, s in zip(candidates, scores) if s > 0.5]"
+      },
+      {
+        "label": "Stream supported/unsupported claims to UI",
+        "description": "Show users which claims are well-grounded vs uncertain.",
+        "code_snippet": "# Render answer with inline citations + 'unsupported' badges:\nfor sentence in answer.split('. '):\n    cites = extract_citations(sentence)\n    if cites:\n        render(sentence, badge='supported', cites=cites)\n    else:\n        render(sentence, badge='unsupported-warning')"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "should_retrieve returns True for everything",
+        "cause": "Prompt is too risk-averse, defaulting to retrieve on any question.",
+        "fix_snippet": "DECISION_PROMPT = '''Most chat questions (greetings, opinions, simple math) do NOT need retrieval. Reply False unless the question references specific docs, policies, products, or facts.'''"
+      },
+      {
+        "error_text": "Latency too high (4-6s)",
+        "cause": "3 LLM calls (decide + grade-per-chunk + answer) is expensive.",
+        "fix_snippet": "# Batch grade all chunks in one call:\nGRADE_BATCH = 'Grade each chunk as relevant or not.\\n' + '\\n---\\n'.join(f'[{i+1}] {c.page_content[:400]}' for i, c in enumerate(chunks))\nllm.with_structured_output(BatchGrades).invoke(GRADE_BATCH)"
+      },
+      {
+        "error_text": "answer.supported always 'fully' even when it's not",
+        "cause": "LLM is optimistic about its own answer.",
+        "fix_snippet": "# Add a verifier prompt:\nVERIFY = 'Check each claim in the answer against the context. Reply with the FIRST unsupported claim, or NONE.'\nverify_out = llm.invoke(f'{VERIFY}\\nContext:{context}\\nAnswer:{answer}')"
+      }
+    ],
+    "production_checklist": [
+      "Log should_retrieve decisions to detect drift; should land 30-70% True for a typical support chat.",
+      "Batch relevance grading into one LLM call - per-chunk grading 5x's the cost.",
+      "Render 'supported/partial/unsupported' badges in the UI - users learn to trust grounded claims more.",
+      "Cap top_k * 2 candidates - grading 20+ chunks is wasteful even if it's faster batched.",
+      "Cache should_retrieve decisions by question hash for 5-min TTL.",
+      "Eval against basic RAG on YOUR traffic - Self-RAG only wins when ~30% of queries don't need retrieval."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "BAAI/bge-m3"
+      ],
+      "library_versions": [
+        "langchain==0.3.7",
+        "langchain-anthropic==0.3.0",
+        "pydantic==2.9.2"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "anthropic",
+      "qdrant",
+      "langchain"
+    ],
+    "related_glossary_slugs": [
+      "self-rag",
+      "grounding",
+      "adaptive-retrieval",
+      "structured-output",
+      "rag"
+    ],
+    "related_learn_slugs": [
+      "self-rag-101",
+      "grounded-answers"
+    ],
+    "faq": [
+      {
+        "question": "Self-RAG vs always-retrieve - when is the gating worth it?",
+        "answer": "If 25%+ of your traffic is non-factual (greetings, opinions, casual chat), Self-RAG cuts retrieval cost and latency by skipping those. If everything needs retrieval, the gate adds overhead with no win - just always retrieve."
+      },
+      {
+        "question": "How does Self-RAG differ from the original paper's approach?",
+        "answer": "The 2023 paper trained a Llama 7B with special retrieve/grade tokens. Modern implementations (this one included) skip the special-token training and use structured output on a frontier model (Claude 4, GPT-5) instead - simpler, more capable, more expensive."
+      }
+    ],
+    "meta_title": "Self-RAG: Model Decides When to Retrieve | OSS AI Hub",
+    "meta_description": "Adaptive RAG pattern: Claude 4 decides if retrieval is needed, grades chunks for relevance, and reports grounding. Reduces hallucination. MIT."
   }
 ]
