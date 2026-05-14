@@ -12141,6 +12141,326 @@
     "meta_description": "Generate exam questions by Bloom's level with rubrics, sample answers, and distractor analysis for multiple choice. Calibrated for fair, non-trick assessment."
   },
   {
+    "slug": "ui-component-from-screenshot",
+    "title": "UI Component From Screenshot",
+    "tldr": "Reads a UI screenshot and generates the HTML/CSS or React component implementing it \u2014 including responsive considerations, semantic HTML, and accessibility hooks.",
+    "category": "multimodal",
+    "tags": [
+      "ui",
+      "screenshot-to-code",
+      "vision",
+      "frontend"
+    ],
+    "best_for_tags": [
+      "frontend-prototyping",
+      "design-handoff",
+      "html-css"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Designer hands engineer a screenshot",
+        "example": "Mockup PNG \u2192 React + Tailwind component starter, ready to wire up state."
+      },
+      {
+        "scenario": "Competitive UI inspiration",
+        "example": "Inspect a competitor's UI; generate similar React component for your design system."
+      },
+      {
+        "scenario": "Legacy screenshot to modern stack",
+        "example": "Old app screenshot \u2192 modern Next.js + Tailwind rebuild starter."
+      },
+      {
+        "scenario": "Component library scaffolding",
+        "example": "Generate all 12 components from Figma screenshots in one pass."
+      }
+    ],
+    "when_not_to_use": "Skip for highly interactive components (animation, complex state) \u2014 generated code is starting point, not finished. Skip when design system constraints aren't known to AI.",
+    "full_prompt": "You are a senior frontend engineer. The screenshot is a UI component. Generate the implementation.\n\nINPUT (provided as image)\n- A UI screenshot\n- Design system / framework preferences: {framework_prefs}    (e.g., React+Tailwind, vanilla HTML/CSS, SwiftUI)\n- Component name: {component_name}\n- Notes from designer: {designer_notes}\n\nOUTPUT\n\n## 1. Visual breakdown\n- Identified elements (title, body, button, etc.)\n- Layout: stack / grid / flex\n- Spacing observations (gaps, padding \u2014 coarse estimates)\n- Color observations (background, accent, text)\n- Typography observations (size, weight)\n\n## 2. Semantic structure\nHTML structure choice with rationale:\n- Which element wraps the whole thing? (article, section, div, custom)\n- What landmarks? (header, main, nav, footer)\n- ARIA roles if non-trivial\n\n## 3. The code\nFull component code in {framework_prefs}. Include:\n- All visible content (use placeholder data, label as placeholder)\n- Tailwind / CSS classes for spacing, color, typography\n- ARIA attributes for accessibility\n- Mobile-responsive considerations (Tailwind sm:/md:/lg:)\n\n## 4. Stuff to wire up\nThings the screenshot shows but the code doesn't fully implement:\n- Click handlers (named, but stubbed)\n- State (mark with TODO and shape)\n- Data sources (mark as props with type)\n\n## 5. Accessibility audit\n- Color contrast estimate (pass/uncertain/fail WCAG AA \u2014 be honest)\n- Keyboard navigation considerations\n- Screen reader notes\n\n## 6. What I might have gotten wrong\n3-5 specific things in the screenshot that I'm uncertain about:\n- Spacing that's hard to read precisely\n- Whether the icon is decorative vs functional\n- Hover/focus states (not visible in static screenshot)\n- Conditional content (might appear in other states)\n\nRULES\n- The screenshot is one snapshot; many UI behaviors are invisible (hover, focus, disabled). Note them.\n- Use semantic HTML \u2014 don't div-everything.\n- Tailwind classes match what's visible; don't add unrequested decoration.\n- Honest about uncertainty \u2014 code is starter, not final.\n\nNow generate.",
+    "input_variables": [
+      {
+        "name": "framework_prefs",
+        "type": "string",
+        "description": "Framework + design system",
+        "required": true,
+        "example": "React + TypeScript + Tailwind CSS"
+      },
+      {
+        "name": "component_name",
+        "type": "string",
+        "description": "Component name",
+        "required": true,
+        "example": "UserProfileCard"
+      },
+      {
+        "name": "designer_notes",
+        "type": "string",
+        "description": "Any context from designer",
+        "required": false,
+        "example": "Hover state shows edit button. Mobile: stack vertically."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: visual breakdown, semantic structure, the code, what-to-wire-up TODOs, accessibility audit, uncertainty notes."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on semantic HTML and honest uncertainty notes."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good code generation; can be over-confident on pixel-perfect spacing."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; accessibility section sometimes thin."
+      },
+      {
+        "model": "llama-3.2-vision",
+        "compatibility": "fair",
+        "notes": "Coarser code generation; useful for layout sketch only."
+      }
+    ],
+    "variations": [
+      {
+        "label": "shadcn/ui components",
+        "description": "Use shadcn primitives.",
+        "prompt_snippet": "Add: \u2018build using shadcn/ui primitives \u2014 Button, Card, Avatar, etc. \u2014 not raw HTML.\u2019"
+      },
+      {
+        "label": "Vue 3 / SwiftUI / Jetpack Compose",
+        "description": "Different framework.",
+        "prompt_snippet": "Set framework_prefs accordingly. Adjust ARIA \u2192 platform a11y conventions (SwiftUI: accessibilityLabel etc.)"
+      },
+      {
+        "label": "Storybook + component",
+        "description": "Also generate a Storybook story.",
+        "prompt_snippet": "Add Section 7: \u2018Storybook story file with 2-3 variants of the component.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Spacing values fabricated as precise (e.g., padding: 17px).",
+        "fix": "Re-pin: \u2018use Tailwind scale (p-2, p-3, p-4) or round to nearest 4px; don't claim pixel-perfect.\u2019"
+      },
+      {
+        "symptom": "All elements div-soup.",
+        "fix": "Force semantic: \u2018use article / section / header / nav appropriately; explain choice in section 2.\u2019"
+      },
+      {
+        "symptom": "Missing accessibility considerations.",
+        "fix": "Force section 5 to be non-empty with specific contrast/keyboard notes."
+      },
+      {
+        "symptom": "Uncertainty section empty.",
+        "fix": "Add: \u2018every screenshot has hidden behaviors. List at minimum 3.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3.2-vision"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "screenshot-bug-report-builder",
+      "code-snippet-with-tests-tdd"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "multimodal",
+      "frontend-codegen"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Will it match my design system?",
+        "answer": "Generic Tailwind/React, yes. Custom design system, no \u2014 pass your conventions in framework_prefs (\u2018use our Button component from @ourorg/ui\u2019)."
+      },
+      {
+        "question": "Pixel-perfect output?",
+        "answer": "Don't expect it. Vision LLMs estimate spacing/color coarsely. Use generated code as scaffolding; designer + developer refine."
+      },
+      {
+        "question": "Multiple states (hover, error, etc.)?",
+        "answer": "Run multiple screenshots through the prompt; manually merge into a stateful component. Or provide all-states screenshot if your design tool supports it."
+      }
+    ],
+    "meta_title": "UI Component From Screenshot \u2014 Prompt",
+    "meta_description": "Generate React/HTML components from UI screenshots: semantic structure, Tailwind classes, ARIA, responsive considerations, uncertainty notes."
+  },
+  {
+    "slug": "video-frame-narrative",
+    "title": "Video Frame Narrative",
+    "tldr": "From 5-15 extracted video frames, produce a narrative description of what's happening: scene transitions, actions, key moments. Useful for video summarization and accessibility.",
+    "category": "multimodal",
+    "tags": [
+      "video",
+      "vision",
+      "narrative",
+      "accessibility"
+    ],
+    "best_for_tags": [
+      "video-summarization",
+      "video-accessibility",
+      "content-moderation"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Tutorial video summarization",
+        "example": "10 frames \u2192 narrative: \u2018instructor introduces the topic, demonstrates setup, runs the example, shows results.\u2019"
+      },
+      {
+        "scenario": "Long-form video \u2192 highlights",
+        "example": "Sample frames every 30s \u2192 narrative; pick key moments for clip extraction."
+      },
+      {
+        "scenario": "Accessibility audio description",
+        "example": "Generate text description for screen reader / visually impaired user."
+      },
+      {
+        "scenario": "Content moderation for video",
+        "example": "Spot-check frames; flag concerning patterns; route for human review."
+      }
+    ],
+    "when_not_to_use": "Skip when audio is available (transcribe audio for richer info). Skip for very fast-changing video (frame sampling misses critical moments).",
+    "full_prompt": "You are describing a video from sampled frames.\n\nINPUT (frames provided as images, in time order)\n- Number of frames: {n_frames}\n- Time interval between frames: {interval_seconds}\n- Optional caption / audio transcript: {audio_or_caption}\n\nOUTPUT\n\n## 1. Per-frame observations\nFor each frame:\n- Frame N (~time T):\n  - Setting / location\n  - Visible actors (1-3 sentences)\n  - Action in progress (verb-driven, what's HAPPENING)\n  - Notable on-screen text (verbatim)\n\nKeep each frame's description tight (3-5 sentences max).\n\n## 2. Scene transitions\nWhere do scenes change? Identify transition points and what changed (location, actor, time-of-day, mood).\n\n## 3. Narrative summary\n2-4 paragraphs describing what's happening as a story. Include:\n- Setup (what we start with)\n- Development (what changes / progresses)\n- Resolution (where it ends)\n\n## 4. Notable moments\n3-5 frames worth highlighting:\n- Frame N: what makes it notable\n- For each, a 1-line accessibility description suitable for audio narration\n\n## 5. What I don't see\nThings this analysis CAN'T determine from frames alone:\n- Audio content (unless caption provided)\n- Inter-frame motion (only sampled positions, not trajectories)\n- Content between sampled frames\n- Subtle expressions or details not visible at this resolution\n\nRULES\n- Describe what's THERE, not what you imagine. \u2018A person is holding a clipboard\u2019 \u2014 observed. \u2018They look frustrated\u2019 \u2014 inferred, mark as inferred.\n- Don't identify specific named individuals.\n- Use time references (~3s, ~17s) so readers can find moments in the source video.\n- Verb-driven: \u2018a hand reaches for the keyboard\u2019 beats \u2018there is a hand near a keyboard.\u2019\n\nNow describe.",
+    "input_variables": [
+      {
+        "name": "n_frames",
+        "type": "integer",
+        "description": "Number of frames",
+        "required": true,
+        "example": "8"
+      },
+      {
+        "name": "interval_seconds",
+        "type": "number",
+        "description": "Seconds between frames",
+        "required": true,
+        "example": "5"
+      },
+      {
+        "name": "audio_or_caption",
+        "type": "string",
+        "description": "Optional audio transcript / caption",
+        "required": false,
+        "example": "Instructor explaining how to set up the database"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Five sections: per-frame observations, scene transitions, narrative summary, notable moments, what's-not-seen list."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Honest about inference vs observation."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally over-narrative."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Handles longer frame sequences well."
+      },
+      {
+        "model": "llama-3.2-vision",
+        "compatibility": "fair",
+        "notes": "Coarser scene understanding."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Audio-fusion",
+        "description": "Combine with audio transcript.",
+        "prompt_snippet": "Add: \u2018interleave frame observations with audio timeline; show alignment between visual and spoken content.\u2019"
+      },
+      {
+        "label": "Chapter markers",
+        "description": "Suggest chapter cut points.",
+        "prompt_snippet": "Add: \u2018suggest 3-7 chapter markers with timestamps + titles based on scene transitions.\u2019"
+      },
+      {
+        "label": "Moderation-only",
+        "description": "Flag concerning content quickly.",
+        "prompt_snippet": "Replace narrative with: \u2018per-frame: any safety concerns (violence, sexual content, minors in sensitive context); rate concern level per frame.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Frames described in isolation; no narrative.",
+        "fix": "Re-pin Section 3 mandatory; refer to specific frames in the narrative."
+      },
+      {
+        "symptom": "Identifies specific named people.",
+        "fix": "Re-pin: \u2018never identify named individuals; describe by role/appearance.\u2019"
+      },
+      {
+        "symptom": "Over-imaginative inference.",
+        "fix": "Add: \u2018mark every inference clearly; rule of thumb \u2014 if I removed the frame, would my claim still seem true? If yes, it's inference, not observation.\u2019"
+      },
+      {
+        "symptom": "Notable-moments section misses obvious ones.",
+        "fix": "Add: \u2018the most notable moments are usually scene transitions, peak emotional moments, or new on-screen text appearances.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3.2-vision"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "image-description-alt-text",
+      "subtitle-translator-with-timing"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "video-understanding",
+      "frame-sampling"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How many frames is right?",
+        "answer": "5-15. Fewer misses transitions; more dilutes narrative. For 5-min video: 8-12 frames at ~30s intervals. For 30-min: extract scene-change frames specifically."
+      },
+      {
+        "question": "Why not just process the whole video?",
+        "answer": "Video models exist (Gemini, GPT-4o with video) but costlier. Frame sampling is a good cost-quality balance for many tasks."
+      },
+      {
+        "question": "Will it work for slow video (lectures, talks)?",
+        "answer": "Yes \u2014 frames at 30-60s intervals suffice. For fast video (sports, action), need much denser sampling or a true video model."
+      }
+    ],
+    "meta_title": "Video Frame Narrative \u2014 Prompt",
+    "meta_description": "Turn sampled video frames into narrative: per-frame observations, scene transitions, story summary, notable moments, honesty about gaps."
+  },
+  {
     "slug": "screenshot-bug-report-builder",
     "title": "Screenshot Bug Report Builder",
     "tldr": "Reads a screenshot of a UI bug and emits a complete bug report: what's wrong, expected vs. observed, where exactly on the screen, reproduction steps, and severity rationale.",
