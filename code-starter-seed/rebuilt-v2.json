@@ -5312,5 +5312,688 @@
     ],
     "meta_title": "LLaMA-Factory Multi-Task Fine-Tune | OSS AI Hub",
     "meta_description": "Production LLaMA-Factory recipe: multi-task LoRA across instruction + math + code datasets, web UI + CLI, FlashAttention 2. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "deepeval-llm-test-suite",
+    "title": "DeepEval LLM Test Suite (Pytest-Style)",
+    "tldr": "DeepEval test suite with metrics for faithfulness, answer relevance, bias, and toxicity. CI-integrated, pytest-compatible.",
+    "description": "Pytest-shaped LLM evaluation with DeepEval: assert metrics per test case, fail CI on regression, get rich HTML reports.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "deepeval",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "deepeval",
+      "pytest",
+      "ci",
+      "llm-eval"
+    ],
+    "best_for_tags": [
+      "llm-testing",
+      "ci",
+      "regression"
+    ],
+    "featured": true,
+    "when_to_use": "You want LLM quality tests that block CI. DeepEval reads like pytest, runs metrics via Claude/GPT-as-judge, and ships an HTML report. Best fit for chat or RAG apps where you need a regression-prevention safety net.",
+    "when_not_to_use": "Skip when (1) you have <50 test cases - manual review beats automated judging at that scale; (2) you don't want LLM-judged metrics (cost + variance) - use exact-match or BLEU instead; (3) you're doing model training - lm-evaluation-harness is the right tool for that.",
+    "quick_start": "1) `pip install deepeval`  2) Write a pytest file with @assert_test cases  3) `deepeval test run tests/`",
+    "full_code": "\"\"\"DeepEval test suite - pytest-style.\"\"\"\nfrom __future__ import annotations\n\nfrom deepeval import assert_test\nfrom deepeval.metrics import (\n    AnswerRelevancyMetric, FaithfulnessMetric, BiasMetric, ToxicityMetric,\n)\nfrom deepeval.test_case import LLMTestCase\nimport pytest\n\n\n# Replace with your RAG/agent call\ndef your_chatbot(question: str, context: list[str]) -> str:\n    \"\"\"Your app code here.\"\"\"\n    return f\"Stub answer to: {question}\"\n\n\n@pytest.mark.parametrize(\"question,context\", [\n    (\"What is your refund policy?\", [\"Refunds within 30 days. Original packaging required.\"]),\n    (\"Do you ship internationally?\", [\"We ship to US + Canada only.\"]),\n])\ndef test_refund_qa(question: str, context: list[str]):\n    actual = your_chatbot(question, context)\n    test_case = LLMTestCase(\n        input=question,\n        actual_output=actual,\n        retrieval_context=context,\n    )\n    assert_test(test_case, metrics=[\n        FaithfulnessMetric(threshold=0.7, model=\"claude-sonnet-4-5\"),\n        AnswerRelevancyMetric(threshold=0.7, model=\"claude-sonnet-4-5\"),\n        BiasMetric(threshold=0.2),       # higher = more biased; we want low\n        ToxicityMetric(threshold=0.1),   # higher = more toxic; we want very low\n    ])\n",
+    "code": "\"\"\"DeepEval test - core pattern.\"\"\"\nfrom deepeval import assert_test\nfrom deepeval.metrics import FaithfulnessMetric, AnswerRelevancyMetric\nfrom deepeval.test_case import LLMTestCase\n\n\ndef test_chatbot():\n    tc = LLMTestCase(input='Refund policy?', actual_output='...', retrieval_context=['Refunds within 30 days.'])\n    assert_test(tc, metrics=[\n        FaithfulnessMetric(threshold=0.7, model='claude-sonnet-4-5'),\n        AnswerRelevancyMetric(threshold=0.7, model='claude-sonnet-4-5'),\n    ])\n",
+    "dependencies": [
+      "deepeval",
+      "pytest"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "deepeval",
+        "version": ">=2.0.0",
+        "purpose": "Pytest-style LLM eval framework."
+      },
+      {
+        "name": "pytest",
+        "version": ">=8.0.0",
+        "purpose": "Test runner."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": false,
+        "description": "Required if model='claude-*'."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": false,
+        "description": "DeepEval defaults to GPT-4o as judge."
+      }
+    ],
+    "setup_steps": [
+      "`pip install deepeval>=2.0.0 pytest>=8.0.0`",
+      "Configure judge model (default OpenAI): `deepeval set-azure-openai ...` OR keep default with OPENAI_API_KEY.",
+      "Create `tests/test_quality.py` with @pytest.mark.parametrize cases.",
+      "Run: `deepeval test run tests/` (or just `pytest tests/`).",
+      "Inspect the generated HTML report at `.deepeval-cache/test-runs/...`",
+      "Wire into CI: add a `deepeval test run` step that fails the build on threshold breach."
+    ],
+    "variations": [
+      {
+        "label": "G-Eval custom metric",
+        "description": "Define a custom judged metric with one-line criteria.",
+        "code_snippet": "from deepeval.metrics import GEval\nfrom deepeval.test_case import LLMTestCaseParams\nmetric = GEval(name='Helpful', criteria='Does it actually help the user complete their task?', evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT], threshold=0.6)"
+      },
+      {
+        "label": "Eval an entire RAG pipeline",
+        "description": "Use ContextualPrecisionMetric + ContextualRecallMetric for retrieval quality.",
+        "code_snippet": "from deepeval.metrics import ContextualPrecisionMetric, ContextualRecallMetric\nmetrics = [ContextualPrecisionMetric(threshold=0.5), ContextualRecallMetric(threshold=0.5)]"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "RateLimitError on judge model",
+        "cause": "Running too many cases in parallel against the same API key.",
+        "fix_snippet": "# In conftest.py:\nimport deepeval\ndeepeval.evaluate(test_cases=..., max_concurrent=4)"
+      },
+      {
+        "error_text": "FaithfulnessMetric always returns 0.0",
+        "cause": "retrieval_context is empty.",
+        "fix_snippet": "# Faithfulness requires retrieval_context list:\ntc = LLMTestCase(input='...', actual_output='...', retrieval_context=['chunk 1', 'chunk 2'])"
+      },
+      {
+        "error_text": "Threshold 0.7 keeps failing on subjective tests",
+        "cause": "Judge variance; one bad sample shouldn't fail CI.",
+        "fix_snippet": "# Average over 3 runs:\nmetric = AnswerRelevancyMetric(threshold=0.7, model='claude-sonnet-4-5', async_mode=True, strict_mode=False)"
+      }
+    ],
+    "production_checklist": [
+      "Curate at least 50 test cases before relying on DeepEval in CI.",
+      "Use Claude Sonnet 4.5 as judge for highest correlation with human ratings.",
+      "Cache test results - re-running the same cases is wasteful + nondeterministic.",
+      "Track per-metric trends weekly - silent quality regressions are caught here.",
+      "Set thresholds conservatively at first (0.5), tighten as you collect baseline data.",
+      "Never use the model under test as its own judge - clear bias.",
+      "Pin deepeval version - metric implementations change subtly across versions."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5 as judge"
+      ],
+      "library_versions": [
+        "deepeval==2.0.0",
+        "pytest==8.3.4"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "deepeval",
+      "promptfoo",
+      "ragas"
+    ],
+    "related_glossary_slugs": [
+      "llm-as-judge",
+      "g-eval",
+      "faithfulness-metric",
+      "answer-relevancy"
+    ],
+    "related_learn_slugs": [
+      "llm-eval-101"
+    ],
+    "faq": [
+      {
+        "question": "DeepEval vs RAGAS vs Promptfoo?",
+        "answer": "DeepEval: pytest-shaped, code-first, best for engineers wiring quality into CI. RAGAS: RAG-specific metrics, simpler API, best for RAG-only eval. Promptfoo: YAML-driven A/B comparisons across models/prompts, best for prompt iteration. Use DeepEval for unit-test-style quality gates, RAGAS for RAG observability, Promptfoo for prompt iteration."
+      },
+      {
+        "question": "Cost of running DeepEval in CI?",
+        "answer": "Each case typically needs 2-4 judge calls (one per metric). At Claude Sonnet 4.5 rates ($3/1M input), 100 cases * 4 metrics * ~500 input tokens = ~200k tokens = $0.60 per run. Cheap relative to the time it saves catching regressions."
+      }
+    ],
+    "meta_title": "DeepEval LLM Test Suite (Pytest-Style) | OSS AI Hub",
+    "meta_description": "Production DeepEval recipe: pytest-style LLM quality tests with faithfulness, relevancy, bias, toxicity metrics. CI-ready. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "promptfoo-prompt-regression",
+    "title": "Promptfoo Prompt Regression Testing (A/B Across 5 Models)",
+    "tldr": "Promptfoo config for A/B testing prompts across 5 models with 100 test cases. Compares cost, latency, and accuracy in one report.",
+    "description": "YAML-driven prompt eval: declare prompts + providers + test cases + assertions; promptfoo runs all combos in parallel + ships an HTML diff.",
+    "category": "evaluation",
+    "language": "yaml",
+    "framework": "promptfoo",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "promptfoo",
+      "regression",
+      "a-b-test"
+    ],
+    "best_for_tags": [
+      "prompt-testing",
+      "regression"
+    ],
+    "when_to_use": "You're iterating on prompts and want apples-to-apples comparison across model providers + prompt variants. Promptfoo is the cleanest tool for this in 2026 - one YAML, one command, one report.",
+    "when_not_to_use": "Skip when (1) you're testing agents/tools - Promptfoo is prompt-first; (2) you need integration with pytest - DeepEval is cleaner there; (3) you only have one model + one prompt - just eval directly.",
+    "quick_start": "1) `npm i -g promptfoo`  2) Save promptfooconfig.yaml  3) `promptfoo eval` then `promptfoo view`",
+    "full_code": "# promptfooconfig.yaml -- A/B 2 prompts x 5 models x 100 test cases\ndescription: \"OSS support agent prompt regression\"\n\nprompts:\n  - id: v1\n    label: \"Production prompt (v1)\"\n    raw: |\n      You are an OSS support agent. Answer the user's question using the context.\n      Cite sources. If unsure, say so.\n      Context: {{context}}\n      Question: {{question}}\n  - id: v2\n    label: \"New prompt (v2)\"\n    raw: |\n      You are a senior OSS support specialist. Answer concisely from the context.\n      Always include a verbatim quote when citing. If the context doesn't answer, say \"I don't have that information\".\n      Context: {{context}}\n      Question: {{question}}\n\nproviders:\n  - anthropic:claude-sonnet-4-5\n  - anthropic:claude-haiku-4-5\n  - openai:gpt-5\n  - openai:gpt-4o-mini\n  - ollama:llama3.3:70b-instruct-q4_K_M\n\ntests:\n  - vars:\n      question: \"What's the refund window?\"\n      context: \"Refunds within 30 days of purchase.\"\n    assert:\n      - type: contains\n        value: \"30 days\"\n      - type: not-contains\n        value: \"I'm sorry, I cannot\"\n      - type: llm-rubric\n        value: \"Cites the 30-day window from the context.\"\n        provider: anthropic:claude-sonnet-4-5\n\n  - vars:\n      question: \"Can I return a digital download?\"\n      context: \"Refunds within 30 days of purchase.\"\n    assert:\n      - type: llm-rubric\n        value: \"Says it doesn't know OR notes the context doesn't address digital downloads.\"\n        provider: anthropic:claude-sonnet-4-5\n\n# Run: promptfoo eval --max-concurrency 5\n# View: promptfoo view  (opens an interactive HTML report)\n",
+    "code": "# promptfooconfig.yaml (excerpt)\nprompts:\n  - id: v1\n    raw: 'Answer from context.\\nContext: {{context}}\\nQuestion: {{question}}'\nproviders: [anthropic:claude-sonnet-4-5, openai:gpt-4o-mini]\ntests:\n  - vars: {question: 'Refund policy?', context: 'Refunds within 30 days.'}\n    assert:\n      - type: contains\n        value: '30 days'\n",
+    "dependencies": [
+      "promptfoo"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "promptfoo",
+        "version": ">=0.100.0",
+        "purpose": "YAML-driven LLM eval CLI."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": false,
+        "description": "For anthropic:* providers."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": false,
+        "description": "For openai:* providers."
+      }
+    ],
+    "setup_steps": [
+      "`npm i -g promptfoo` (or `npx promptfoo` ad-hoc).",
+      "`promptfoo init` to scaffold a config.",
+      "Edit `promptfooconfig.yaml` with prompts + providers + tests.",
+      "Run: `promptfoo eval --max-concurrency 5`",
+      "View: `promptfoo view` (opens http://localhost:15500 with an interactive A/B table).",
+      "Wire into CI: `promptfoo eval --output results.json` + fail on assertion errors."
+    ],
+    "variations": [
+      {
+        "label": "Test against a CSV of cases",
+        "description": "Generate tests dynamically from a CSV file.",
+        "code_snippet": "tests: ./testcases.csv\n# CSV columns become {{vars}}; assertions in 'assert' column"
+      },
+      {
+        "label": "Add a custom Python assertion",
+        "description": "When built-in assertions aren't enough.",
+        "code_snippet": "# my_assertion.py\ndef get_assert(output, context):\n    return {'pass': 'cite' in output.lower(), 'score': 1.0 if 'cite' in output.lower() else 0.0}\n# In yaml:  assert: - type: python\n#                    value: file://my_assertion.py"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "All assertions pass for both prompts - no signal",
+        "cause": "Assertions are too lenient.",
+        "fix_snippet": "# Add llm-rubric assertions that ask the judge to grade carefully:\n- type: llm-rubric\n  value: 'Quality criteria...'\n  threshold: 0.7"
+      },
+      {
+        "error_text": "Eval takes 30 min on 500 cases",
+        "cause": "Default concurrency is low.",
+        "fix_snippet": "promptfoo eval --max-concurrency 10 --no-cache"
+      },
+      {
+        "error_text": "Inconsistent results between runs",
+        "cause": "Temperature default is provider-specific.",
+        "fix_snippet": "providers:\n  - id: anthropic:claude-sonnet-4-5\n    config:\n      temperature: 0\n      max_tokens: 500"
+      }
+    ],
+    "production_checklist": [
+      "Pin model providers + temperature for reproducibility.",
+      "Curate at least 50 diverse test cases - 5 examples doesn't reveal regressions.",
+      "Run eval before every prompt change - commit results to git for traceability.",
+      "Compare cost + latency, not just correctness - cheap model that's 90% as good often wins.",
+      "Use --no-cache when changing model versions; otherwise leverage cache.",
+      "Pin promptfoo version + commit promptfooconfig.yaml.",
+      "Wire `promptfoo eval --output results.json` into CI - fail on regression."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5",
+        "claude-haiku-4-5",
+        "gpt-5",
+        "gpt-4o-mini",
+        "llama3.3:70b"
+      ],
+      "library_versions": [
+        "promptfoo==0.100.0",
+        "Node 20"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "promptfoo",
+      "deepeval"
+    ],
+    "related_glossary_slugs": [
+      "prompt-eval",
+      "a-b-testing",
+      "llm-as-judge"
+    ],
+    "related_learn_slugs": [
+      "prompt-eval-101"
+    ],
+    "faq": [
+      {
+        "question": "Promptfoo vs DeepEval?",
+        "answer": "Promptfoo: YAML-first, multi-model A/B, best for prompt iteration + provider comparison. DeepEval: pytest-shaped, code-first, best for CI-blocking quality gates on a single deployed app. Most teams use both - Promptfoo when picking prompts/models, DeepEval to keep them honest in production."
+      },
+      {
+        "question": "Can I run against my own local API?",
+        "answer": "Yes - use `providers: ['http:my-api']` with a custom HTTP config block. Promptfoo supports anything OpenAI-compatible out of the box (vLLM, Ollama, LiteLLM) and arbitrary HTTP for custom endpoints."
+      }
+    ],
+    "meta_title": "Promptfoo Prompt Regression Testing | OSS AI Hub",
+    "meta_description": "Production Promptfoo recipe: YAML A/B testing across 5 models with 100 test cases. Cost + latency + accuracy report. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "ragas-rag-eval",
+    "title": "Ragas RAG Evaluation (4 Metrics, Fully Automated)",
+    "tldr": "Ragas pipeline: faithfulness + answer relevance + context precision + context recall - all LLM-judged. Outputs CSV for dashboards.",
+    "description": "Production Ragas eval harness: load eval set (question + ground_truth + retrieved_contexts + answer), score with 4 core metrics, export per-row + aggregate CSV.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "ragas",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "ragas",
+      "rag-eval",
+      "llm-judge"
+    ],
+    "best_for_tags": [
+      "rag-eval",
+      "production-rag"
+    ],
+    "featured": true,
+    "when_to_use": "You shipped a RAG and need to track quality over time. Ragas's 4 metrics cover the core failure modes: hallucination (faithfulness), off-topic answer (relevance), bad retrieval (precision/recall). Run weekly on a held-out set + dashboard the deltas.",
+    "when_not_to_use": "Skip Ragas when (1) you don't have ground_truth labels - precision/recall metrics need them; (2) your judge model is weaker than the generator - judge variance dominates the signal; (3) your stack isn't RAG.",
+    "quick_start": "1) `pip install ragas datasets`  2) Prepare eval set with question/ground_truth/contexts/answer  3) `python ragas_eval.py`",
+    "full_code": "\"\"\"Ragas RAG evaluation - 4 core metrics.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom datasets import Dataset\nimport pandas as pd\nfrom ragas import evaluate\nfrom ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall\nfrom ragas.llms import LangchainLLMWrapper\nfrom ragas.embeddings import LangchainEmbeddingsWrapper\nfrom langchain_anthropic import ChatAnthropic\nfrom langchain_openai import OpenAIEmbeddings\n\n\n# Eval set columns: question, ground_truth (gold answer), contexts (retrieved chunks), answer (system output)\nSAMPLE = {\n    \"question\": [\n        \"What's the refund window?\",\n        \"Do you ship internationally?\",\n    ],\n    \"ground_truth\": [\n        \"30 days from purchase.\",\n        \"US and Canada only.\",\n    ],\n    \"contexts\": [\n        [\"Refunds within 30 days of purchase. Original packaging required.\"],\n        [\"We ship to US + Canada only. International shipping is not available.\"],\n    ],\n    \"answer\": [\n        \"You can request a refund within 30 days of purchase.\",\n        \"We currently only ship to the US and Canada.\",\n    ],\n}\n\n\ndef main() -> None:\n    ds = Dataset.from_dict(SAMPLE)\n    judge = LangchainLLMWrapper(ChatAnthropic(model=\"claude-sonnet-4-5\", temperature=0))\n    embed = LangchainEmbeddingsWrapper(OpenAIEmbeddings(model=\"text-embedding-3-small\"))\n\n    metrics = [faithfulness, answer_relevancy, context_precision, context_recall]\n    result = evaluate(ds, metrics=metrics, llm=judge, embeddings=embed)\n\n    df = result.to_pandas()\n    print(df)\n    df.to_csv(\"ragas_eval_results.csv\", index=False)\n\n    # Aggregate\n    print(\"\\n=== Aggregate ===\")\n    for m in metrics:\n        print(f\"{m.name}: {df[m.name].mean():.3f}\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+    "code": "from datasets import Dataset\nfrom ragas import evaluate\nfrom ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall\n\nds = Dataset.from_dict({'question': [...], 'ground_truth': [...], 'contexts': [[...]], 'answer': [...]})\nresult = evaluate(ds, metrics=[faithfulness, answer_relevancy, context_precision, context_recall])\nresult.to_pandas().to_csv('ragas_results.csv', index=False)\n",
+    "dependencies": [
+      "ragas",
+      "datasets",
+      "langchain-anthropic"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "ragas",
+        "version": ">=0.2.0",
+        "purpose": "RAG-specific eval framework."
+      },
+      {
+        "name": "datasets",
+        "version": ">=3.0.0",
+        "purpose": "HF Dataset for eval data."
+      },
+      {
+        "name": "langchain-anthropic",
+        "version": ">=0.3.0",
+        "purpose": "Claude as judge."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Judge model key."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "For embeddings (or swap to BGE)."
+      }
+    ],
+    "setup_steps": [
+      "`pip install ragas>=0.2.0 datasets>=3.0.0 langchain-anthropic langchain-openai`",
+      "Export ANTHROPIC_API_KEY + OPENAI_API_KEY.",
+      "Build eval set as HF Dataset with 4 columns: question, ground_truth, contexts, answer.",
+      "Save as `ragas_eval.py` and run.",
+      "Inspect per-row scores in `ragas_eval_results.csv`.",
+      "Wire into your weekly cron - track aggregate metric deltas in a dashboard."
+    ],
+    "variations": [
+      {
+        "label": "Use BGE embeddings instead of OpenAI",
+        "description": "Local + free embeddings.",
+        "code_snippet": "from langchain_huggingface import HuggingFaceEmbeddings\nembed = LangchainEmbeddingsWrapper(HuggingFaceEmbeddings(model_name='BAAI/bge-small-en-v1.5'))"
+      },
+      {
+        "label": "Add custom metrics",
+        "description": "e.g. answer_correctness (combines faithfulness + relevance with ground_truth).",
+        "code_snippet": "from ragas.metrics import answer_correctness\nmetrics = [faithfulness, answer_relevancy, answer_correctness]"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "context_recall returns 0.0 always",
+        "cause": "Missing ground_truth column.",
+        "fix_snippet": "# context_recall NEEDS ground_truth. Add it to your Dataset OR drop the metric."
+      },
+      {
+        "error_text": "Faithfulness scores wildly inconsistent run-to-run",
+        "cause": "Judge temperature non-zero.",
+        "fix_snippet": "judge = LangchainLLMWrapper(ChatAnthropic(model='claude-sonnet-4-5', temperature=0))"
+      },
+      {
+        "error_text": "Evaluation hangs or times out",
+        "cause": "API rate limit on judge model.",
+        "fix_snippet": "# Set max_workers + retry:\nresult = evaluate(ds, metrics=metrics, llm=judge, raise_exceptions=False, run_config=RunConfig(max_workers=4))"
+      }
+    ],
+    "production_checklist": [
+      "Curate at least 100 ground-truth-labeled examples - smaller sets have noisy aggregate metrics.",
+      "Use temperature=0 on the judge - non-zero turns Ragas results into a slot machine.",
+      "Run Ragas weekly on a frozen golden set + ad-hoc on prod traffic samples.",
+      "Track per-question scores - aggregate hides specific regressions.",
+      "Pin Ragas minor version - 0.1.x to 0.2.x changed metric internals.",
+      "Avoid using the same model for generation and judging - clear bias.",
+      "Cache judge calls aggressively - same (question, answer, contexts) triple repeats often."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5 as judge",
+        "text-embedding-3-small"
+      ],
+      "library_versions": [
+        "ragas==0.2.10",
+        "datasets==3.0.1"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "ragas",
+      "deepeval"
+    ],
+    "related_glossary_slugs": [
+      "rag-eval",
+      "faithfulness",
+      "context-precision",
+      "context-recall",
+      "llm-as-judge"
+    ],
+    "related_learn_slugs": [
+      "rag-eval-101"
+    ],
+    "faq": [
+      {
+        "question": "Which Ragas metric matters most?",
+        "answer": "For preventing hallucination: faithfulness. For preventing off-topic answers: answer_relevancy. For diagnosing retrieval: context_precision (junk retrieved?) + context_recall (gold context missing?). Faithfulness is the one most teams gate releases on."
+      },
+      {
+        "question": "Do I need ground_truth labels?",
+        "answer": "For faithfulness + answer_relevancy + context_precision: no. For context_recall + answer_correctness: yes. If labeling is expensive, drop to the 3 unsupervised metrics and add human spot-checks weekly."
+      }
+    ],
+    "meta_title": "Ragas RAG Evaluation (4 Metrics, Automated) | OSS AI Hub",
+    "meta_description": "Production Ragas recipe: faithfulness + answer_relevance + context_precision + context_recall via Claude judge. CSV output. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "lm-eval-harness-benchmarks",
+    "title": "lm-evaluation-harness on Custom Tasks (MMLU + HumanEval + Yours)",
+    "tldr": "Run MMLU + HumanEval + custom YAML tasks on any HF model. JSON results parser + comparison plot script.",
+    "description": "EleutherAI's lm-evaluation-harness: the standard academic benchmark runner. Add a YAML task for your domain, run all benchmarks, compare models with one command.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "lm-evaluation-harness",
+    "difficulty_tier": "intermediate",
+    "tags": [
+      "lm-eval-harness",
+      "mmlu",
+      "humaneval",
+      "benchmarks"
+    ],
+    "best_for_tags": [
+      "academic-benchmarks",
+      "model-comparison"
+    ],
+    "when_to_use": "You're comparing fine-tuned models to each other and to baselines (Llama 3.1 base, Llama 3.3 instruct, Mixtral). lm-evaluation-harness is the gold-standard runner - if you cite MMLU/HumanEval/GSM8K numbers, this is how the rest of the field measured them.",
+    "when_not_to_use": "Skip when (1) you're eval'ing applied quality (chat, agents) - DeepEval/Ragas are right; (2) you need streaming/long-context evals - harness is single-turn; (3) you want pretty dashboards - the JSON output needs a viz layer.",
+    "quick_start": "1) `pip install lm-eval`  2) `lm_eval --model hf --model_args pretrained=meta-llama/Llama-3.1-8B-Instruct --tasks mmlu,hellaswag,humaneval --batch_size auto`",
+    "full_code": "\"\"\"lm-evaluation-harness with a custom YAML task + JSON comparison.\"\"\"\nimport json\nimport subprocess\nfrom pathlib import Path\n\n\ndef run_harness(model_id: str, tasks: list[str], output: str, batch_size: str = \"auto\") -> dict:\n    cmd = [\n        \"lm_eval\",\n        \"--model\", \"hf\",\n        \"--model_args\", f\"pretrained={model_id},dtype=bfloat16\",\n        \"--tasks\", \",\".join(tasks),\n        \"--batch_size\", batch_size,\n        \"--output_path\", output,\n        \"--log_samples\",\n    ]\n    print(\"[lm_eval]\", \" \".join(cmd))\n    subprocess.run(cmd, check=True)\n    result_file = list(Path(output).glob(f\"**/results_*.json\"))[-1]\n    return json.loads(result_file.read_text())\n\n\ndef compare(model_a: str, model_b: str, tasks: list[str]) -> None:\n    a = run_harness(model_a, tasks, \"./out/a\")\n    b = run_harness(model_b, tasks, \"./out/b\")\n    print(f\"\\n{'task':<25} {model_a:<35} {model_b:<35}\")\n    for task in tasks:\n        sa = a[\"results\"][task].get(\"acc,none\", a[\"results\"][task].get(\"acc\"))\n        sb = b[\"results\"][task].get(\"acc,none\", b[\"results\"][task].get(\"acc\"))\n        delta = (sb - sa) * 100 if sa and sb else 0\n        print(f\"{task:<25} {sa:<35.4f} {sb:<35.4f}  delta {delta:+.2f}pp\")\n\n\nif __name__ == \"__main__\":\n    TASKS = [\"mmlu\", \"hellaswag\", \"humaneval\"]\n    compare(\n        model_a=\"meta-llama/Llama-3.1-8B-Instruct\",\n        model_b=\"chadcorp/llama3_1_8b_ossai_v1\",\n        tasks=TASKS,\n    )\n",
+    "code": "import subprocess\n\nsubprocess.run(['lm_eval', '--model', 'hf',\n    '--model_args', 'pretrained=meta-llama/Llama-3.1-8B-Instruct,dtype=bfloat16',\n    '--tasks', 'mmlu,hellaswag,humaneval',\n    '--batch_size', 'auto',\n    '--output_path', './out',\n    '--log_samples'], check=True)\n",
+    "dependencies": [
+      "lm-eval"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "lm-eval",
+        "version": ">=0.4.5",
+        "purpose": "EleutherAI lm-evaluation-harness."
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Model + dataset access."
+      }
+    ],
+    "setup_steps": [
+      "Provision GPU (any 16GB+ for 8B; 80GB for 70B).",
+      "`pip install lm-eval>=0.4.5`",
+      "Login: `huggingface-cli login`",
+      "Run a smoke test: `lm_eval --model hf --model_args pretrained=Qwen/Qwen2.5-0.5B --tasks lambada_openai --limit 100`",
+      "Run the full comparison: see full_code.",
+      "Inspect results in `./out/<model>/results_<timestamp>.json` - the JSON includes per-sample logs if --log_samples set."
+    ],
+    "variations": [
+      {
+        "label": "Add a custom YAML task for your domain",
+        "description": "Define your eval as a YAML task file.",
+        "code_snippet": "# my_task.yaml\ntask: ossai_qa\ndataset_path: chadcorp/ossai-eval\ntest_split: test\ndoc_to_text: 'Q: {{question}}\\nA:'\ndoc_to_target: '{{answer}}'\nmetric_list:\n  - metric: exact_match\n    aggregation: mean\noutput_type: generate_until\n# Then: lm_eval --tasks my_task.yaml ..."
+      },
+      {
+        "label": "vLLM backend for speed",
+        "description": "10-50x faster than HF backend on large models.",
+        "code_snippet": "lm_eval --model vllm --model_args pretrained=meta-llama/Llama-3.1-8B-Instruct,tensor_parallel_size=1,dtype=bfloat16 --tasks mmlu --batch_size auto"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "RuntimeError: CUDA out of memory during MMLU",
+        "cause": "Batch size auto picked too big for VRAM.",
+        "fix_snippet": "lm_eval ... --batch_size 4  # fixed instead of auto"
+      },
+      {
+        "error_text": "Task 'mmlu' is deprecated, use 'mmlu_continuation'",
+        "cause": "lm-eval renames tasks across versions.",
+        "fix_snippet": "# Check current name: lm_eval --tasks list | grep -i mmlu"
+      },
+      {
+        "error_text": "HumanEval needs separate install",
+        "cause": "The code-exec sandbox isn't bundled.",
+        "fix_snippet": "pip install lm-eval[extras]\n# Or: pip install evaluate human-eval"
+      }
+    ],
+    "production_checklist": [
+      "Pin lm-eval version + commit the exact command - benchmark numbers are version-sensitive.",
+      "Use --log_samples for reproducibility - lets you investigate per-question failures.",
+      "Run on a known checkpoint (e.g. meta-llama/Llama-3.1-8B-Instruct) periodically to catch silent regressions in harness.",
+      "Use vLLM backend for >7B models - HF backend is 10-50x slower.",
+      "Cache results by (model_id, task, version) hash - reruns are wasteful.",
+      "For published numbers, fix --num_fewshot per task (MMLU uses 5-shot canonically).",
+      "Watch metric naming - 'acc' vs 'acc,none' vs 'em' varies by task."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.1-8B-Instruct"
+      ],
+      "library_versions": [
+        "lm-eval==0.4.5",
+        "vllm==0.7.0 (backend)"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "lm-evaluation-harness",
+      "vllm"
+    ],
+    "related_glossary_slugs": [
+      "mmlu",
+      "humaneval",
+      "few-shot",
+      "perplexity"
+    ],
+    "related_learn_slugs": [
+      "benchmarks-101"
+    ],
+    "faq": [
+      {
+        "question": "Why are my MMLU numbers lower than the paper?",
+        "answer": "Check (a) --num_fewshot 5 (the canonical setting), (b) the harness version (numbers shift slightly across versions), (c) model dtype (bf16 vs fp16 can change a few tenths), and (d) whether you used the chat template (instruct models need it). Reproducing published numbers is finicky - use the exact command from the model card."
+      },
+      {
+        "question": "Is lm-eval-harness right for production eval?",
+        "answer": "Not directly - academic benchmarks measure general capability, not your specific use case. Use harness to compare base models pre-fine-tune, then use DeepEval/Ragas for applied quality on your domain."
+      }
+    ],
+    "meta_title": "lm-evaluation-harness on Custom Tasks | OSS AI Hub",
+    "meta_description": "Production lm-evaluation-harness recipe: MMLU + HumanEval + custom YAML tasks, vLLM backend, model comparison script. MIT."
+  },
+  {
+    "license": "MIT",
+    "attribution": "OSS AI Hub - original work, MIT-licensed.",
+    "github_url": "https://github.com/chadcorp/ossaihub-cron/tree/main/code-starter-seed",
+    "status": "approved",
+    "archived": false,
+    "submitter_email": "seed@ossaihub.com",
+    "submitter_name": "OSS Hub",
+    "slug": "golden-dataset-ab-harness",
+    "title": "Golden Dataset A/B Harness for Prompt Changes",
+    "tldr": "Pytest harness that runs each prompt variant against a golden dataset, computes deltas, fails CI on regression beyond threshold.",
+    "description": "Lightweight pure-pytest A/B harness: load gold cases, call variant A + variant B in parallel, compute metric deltas, fail the build on regression.",
+    "category": "evaluation",
+    "language": "python",
+    "framework": "pytest",
+    "difficulty_tier": "beginner",
+    "tags": [
+      "golden-dataset",
+      "regression",
+      "pytest",
+      "ci"
+    ],
+    "best_for_tags": [
+      "ci",
+      "golden-dataset",
+      "regression"
+    ],
+    "when_to_use": "Simplest possible CI quality gate: you have 50-500 gold (input, expected_keywords) pairs and want a pure-pytest harness that prevents prompt regressions. No external eval framework needed.",
+    "when_not_to_use": "Skip when (1) you need LLM-judged metrics - DeepEval/Promptfoo are right; (2) you need multi-model comparison - Promptfoo wins; (3) your eval is purely subjective - keyword/regex matching won't help.",
+    "quick_start": "1) `pip install pytest`  2) Save `golden_cases.jsonl` + `test_prompts.py`  3) `pytest -v --regression-threshold=0.05`",
+    "full_code": "\"\"\"Pure-pytest A/B harness against a golden dataset.\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport pathlib\nimport re\nfrom typing import Iterable\n\nimport pytest\n\n\nGOLDEN_PATH = pathlib.Path(\"golden_cases.jsonl\")\n\n\ndef load_cases() -> list[dict]:\n    return [json.loads(ln) for ln in GOLDEN_PATH.read_text(encoding=\"utf-8\").splitlines() if ln.strip()]\n\n\ndef chat(prompt_template: str, question: str) -> str:\n    \"\"\"Plug in your model call here.\"\"\"\n    # Stub - replace with your actual LLM call.\n    return f\"Stub answer using {prompt_template[:15]}... for: {question}\"\n\n\ndef score(answer: str, expected_keywords: list[str], banned_keywords: list[str]) -> float:\n    \"\"\"Simple keyword + regex score. Replace with your domain scorer.\"\"\"\n    hits = sum(1 for k in expected_keywords if k.lower() in answer.lower())\n    banned = sum(1 for k in banned_keywords if k.lower() in answer.lower())\n    return max(0.0, (hits / max(len(expected_keywords), 1)) - (banned * 0.5))\n\n\nPROMPT_V1 = \"You are a support agent. Answer the user's question.\\nQ: {q}\\nA:\"\nPROMPT_V2 = \"You are a senior support specialist. Answer concisely from the context.\\nQ: {q}\\nA:\"\n\n\n@pytest.fixture(scope=\"session\")\ndef cases():\n    return load_cases()\n\n\ndef _score_variant(cases: list[dict], template: str) -> float:\n    scores = [score(chat(template, c[\"question\"]), c[\"expected_keywords\"], c.get(\"banned_keywords\", [])) for c in cases]\n    return sum(scores) / len(scores)\n\n\ndef test_v2_does_not_regress(cases):\n    v1_score = _score_variant(cases, PROMPT_V1)\n    v2_score = _score_variant(cases, PROMPT_V2)\n    regression = v1_score - v2_score\n    threshold = 0.05  # max acceptable 5pp drop\n    print(f\"\\nV1={v1_score:.3f}  V2={v2_score:.3f}  regression={regression*100:+.1f}pp\")\n    assert regression <= threshold, f\"V2 regressed {regression*100:.1f}pp > {threshold*100:.0f}pp threshold\"\n",
+    "code": "import json, pathlib, pytest\n\nGOLDEN = pathlib.Path('golden_cases.jsonl')\n\ndef load_cases():\n    return [json.loads(l) for l in GOLDEN.read_text().splitlines() if l.strip()]\n\ndef test_no_regression():\n    cases = load_cases()\n    v1_avg = sum(score(call(P_V1, c)) for c in cases) / len(cases)\n    v2_avg = sum(score(call(P_V2, c)) for c in cases) / len(cases)\n    assert v1_avg - v2_avg <= 0.05, 'V2 regressed > 5pp'\n",
+    "dependencies": [
+      "pytest"
+    ],
+    "dependencies_v2": [
+      {
+        "name": "pytest",
+        "version": ">=8.0.0",
+        "purpose": "Test runner."
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "`pip install pytest>=8.0.0`",
+      "Create `golden_cases.jsonl`: one JSON per line with {question, expected_keywords, banned_keywords}.",
+      "Wire your real LLM call in `chat()`.",
+      "Customize `score()` to match your quality bar (e.g. add fuzzy match, regex, BLEU).",
+      "Save as `test_prompts.py`.",
+      "Run: `pytest test_prompts.py -v`",
+      "Wire into CI - the test fails the build on regression."
+    ],
+    "variations": [
+      {
+        "label": "Add LLM-judged scoring",
+        "description": "Replace keyword matching with Claude-judged 1-5 score.",
+        "code_snippet": "from anthropic import Anthropic\nclient = Anthropic()\n\ndef llm_score(answer, expected):\n    res = client.messages.create(model='claude-sonnet-4-5', max_tokens=10,\n        messages=[{'role':'user', 'content': f'Rate 1-5 how well \"{answer}\" addresses: \"{expected}\". Reply with a single digit.'}])\n    return int(res.content[0].text.strip()) / 5.0"
+      },
+      {
+        "label": "Compare 3+ variants at once",
+        "description": "Score V1/V2/V3 + write a comparison CSV.",
+        "code_snippet": "VARIANTS = {'v1': P_V1, 'v2': P_V2, 'v3': P_V3}\nresults = {name: _score_variant(cases, t) for name, t in VARIANTS.items()}\n# Write a CSV/Markdown table"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Scoring function returns the same value for all variants",
+        "cause": "Expected_keywords too broad/generic.",
+        "fix_snippet": "# Be specific: 'refund within 30' not 'refund'\n# Add banned_keywords for must-NOT-have phrases"
+      },
+      {
+        "error_text": "Test is flaky between runs",
+        "cause": "LLM temperature non-zero.",
+        "fix_snippet": "# In your chat() call: temperature=0, max_tokens=200"
+      },
+      {
+        "error_text": "All variants score 100%",
+        "cause": "Golden cases are too easy.",
+        "fix_snippet": "# Add adversarial cases: typos, ambiguous queries, edge cases your real users send."
+      }
+    ],
+    "production_checklist": [
+      "Curate 50-200 golden cases - any fewer is noisy; any more is hard to maintain.",
+      "Set temperature=0 on the LLM call so the test is deterministic.",
+      "Pick a regression threshold based on natural noise (run V1 twice, measure variance).",
+      "Run on every prompt change - this catches the silent regressions DeepEval misses.",
+      "Version golden_cases.jsonl in git - your eval set is part of the product.",
+      "When the test fails, manually review the diffs - sometimes V2 is actually better and your golden set needs updating.",
+      "Combine with DeepEval for richer metrics on the same set."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-sonnet-4-5"
+      ],
+      "library_versions": [
+        "pytest==8.3.4"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "pytest"
+    ],
+    "related_glossary_slugs": [
+      "golden-dataset",
+      "regression-testing",
+      "a-b-testing"
+    ],
+    "related_learn_slugs": [
+      "prompt-eval-101"
+    ],
+    "faq": [
+      {
+        "question": "Why pure pytest instead of DeepEval/Promptfoo?",
+        "answer": "Less moving parts. For solo devs and small teams, the simplest harness wins because you'll actually run it. Add LLM-judged metrics later when the simple harness stops catching enough regressions."
+      },
+      {
+        "question": "How big should the golden set be?",
+        "answer": "Minimum 50 cases for stable averages. Sweet spot 100-200. Above 500 the harness becomes slow + you lose the agility - move to DeepEval at that scale."
+      }
+    ],
+    "meta_title": "Golden Dataset A/B Harness for Prompt Changes | OSS AI Hub",
+    "meta_description": "Production pure-pytest A/B harness: gold cases + keyword scoring + regression threshold for prompt-change CI gates. MIT."
   }
 ]
