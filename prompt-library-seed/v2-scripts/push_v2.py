@@ -63,7 +63,11 @@ def post_with_retry(url, api_key, body_bytes, attempts=10):
 
 
 def sanitize_for_upsert(rec):
-    """Return only v2 fields upsertPrompt accepts."""
+    """Return v2 fields plus entity-required fields for upsertPrompt.
+
+    Base44 Prompt entity requires: title, content, category, submitter_email.
+    Without these, CREATE silently fails (returns 200 but no row inserted).
+    """
     allowed = {
         "slug", "title", "tldr", "category", "tags", "best_for_tags",
         "difficulty_tier", "featured",
@@ -75,8 +79,29 @@ def sanitize_for_upsert(rec):
         "meta_title", "meta_description",
         # back-compat
         "description", "prompt_text",
+        # required for entity create
+        "content", "submitter_email", "submitter_name", "status",
+        # v2 model compat structured form
+        "model_compatibility_v2",
     }
     out = {k: v for k, v in rec.items() if k in allowed}
+    # Map full_prompt → content (Prompt entity's required field)
+    if "full_prompt" in out and "content" not in out:
+        out["content"] = out["full_prompt"]
+    # Required defaults for entity creation
+    out.setdefault("submitter_email", "seed@ossaihub.com")
+    out.setdefault("submitter_name", "OSS Hub")
+    out.setdefault("status", "approved")
+    # Coerce difficulty_tier: schema allows 'advanced'; Base44 enum is 'expert'
+    if out.get("difficulty_tier") == "advanced":
+        out["difficulty_tier"] = "expert"
+    # model_compatibility v2: my data is array of {model, compatibility, notes} objects.
+    # Entity expects: model_compatibility=[strings], model_compatibility_v2=[objects].
+    mc = out.get("model_compatibility")
+    if isinstance(mc, list) and mc and isinstance(mc[0], dict):
+        out["model_compatibility_v2"] = mc
+        out["model_compatibility"] = [m.get("model", "") for m in mc]
+    # back-compat aliases
     if "tldr" in out and "description" not in out:
         out["description"] = out["tldr"]
     if "full_prompt" in out and "prompt_text" not in out:
