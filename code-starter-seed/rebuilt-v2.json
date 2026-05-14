@@ -2201,6 +2201,630 @@
     "meta_description": "YAML-config prompt regression tests with assertions, multi-provider, LLM-rubric judging \u2014 ready for CI."
   },
   {
+    "slug": "openai-fine-tune-pipeline",
+    "title": "OpenAI Fine-Tune End-to-End Pipeline",
+    "tldr": "Complete OpenAI fine-tune workflow: prepare JSONL training data, validate format, upload, kick off job, poll completion, evaluate the resulting model. With cost estimate before commit.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "OpenAI SDK",
+    "tags": [
+      "fine-tuning",
+      "openai",
+      "training",
+      "evaluation"
+    ],
+    "best_for_tags": [
+      "domain-specialization",
+      "format-compliance",
+      "tone-matching"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "when_to_use": "When prompt engineering hits a ceiling on a narrow task \u2014 formatting compliance, brand voice, specialized classification. Fine-tuning works best where you have 50-500 high-quality examples of the desired behavior.",
+    "when_not_to_use": "Skip when RAG would solve it (you need the model to know facts, not behave differently). Skip when you have <50 examples; tune the prompt instead. Skip if cost matters more than 5-10% quality improvement.",
+    "quick_start": "pip install openai && OPENAI_API_KEY=sk-... python tune.py prepare data.csv && python tune.py train",
+    "full_code": "\"\"\"OpenAI fine-tuning end-to-end.\n\nSteps:\n  1. prepare: convert CSV/JSONL to OpenAI training format.\n  2. validate: check format, warn on issues, estimate cost.\n  3. upload: upload training (and optional validation) file.\n  4. train: kick off fine-tune job.\n  5. poll: wait for completion; show progress.\n  6. evaluate: run held-out test cases through both base and fine-tuned model.\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport sys\nimport time\nfrom pathlib import Path\n\nimport tiktoken\nfrom openai import OpenAI\n\nclient = OpenAI()\nenc = tiktoken.encoding_for_model(\"gpt-4o-mini\")\n\nBASE_MODEL = \"gpt-4o-mini-2024-07-18\"  # currently supports fine-tuning\nCOST_PER_M_TRAINING_TOKEN = 3.00       # USD (approximate; check OpenAI's pricing page)\n\n\n# ----------------- 1. PREPARE -----------------\n\ndef prepare_from_csv(csv_path: Path, jsonl_path: Path) -> None:\n    \"\"\"CSV columns: system, user, assistant.\n\n    Outputs JSONL with one {messages: [...]} per row.\n    \"\"\"\n    import csv\n\n    with csv_path.open() as fin, jsonl_path.open(\"w\") as fout:\n        reader = csv.DictReader(fin)\n        for row in reader:\n            example = {\n                \"messages\": [\n                    {\"role\": \"system\", \"content\": row[\"system\"]},\n                    {\"role\": \"user\", \"content\": row[\"user\"]},\n                    {\"role\": \"assistant\", \"content\": row[\"assistant\"]},\n                ]\n            }\n            fout.write(json.dumps(example) + \"\\n\")\n\n\n# ----------------- 2. VALIDATE -----------------\n\ndef validate(jsonl_path: Path) -> dict:\n    \"\"\"Check format, count tokens, estimate cost.\"\"\"\n    issues = []\n    total_tokens = 0\n    n_examples = 0\n\n    with jsonl_path.open() as f:\n        for i, line in enumerate(f, 1):\n            try:\n                ex = json.loads(line)\n            except json.JSONDecodeError as e:\n                issues.append(f\"line {i}: invalid JSON ({e})\")\n                continue\n\n            if \"messages\" not in ex:\n                issues.append(f\"line {i}: missing 'messages' field\")\n                continue\n\n            for msg in ex[\"messages\"]:\n                if msg.get(\"role\") not in {\"system\", \"user\", \"assistant\"}:\n                    issues.append(f\"line {i}: invalid role {msg.get('role')}\")\n                total_tokens += len(enc.encode(msg.get(\"content\", \"\")))\n\n            n_examples += 1\n\n    return {\n        \"n_examples\": n_examples,\n        \"total_tokens\": total_tokens,\n        \"issues\": issues,\n        \"estimated_cost_usd_per_epoch\": (total_tokens / 1_000_000) * COST_PER_M_TRAINING_TOKEN,\n    }\n\n\n# ----------------- 3. UPLOAD -----------------\n\ndef upload(jsonl_path: Path) -> str:\n    \"\"\"Upload training file. Returns file ID.\"\"\"\n    with jsonl_path.open(\"rb\") as f:\n        resp = client.files.create(file=f, purpose=\"fine-tune\")\n    return resp.id\n\n\n# ----------------- 4. TRAIN -----------------\n\ndef train(\n    training_file_id: str,\n    *,\n    validation_file_id: str | None = None,\n    suffix: str = \"ossaihub-custom\",\n    n_epochs: int = 3,\n) -> str:\n    \"\"\"Create fine-tune job. Returns job ID.\"\"\"\n    job = client.fine_tuning.jobs.create(\n        training_file=training_file_id,\n        validation_file=validation_file_id,\n        model=BASE_MODEL,\n        hyperparameters={\"n_epochs\": n_epochs},\n        suffix=suffix,\n    )\n    return job.id\n\n\n# ----------------- 5. POLL -----------------\n\ndef poll(job_id: str, *, interval_seconds: int = 30) -> str | None:\n    \"\"\"Block until job completes. Returns fine-tuned model name or None.\"\"\"\n    while True:\n        job = client.fine_tuning.jobs.retrieve(job_id)\n        print(f\"  status: {job.status}\", end=\"\")\n        if job.estimated_finish:\n            print(f\" (eta: {job.estimated_finish})\")\n        else:\n            print()\n\n        if job.status in (\"succeeded\", \"failed\", \"cancelled\"):\n            if job.status == \"succeeded\":\n                return job.fine_tuned_model\n            print(f\"Job ended with status: {job.status}\")\n            if job.error:\n                print(f\"Error: {job.error}\")\n            return None\n\n        time.sleep(interval_seconds)\n\n\n# ----------------- 6. EVALUATE -----------------\n\ndef evaluate(fine_tuned_model: str, test_cases: list[dict]) -> None:\n    \"\"\"Run test cases through base and fine-tuned model; compare side by side.\"\"\"\n    for tc in test_cases:\n        print(f\"\\n--- {tc.get('name', 'case')} ---\")\n        for model in [BASE_MODEL, fine_tuned_model]:\n            resp = client.chat.completions.create(\n                model=model,\n                messages=tc[\"messages\"],\n                temperature=0,\n            )\n            print(f\"\\n[{model}]\\n{resp.choices[0].message.content}\")\n\n\n# ----------------- MAIN -----------------\n\ndef main():\n    if len(sys.argv) < 2:\n        print(\"usage: python tune.py prepare data.csv | validate | upload | train | poll <job_id> | evaluate <model>\")\n        return\n\n    cmd = sys.argv[1]\n\n    if cmd == \"prepare\":\n        prepare_from_csv(Path(sys.argv[2]), Path(\"training.jsonl\"))\n        print(\"Wrote training.jsonl\")\n\n    elif cmd == \"validate\":\n        stats = validate(Path(\"training.jsonl\"))\n        print(json.dumps(stats, indent=2))\n\n    elif cmd == \"upload\":\n        file_id = upload(Path(\"training.jsonl\"))\n        print(f\"Uploaded: {file_id}\")\n        Path(\".file_id\").write_text(file_id)\n\n    elif cmd == \"train\":\n        file_id = Path(\".file_id\").read_text().strip()\n        job_id = train(file_id)\n        print(f\"Started job: {job_id}\")\n        Path(\".job_id\").write_text(job_id)\n\n    elif cmd == \"poll\":\n        job_id = sys.argv[2] if len(sys.argv) > 2 else Path(\".job_id\").read_text().strip()\n        model = poll(job_id)\n        if model:\n            print(f\"Fine-tuned model: {model}\")\n            Path(\".model\").write_text(model)\n\n    elif cmd == \"evaluate\":\n        model = sys.argv[2] if len(sys.argv) > 2 else Path(\".model\").read_text().strip()\n        test_cases = [\n            {\"name\": \"case1\", \"messages\": [{\"role\": \"user\", \"content\": \"test prompt\"}]},\n        ]\n        evaluate(model, test_cases)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Fine-tune API"
+      },
+      {
+        "name": "tiktoken",
+        "version": ">=0.7",
+        "purpose": "Token counting"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai tiktoken",
+      "Prepare CSV with columns: system, user, assistant",
+      "python tune.py prepare data.csv  # \u2192 training.jsonl",
+      "python tune.py validate  # check format + estimate cost",
+      "python tune.py upload  # \u2192 file ID",
+      "python tune.py train  # \u2192 job ID",
+      "python tune.py poll  # wait for completion",
+      "python tune.py evaluate  # compare base vs fine-tuned"
+    ],
+    "variations": [
+      {
+        "label": "With validation file",
+        "description": "Track loss on held-out set.",
+        "code_snippet": "# Upload a separate validation.jsonl; pass validation_file_id to train()\\n# OpenAI reports validation loss in job events"
+      },
+      {
+        "label": "Hyperparameter sweep",
+        "description": "Try multiple epochs.",
+        "code_snippet": "for n_epochs in [1, 2, 3, 4]:\\n    job_id = train(file_id, n_epochs=n_epochs, suffix=f'epochs-{n_epochs}')\\n    # poll each, then evaluate all on held-out test set"
+      },
+      {
+        "label": "Synthetic data augmentation",
+        "description": "Generate more training examples from existing.",
+        "code_snippet": "# Use the base model to generate variants of each example.\\n# Validate carefully \u2014 synthetic noise can hurt."
+      },
+      {
+        "label": "Function calling tune",
+        "description": "Tune for consistent tool use.",
+        "code_snippet": "# Include tool_calls in assistant messages.\\n# Format per OpenAI docs: messages with 'tool_calls' array."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "BadRequestError: invalid file format",
+        "cause": "JSONL doesn't follow OpenAI's expected schema.",
+        "fix_snippet": "Validate first. Each line: {\"messages\": [{\"role\": ..., \"content\": ...}, ...]}. No extra fields at top level."
+      },
+      {
+        "error_text": "Cost shock",
+        "cause": "Didn't estimate before running.",
+        "fix_snippet": "Always run validate() first; multiply total_tokens by n_epochs to get full cost estimate."
+      },
+      {
+        "error_text": "Fine-tuned model performs worse than base",
+        "cause": "Insufficient or poor-quality training data.",
+        "fix_snippet": "Need at least 50-100 high-quality examples. Re-evaluate examples \u2014 diverse, cover edge cases, no contradictions. If unsolved, fine-tuning isn't the right tool."
+      },
+      {
+        "error_text": "Training takes hours",
+        "cause": "Normal for first job; depends on dataset size.",
+        "fix_snippet": "Smaller datasets train in 10-30 min; larger in hours. Use the poll script with notification."
+      }
+    ],
+    "production_checklist": [
+      "Hold out 20% of data for evaluation BEFORE training.",
+      "Compare base vs fine-tuned on held-out cases; don't just trust training loss.",
+      "Pin the fine-tuned model name in your code; don't auto-upgrade.",
+      "Monitor production performance; retrain on new data quarterly.",
+      "Cost: training is one-time; inference cost on FT models is higher than base. Calculate ROI.",
+      "Document the fine-tune: data version, base model version, hyperparameters, eval results.",
+      "Keep training data in version control; reproducibility matters."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini-2024-07-18"
+      ],
+      "library_versions": [
+        "openai==1.51.0",
+        "tiktoken==0.8.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "fine-tuning",
+      "supervised-finetuning"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "When does fine-tuning beat prompting?",
+        "answer": "Narrow tasks with specific format / style requirements. Brand voice. Domain-specific classification with subtle nuances. Function-call format compliance. NOT for: knowledge updates (use RAG), reasoning capability boosts (use larger model)."
+      },
+      {
+        "question": "How much training data do I need?",
+        "answer": "OpenAI says minimum 10; realistically 50-100 to see improvement, 200-500 for solid gains. Quality matters more than quantity beyond that."
+      },
+      {
+        "question": "What's the cost?",
+        "answer": "Training: ~$3 per million tokens (gpt-4o-mini) \u00d7 n_epochs. Inference on FT model: ~2-3x base model cost. Estimate carefully before training."
+      },
+      {
+        "question": "Can I download the fine-tuned model?",
+        "answer": "No \u2014 OpenAI fine-tuned models are hosted only. For full ownership, fine-tune a local model with LoRA (see PEFT starter)."
+      }
+    ],
+    "github_url": "https://github.com/openai/openai-python",
+    "meta_title": "OpenAI Fine-Tune Pipeline \u2014 Starter",
+    "meta_description": "End-to-end OpenAI fine-tuning: prepare data, validate, upload, train, poll, evaluate base vs fine-tuned. Cost estimate before commit."
+  },
+  {
+    "slug": "lora-finetune-with-peft",
+    "title": "LoRA Fine-Tune With Hugging Face PEFT",
+    "tldr": "Parameter-efficient fine-tuning (LoRA) on a Llama 3.1 8B model using PEFT. Trains on a single A100 in hours; saves 100MB adapter instead of 16GB full weights.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "PEFT + transformers",
+    "tags": [
+      "lora",
+      "peft",
+      "fine-tuning",
+      "open-source-llm"
+    ],
+    "best_for_tags": [
+      "local-fine-tune",
+      "domain-llm",
+      "low-budget-tuning"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "When you want to fine-tune an open-source model (Llama, Mistral) without renting an 8x A100. LoRA trains only 0.1-1% of parameters; you get a small adapter file that swaps in at inference time.",
+    "when_not_to_use": "Skip when you can use OpenAI fine-tuning (easier, no infra). Skip when you need full weights (research). Skip if you don't have any GPU \u2014 LoRA still needs one A100 for 8B+ models.",
+    "quick_start": "pip install peft transformers accelerate bitsandbytes && python lora_train.py",
+    "full_code": "\"\"\"LoRA fine-tune of Llama 3.1 8B using PEFT.\n\nTrains on consumer-friendly hardware:\n  - 1x A100 40GB (recommended) or A100 80GB\n  - QLoRA (4-bit base model) enables training on smaller GPUs\n\nOutput is a ~100MB adapter file that loads on top of the base model.\n\"\"\"\nfrom __future__ import annotations\n\nfrom datasets import load_dataset\nfrom peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training\nfrom transformers import (\n    AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig,\n    TrainingArguments, Trainer, DataCollatorForLanguageModeling\n)\nimport torch\n\nMODEL_NAME = \"meta-llama/Llama-3.1-8B-Instruct\"\n\n# 4-bit quantization for QLoRA \u2014 fits 8B in ~6GB instead of ~16GB\nbnb_config = BitsAndBytesConfig(\n    load_in_4bit=True,\n    bnb_4bit_quant_type=\"nf4\",\n    bnb_4bit_use_double_quant=True,\n    bnb_4bit_compute_dtype=torch.bfloat16,\n)\n\n# Load base model\nmodel = AutoModelForCausalLM.from_pretrained(\n    MODEL_NAME,\n    quantization_config=bnb_config,\n    device_map=\"auto\",\n)\nmodel = prepare_model_for_kbit_training(model)\n\n# Load tokenizer\ntokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)\ntokenizer.pad_token = tokenizer.eos_token\n\n# LoRA config \u2014 what layers to adapt\nlora_config = LoraConfig(\n    r=16,                                  # rank: higher = more capacity, more params\n    lora_alpha=32,                         # scaling\n    target_modules=[\"q_proj\", \"k_proj\", \"v_proj\", \"o_proj\"],  # attention layers\n    lora_dropout=0.05,\n    bias=\"none\",\n    task_type=TaskType.CAUSAL_LM,\n)\n\nmodel = get_peft_model(model, lora_config)\nmodel.print_trainable_parameters()\n# Output like: \"trainable params: 6,815,744 || all params: 8,036,067,328 || trainable%: 0.085\"\n\n\n# Load and format dataset\ndef format_example(example):\n    \"\"\"Format as Llama instruction template.\"\"\"\n    return {\n        \"text\": (\n            \"<|start_header_id|>system<|end_header_id|>\\n\\n\"\n            f\"{example.get('system', 'You are a helpful assistant.')}<|eot_id|>\"\n            \"<|start_header_id|>user<|end_header_id|>\\n\\n\"\n            f\"{example['instruction']}<|eot_id|>\"\n            \"<|start_header_id|>assistant<|end_header_id|>\\n\\n\"\n            f\"{example['response']}<|eot_id|>\"\n        )\n    }\n\n\ndataset = load_dataset(\"json\", data_files=\"training.jsonl\", split=\"train\")\ndataset = dataset.map(format_example)\ndataset = dataset.map(lambda x: tokenizer(x[\"text\"], truncation=True, max_length=2048), batched=True)\n\n# Training args\ntraining_args = TrainingArguments(\n    output_dir=\"./lora-output\",\n    per_device_train_batch_size=4,\n    gradient_accumulation_steps=4,         # effective batch = 16\n    num_train_epochs=3,\n    learning_rate=2e-4,\n    fp16=False,\n    bf16=True,\n    logging_steps=10,\n    save_strategy=\"epoch\",\n    warmup_ratio=0.03,\n    lr_scheduler_type=\"cosine\",\n    report_to=\"none\",                      # or \"wandb\" for logging\n)\n\n# Train\ntrainer = Trainer(\n    model=model,\n    args=training_args,\n    train_dataset=dataset,\n    data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False),\n)\ntrainer.train()\n\n# Save adapter only (100MB) \u2014 not the full model\nmodel.save_pretrained(\"./final-adapter\")\ntokenizer.save_pretrained(\"./final-adapter\")\n\n# ----------------- LOADING FOR INFERENCE -----------------\n# Later, to load:\n#   from peft import PeftModel\n#   base = AutoModelForCausalLM.from_pretrained(MODEL_NAME, quantization_config=bnb_config)\n#   model = PeftModel.from_pretrained(base, \"./final-adapter\")\n",
+    "dependencies": [
+      {
+        "name": "peft",
+        "version": ">=0.13",
+        "purpose": "Parameter-efficient fine-tuning"
+      },
+      {
+        "name": "transformers",
+        "version": ">=4.45",
+        "purpose": "Model + Trainer"
+      },
+      {
+        "name": "accelerate",
+        "version": ">=1.0",
+        "purpose": "Multi-GPU / device management"
+      },
+      {
+        "name": "bitsandbytes",
+        "version": ">=0.44",
+        "purpose": "4-bit quantization"
+      },
+      {
+        "name": "datasets",
+        "version": ">=3.0",
+        "purpose": "Data loading"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "HF token (Llama is gated)",
+        "example": "hf_..."
+      }
+    ],
+    "setup_steps": [
+      "Accept Llama 3.1 license on huggingface.co",
+      "export HF_TOKEN=hf_...",
+      "pip install peft transformers accelerate bitsandbytes datasets torch",
+      "Prepare training.jsonl: {\"instruction\": \"...\", \"response\": \"...\"} per line",
+      "python lora_train.py  # needs GPU",
+      "Adapter saved to ./final-adapter (~100MB)"
+    ],
+    "variations": [
+      {
+        "label": "DPO (preference tuning)",
+        "description": "Train on preference pairs instead of completions.",
+        "code_snippet": "from trl import DPOTrainer\\n# Dataset has {prompt, chosen, rejected}\\ntrainer = DPOTrainer(model, args=training_args, train_dataset=dataset, tokenizer=tokenizer)"
+      },
+      {
+        "label": "Without 4-bit (full precision)",
+        "description": "If you have an 80GB A100.",
+        "code_snippet": "# Skip bnb_config; load model directly:\\nmodel = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.bfloat16, device_map='auto')"
+      },
+      {
+        "label": "Multi-GPU",
+        "description": "Distribute across 2-8 GPUs.",
+        "code_snippet": "# accelerate launch lora_train.py\\n# Auto-distributes via accelerate config (run `accelerate config` first)"
+      },
+      {
+        "label": "Inference server",
+        "description": "Serve the adapter with vLLM.",
+        "code_snippet": "# vLLM supports LoRA adapters:\\n# vllm serve meta-llama/Llama-3.1-8B-Instruct --lora-modules my-adapter=./final-adapter"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "OutOfMemoryError",
+        "cause": "Batch size too high or model not quantized.",
+        "fix_snippet": "Reduce per_device_train_batch_size to 1; increase gradient_accumulation_steps to maintain effective batch. Or use smaller model (Llama 3.1 1B)."
+      },
+      {
+        "error_text": "Training converges immediately (loss \u2192 0)",
+        "cause": "Likely overfitting on small dataset, or data leakage.",
+        "fix_snippet": "Hold out validation set; track val loss. If val loss diverges, reduce learning rate or epochs. Check for duplicate examples in training data."
+      },
+      {
+        "error_text": "Adapter doesn't change model output",
+        "cause": "Forgot to load adapter at inference time, or LoRA target_modules wrong.",
+        "fix_snippet": "Verify adapter loading: model = PeftModel.from_pretrained(base, './final-adapter'). For Llama 3.1, q_proj/k_proj/v_proj/o_proj are correct; verify with model.print_trainable_parameters() > 0%."
+      },
+      {
+        "error_text": "Slow training on consumer GPU",
+        "cause": "QLoRA still needs a strong GPU.",
+        "fix_snippet": "Llama 3.1 8B QLoRA needs at least A10G or 3090 for reasonable speed. 4090 also works. For weaker hardware, use a smaller base model (3B or 1B)."
+      }
+    ],
+    "production_checklist": [
+      "Hold out 10-20% of data as eval set; track val loss.",
+      "Save adapter + base model version + LoRA config \u2014 reproducibility.",
+      "Test on held-out cases AND production-shape inputs before deploying.",
+      "For inference, vLLM with LoRA adapter is fastest. Or transformers with PeftModel.",
+      "Monitor base model upgrades; LoRA adapters are tied to a specific base version.",
+      "Backup adapters; they're small but irreplaceable without retraining.",
+      "Document hyperparameters in adapter folder \u2014 future-you will thank you."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "meta-llama/Llama-3.1-8B-Instruct"
+      ],
+      "library_versions": [
+        "peft==0.13.2",
+        "transformers==4.45.2",
+        "bitsandbytes==0.44.1"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "peft",
+      "transformers"
+    ],
+    "related_glossary_slugs": [
+      "lora",
+      "qlora",
+      "peft",
+      "fine-tuning"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "LoRA vs full fine-tune?",
+        "answer": "LoRA: 0.1-1% of parameters, tiny memory footprint, slightly worse quality. Full FT: all parameters, much bigger memory, slightly better quality. For most tasks, LoRA is the right call. Full FT only for research or extreme quality."
+      },
+      {
+        "question": "What r value (rank) to use?",
+        "answer": "r=8-16 for most tasks. r=32-64 if you have lots of data and want more capacity. r=4 if data is small. Higher r = more params but bigger adapter."
+      },
+      {
+        "question": "Can I run inference on CPU?",
+        "answer": "Slow but possible. Better: use the adapter with an Ollama-compatible quantization (GGUF) for CPU inference. Or just use the base model."
+      },
+      {
+        "question": "How does this compare to OpenAI fine-tuning?",
+        "answer": "OpenAI: easier, hosted, no infra, no model ownership. LoRA: full control, own the adapter, can run on your hardware, cheaper at scale. Pick based on operational concerns."
+      }
+    ],
+    "github_url": "https://github.com/huggingface/peft",
+    "meta_title": "LoRA Fine-Tune With Hugging Face PEFT",
+    "meta_description": "Parameter-efficient fine-tune of Llama 3.1 8B with PEFT + QLoRA. ~100MB adapter trains on a single A100 in hours."
+  },
+  {
+    "slug": "nextjs-vercel-ai-sdk-chat",
+    "title": "Next.js Chat With Vercel AI SDK and Streaming",
+    "tldr": "Production-shape Next.js chat: streaming responses via Vercel AI SDK, tool calling, error retries, and a clean useChat hook integration. Works with OpenAI, Anthropic, or any compatible provider.",
+    "category": "frontend",
+    "language": "typescript",
+    "framework": "Next.js + Vercel AI SDK",
+    "tags": [
+      "nextjs",
+      "vercel-ai-sdk",
+      "streaming",
+      "chat-ui"
+    ],
+    "best_for_tags": [
+      "chat-applications",
+      "ai-saas",
+      "react"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Building a chat UI with Next.js where you want streaming responses without writing the SSE plumbing. Vercel AI SDK gives you useChat() that handles the stream.",
+    "when_not_to_use": "Skip for non-chat UIs (overhead). Skip for highly custom UIs where the SDK's abstractions don't fit \u2014 you'll fight it. Skip for non-Next.js stacks (the SDK works in Express/Hono but is best with Next).",
+    "quick_start": "npx create-next-app@latest && npm install ai @ai-sdk/openai && cp the code below",
+    "full_code": "// app/api/chat/route.ts \u2014 Server route handling LLM streaming\nimport { openai } from \"@ai-sdk/openai\";\nimport { streamText, tool } from \"ai\";\nimport { z } from \"zod\";\n\nexport const maxDuration = 30;\n\nexport async function POST(req: Request) {\n  const { messages } = await req.json();\n\n  const result = streamText({\n    model: openai(\"gpt-4o-mini\"),\n    system: \"You are a helpful assistant. Use tools when relevant.\",\n    messages,\n    maxToolRoundtrips: 5,           // limit tool-use loops\n    tools: {\n      getWeather: tool({\n        description: \"Get current weather for a location\",\n        parameters: z.object({\n          location: z.string().describe(\"City name\"),\n        }),\n        execute: async ({ location }) => {\n          // Replace with real API\n          return { location, temp: 22, condition: \"clear\" };\n        },\n      }),\n    },\n  });\n\n  return result.toDataStreamResponse();\n}\n\n// ---- app/page.tsx \u2014 Client UI\n'use client';\n\nimport { useChat } from 'ai/react';\n\nexport default function ChatPage() {\n  const {\n    messages,\n    input,\n    handleInputChange,\n    handleSubmit,\n    isLoading,\n    error,\n    reload,\n    stop,\n  } = useChat({\n    api: '/api/chat',\n    onError: (err) => console.error('chat error:', err),\n  });\n\n  return (\n    <div className=\"flex flex-col h-screen max-w-2xl mx-auto p-4\">\n      <div className=\"flex-1 overflow-y-auto space-y-4 pb-4\">\n        {messages.map((m) => (\n          <div\n            key={m.id}\n            className={m.role === 'user' ? 'text-right' : 'text-left'}\n          >\n            <div\n              className={`inline-block rounded-lg px-3 py-2 ${\n                m.role === 'user'\n                  ? 'bg-blue-500 text-white'\n                  : 'bg-gray-100 text-gray-900'\n              }`}\n            >\n              {m.content}\n              {m.toolInvocations?.map((tool) => (\n                <div key={tool.toolCallId} className=\"text-xs opacity-70 mt-1\">\n                  [used tool: {tool.toolName}]\n                </div>\n              ))}\n            </div>\n          </div>\n        ))}\n\n        {isLoading && (\n          <div className=\"text-gray-500\">\n            <span>thinking...</span>\n            <button onClick={stop} className=\"ml-2 underline\">stop</button>\n          </div>\n        )}\n\n        {error && (\n          <div className=\"text-red-600\">\n            Something went wrong.{' '}\n            <button onClick={() => reload()} className=\"underline\">retry</button>\n          </div>\n        )}\n      </div>\n\n      <form onSubmit={handleSubmit} className=\"flex gap-2 border-t pt-4\">\n        <input\n          value={input}\n          onChange={handleInputChange}\n          placeholder=\"say something...\"\n          disabled={isLoading}\n          className=\"flex-1 border rounded px-3 py-2\"\n        />\n        <button\n          type=\"submit\"\n          disabled={isLoading || !input.trim()}\n          className=\"bg-blue-500 text-white rounded px-4 py-2 disabled:bg-gray-300\"\n        >\n          send\n        </button>\n      </form>\n    </div>\n  );\n}\n",
+    "dependencies": [
+      {
+        "name": "ai",
+        "version": "^3.4",
+        "purpose": "Vercel AI SDK (streaming, tool calling)"
+      },
+      {
+        "name": "@ai-sdk/openai",
+        "version": "^0.0.66",
+        "purpose": "OpenAI provider for AI SDK"
+      },
+      {
+        "name": "zod",
+        "version": "^3.23",
+        "purpose": "Tool parameter schemas"
+      },
+      {
+        "name": "next",
+        "version": "^15.0",
+        "purpose": "Next.js framework"
+      },
+      {
+        "name": "react",
+        "version": "^18.3",
+        "purpose": "React"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key (server-side only)",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "npx create-next-app@latest my-chat",
+      "cd my-chat && npm install ai @ai-sdk/openai zod",
+      "Create app/api/chat/route.ts with server code",
+      "Create app/page.tsx with client code",
+      "echo 'OPENAI_API_KEY=sk-...' >> .env.local",
+      "npm run dev"
+    ],
+    "variations": [
+      {
+        "label": "Anthropic provider",
+        "description": "Swap to Claude.",
+        "code_snippet": "import { anthropic } from '@ai-sdk/anthropic';\\n// model: anthropic('claude-3-7-sonnet-latest')"
+      },
+      {
+        "label": "Multiple tools",
+        "description": "Add more tools to the route.",
+        "code_snippet": "tools: {\\n  getWeather: ...,\\n  searchDocs: tool({ description: 'Search docs', parameters: z.object({ query: z.string() }), execute: async ({query}) => searchDB(query) }),\\n}"
+      },
+      {
+        "label": "Streaming with thinking blocks",
+        "description": "Show model's reasoning as it generates.",
+        "code_snippet": "// Vercel AI SDK exposes data parts; render them in client distinctly from main content."
+      },
+      {
+        "label": "Edge runtime",
+        "description": "Run on Vercel Edge.",
+        "code_snippet": "// In route.ts add: export const runtime = 'edge';\\n// Caveat: some Node-only libs (sharp, fs) won't work."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Maximum execution time exceeded",
+        "cause": "Default Vercel function timeout (10-15s).",
+        "fix_snippet": "Add: export const maxDuration = 30; (starter has this). For Pro: max 60s. For longer, use Vercel Edge or background functions."
+      },
+      {
+        "error_text": "Stream cuts off mid-response",
+        "cause": "Network issue or function timeout.",
+        "fix_snippet": "Implement client-side reload(). Check Vercel logs for timeout. For really long responses, consider async background jobs + polling."
+      },
+      {
+        "error_text": "Tool calls don't execute",
+        "cause": "Forgot maxToolRoundtrips or tool execute didn't return.",
+        "fix_snippet": "Set maxToolRoundtrips >= number of tool steps you expect. Tool execute MUST return (sync or async); throwing errors causes infinite retry."
+      },
+      {
+        "error_text": "API key leaked to client",
+        "cause": "Server code accidentally bundled to client.",
+        "fix_snippet": "API routes are server-only; ensure OPENAI_API_KEY is in .env.local (not .env). Never reference process.env.OPENAI_API_KEY in client components."
+      }
+    ],
+    "production_checklist": [
+      "Rate-limit API route (use middleware or upstash/redis-ratelimit).",
+      "Validate input length; refuse messages over a sane limit.",
+      "Set CORS appropriately for cross-origin if needed.",
+      "Add auth \u2014 anonymous chat means you're paying for trolls' tokens.",
+      "Log token usage per request for cost tracking.",
+      "Add usage caps per user / API key.",
+      "Stream-resilient client: reconnect on network blip.",
+      "Test reload() flow when an error occurs mid-stream."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "ai==3.4.18",
+        "@ai-sdk/openai==0.0.66",
+        "next==15.0.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "vercel-ai-sdk"
+    ],
+    "related_glossary_slugs": [
+      "streaming",
+      "useChat",
+      "sse"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Vercel AI SDK vs raw OpenAI SDK?",
+        "answer": "Vercel AI SDK handles streaming protocol, useChat hook, tool calling state, and provider abstraction. Raw SDK requires you to wire SSE yourself. AI SDK is the right call for chat UIs."
+      },
+      {
+        "question": "Does it work with non-Vercel providers?",
+        "answer": "Yes \u2014 @ai-sdk/openai, @ai-sdk/anthropic, @ai-sdk/google, @ai-sdk/mistral, @ai-sdk/cohere, plus community providers (Groq, Together, etc.). Same API across."
+      },
+      {
+        "question": "Can I use it without Next.js?",
+        "answer": "Yes \u2014 works in Express, Hono, SvelteKit, etc. useChat is React-specific; useChat alternatives exist for Svelte and Vue."
+      },
+      {
+        "question": "How do I add markdown rendering?",
+        "answer": "react-markdown + remark-gfm in the message renderer. Sanitize against XSS (use react-markdown's strict mode or DOMPurify)."
+      }
+    ],
+    "github_url": "https://github.com/vercel/ai",
+    "meta_title": "Next.js Chat With Vercel AI SDK and Streaming",
+    "meta_description": "Production Next.js chat: streaming, tool calling, retries, error handling. useChat() hook + AI SDK route. Provider-agnostic."
+  },
+  {
+    "slug": "react-streaming-markdown-renderer",
+    "title": "React Streaming Markdown Renderer With Syntax Highlighting",
+    "tldr": "React component that renders streaming markdown WITH syntax-highlighted code blocks \u2014 handles partial code fences gracefully (no broken rendering during stream).",
+    "category": "frontend",
+    "language": "typescript",
+    "framework": "React",
+    "tags": [
+      "react",
+      "markdown",
+      "streaming",
+      "syntax-highlighting"
+    ],
+    "best_for_tags": [
+      "chat-ui",
+      "ai-content-display",
+      "documentation"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Anywhere AI streams markdown to the UI (chat, doc generation, code review tools). The starter handles the streaming-partial problem: \u2018```python\\nprint(\u2019 shouldn't render as broken HTML.",
+    "when_not_to_use": "Skip for pure plain-text streaming (use a simple pre tag). Skip for very high-frequency updates (DOM thrash) \u2014 debounce or batch updates.",
+    "quick_start": "npm install react-markdown remark-gfm rehype-highlight && import the component",
+    "full_code": "// StreamingMarkdown.tsx\nimport { useMemo } from 'react';\nimport ReactMarkdown from 'react-markdown';\nimport remarkGfm from 'remark-gfm';\nimport rehypeHighlight from 'rehype-highlight';\nimport 'highlight.js/styles/github-dark.css';\n\ninterface Props {\n  content: string;\n  isStreaming?: boolean;\n}\n\nexport function StreamingMarkdown({ content, isStreaming = false }: Props) {\n  // Normalize content during streaming to prevent broken renders:\n  //   - If we're inside an open code fence (odd number of ``` so far),\n  //     close it temporarily so syntax highlighter renders it as a partial code block.\n  const safeContent = useMemo(() => {\n    if (!isStreaming) return content;\n\n    const fenceCount = (content.match(/```/g) || []).length;\n    if (fenceCount % 2 === 1) {\n      // Odd number of fences \u2014 we're inside an open code block\n      // Append a closing fence so the partial code renders as a code block\n      return content + '\\n```';\n    }\n    return content;\n  }, [content, isStreaming]);\n\n  return (\n    <div className=\"prose prose-sm max-w-none\">\n      <ReactMarkdown\n        remarkPlugins={[remarkGfm]}\n        rehypePlugins={[rehypeHighlight]}\n        components={{\n          // Custom code-block renderer with copy button\n          pre: ({ children, ...props }) => (\n            <div className=\"relative group\">\n              <pre {...props} className=\"bg-gray-900 rounded p-4 overflow-x-auto\">\n                {children}\n              </pre>\n              <CopyButton textGetter={() => extractCodeText(children)} />\n            </div>\n          ),\n          // Sanitize/style links (open external in new tab)\n          a: ({ href, children, ...props }) => (\n            <a\n              href={href}\n              {...props}\n              target={href?.startsWith('http') ? '_blank' : undefined}\n              rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}\n              className=\"text-blue-600 underline\"\n            >\n              {children}\n            </a>\n          ),\n          // Tables get a wrapper for horizontal scroll\n          table: ({ children, ...props }) => (\n            <div className=\"overflow-x-auto\">\n              <table {...props} className=\"border-collapse border border-gray-300\">\n                {children}\n              </table>\n            </div>\n          ),\n        }}\n      >\n        {safeContent}\n      </ReactMarkdown>\n\n      {isStreaming && (\n        <span className=\"inline-block w-2 h-4 bg-gray-500 animate-pulse ml-1\" aria-label=\"typing\" />\n      )}\n    </div>\n  );\n}\n\nfunction CopyButton({ textGetter }: { textGetter: () => string }) {\n  const [copied, setCopied] = useState(false);\n\n  return (\n    <button\n      onClick={async () => {\n        await navigator.clipboard.writeText(textGetter());\n        setCopied(true);\n        setTimeout(() => setCopied(false), 1500);\n      }}\n      className=\"absolute top-2 right-2 px-2 py-1 text-xs bg-gray-700 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity\"\n    >\n      {copied ? 'copied' : 'copy'}\n    </button>\n  );\n}\n\nfunction extractCodeText(children: React.ReactNode): string {\n  // Walk React children to extract text content of <code> within <pre>.\n  let text = '';\n  const walk = (node: React.ReactNode) => {\n    if (typeof node === 'string') text += node;\n    else if (Array.isArray(node)) node.forEach(walk);\n    else if (typeof node === 'object' && node !== null && 'props' in node) {\n      walk((node as { props: { children: React.ReactNode } }).props.children);\n    }\n  };\n  walk(children);\n  return text;\n}\n\n// Usage:\n// const [content, setContent] = useState('');\n// // As tokens stream in: setContent(prev => prev + chunk)\n// return <StreamingMarkdown content={content} isStreaming={true} />\n",
+    "dependencies": [
+      {
+        "name": "react-markdown",
+        "version": "^9.0",
+        "purpose": "Markdown rendering"
+      },
+      {
+        "name": "remark-gfm",
+        "version": "^4.0",
+        "purpose": "GFM extensions (tables, strikethrough)"
+      },
+      {
+        "name": "rehype-highlight",
+        "version": "^7.0",
+        "purpose": "Syntax highlighting via highlight.js"
+      },
+      {
+        "name": "highlight.js",
+        "version": "^11.10",
+        "purpose": "Syntax highlighting engine"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "npm install react-markdown remark-gfm rehype-highlight highlight.js",
+      "Import a highlight.js CSS theme (github-dark, atom-one, etc.)",
+      "Use <StreamingMarkdown content={streamingText} isStreaming={true} />"
+    ],
+    "variations": [
+      {
+        "label": "KaTeX math support",
+        "description": "Render LaTeX formulas.",
+        "code_snippet": "import rehypeKatex from 'rehype-katex';\\nimport remarkMath from 'remark-math';\\n// Add to remarkPlugins/rehypePlugins arrays.\\n// import 'katex/dist/katex.min.css';"
+      },
+      {
+        "label": "Mermaid diagrams",
+        "description": "Render mermaid code blocks as diagrams.",
+        "code_snippet": "// In custom code component:\\nif (language === 'mermaid') return <MermaidDiagram chart={textContent} />;"
+      },
+      {
+        "label": "Sanitization",
+        "description": "Block dangerous HTML.",
+        "code_snippet": "import rehypeSanitize from 'rehype-sanitize';\\n// Add to rehypePlugins \u2014 first in the chain."
+      },
+      {
+        "label": "Custom token-by-token cursor",
+        "description": "Show typing animation.",
+        "code_snippet": "// Component already has cursor. Customize: blink rate via animation-duration; style via CSS."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Code blocks flash on every token",
+        "cause": "React re-renders entire markdown on every char.",
+        "fix_snippet": "Debounce updates: only re-render every 50ms during streaming. useDeferredValue or manual setTimeout."
+      },
+      {
+        "error_text": "XSS via untrusted markdown",
+        "cause": "react-markdown is generally safe but HTML embedded in markdown can be dangerous.",
+        "fix_snippet": "Add rehype-sanitize to rehypePlugins. Be especially careful with user-generated content; AI-generated is safer but still review."
+      },
+      {
+        "error_text": "Streaming partial code looks ugly",
+        "cause": "Half-rendered fences.",
+        "fix_snippet": "Starter handles this \u2014 adds closing fence during streaming. Verify isStreaming is set true while streaming, false when done."
+      },
+      {
+        "error_text": "Syntax highlighting wrong language",
+        "cause": "Language not specified or unknown.",
+        "fix_snippet": "Use full language names: ```typescript not ```ts (highlight.js aliases vary). Test target languages."
+      }
+    ],
+    "production_checklist": [
+      "Sanitize if rendering user-generated markdown (XSS risk).",
+      "Debounce re-renders during streaming (>50 tokens/sec gets choppy).",
+      "Lazy-load highlight.js languages for smaller bundle.",
+      "Test long code blocks; horizontal scroll vs wrap.",
+      "Accessibility: cursor has aria-label; ensure screen readers handle streaming text well.",
+      "Mobile: code blocks need horizontal scroll, not wrap (breaks indentation).",
+      "Memoize the component if parent re-renders frequently."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "react-markdown==9.0.1",
+        "remark-gfm==4.0.0",
+        "rehype-highlight==7.0.0"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "markdown",
+      "streaming-ui",
+      "syntax-highlighting"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why is streaming code rendering tricky?",
+        "answer": "Markdown's '```' fences expect a closing fence. Mid-stream, content has open fence + partial code. Without handling, react-markdown renders raw or breaks. The starter closes the fence virtually for rendering, but the underlying state stays as the actual streamed content."
+      },
+      {
+        "question": "Bundle size concerns?",
+        "answer": "highlight.js bundles many languages. Use the modular import (only register the languages you support): import hljs from 'highlight.js/lib/core'; hljs.registerLanguage('typescript', tsLang);"
+      },
+      {
+        "question": "Does this work with React Server Components?",
+        "answer": "Yes for the markdown component. CopyButton (with useState) is client-only. Mark the file 'use client' if using anywhere with state."
+      },
+      {
+        "question": "Can I use this with Vue / Svelte?",
+        "answer": "The pattern transfers; the libraries don't. For Vue: marked + vue-markdown-it. For Svelte: marked + svelte-markdown."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "React Streaming Markdown Renderer \u2014 Starter",
+    "meta_description": "Render streaming AI markdown in React: handles partial code fences, syntax highlighting, copy button, cursor animation."
+  },
+  {
     "slug": "openai-function-calling-parallel",
     "title": "OpenAI Parallel Function Calling With Validation",
     "tldr": "OpenAI's parallel tool calling pattern with Pydantic-validated arguments, automatic retry on validation failures, and explicit handling of the \u2018no tool needed\u2019 case. ~100 lines of production-grade scaffolding.",
