@@ -6151,6 +6151,269 @@
     ]
   },
   {
+    "slug": "parent-child-chunks-rag",
+    "title": "Parent-Child Chunk Strategy For RAG",
+    "tldr": "Retrieve precise small chunks for matching; return their parent paragraph (or section) for context. Solves the recall-vs-context tension in RAG.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "ChromaDB",
+    "tags": [
+      "rag",
+      "chunking",
+      "retrieval",
+      "parent-child"
+    ],
+    "best_for_tags": [
+      "technical-docs",
+      "long-documents",
+      "rag-quality"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "when_to_use": "When small chunks give better retrieval precision but the model needs more surrounding context to answer well. Parent-child stores both \u2014 search the small, return the large.",
+    "when_not_to_use": "Skip for very short documents (chunks naturally fit). Skip when retrieval precision isn't the bottleneck \u2014 try plain chunking first.",
+    "quick_start": "pip install chromadb && python parent_child.py ingest && python parent_child.py 'your question'",
+    "full_code": "\"\"\"Parent-child RAG: search small chunks, return parent paragraphs.\n\nStructure:\n  - Each document split into PARENT chunks (~1200 chars, paragraph-level)\n  - Each parent split into CHILD chunks (~300 chars, sentence-level)\n  - Index CHILDREN (vectors). On query: find best child \u2192 return its parent.\n\nWhy: search precision benefits from small chunks; LLM answer quality benefits\nfrom more context. Parent-child gives you both.\n\"\"\"\nfrom __future__ import annotations\n\nimport sys\nfrom pathlib import Path\n\nimport chromadb\nfrom chromadb.utils import embedding_functions\n\nPERSIST_DIR = \"./pc_chroma\"\nclient = chromadb.PersistentClient(path=PERSIST_DIR)\nembedder = embedding_functions.SentenceTransformerEmbeddingFunction(\"all-MiniLM-L6-v2\")\n\n# Two collections: children (searched), parents (returned)\nchildren_col = client.get_or_create_collection(\"children\", embedding_function=embedder)\nparents_col = client.get_or_create_collection(\"parents\", embedding_function=embedder)\n\n\ndef split_parents(text: str, *, max_chars: int = 1200) -> list[str]:\n    \"\"\"Paragraph-aware split into PARENTS.\"\"\"\n    parts = [p.strip() for p in text.split(\"\\n\\n\") if p.strip()]\n    parents = []\n    cur = \"\"\n    for p in parts:\n        if len(cur) + len(p) + 2 > max_chars and cur:\n            parents.append(cur)\n            cur = p\n        else:\n            cur = cur + \"\\n\\n\" + p if cur else p\n    if cur:\n        parents.append(cur)\n    return parents\n\n\ndef split_children(parent: str, *, max_chars: int = 300) -> list[str]:\n    \"\"\"Sentence-aware split into CHILDREN.\"\"\"\n    import re\n    sentences = re.split(r\"(?<=[.!?])\\s+\", parent)\n    chunks = []\n    cur = \"\"\n    for s in sentences:\n        if len(cur) + len(s) > max_chars and cur:\n            chunks.append(cur.strip())\n            cur = s\n        else:\n            cur = cur + \" \" + s if cur else s\n    if cur:\n        chunks.append(cur.strip())\n    return chunks\n\n\ndef ingest(source: str, text: str) -> None:\n    parents = split_parents(text)\n    parent_ids = []\n    parent_docs = []\n    parent_metas = []\n    child_ids = []\n    child_docs = []\n    child_metas = []\n\n    for pi, parent_text in enumerate(parents):\n        parent_id = f\"{source}::p{pi}\"\n        parent_ids.append(parent_id)\n        parent_docs.append(parent_text)\n        parent_metas.append({\"source\": source, \"p_index\": pi})\n\n        for ci, child_text in enumerate(split_children(parent_text)):\n            child_ids.append(f\"{source}::p{pi}::c{ci}\")\n            child_docs.append(child_text)\n            child_metas.append({\"source\": source, \"parent_id\": parent_id})\n\n    parents_col.upsert(ids=parent_ids, documents=parent_docs, metadatas=parent_metas)\n    children_col.upsert(ids=child_ids, documents=child_docs, metadatas=child_metas)\n    print(f\"  ingested {source}: {len(parents)} parents, {len(child_docs)} children\")\n\n\ndef query(question: str, *, k_children: int = 8, k_parents: int = 3) -> list[dict]:\n    \"\"\"Search children; dedupe by parent; return top parents with context.\"\"\"\n    child_results = children_col.query(query_texts=[question], n_results=k_children)\n\n    # Collect unique parents (keep best-scoring child for each parent)\n    parent_seen: dict[str, dict] = {}\n    for i, child_id in enumerate(child_results[\"ids\"][0]):\n        parent_id = child_results[\"metadatas\"][0][i][\"parent_id\"]\n        if parent_id not in parent_seen:\n            parent_seen[parent_id] = {\n                \"parent_id\": parent_id,\n                \"best_child_score\": child_results[\"distances\"][0][i],\n                \"matching_child_text\": child_results[\"documents\"][0][i],\n            }\n\n    # Fetch parent text for top N\n    top_parent_ids = sorted(\n        parent_seen.keys(), key=lambda pid: parent_seen[pid][\"best_child_score\"]\n    )[:k_parents]\n\n    parents = parents_col.get(ids=top_parent_ids)\n    out = []\n    for i, pid in enumerate(parents[\"ids\"]):\n        out.append({\n            \"parent_id\": pid,\n            \"parent_text\": parents[\"documents\"][i],\n            \"matching_child\": parent_seen[pid][\"matching_child_text\"],\n            \"score\": parent_seen[pid][\"best_child_score\"],\n            \"source\": parents[\"metadatas\"][i].get(\"source\"),\n        })\n    return out\n\n\nif __name__ == \"__main__\":\n    if sys.argv[1:2] == [\"ingest\"]:\n        # Demo data\n        ingest(\"rag-guide\", Path(\"rag.md\").read_text() if Path(\"rag.md\").exists() else \"\"\"\nReciprocal Rank Fusion combines multiple retriever outputs. Each document\ngets a score of 1/(k+rank) summed across all retrievers. This is robust to\nheterogeneous retrievers because it works on ranks, not raw scores.\n\nHNSW and IVFFlat are two index types for pgvector. HNSW gives faster queries\nbut uses more RAM. IVFFlat uses less RAM but requires REINDEX after bulk\ninserts. For most production workloads under 1M vectors, HNSW is the right\nchoice.\n\nChunking strategy matters more than chunk size. Paragraph-aware chunks\noutperform fixed-size in retrieval precision because they respect natural\ninformation boundaries.\n\"\"\")\n    else:\n        question = \" \".join(sys.argv[1:]) if len(sys.argv) > 1 else \"How do I choose HNSW vs IVFFlat?\"\n        for hit in query(question):\n            print(f\"\\n[{hit['score']:.3f}] {hit['source']}\")\n            print(f\"  matched: {hit['matching_child']}\")\n            print(f\"  parent: {hit['parent_text'][:200]}...\")\n",
+    "dependencies": [
+      {
+        "name": "chromadb",
+        "version": ">=0.5",
+        "purpose": "Vector DB"
+      },
+      {
+        "name": "sentence-transformers",
+        "version": ">=3.0",
+        "purpose": "Embeddings"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "pip install chromadb sentence-transformers",
+      "python parent_child.py ingest",
+      "python parent_child.py 'your question'"
+    ],
+    "variations": [
+      {
+        "label": "Hierarchical (3+ levels)",
+        "description": "Section \u2192 Paragraph \u2192 Sentence.",
+        "code_snippet": "# Three collections: sentences (searched), paragraphs (returned for context), sections (returned for broader context if needed)"
+      },
+      {
+        "label": "With summary as parent",
+        "description": "Search sentences; return LLM-summarized parent for cleaner context.",
+        "code_snippet": "# At ingest, generate parent summaries with LLM; store both summary + original. Return summary by default; original on user request."
+      },
+      {
+        "label": "Async ingestion",
+        "description": "Parallel ingest for large corpora.",
+        "code_snippet": "import asyncio\\n# Use AsyncOpenAI for embeddings; gather ingests across files"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Same parent returned multiple times",
+        "cause": "Deduplication logic missing or buggy.",
+        "fix_snippet": "Starter dedupes via parent_seen dict. Verify every child has unique parent_id metadata at ingest."
+      },
+      {
+        "error_text": "Child chunk doesn't match well",
+        "cause": "Sentence-level split too fine; matches on common words.",
+        "fix_snippet": "Increase child max_chars to ~500 \u2014 still smaller than parent but contains more context for matching."
+      },
+      {
+        "error_text": "Parent context too long",
+        "cause": "max_chars on parents set too high.",
+        "fix_snippet": "Parent max_chars 800-1500 is typical. Larger parents dilute token budget downstream."
+      }
+    ],
+    "production_checklist": [
+      "Tune child:parent size ratio for your corpus (typically 1:4 to 1:6).",
+      "Watch for parents that contain mostly non-content (table of contents, references).",
+      "Cache common queries; parent-child adds overhead vs flat.",
+      "Test on questions that span paragraph boundaries; sometimes you need adjacent parents too.",
+      "Pin embedding model; switching invalidates both collections."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "chromadb==0.5.15",
+        "sentence-transformers==3.2.1"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "chromadb"
+    ],
+    "related_glossary_slugs": [
+      "chunking",
+      "rag",
+      "retrieval"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why not just use larger chunks?",
+        "answer": "Large chunks lower retrieval precision \u2014 matching on incidental words instead of the relevant fact. Parent-child preserves precision (small for matching) while delivering context (large for answer generation)."
+      },
+      {
+        "question": "How is this different from LangChain ParentDocumentRetriever?",
+        "answer": "Same idea, lower-dependency implementation. LangChain's version supports more retriever backends. This starter is direct ChromaDB; rewrite for Qdrant/Pinecone is mechanical."
+      },
+      {
+        "question": "What about overlapping parents?",
+        "answer": "Standard parent-child uses non-overlapping parents (clean partition of doc). Adding overlap helps when answers span boundaries but doubles storage. Test for your corpus."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Parent-Child Chunk Strategy for RAG \u2014 Starter",
+    "meta_description": "Search small chunks for precision, return parent paragraphs for context. Solves the recall vs context tension in RAG."
+  },
+  {
+    "slug": "multi-query-rag-fusion",
+    "title": "Multi-Query Generation + Result Fusion",
+    "tldr": "Generate N rephrasings of the user's query, run each through retrieval, fuse the results with RRF. Recovers from poorly-worded queries and captures multi-aspect questions.",
+    "category": "rag-patterns",
+    "language": "python",
+    "framework": "OpenAI + Qdrant",
+    "tags": [
+      "rag",
+      "multi-query",
+      "rrf",
+      "query-expansion"
+    ],
+    "best_for_tags": [
+      "rag-quality",
+      "ambiguous-queries",
+      "production-rag"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "when_to_use": "When user queries are short, ambiguous, or multi-part. Single-query retrieval often misses. Multi-query + fusion is a robust default for production RAG.",
+    "when_not_to_use": "Skip for highly precise queries (looking up specific named entity). Skip if latency-sensitive \u2014 adds 1 LLM call + N retrievals.",
+    "quick_start": "pip install openai qdrant-client fastembed && python multi_query.py 'your question'",
+    "full_code": "\"\"\"Multi-query RAG: LLM generates 3-4 rephrasings; each retrieves; results fused.\n\nProcess:\n  1. User asks Q\n  2. LLM generates {N} rephrasings of Q\n  3. Each rephrasing retrieves top-K from vector DB\n  4. Reciprocal Rank Fusion merges into single ranked list\n  5. Top-N fused results passed to answer generator\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport sys\n\nfrom fastembed import TextEmbedding\nfrom openai import OpenAI\nfrom qdrant_client import QdrantClient\n\noai = OpenAI()\nembedder = TextEmbedding(\"BAAI/bge-small-en-v1.5\")\nqdrant = QdrantClient(url=\"http://localhost:6333\")\n\nCOLLECTION = \"docs\"\n\n\ndef generate_query_variations(query: str, *, n: int = 4) -> list[str]:\n    \"\"\"Use the LLM to generate N rephrasings.\"\"\"\n    prompt = f\"\"\"Generate {n} distinct rephrasings of the user's question. Each:\n- Self-contained (no pronouns)\n- Captures a different angle or aspect\n- Useful for retrieval (not over-elaborated)\n\nUser question: {query}\n\nReturn JSON: {{\"queries\": [\"q1\", \"q2\", ...]}} \"\"\"\n\n    resp = oai.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        temperature=0.3,                # slight variety helps\n        response_format={\"type\": \"json_object\"},\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n    )\n    data = json.loads(resp.choices[0].message.content)\n    return [query] + data[\"queries\"][:n]  # always include original\n\n\ndef retrieve_for_query(query: str, *, k: int = 8) -> list[dict]:\n    \"\"\"Vector search for one query.\"\"\"\n    qvec = list(embedder.embed([query]))[0]\n    hits = qdrant.search(\n        collection_name=COLLECTION,\n        query_vector=qvec.tolist(),\n        limit=k,\n    )\n    return [{\"id\": h.id, \"score\": h.score, \"payload\": h.payload} for h in hits]\n\n\ndef rrf_fuse(*hit_lists: list[dict], k: int = 10, rrf_k: int = 60) -> list[dict]:\n    \"\"\"Reciprocal Rank Fusion.\"\"\"\n    scores: dict = {}\n    payloads: dict = {}\n    for lst in hit_lists:\n        for rank, hit in enumerate(lst):\n            doc_id = hit[\"id\"]\n            scores[doc_id] = scores.get(doc_id, 0) + 1 / (rrf_k + rank + 1)\n            payloads[doc_id] = hit[\"payload\"]\n    ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:k]\n    return [{\"id\": i, \"score\": s, \"payload\": payloads[i]} for i, s in ranked]\n\n\ndef multi_query_retrieve(query: str, *, n_variations: int = 4, k_per: int = 8, k_final: int = 10) -> list[dict]:\n    variations = generate_query_variations(query, n=n_variations)\n    print(f\"Variations: {variations}\")\n\n    all_hits = [retrieve_for_query(v, k=k_per) for v in variations]\n    fused = rrf_fuse(*all_hits, k=k_final)\n    return fused\n\n\ndef answer_with_context(query: str, hits: list[dict]) -> str:\n    context = \"\\n\\n\".join(h[\"payload\"].get(\"text\", \"\") for h in hits)\n    resp = oai.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        temperature=0,\n        messages=[\n            {\"role\": \"system\", \"content\": \"Answer based only on the provided context. Cite sources.\"},\n            {\"role\": \"user\", \"content\": f\"Context:\\n{context}\\n\\nQuestion: {query}\"},\n        ],\n    )\n    return resp.choices[0].message.content\n\n\nif __name__ == \"__main__\":\n    question = \" \".join(sys.argv[1:]) or \"How do I tune retrieval quality?\"\n    hits = multi_query_retrieve(question)\n    print(f\"\\n=== TOP {len(hits)} HITS ===\")\n    for h in hits[:5]:\n        print(f\"[{h['score']:.4f}] {h['payload'].get('text', '')[:100]}\")\n    print(\"\\n=== ANSWER ===\")\n    print(answer_with_context(question, hits))\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Query generation + answer"
+      },
+      {
+        "name": "qdrant-client",
+        "version": ">=1.12",
+        "purpose": "Vector retrieval"
+      },
+      {
+        "name": "fastembed",
+        "version": ">=0.4",
+        "purpose": "Local embeddings"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "docker run -p 6333:6333 qdrant/qdrant",
+      "pip install openai qdrant-client fastembed",
+      "Ingest some docs into Qdrant first (see ingestion starter)",
+      "python multi_query.py 'your question'"
+    ],
+    "variations": [
+      {
+        "label": "Step-back prompting",
+        "description": "Generate ONE high-level rephrasing as additional retrieval.",
+        "code_snippet": "step_back = generate_query_variations(query, n=1, prompt='Reformulate at a higher abstraction level')\\n# Add step_back to variations list before retrieval"
+      },
+      {
+        "label": "HyDE",
+        "description": "Generate a hypothetical answer and embed it.",
+        "code_snippet": "hypothetical = oai.chat.completions.create(model='gpt-4o-mini', messages=[{'role': 'user', 'content': f'Write a 2-sentence answer to: {query}'}]).choices[0].message.content\\nhyde_hits = retrieve_for_query(hypothetical)"
+      },
+      {
+        "label": "Cross-encoder rerank after fusion",
+        "description": "Add a reranker pass for final quality.",
+        "code_snippet": "from sentence_transformers import CrossEncoder\\nce = CrossEncoder('BAAI/bge-reranker-base')\\nfused = sorted(fused, key=lambda h: ce.predict([(query, h['payload']['text'])])[0], reverse=True)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Variations are paraphrases (no real diversity)",
+        "cause": "Temperature too low or prompt unclear.",
+        "fix_snippet": "Increase temperature to 0.5-0.7 for query generation. Add: \u2018each variation should capture a different aspect or angle, not just rewords.\u2019"
+      },
+      {
+        "error_text": "Slow latency",
+        "cause": "Sequential retrievals + LLM call.",
+        "fix_snippet": "Run retrievals in parallel: use asyncio.gather across variations. Saves N-1 round-trips."
+      },
+      {
+        "error_text": "Fused results worse than single-query",
+        "cause": "Bad variations dilute the signal.",
+        "fix_snippet": "Validate quality on eval set BEFORE deploying. Sometimes plain retrieval wins; multi-query helps on ambiguous queries specifically."
+      },
+      {
+        "error_text": "Variations include hallucinated keywords",
+        "cause": "LLM imagines context.",
+        "fix_snippet": "Tighten prompt: \u2018don't add concepts not implied by the user's query.\u2019 Use lower temperature."
+      }
+    ],
+    "production_checklist": [
+      "Cache query variations per query \u2014 same input \u2192 same variations.",
+      "Parallelize the N retrievals; latency adds up serial.",
+      "Test on a held-out eval set; multi-query doesn't always win.",
+      "Budget LLM cost \u2014 query expansion adds calls.",
+      "Tune N variations: 2-4 is sweet spot; more dilutes."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "openai==1.51.0",
+        "qdrant-client==1.12.0",
+        "fastembed==0.4.1"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_tool_slugs": [
+      "qdrant",
+      "fastembed"
+    ],
+    "related_glossary_slugs": [
+      "multi-query",
+      "rrf",
+      "hyde",
+      "query-expansion"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Multi-query vs single-query?",
+        "answer": "Multi-query: better on ambiguous/multi-aspect queries, ~30% latency penalty. Single: faster, fine for precise queries. Many production systems use multi-query as default with single-query fallback for hot-path latency."
+      },
+      {
+        "question": "How many variations?",
+        "answer": "3-4 is the sweet spot in published evals. Beyond 5, returns diminish and dilution grows. Include the original query always."
+      },
+      {
+        "question": "Combine with cross-encoder?",
+        "answer": "Yes \u2014 multi-query for recall, cross-encoder rerank for precision. Both at once is the strongest pattern (and most expensive)."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Multi-Query Generation + Result Fusion \u2014 Starter",
+    "meta_description": "Generate N query rephrasings, retrieve each, fuse with RRF. Robust RAG retrieval for ambiguous and multi-aspect queries."
+  },
+  {
     "slug": "pii-redaction-presidio-anthropic",
     "title": "PII Redaction Before LLM Call (Presidio + Fallback)",
     "tldr": "Strip PII (emails, phones, SSNs, credit cards, names) from user inputs before sending to an LLM. Uses Microsoft Presidio for high-recall detection plus a fallback regex layer for known patterns.",
