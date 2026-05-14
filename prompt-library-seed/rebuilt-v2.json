@@ -11004,6 +11004,340 @@
     "meta_description": "Moderate UGC against named policies with severity + confidence per policy. Allow/label/remove/escalate recommendation. Critical always escalates."
   },
   {
+    "slug": "feynman-explanation-test",
+    "title": "Feynman Explanation Test",
+    "tldr": "Convert your tentative understanding of a topic into a Feynman-style explanation, then identify the gaps in your own understanding via the test of explaining it simply.",
+    "category": "education",
+    "tags": [
+      "learning",
+      "feynman",
+      "self-test",
+      "comprehension"
+    ],
+    "best_for_tags": [
+      "self-study",
+      "concept-mastery",
+      "exam-prep"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Self-checking new material",
+        "example": "After reading a chapter on transformers, write your explanation; this prompt finds the gaps."
+      },
+      {
+        "scenario": "Before a high-stakes presentation",
+        "example": "Identify weak spots in your explanation before the audience does."
+      },
+      {
+        "scenario": "Tutor preparation",
+        "example": "Tutor uses to spot which concepts they themselves don't fully grasp."
+      },
+      {
+        "scenario": "Documentation review",
+        "example": "Run on your draft docs; find the assumptions you're making the reader can't follow."
+      }
+    ],
+    "when_not_to_use": "Skip for memorization (facts, dates) \u2014 Feynman is about understanding, not recall. Skip for highly technical detail-level review (use a checklist).",
+    "full_prompt": "You are a Feynman-style learning coach. The user has tried to explain a topic in their own words. You'll evaluate that explanation, identify gaps, and prompt them to fix the weak spots.\n\nINPUT\n- Topic: {topic}\n- The user's attempted explanation: {user_explanation}\n- Their audience for the explanation (informs vocabulary): {audience}\n\nOUTPUT\n\n## 1. What's clearly grasped\n2-4 specific things the user explained accurately. Be specific \u2014 quote phrases from their explanation.\n\n## 2. Spots where understanding is shaky\nFor each:\n- Quote: the specific sentence/phrase that signals shakiness\n- Symptom of the shakiness: jargon used without owning the concept / leap that skips a step / metaphor that doesn't quite work / hedging that hides not-knowing\n- What this suggests they don't fully understand\n- A clarifying question that would force them to confront the gap\n\n3-5 spots. Prefer surface-level shakiness over deep \u2014 those are easier to fix.\n\n## 3. Audience-fit check\n- Does their explanation match the stated audience?\n- Specific terms that are too jargon-heavy or too vague for that audience.\n\n## 4. The Feynman test\nThree things they should now try to explain (in their head or aloud) to deepen understanding:\n- The hardest sub-concept embedded in the topic\n- A counter-example or edge case\n- Why the obvious-alternative-explanation is wrong\n\n## 5. Suggested next study move\nOne specific action: re-read X, work through Y problem, explain Z to someone.\n\nRULES\n- Be specific. \u2018You don't fully understand X\u2019 is useless; \u2018You said X is because of Y, but you didn't say WHY Y leads to X\u2019 is useful.\n- Don't grade or score; this is diagnostic.\n- Don't supply the answer to the gap \u2014 pose the question. The user does the work.\n- When the explanation IS solid, say so clearly; don't manufacture weaknesses.\n\nUSER'S EXPLANATION\n{user_explanation}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "topic",
+        "type": "string",
+        "description": "Topic being explained",
+        "required": true,
+        "example": "How attention mechanisms work in transformers"
+      },
+      {
+        "name": "user_explanation",
+        "type": "string",
+        "description": "The user's draft explanation",
+        "required": true,
+        "example": "Attention lets a model focus on the most relevant tokens..."
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Who they're explaining to",
+        "required": true,
+        "example": "Smart non-ML engineer"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Five sections: what's grasped, shaky spots with diagnostic questions, audience-fit, Feynman test, next study move."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Surfaces genuine gaps without manufacturing them."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally too generous \u2014 re-pin specificity."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Holds structure; diagnostic questions can be generic."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Surface critique; needs reminder to quote phrases."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Iterative",
+        "description": "User refines explanation; re-run.",
+        "prompt_snippet": "After Section 5, add: \u2018When user resubmits a revised explanation, compare to previous version and note what's improved and what's still shaky.\u2019"
+      },
+      {
+        "label": "Multi-audience",
+        "description": "Test the same explanation across 2-3 audiences.",
+        "prompt_snippet": "Add: \u2018also evaluate fit for an EXPERT audience and a NOVICE audience; note where adjustments needed.\u2019"
+      },
+      {
+        "label": "With self-grade",
+        "description": "User self-grades; compare to AI assessment.",
+        "prompt_snippet": "Add: \u2018ask the user to self-grade 1-5 on each section before showing results; flag where their self-grade differs from observed shakiness.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Manufactures gaps where explanation is solid.",
+        "fix": "Add: \u2018if explanation is solid, say so plainly; don't generate fake critique.\u2019"
+      },
+      {
+        "symptom": "Provides the answer instead of the question.",
+        "fix": "Re-pin: \u2018pose a clarifying question; don't supply the answer.\u2019"
+      },
+      {
+        "symptom": "Vague feedback (\u2018this is unclear\u2019).",
+        "fix": "Force quoting: \u2018every gap cites a specific phrase from the user's explanation.\u2019"
+      },
+      {
+        "symptom": "Audience mismatch ignored.",
+        "fix": "Add: \u2018flag at least 2 specific vocabulary choices that don't match audience.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "socratic-tutor",
+      "concept-map-builder",
+      "study-guide-from-chapter"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "feynman-technique",
+      "active-learning"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How is this different from a tutor?",
+        "answer": "A tutor explains; this prompts you to find your own gaps. Better for long-term retention because YOU do the work of fixing the understanding."
+      },
+      {
+        "question": "When do I know I've passed the Feynman test?",
+        "answer": "When you can explain the concept to a smart non-expert, answer their follow-up questions, and articulate WHY adjacent explanations are wrong. Iteration until that point."
+      },
+      {
+        "question": "Can this work for math/code?",
+        "answer": "Yes \u2014 paste your explanation alongside any equations or code snippets. The prompt finds where your verbal explanation glosses what your equation actually does."
+      }
+    ],
+    "meta_title": "Feynman Explanation Test \u2014 Prompt",
+    "meta_description": "Test your explanation of a concept: cite shaky phrases, pose diagnostic questions, identify what's grasped vs not. Active-learning tool."
+  },
+  {
+    "slug": "spaced-repetition-flashcard-set",
+    "title": "Spaced-Repetition Flashcards From Material",
+    "tldr": "Generates 20-40 flashcards from notes/textbook/lecture transcript, optimized for spaced-repetition systems (Anki / RemNote): one concept per card, atomic questions, no compound cards.",
+    "category": "education",
+    "tags": [
+      "flashcards",
+      "spaced-repetition",
+      "anki",
+      "memory"
+    ],
+    "best_for_tags": [
+      "exam-prep",
+      "memorization",
+      "self-study"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Build flashcards from lecture notes",
+        "example": "Two hours of class notes \u2192 30 atomic cards ready to import into Anki."
+      },
+      {
+        "scenario": "Convert textbook chapter to cards",
+        "example": "Chapter on photosynthesis \u2192 cards covering definitions, mechanisms, edge cases."
+      },
+      {
+        "scenario": "Onboarding documentation",
+        "example": "Company docs \u2192 cards new hires use to learn the stack."
+      },
+      {
+        "scenario": "Language vocabulary",
+        "example": "Vocabulary list \u2192 bidirectional cards (target \u2192 English and English \u2192 target)."
+      }
+    ],
+    "when_not_to_use": "Skip for material best learned through doing (programming, art). Skip for understanding-heavy concepts \u2014 cards good for facts, weaker for concepts requiring synthesis.",
+    "full_prompt": "You are creating spaced-repetition flashcards from study material. Output cards optimized for Anki / RemNote / similar SRS.\n\nINPUT\n- Material to convert: {material}\n- Target audience: {audience}\n- Card count target: {n_cards}\n- Card style preference: {style}             (basic Q&A / cloze deletion / image occlusion / mixed)\n\nOUTPUT\n\nFor each card, format as:\n\n### Card N\n\n**Front:** <question or prompt>\n**Back:** <answer>\n**Tags:** <comma-separated tags for category / topic>\n**Type:** basic | cloze | image_description\n\nIf cloze: front contains {{c1::hidden}} placeholders; back duplicates with the hidden parts marked.\n\nPRINCIPLES (the SRS-Optimal rules)\n\n1. ONE FACT PER CARD. Bad: \u2018Define HNSW and IVFFlat\u2019. Good: \u2018What does HNSW stand for?\u2019 + \u2018What's the main tradeoff of HNSW?\u2019 as two cards.\n\n2. ATOMIC. Each card has ONE specific answer. \u2018Discuss the strengths and weaknesses of...\u2019 is not a card.\n\n3. CONTEXT FREE. The front should make sense without the source material. Bad: \u2018What's the answer from chapter 3?\u2019 Good: \u2018What's the formula for reciprocal rank fusion?\u2019\n\n4. SHORT ANSWERS. If the back exceeds 2 sentences, the card is probably too big \u2014 split.\n\n5. BIDIRECTIONAL where useful. Definitions: term \u2192 definition AND definition \u2192 term.\n\n6. SPECIFIC OVER GENERAL. \u2018List the steps of photosynthesis\u2019 is bad; \u2018What's the immediate product of the light-dependent reactions?\u2019 is better.\n\n7. AVOID OPTIONAL CONTEXT. \u2018Sometimes...\u2019, \u2018In some cases...\u2019 \u2014 these make the card untestable.\n\n8. CLOZE for relationships and formulas. \u2018RRF score = sum of {{c1::1/(k+rank)}}\u2019 works well as cloze.\n\nOUTPUT FORMAT\nAfter all cards, include:\n- Total card count\n- Tags used (for organizing in SRS)\n- A 2-3 line \"study order\" suggestion (which tag to learn first)\n- A list of facts in the material you did NOT make cards from (and why \u2014 too contextual / too synthetic / etc.)\n\nMATERIAL\n{material}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "material",
+        "type": "string",
+        "description": "Source material to convert",
+        "required": true,
+        "example": "[textbook chapter / lecture notes / article]"
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Card user (sets vocabulary level)",
+        "required": true,
+        "example": "Engineering bootcamp student"
+      },
+      {
+        "name": "n_cards",
+        "type": "integer",
+        "description": "Target number of cards",
+        "required": true,
+        "example": "30"
+      },
+      {
+        "name": "style",
+        "type": "string",
+        "description": "Card style preference",
+        "required": false,
+        "example": "Mix of basic Q&A and cloze deletion"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "N numbered cards with Front/Back/Tags/Type fields; then summary section with counts, tags, study order, omitted-facts list."
+    },
+    "few_shot_examples": [
+      {
+        "input": "Material on RRF; n_cards=3",
+        "output": "### Card 1\\n**Front:** What does RRF stand for in retrieval systems?\\n**Back:** Reciprocal Rank Fusion\\n**Tags:** rag, retrieval, acronyms\\n**Type:** basic\\n\\n### Card 2\\n**Front:** RRF score = sum of {{c1::1/(k+rank)}} across retrievers, where k is a {{c2::smoothing constant}}.\\n**Back:** RRF score = sum of 1/(k+rank) across retrievers, where k is a smoothing constant.\\n**Tags:** rag, retrieval, formulas\\n**Type:** cloze"
+      }
+    ],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong atomicity; respects single-fact rule."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; occasionally creates compound cards \u2014 re-pin one-fact rule."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; cloze formatting sometimes off."
+      },
+      {
+        "model": "llama-3-70b-instruct",
+        "compatibility": "fair",
+        "notes": "Tends to multi-fact cards; iterate or use stricter prompt."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Image cloze",
+        "description": "Generate cards referencing diagrams.",
+        "prompt_snippet": "Add: \u2018for any diagram-related facts, output as image_description type with a 1-line description of what should be on the card image.\u2019"
+      },
+      {
+        "label": "Language vocabulary",
+        "description": "Bidirectional language cards.",
+        "prompt_snippet": "Add: \u2018for each vocabulary item, produce TWO cards: front=target-language term back=translation, and front=translation back=target-language term.\u2019"
+      },
+      {
+        "label": "Anki CSV output",
+        "description": "Direct import format.",
+        "prompt_snippet": "Replace markdown with: \u2018output as CSV: front,back,tags,type \u2014 ready to import into Anki via File \u2192 Import.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Compound cards (multiple facts).",
+        "fix": "Re-pin: \u2018ONE fact per card; split if needed.\u2019"
+      },
+      {
+        "symptom": "Context-dependent fronts (\u2018what's mentioned above?\u2019).",
+        "fix": "Add: \u2018every card front must be answerable without the source material visible.\u2019"
+      },
+      {
+        "symptom": "Long answers (>2 sentences).",
+        "fix": "Add: \u2018back is at most 2 sentences; split otherwise.\u2019"
+      },
+      {
+        "symptom": "Omitted-facts list missing.",
+        "fix": "Force: \u2018list at minimum 3 facts you chose NOT to card; explain why (synthetic / contextual / too easy).\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "llama-3-70b-instruct"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "study-guide-from-chapter",
+      "feynman-explanation-test"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "spaced-repetition",
+      "flashcard",
+      "atomic-card"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How many cards from one chapter?",
+        "answer": "Quality > quantity. 20-40 atomic cards per textbook chapter. More than 60 and you're carding inconsequential details; fewer than 15 and you're missing testable facts."
+      },
+      {
+        "question": "Cloze vs basic?",
+        "answer": "Cloze for formulas, lists, and relationships. Basic for definitions, single facts, and Q&A patterns. Mix for variety in review."
+      },
+      {
+        "question": "Will AI cards work as well as hand-made?",
+        "answer": "Close. AI cards are atomic and well-structured. They miss your personal mnemonics and emphasis \u2014 manually adjust 10-20% of cards to match how you think."
+      }
+    ],
+    "meta_title": "Spaced-Repetition Flashcards From Material \u2014 Prompt",
+    "meta_description": "Convert study material into 20-40 atomic flashcards optimized for SRS: one fact per card, cloze for formulas, context-free fronts."
+  },
+  {
     "slug": "socratic-tutor",
     "title": "Socratic Tutor That Never Gives the Answer First",
     "tldr": "A tutor persona that asks layered questions to guide the student to the answer instead of solving for them \u2014 calibrated to slow down only when the student is actually stuck, not just impatient.",
