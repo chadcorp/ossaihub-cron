@@ -5214,6 +5214,599 @@
     "meta_description": "Parameter-efficient fine-tune of Llama 3.1 8B with PEFT + QLoRA. ~100MB adapter trains on a single A100 in hours."
   },
   {
+    "slug": "unsloth-qlora-llama-finetune",
+    "title": "Unsloth QLoRA Fine-Tune (4x Faster, 70% Less VRAM)",
+    "tldr": "Unsloth: drop-in fine-tuning that's 4x faster + uses 70% less VRAM than HF Trainer. Fine-tune Llama-3.1-8B on a single 24GB GPU in <2 hours.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "Unsloth",
+    "tags": [
+      "unsloth",
+      "qlora",
+      "fine-tuning",
+      "llama"
+    ],
+    "best_for_tags": [
+      "single-gpu",
+      "fast-iteration",
+      "cost-sensitive"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Fine-tuning Llama / Mistral / Phi / Qwen on a single GPU (24GB+) and want to iterate fast. Unsloth's custom kernels make this practical without H100 clusters.",
+    "when_not_to_use": "Skip for full-parameter fine-tuning of 70B+ models (still need multi-GPU + DeepSpeed). Skip if you need broad model support \u2014 Unsloth supports a curated list.",
+    "quick_start": "pip install 'unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git' && python unsloth_qlora.py",
+    "full_code": "\"\"\"Unsloth QLoRA fine-tune on a single 24GB GPU.\"\"\"\nfrom __future__ import annotations\n\nfrom unsloth import FastLanguageModel\nfrom datasets import load_dataset\nfrom trl import SFTTrainer\nfrom transformers import TrainingArguments\n\n\n# ----------------- LOAD MODEL (4-bit QLoRA) -----------------\n\nMAX_SEQ_LEN = 4096\n\nmodel, tokenizer = FastLanguageModel.from_pretrained(\n    model_name=\"unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit\",\n    max_seq_length=MAX_SEQ_LEN,\n    dtype=None,  # auto: bfloat16 on Ampere+, float16 on older\n    load_in_4bit=True,\n)\n\n\n# ----------------- ADD LORA ADAPTERS -----------------\n\nmodel = FastLanguageModel.get_peft_model(\n    model,\n    r=16,                            # LoRA rank; 16 is balanced\n    target_modules=[\"q_proj\", \"k_proj\", \"v_proj\", \"o_proj\",\n                    \"gate_proj\", \"up_proj\", \"down_proj\"],\n    lora_alpha=32,                   # 2x rank is a good default\n    lora_dropout=0.05,\n    bias=\"none\",\n    use_gradient_checkpointing=\"unsloth\",  # ~30% less VRAM\n    random_state=42,\n    use_rslora=False,                # try True for harder tasks\n)\n\n\n# ----------------- DATASET (Alpaca-style) -----------------\n\nALPACA_TEMPLATE = \"\"\"Below is an instruction. Write a response that fulfills it.\n\n### Instruction:\n{instruction}\n\n### Response:\n{output}\"\"\"\n\n\ndef format_alpaca(example):\n    return {\"text\": ALPACA_TEMPLATE.format(\n        instruction=example[\"instruction\"],\n        output=example[\"output\"],\n    )}\n\n\ndataset = load_dataset(\"yahma/alpaca-cleaned\", split=\"train\")\ndataset = dataset.map(format_alpaca)\n\n\n# ----------------- TRAINER -----------------\n\ntrainer = SFTTrainer(\n    model=model,\n    tokenizer=tokenizer,\n    train_dataset=dataset,\n    dataset_text_field=\"text\",\n    max_seq_length=MAX_SEQ_LEN,\n    packing=True,                # 5x faster on short sequences\n    args=TrainingArguments(\n        output_dir=\"./unsloth-llama-finetune\",\n        per_device_train_batch_size=2,\n        gradient_accumulation_steps=4,   # effective batch = 8\n        warmup_steps=20,\n        max_steps=200,                   # short run for demo; remove for full epoch\n        learning_rate=2e-4,\n        bf16=True,                       # bfloat16 if available\n        logging_steps=10,\n        optim=\"adamw_8bit\",              # 8-bit Adam for memory\n        weight_decay=0.01,\n        lr_scheduler_type=\"cosine\",\n        seed=42,\n        report_to=\"wandb\",               # or \"none\"\n    ),\n)\n\n\n# ----------------- TRAIN -----------------\n\nif __name__ == \"__main__\":\n    trainer.train()\n\n    # Save LoRA adapter\n    model.save_pretrained(\"./unsloth-llama-lora\")\n    tokenizer.save_pretrained(\"./unsloth-llama-lora\")\n\n    # OR merge to base + save as full model (4-bit or 16-bit)\n    # model.save_pretrained_merged(\"./merged-16bit\", tokenizer, save_method=\"merged_16bit\")\n    # model.save_pretrained_gguf(\"./gguf-q4\", tokenizer, quantization_method=\"q4_k_m\")\n",
+    "dependencies": [
+      {
+        "name": "unsloth",
+        "version": ">=2024.10",
+        "purpose": "Optimized fine-tuning"
+      },
+      {
+        "name": "trl",
+        "version": ">=0.11",
+        "purpose": "SFTTrainer"
+      },
+      {
+        "name": "datasets",
+        "version": ">=2.18",
+        "purpose": "Dataset loading"
+      },
+      {
+        "name": "wandb",
+        "version": ">=0.17",
+        "purpose": "Experiment tracking (optional)"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "WANDB_API_KEY",
+        "required": false,
+        "description": "If using wandb",
+        "example": "..."
+      },
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "For gated model downloads",
+        "example": "hf_..."
+      }
+    ],
+    "setup_steps": [
+      "Install: pip install 'unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git'",
+      "Verify GPU: nvidia-smi (need 24GB+ for 8B; 16GB for 7B)",
+      "export HF_TOKEN=hf_...",
+      "python unsloth_qlora.py",
+      "Monitor: tensorboard or wandb dashboard"
+    ],
+    "variations": [
+      {
+        "label": "Larger model (70B)",
+        "description": "QLoRA on 70B with 1\u00d7H100 80GB or 2\u00d7A6000.",
+        "code_snippet": "model_name='unsloth/Meta-Llama-3.1-70B-Instruct-bnb-4bit'; per_device_train_batch_size=1; gradient_accumulation_steps=8"
+      },
+      {
+        "label": "DPO / preference tuning",
+        "description": "Train on chosen/rejected pairs.",
+        "code_snippet": "from trl import DPOTrainer; DPOTrainer(model=model, beta=0.1, train_dataset=dpo_dataset, ...)"
+      },
+      {
+        "label": "Export to GGUF for Ollama",
+        "description": "Run fine-tuned model in Ollama.",
+        "code_snippet": "model.save_pretrained_gguf('./gguf', tokenizer, quantization_method='q4_k_m'); # then 'ollama create my-model -f Modelfile'"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "CUDA OOM mid-training",
+        "cause": "Sequence length / batch too aggressive.",
+        "fix_snippet": "Reduce max_seq_length (4096 \u2192 2048). Reduce per_device_train_batch_size. Increase gradient_accumulation_steps to keep effective batch size."
+      },
+      {
+        "error_text": "Loss diverges (NaN)",
+        "cause": "Learning rate too high.",
+        "fix_snippet": "Lower learning_rate (2e-4 \u2192 1e-4). Increase warmup_steps. Add gradient_clipping (max_grad_norm=1.0 in TrainingArguments)."
+      },
+      {
+        "error_text": "Model outputs garbage after merging",
+        "cause": "Wrong save method or tokenizer mismatch.",
+        "fix_snippet": "Use save_pretrained_merged with 'merged_16bit' (not 4bit). Verify tokenizer pad/eos tokens match base model."
+      },
+      {
+        "error_text": "RuntimeError: unsloth not supported on this GPU",
+        "cause": "Unsloth requires Ampere+ (RTX 30/40, A100, H100).",
+        "fix_snippet": "Use vanilla HF Trainer + bitsandbytes for older GPUs. Or rent a colab/runpod with Ampere+."
+      }
+    ],
+    "production_checklist": [
+      "Hold out an eval set; track loss + custom metrics during training.",
+      "Track experiments (wandb / mlflow) \u2014 fine-tuning has many knobs.",
+      "Run inference test on fine-tuned model before merging.",
+      "Quantize for deployment (4-bit or 8-bit) to cut serving cost.",
+      "Document training data + config (model card).",
+      "Test for catastrophic forgetting on general benchmarks."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "Llama-3.1-8B-Instruct",
+        "Mistral-7B-v0.3"
+      ],
+      "library_versions": [
+        "unsloth==2024.10",
+        "trl==0.11"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "unsloth",
+      "trl"
+    ],
+    "related_glossary_slugs": [
+      "qlora",
+      "fine-tuning"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "QLoRA vs full fine-tuning?",
+        "answer": "QLoRA: trains a small adapter (~50MB) on top of frozen 4-bit base. 5-10% less performance than full FT. 50x cheaper VRAM. Use QLoRA unless you need full FT for quality reasons."
+      },
+      {
+        "question": "Unsloth vs HF Trainer?",
+        "answer": "Unsloth: 4x faster, 70% less VRAM, custom kernels. HF Trainer: broader model support, more features. Unsloth for compatible models; HF for everything else."
+      },
+      {
+        "question": "How much data?",
+        "answer": "1k-10k high-quality examples beats 100k mediocre. Quality > quantity. Aim for >2k examples for a 7B model."
+      },
+      {
+        "question": "Cost?",
+        "answer": "Single 8B fine-tune on RTX 4090 ($0.50/hr cloud): ~$1-3. On A100: faster, similar cost. Compare to OpenAI fine-tuning (~$25 for 1M tokens) \u2014 way cheaper if you self-host."
+      }
+    ],
+    "github_url": "https://github.com/unslothai/unsloth",
+    "meta_title": "Unsloth QLoRA Fine-Tune Starter",
+    "meta_description": "Fine-tune Llama / Mistral with Unsloth QLoRA: 4x faster, 70% less VRAM. Single 24GB GPU, 2-hour iterations, GGUF export."
+  },
+  {
+    "slug": "axolotl-config-driven-finetune",
+    "title": "Axolotl Config-Driven Fine-Tune",
+    "tldr": "Axolotl: YAML-config-driven fine-tuning supporting QLoRA, LoRA, full-FT, DPO. Reproducible, distributed-training friendly, integrates with DeepSpeed / FSDP.",
+    "category": "fine-tuning",
+    "language": "yaml",
+    "framework": "Axolotl",
+    "tags": [
+      "axolotl",
+      "fine-tuning",
+      "yaml-config",
+      "distributed"
+    ],
+    "best_for_tags": [
+      "reproducibility",
+      "multi-gpu",
+      "team-workflows"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "Team-environment fine-tuning where reproducibility + config-as-code matter. Axolotl YAML configs are easier to version + share than Python scripts. Multi-GPU FT is first-class.",
+    "when_not_to_use": "Skip for one-off experiments (Python script is faster). Skip for unsupported models (Axolotl supports a curated list).",
+    "quick_start": "pip install 'axolotl[flash-attn,deepspeed]' && accelerate launch -m axolotl.cli.train config.yml",
+    "full_code": "# axolotl config \u2014 fine-tune Llama-3.1-8B with QLoRA on Alpaca dataset\n# Save as: config.yml\n# Run:     accelerate launch -m axolotl.cli.train config.yml\n\n# ----------------- MODEL -----------------\nbase_model: meta-llama/Llama-3.1-8B-Instruct\nmodel_type: LlamaForCausalLM\ntokenizer_type: AutoTokenizer\n\nload_in_4bit: true                    # QLoRA\nstrict: false\n\n\n# ----------------- DATASET -----------------\ndatasets:\n  - path: yahma/alpaca-cleaned\n    type: alpaca                       # built-in format; or: completion, sharegpt, custom\n\n  # Multi-dataset mix\n  # - path: tatsu-lab/alpaca\n  #   type: alpaca\n  # - path: ./custom_data.jsonl\n  #   type: chat_template\n  #   chat_template: chatml\n\ndataset_prepared_path: ./prepared\nval_set_size: 0.05\noutput_dir: ./axolotl-llama-out\n\nsequence_len: 4096\nsample_packing: true                  # pack short sequences; ~5x faster\npad_to_sequence_len: true\n\n\n# ----------------- LORA -----------------\nadapter: qlora                        # qlora | lora | (omit for full FT)\nlora_r: 32\nlora_alpha: 64\nlora_dropout: 0.05\nlora_target_linear: true\nlora_modules_to_save: []\n\n\n# ----------------- TRAINING -----------------\ngradient_accumulation_steps: 4\nmicro_batch_size: 2\nnum_epochs: 3\n\noptimizer: adamw_bnb_8bit             # 8-bit Adam\nlr_scheduler: cosine\nlearning_rate: 2.0e-4\nwarmup_steps: 50\n\ntrain_on_inputs: false                # mask user turns; only train on assistant\ngroup_by_length: false\n\nbf16: auto\ntf32: true\nflash_attention: true\ngradient_checkpointing: true\n\n\n# ----------------- DEEPSPEED (multi-GPU) -----------------\n# deepspeed: deepspeed_configs/zero2.json   # uncomment for multi-GPU\n\n\n# ----------------- LOGGING + EVAL -----------------\nlogging_steps: 10\neval_steps: 100\nsave_steps: 200\nsave_total_limit: 2\n\n# WandB\n# wandb_project: my-finetune\n# wandb_entity: my-team\n\n\n# ----------------- TOKENS + ROPE -----------------\nspecial_tokens:\n  pad_token: \"<|end_of_text|>\"\n\n# rope_scaling:\n#   type: linear\n#   factor: 2.0\n\n\n# ----------------- POST-TRAINING MERGE -----------------\n# After training, merge LoRA \u2192 base:\n# python -m axolotl.cli.merge_lora ./axolotl-llama-out\n",
+    "dependencies": [
+      {
+        "name": "axolotl",
+        "version": ">=0.5",
+        "purpose": "Config-driven fine-tuning framework"
+      },
+      {
+        "name": "flash-attn",
+        "version": ">=2.6",
+        "purpose": "Flash attention (optional, faster)"
+      },
+      {
+        "name": "deepspeed",
+        "version": ">=0.15",
+        "purpose": "Multi-GPU support"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Gated model access",
+        "example": "hf_..."
+      },
+      {
+        "name": "WANDB_API_KEY",
+        "required": false,
+        "description": "Optional logging",
+        "example": "..."
+      }
+    ],
+    "setup_steps": [
+      "Install Axolotl: pip install 'axolotl[flash-attn,deepspeed]'",
+      "Save config.yml",
+      "huggingface-cli login",
+      "accelerate config  # one-time setup, pick GPU/multi-GPU",
+      "accelerate launch -m axolotl.cli.train config.yml",
+      "Merge: python -m axolotl.cli.merge_lora ./axolotl-llama-out"
+    ],
+    "variations": [
+      {
+        "label": "DPO preference tuning",
+        "description": "Train on chosen/rejected pairs.",
+        "code_snippet": "# Add to config:\\nrl: dpo\\ndatasets:\\n  - path: argilla/distilabel-intel-orca-dpo-pairs\\n    type:\\n      field_system: system\\n      field_chosen: chosen\\n      field_rejected: rejected"
+      },
+      {
+        "label": "Multi-GPU with DeepSpeed",
+        "description": "Scale across N GPUs.",
+        "code_snippet": "# Uncomment deepspeed: deepspeed_configs/zero2.json in config\\n# Run: deepspeed --num_gpus 4 -m axolotl.cli.train config.yml"
+      },
+      {
+        "label": "Full fine-tuning (no LoRA)",
+        "description": "Maximum quality, max cost.",
+        "code_snippet": "# Remove 'adapter: qlora' and lora_* fields. Need 80GB+ VRAM for 7B; multi-GPU for 13B+"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "FlashAttention not available",
+        "cause": "Wrong CUDA version or older GPU.",
+        "fix_snippet": "Pin: pip install flash-attn==2.6.3 --no-build-isolation. Set flash_attention: false in config if hardware doesn't support."
+      },
+      {
+        "error_text": "Sample packing breaks loss",
+        "cause": "Some dataset formats incompatible.",
+        "fix_snippet": "Set sample_packing: false. ~5x slower but works with all formats. Re-enable after debugging."
+      },
+      {
+        "error_text": "Inconsistent results across runs",
+        "cause": "No seed set.",
+        "fix_snippet": "Add seed: 42 to config. Note: distributed training has inherent non-determinism even with seed."
+      },
+      {
+        "error_text": "Validation loss stops decreasing early",
+        "cause": "Underfit or LR too low.",
+        "fix_snippet": "Increase num_epochs. Check learning_rate (2e-4 typical for LoRA). Consider mixing in more diverse data."
+      }
+    ],
+    "production_checklist": [
+      "Pin all dependency versions in requirements.txt.",
+      "Version-control the YAML config alongside model card.",
+      "Set seed for reproducibility (still non-deterministic in distributed).",
+      "Track all runs in wandb/mlflow for comparison.",
+      "Hold out a TEST set (never seen during training/eval).",
+      "Document data sources + processing in config comments."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "Llama-3.1-8B-Instruct"
+      ],
+      "library_versions": [
+        "axolotl==0.5"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "axolotl"
+    ],
+    "related_glossary_slugs": [
+      "lora",
+      "qlora"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Axolotl vs Unsloth?",
+        "answer": "Axolotl: config-first, multi-GPU friendly, reproducible. Unsloth: fastest single-GPU, custom kernels. Axolotl for production / teams; Unsloth for fast iteration."
+      },
+      {
+        "question": "How long does training take?",
+        "answer": "8B + QLoRA + Alpaca-cleaned (~50k examples) + 3 epochs: ~6-8 hours on A100. Single 4090: ~12-18 hours. Use micro_batch_size + gradient_accumulation_steps to fit memory."
+      },
+      {
+        "question": "Sample packing \u2014 always on?",
+        "answer": "Yes for performance unless you hit an error. Packs short sequences into one batch element. ~5x speedup typical. Some dataset types break with packing (chat with system prompts handled specially)."
+      },
+      {
+        "question": "What about TPUs?",
+        "answer": "Axolotl has partial TPU support via accelerate. Most heavily tested on NVIDIA. For TPU, consider EasyDeL or native JAX libs."
+      }
+    ],
+    "github_url": "https://github.com/OpenAccess-AI-Collective/axolotl",
+    "meta_title": "Axolotl Config-Driven Fine-Tune Starter",
+    "meta_description": "Axolotl YAML config for QLoRA / LoRA / DPO / full FT. Multi-GPU friendly, reproducible, integrates with DeepSpeed."
+  },
+  {
+    "slug": "finetune-dataset-prep-pipeline",
+    "title": "Fine-Tune Dataset Prep Pipeline (Quality > Quantity)",
+    "tldr": "Dataset prep: dedupe, quality-filter, format conversion (chat template), token-count distribution check, train/val split. Bad data is the #1 cause of bad fine-tunes.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "datasets + custom",
+    "tags": [
+      "dataset-prep",
+      "fine-tuning",
+      "quality-control",
+      "tokenizer"
+    ],
+    "best_for_tags": [
+      "data-quality",
+      "pre-training-pipeline",
+      "ml-engineers"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Before fine-tuning: validate dataset quality. Catch issues that ruin training (duplicates, malformed examples, length outliers, missing fields). Do this BEFORE spending GPU hours.",
+    "when_not_to_use": "Skip for tiny datasets (<200 examples; eyeball manually). Skip when you've already prepped a dataset for a previous fine-tune (rerun audit on changes).",
+    "quick_start": "pip install datasets tqdm transformers && python prep_dataset.py",
+    "full_code": "\"\"\"Fine-tune dataset prep + audit pipeline.\"\"\"\nfrom __future__ import annotations\n\nimport hashlib\nimport json\nimport re\nimport statistics\nfrom collections import Counter\nfrom pathlib import Path\n\nfrom datasets import Dataset, load_dataset\nfrom transformers import AutoTokenizer\nfrom tqdm import tqdm\n\n\nTOKENIZER = AutoTokenizer.from_pretrained(\"meta-llama/Llama-3.1-8B-Instruct\")\n\n\n# ----------------- LOAD -----------------\n\ndef load_raw(source: str) -> Dataset:\n    \"\"\"Load from HuggingFace hub or local file.\"\"\"\n    if source.endswith(\".jsonl\"):\n        return Dataset.from_json(source)\n    return load_dataset(source, split=\"train\")\n\n\n# ----------------- AUDIT (run BEFORE filtering) -----------------\n\ndef audit(dataset: Dataset, instruction_field: str = \"instruction\",\n          output_field: str = \"output\") -> dict:\n    instruction_lens = []\n    output_lens = []\n    empty_count = 0\n    has_lang_tags = 0\n    seen_hashes: set[str] = set()\n    duplicate_count = 0\n\n    for ex in tqdm(dataset, desc=\"Auditing\"):\n        i = ex.get(instruction_field) or \"\"\n        o = ex.get(output_field) or \"\"\n        if not i.strip() or not o.strip():\n            empty_count += 1\n            continue\n        if re.search(r\"\\b(?:html|xml|css|javascript)\\b\", o.lower()[:200]):\n            has_lang_tags += 1\n        i_tokens = len(TOKENIZER.encode(i))\n        o_tokens = len(TOKENIZER.encode(o))\n        instruction_lens.append(i_tokens)\n        output_lens.append(o_tokens)\n        # Dedup by hash\n        h = hashlib.sha256((i + \"|\" + o).encode()).hexdigest()\n        if h in seen_hashes:\n            duplicate_count += 1\n        else:\n            seen_hashes.add(h)\n\n    return {\n        \"total\": len(dataset),\n        \"empty_examples\": empty_count,\n        \"duplicates\": duplicate_count,\n        \"unique_examples\": len(dataset) - empty_count - duplicate_count,\n        \"instruction_tokens\": {\n            \"median\": statistics.median(instruction_lens) if instruction_lens else 0,\n            \"p95\": sorted(instruction_lens)[int(0.95 * len(instruction_lens))] if instruction_lens else 0,\n            \"max\": max(instruction_lens) if instruction_lens else 0,\n        },\n        \"output_tokens\": {\n            \"median\": statistics.median(output_lens) if output_lens else 0,\n            \"p95\": sorted(output_lens)[int(0.95 * len(output_lens))] if output_lens else 0,\n            \"max\": max(output_lens) if output_lens else 0,\n        },\n        \"with_html_tags\": has_lang_tags,\n    }\n\n\n# ----------------- FILTERS -----------------\n\ndef filter_and_dedupe(dataset: Dataset, max_total_tokens: int = 4000,\n                     instruction_field: str = \"instruction\",\n                     output_field: str = \"output\") -> Dataset:\n    \"\"\"Apply quality filters.\"\"\"\n    seen: set[str] = set()\n    kept = []\n\n    for ex in tqdm(dataset, desc=\"Filtering\"):\n        i = (ex.get(instruction_field) or \"\").strip()\n        o = (ex.get(output_field) or \"\").strip()\n        if not i or not o:\n            continue\n        # Length filter (avoid OOM on training)\n        total_tokens = len(TOKENIZER.encode(i + \"\\n\" + o))\n        if total_tokens > max_total_tokens:\n            continue\n        # Deduplicate\n        h = hashlib.sha256((i + \"|\" + o).encode()).hexdigest()\n        if h in seen:\n            continue\n        seen.add(h)\n        # Heuristic: reject very short outputs (likely low-quality)\n        if len(o) < 20:\n            continue\n        kept.append({instruction_field: i, output_field: o})\n\n    print(f\"Kept {len(kept)} / {len(dataset)} ({100 * len(kept) / max(len(dataset), 1):.1f}%)\")\n    return Dataset.from_list(kept)\n\n\n# ----------------- FORMAT TO CHAT TEMPLATE -----------------\n\ndef to_chat_template(example, instruction_field: str = \"instruction\",\n                     output_field: str = \"output\"):\n    \"\"\"Convert to Llama-3 chat template.\"\"\"\n    messages = [\n        {\"role\": \"user\", \"content\": example[instruction_field]},\n        {\"role\": \"assistant\", \"content\": example[output_field]},\n    ]\n    return {\"text\": TOKENIZER.apply_chat_template(messages, tokenize=False)}\n\n\n# ----------------- SPLIT -----------------\n\ndef train_val_test_split(dataset: Dataset, val_size: float = 0.05,\n                         test_size: float = 0.02, seed: int = 42):\n    splits = dataset.train_test_split(test_size=val_size + test_size, seed=seed)\n    val_test = splits[\"test\"].train_test_split(\n        test_size=test_size / (val_size + test_size), seed=seed\n    )\n    return {\n        \"train\": splits[\"train\"],\n        \"validation\": val_test[\"train\"],\n        \"test\": val_test[\"test\"],\n    }\n\n\n# ----------------- SAVE -----------------\n\ndef save_splits(splits: dict, out_dir: str = \"./prepared\"):\n    out = Path(out_dir)\n    out.mkdir(exist_ok=True, parents=True)\n    for name, ds in splits.items():\n        path = out / f\"{name}.jsonl\"\n        ds.to_json(str(path), orient=\"records\", lines=True)\n        print(f\"Wrote {path}: {len(ds)} examples\")\n\n\n# ----------------- RUN -----------------\n\nif __name__ == \"__main__\":\n    raw = load_raw(\"yahma/alpaca-cleaned\")\n    print(\"\\n=== AUDIT ===\")\n    print(json.dumps(audit(raw), indent=2))\n\n    print(\"\\n=== FILTER + DEDUPE ===\")\n    cleaned = filter_and_dedupe(raw)\n\n    print(\"\\n=== FORMAT TO CHAT TEMPLATE ===\")\n    formatted = cleaned.map(to_chat_template)\n\n    print(\"\\n=== SPLIT ===\")\n    splits = train_val_test_split(formatted)\n    save_splits(splits)\n",
+    "dependencies": [
+      {
+        "name": "datasets",
+        "version": ">=2.18",
+        "purpose": "HF datasets"
+      },
+      {
+        "name": "transformers",
+        "version": ">=4.45",
+        "purpose": "Tokenizer"
+      },
+      {
+        "name": "tqdm",
+        "version": ">=4.66",
+        "purpose": "Progress bars"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Tokenizer downloads",
+        "example": "hf_..."
+      }
+    ],
+    "setup_steps": [
+      "pip install datasets transformers tqdm",
+      "export HF_TOKEN=hf_...",
+      "Replace dataset source with your real data",
+      "python prep_dataset.py",
+      "Inspect ./prepared/train.jsonl + audit output"
+    ],
+    "variations": [
+      {
+        "label": "LLM-as-judge filter",
+        "description": "Filter low-quality examples with another LLM.",
+        "code_snippet": "# For each example, ask GPT-4o-mini: 'is this a high-quality training example? yes/no.' Filter no's."
+      },
+      {
+        "label": "Synthetic data generation",
+        "description": "Augment small datasets.",
+        "code_snippet": "# Use Magpie / Self-Instruct: prompt a large model to generate (instruction, output) pairs from a seed instruction"
+      },
+      {
+        "label": "Multi-source mix",
+        "description": "Combine datasets with weights.",
+        "code_snippet": "# Use datasets.interleave_datasets([ds1, ds2, ds3], probabilities=[0.5, 0.3, 0.2]) to control mix ratio"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Out-of-memory loading large dataset",
+        "cause": "Trying to load all at once.",
+        "fix_snippet": "Use streaming: load_dataset('...', streaming=True). Iterate without loading everything into RAM."
+      },
+      {
+        "error_text": "Train/val leak (data in both)",
+        "cause": "Splitting AFTER deduplication.",
+        "fix_snippet": "Dedupe BEFORE split. Or split first, then dedupe within each split \u2014 but check val/test don't share hashes with train."
+      },
+      {
+        "error_text": "Chat template not applying correctly",
+        "cause": "Tokenizer missing template.",
+        "fix_snippet": "Verify tokenizer.chat_template attribute exists. For older tokenizers, set tokenizer.chat_template manually."
+      },
+      {
+        "error_text": "Length filter too aggressive \u2014 dataset shrinks 80%",
+        "cause": "max_total_tokens too low.",
+        "fix_snippet": "Set max_total_tokens to match your training max_seq_len. Don't filter too aggressively at prep time."
+      }
+    ],
+    "production_checklist": [
+      "Run audit BEFORE filtering \u2014 surfaces issues you'd miss in spot-checks.",
+      "Deduplicate by exact hash + near-duplicate detection (MinHash for big datasets).",
+      "Hold out a TEST split, never seen during training or eval-iteration.",
+      "Version dataset prep code alongside model artifacts.",
+      "Track: total examples, filter rate, token distribution per split.",
+      "Document data sources + filters in the model card."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "datasets==2.18",
+        "transformers==4.45"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "huggingface-datasets"
+    ],
+    "related_glossary_slugs": [
+      "dataset-curation",
+      "fine-tuning"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How much data for fine-tuning?",
+        "answer": "1k-10k high-quality > 100k mediocre. For instruction-tuning a 7B model: 5k diverse examples is a good baseline. More if your domain is broad."
+      },
+      {
+        "question": "Near-duplicate detection?",
+        "answer": "Exact-hash catches identical examples. For near-duplicates (paraphrases), use MinHash + LSH or embedding cosine similarity. Adds 5-10% filter on top of exact-hash."
+      },
+      {
+        "question": "Should I balance categories?",
+        "answer": "Depends on use case. If training a classifier, balance. If training an open-ended assistant, follow real-world distribution. Synthetic upsampling is a last resort."
+      },
+      {
+        "question": "Validation vs test set?",
+        "answer": "Validation: used for early stopping / HP tuning. Test: locked, single final evaluation. Treat test set as sacred \u2014 don't peek during iteration."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Fine-Tune Dataset Prep Pipeline Starter",
+    "meta_description": "Dataset prep for fine-tuning: audit, dedupe, length-filter, chat-template format, train/val/test split. Bad data ruins fine-tunes \u2014 start clean."
+  },
+  {
+    "slug": "finetune-eval-vs-baseline",
+    "title": "Fine-Tune Evaluation vs Baseline (Win-Rate)",
+    "tldr": "After fine-tuning, prove it beat the baseline. Compare fine-tuned vs base on held-out set with LLM judge \u2014 win-rate, tie-rate, regression-rate. The metric that matters.",
+    "category": "fine-tuning",
+    "language": "python",
+    "framework": "Custom + OpenAI judge",
+    "tags": [
+      "fine-tuning",
+      "eval",
+      "win-rate",
+      "judge"
+    ],
+    "best_for_tags": [
+      "ml-engineers",
+      "fine-tune-validation",
+      "ab-testing"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Just finished fine-tuning. Need to PROVE it beat the base model before shipping. LLM-judge win-rate on a held-out set is the gold-standard practical metric.",
+    "when_not_to_use": "Skip if you have a deterministic eval (BLEU, exact match) \u2014 use that. Skip for tiny test sets (<50 examples) \u2014 noise dominates win-rate signal.",
+    "quick_start": "pip install openai datasets && python finetune_eval.py",
+    "full_code": "\"\"\"Fine-tune vs baseline win-rate eval.\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport random\nfrom collections import Counter\nfrom concurrent.futures import ThreadPoolExecutor\n\nfrom openai import OpenAI\nfrom datasets import load_dataset\n\n\nclient = OpenAI(api_key=os.environ[\"OPENAI_API_KEY\"])\n\n\n# ----------------- GENERATE RESPONSES -----------------\n\ndef generate(prompt: str, model: str) -> str:\n    \"\"\"Call BOTH the base model and fine-tuned model.\n\n    Wire to your real endpoints \u2014 vLLM, Modal, etc. Below is illustrative.\n    \"\"\"\n    response = client.chat.completions.create(\n        model=model,\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n        temperature=0,\n        max_tokens=512,\n    )\n    return response.choices[0].message.content\n\n\n# ----------------- LLM JUDGE -----------------\n\nJUDGE_PROMPT = \"\"\"You are evaluating two AI responses to a user prompt.\n\nPROMPT:\n{prompt}\n\nRESPONSE A:\n{a}\n\nRESPONSE B:\n{b}\n\nWhich response is better overall (correctness, completeness, helpfulness)?\nRespond with EXACTLY one of: \"A\", \"B\", or \"TIE\".\nDo not explain. Just the letter.\"\"\"\n\n\ndef judge(prompt: str, response_a: str, response_b: str) -> str:\n    \"\"\"Single judgment from a stronger model (gpt-4o).\"\"\"\n    j = client.chat.completions.create(\n        model=\"gpt-4o\",\n        messages=[{\"role\": \"user\", \"content\": JUDGE_PROMPT.format(\n            prompt=prompt, a=response_a, b=response_b\n        )}],\n        temperature=0,\n        max_tokens=10,\n    )\n    return j.choices[0].message.content.strip()\n\n\n# ----------------- BIAS MITIGATION: SWAP A/B -----------------\n\ndef judge_with_position_swap(prompt: str, base_resp: str, ft_resp: str) -> str:\n    \"\"\"Run judge twice (A=base/B=ft AND A=ft/B=base); only count consistent verdict.\"\"\"\n    v1 = judge(prompt, base_resp, ft_resp)\n    v2 = judge(prompt, ft_resp, base_resp)\n\n    # Translate v2 (where A=ft) to base/ft language\n    if v1 == \"A\" and v2 == \"B\":\n        return \"base\"  # base won both\n    elif v1 == \"B\" and v2 == \"A\":\n        return \"ft\"  # ft won both\n    else:\n        return \"tie\"\n\n\n# ----------------- RUN EVAL -----------------\n\ndef run_eval(eval_set_path: str, base_model: str, ft_model: str, n_samples: int = 100):\n    examples = load_dataset(\"json\", data_files=eval_set_path)[\"train\"]\n    if len(examples) > n_samples:\n        examples = examples.shuffle(seed=42).select(range(n_samples))\n\n    results = []\n    with ThreadPoolExecutor(max_workers=10) as pool:\n        for ex in examples:\n            prompt = ex.get(\"instruction\") or ex[\"prompt\"]\n            base_resp = generate(prompt, base_model)\n            ft_resp = generate(prompt, ft_model)\n            verdict = judge_with_position_swap(prompt, base_resp, ft_resp)\n            results.append({\"prompt\": prompt[:100], \"verdict\": verdict})\n\n    counts = Counter(r[\"verdict\"] for r in results)\n    total = len(results)\n    print(\"\\n=== RESULTS ===\")\n    print(f\"  ft wins:   {counts['ft']:>3} / {total} ({100 * counts['ft'] / total:.0f}%)\")\n    print(f\"  base wins: {counts['base']:>3} / {total} ({100 * counts['base'] / total:.0f}%)\")\n    print(f\"  ties:      {counts['tie']:>3} / {total} ({100 * counts['tie'] / total:.0f}%)\")\n\n    # Decision rule\n    win_rate = (counts['ft'] + counts['tie'] * 0.5) / total\n    if win_rate >= 0.55:\n        print(f\"\\n\u2705 Ship: fine-tune beats base (win-rate {win_rate:.2%})\")\n    elif win_rate <= 0.45:\n        print(f\"\\n\u274c Don't ship: fine-tune LOSES (win-rate {win_rate:.2%})\")\n    else:\n        print(f\"\\n\u26a0\ufe0f  Inconclusive (win-rate {win_rate:.2%}). Run more samples.\")\n\n    # Save detailed log\n    with open(\"eval_results.jsonl\", \"w\") as f:\n        for r in results:\n            f.write(json.dumps(r) + \"\\n\")\n\n\nif __name__ == \"__main__\":\n    run_eval(\n        eval_set_path=\"./prepared/test.jsonl\",\n        base_model=\"meta-llama/Llama-3.1-8B-Instruct\",\n        ft_model=\"my-ft-llama-3.1-8b\",\n        n_samples=100,\n    )\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Judge LLM"
+      },
+      {
+        "name": "datasets",
+        "version": ">=2.18",
+        "purpose": "Load test data"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "For gpt-4o judge",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai datasets",
+      "Have a held-out test set (./prepared/test.jsonl)",
+      "Configure base + ft model endpoints",
+      "python finetune_eval.py",
+      "Review eval_results.jsonl for per-example verdicts"
+    ],
+    "variations": [
+      {
+        "label": "Multi-judge consensus",
+        "description": "Use 3 judges; majority wins.",
+        "code_snippet": "# Run judge with gpt-4o, claude-3-5-sonnet, gemini-1.5-pro. Take majority verdict. More robust to single-judge bias."
+      },
+      {
+        "label": "Per-category breakdown",
+        "description": "Win-rate by query type.",
+        "code_snippet": "# Tag eval examples by category. Compute win-rate per category. Surfaces where fine-tune wins vs loses."
+      },
+      {
+        "label": "Statistical significance",
+        "description": "Bootstrap confidence interval.",
+        "code_snippet": "# Resample N times; compute win-rate distribution. Report 95% CI. Avoids over-interpreting small samples."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Judge favors the longer response",
+        "cause": "Length bias.",
+        "fix_snippet": "Position swap (already in code) helps. Also: tell judge to ignore length; or use rubric-based judge over preference judge."
+      },
+      {
+        "error_text": "All responses tied",
+        "cause": "Test set too easy or judge model too weak.",
+        "fix_snippet": "Use harder test cases. Use a STRONGER judge (gpt-4o or claude-3-opus over gpt-4o-mini)."
+      },
+      {
+        "error_text": "Win-rate jumps run-to-run",
+        "cause": "Sample size too small or temperature non-zero.",
+        "fix_snippet": "Use temperature=0 for generation AND judge. Run with at least 100 examples; 300 for stable signals."
+      },
+      {
+        "error_text": "Judge says 'A' but the better answer is B",
+        "cause": "Judge model has known biases.",
+        "fix_snippet": "Position swap helps catch this. Multi-judge consensus better. Validate judge accuracy on a hand-labeled subset before trusting at scale."
+      }
+    ],
+    "production_checklist": [
+      "Hold-out test set never seen during fine-tuning.",
+      "Position-swap to mitigate A/B bias.",
+      "Use a STRONGER model as judge (gpt-4o beats gpt-4o-mini).",
+      "Run with \u2265100 examples for stable signals.",
+      "Track win-rate over time \u2014 fine-tune drift detection.",
+      "Pair with deterministic metrics (BLEU, exact-match) for full picture."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o",
+        "Llama-3.1-8B-Instruct"
+      ],
+      "library_versions": [
+        "openai==1.51"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "openai",
+      "datasets"
+    ],
+    "related_glossary_slugs": [
+      "llm-as-judge",
+      "win-rate"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why win-rate vs loss / perplexity?",
+        "answer": "Loss measures training fit, not user value. Two models with identical loss can produce different quality outputs. Win-rate measures what users actually care about: better answers."
+      },
+      {
+        "question": "Cost of LLM judge?",
+        "answer": "gpt-4o judge: ~$0.001 per comparison. 100 examples \u00d7 2 positions = 200 calls = ~$0.20 per eval run. Cheap relative to fine-tuning cost."
+      },
+      {
+        "question": "Can the judge be the base model?",
+        "answer": "No \u2014 judge must be STRONGER than both candidates. Otherwise the judge is biased toward responses that resemble its own outputs."
+      },
+      {
+        "question": "What win-rate to ship?",
+        "answer": "\u226555% (after position swap) is the typical bar. 50% = same as base; below 45% = fine-tune is worse. Pair with category breakdown to spot regressions."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Fine-Tune Evaluation vs Baseline Starter",
+    "meta_description": "Prove your fine-tune beat the base model: win-rate eval with LLM judge, position-swap bias mitigation, ship/don't-ship decision rule."
+  },
+  {
     "slug": "nextjs-vercel-ai-sdk-chat",
     "title": "Next.js Chat With Vercel AI SDK and Streaming",
     "tldr": "Production-shape Next.js chat: streaming responses via Vercel AI SDK, tool calling, error retries, and a clean useChat hook integration. Works with OpenAI, Anthropic, or any compatible provider.",
@@ -9704,6 +10297,541 @@
     "github_url": "https://github.com/jlowin/fastmcp",
     "meta_title": "Read-Only Database MCP Server \u2014 Starter",
     "meta_description": "MCP server exposing SQL to Claude/Cursor \u2014 read-only validation + statement timeout + row caps + schema introspection."
+  },
+  {
+    "slug": "mcp-typescript-client",
+    "title": "MCP TypeScript Client: Connect to Any MCP Server",
+    "tldr": "Build a TypeScript client that connects to MCP servers via stdio or HTTP, lists their tools, and calls them. Foundation for embedding MCP into Node-based agent frameworks.",
+    "category": "mcp-servers",
+    "language": "typescript",
+    "framework": "@modelcontextprotocol/sdk",
+    "tags": [
+      "mcp",
+      "typescript",
+      "client",
+      "sdk"
+    ],
+    "best_for_tags": [
+      "node-apps",
+      "mcp-integration",
+      "agent-tooling"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Building a Node.js / Bun / TS agent app that needs MCP server integration. The official TS SDK gives you typed access to any MCP server's tools / resources / prompts.",
+    "when_not_to_use": "Skip if your stack is purely Python (use the Python MCP SDK). Skip for simple one-off scripts where direct HTTP is easier than the MCP abstraction.",
+    "quick_start": "npm i @modelcontextprotocol/sdk && tsx mcp_client.ts",
+    "full_code": "/**\n * MCP TypeScript client: connect, discover tools, call them.\n *\n * Works with stdio (subprocess) or HTTP (SSE) transports.\n */\nimport { Client } from \"@modelcontextprotocol/sdk/client/index.js\";\nimport { StdioClientTransport } from \"@modelcontextprotocol/sdk/client/stdio.js\";\nimport { SSEClientTransport } from \"@modelcontextprotocol/sdk/client/sse.js\";\n\n\n// ----------------- CONNECT (stdio) -----------------\n\nasync function connectStdio(command: string, args: string[]) {\n  const transport = new StdioClientTransport({ command, args });\n  const client = new Client(\n    { name: \"demo-client\", version: \"1.0.0\" },\n    { capabilities: { tools: {}, resources: {}, prompts: {} } }\n  );\n  await client.connect(transport);\n  return client;\n}\n\n\n// ----------------- CONNECT (HTTP/SSE) -----------------\n\nasync function connectHttp(url: string) {\n  const transport = new SSEClientTransport(new URL(url));\n  const client = new Client(\n    { name: \"demo-client\", version: \"1.0.0\" },\n    { capabilities: {} }\n  );\n  await client.connect(transport);\n  return client;\n}\n\n\n// ----------------- DISCOVER + CALL -----------------\n\nasync function discover(client: Client) {\n  const tools = await client.listTools();\n  console.log(\"Tools:\");\n  for (const t of tools.tools) {\n    console.log(`  - ${t.name}: ${t.description}`);\n  }\n\n  const resources = await client.listResources();\n  console.log(`Resources: ${resources.resources.length}`);\n\n  const prompts = await client.listPrompts();\n  console.log(`Prompts: ${prompts.prompts.length}`);\n}\n\n\nasync function callTool(client: Client, name: string, args: Record<string, unknown>) {\n  const result = await client.callTool({ name, arguments: args });\n  if (result.isError) {\n    throw new Error(`Tool error: ${JSON.stringify(result.content)}`);\n  }\n  return result.content;\n}\n\n\n// ----------------- ROBUSTNESS -----------------\n\nasync function callToolWithRetry(\n  client: Client,\n  name: string,\n  args: Record<string, unknown>,\n  maxRetries = 3\n) {\n  for (let attempt = 0; attempt <= maxRetries; attempt++) {\n    try {\n      return await callTool(client, name, args);\n    } catch (e) {\n      if (attempt === maxRetries) throw e;\n      const backoff = 1000 * Math.pow(2, attempt);\n      console.error(`Attempt ${attempt + 1} failed; retrying in ${backoff}ms`);\n      await new Promise((r) => setTimeout(r, backoff));\n    }\n  }\n}\n\n\n// ----------------- DEMO -----------------\n\nasync function main() {\n  // Stdio example \u2014 launch a server subprocess\n  const stdioClient = await connectStdio(\"npx\", [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/tmp\"]);\n  await discover(stdioClient);\n  const result = await callToolWithRetry(stdioClient, \"list_directory\", { path: \"/tmp\" });\n  console.log(\"Files:\", result);\n  await stdioClient.close();\n\n  // HTTP example\n  // const httpClient = await connectHttp(\"http://localhost:3000/sse\");\n  // await discover(httpClient);\n}\n\nmain().catch(console.error);\n",
+    "dependencies": [
+      {
+        "name": "@modelcontextprotocol/sdk",
+        "version": ">=1.0",
+        "purpose": "Official MCP TS SDK"
+      },
+      {
+        "name": "tsx",
+        "version": ">=4.0",
+        "purpose": "Run TS files directly"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "npm init -y && npm i @modelcontextprotocol/sdk",
+      "npm i -D tsx typescript @types/node",
+      "Save mcp_client.ts",
+      "npx tsx mcp_client.ts"
+    ],
+    "variations": [
+      {
+        "label": "Stream tool results",
+        "description": "Long-running tool with progress events.",
+        "code_snippet": "// Use client.callTool({ name, arguments }, { signal }) and listen for progress notifications via client.notification('progress', handler)"
+      },
+      {
+        "label": "Multiple server connections",
+        "description": "Aggregate tools across servers.",
+        "code_snippet": "const clients = await Promise.all([connectStdio(...), connectHttp(...)]); // pool, route by tool name"
+      },
+      {
+        "label": "TypeScript types from server schema",
+        "description": "Generate types from tool input_schema.",
+        "code_snippet": "// Use json-schema-to-typescript or zod-from-json-schema to generate types from the listTools() response"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "EPIPE / connection closed",
+        "cause": "Server subprocess crashed.",
+        "fix_snippet": "Wrap client.close() in finally. Capture subprocess stderr to debug. Add health check (callTool with a known-good ping)."
+      },
+      {
+        "error_text": "Tool args fail server validation",
+        "cause": "Schema mismatch.",
+        "fix_snippet": "After listTools(), validate args against the input_schema BEFORE callTool. Use ajv or zod-from-json-schema."
+      },
+      {
+        "error_text": "SSE connection times out",
+        "cause": "Server doesn't keep-alive.",
+        "fix_snippet": "Add keep-alive heartbeats from server (every 25s). On client, configure SSE retry policy."
+      },
+      {
+        "error_text": "Server requires auth header",
+        "cause": "Production MCP HTTP servers require bearer tokens.",
+        "fix_snippet": "Pass headers to SSEClientTransport: new SSEClientTransport(url, { requestInit: { headers: { Authorization: `Bearer ${token}` }}})"
+      }
+    ],
+    "production_checklist": [
+      "Connection pooling: reuse clients, don't recreate per call.",
+      "Catch + retry transient errors with exponential backoff.",
+      "Validate tool args against schema client-side first.",
+      "Log all tool calls + responses for debugging.",
+      "Pin MCP SDK version; protocol evolves.",
+      "Use HTTP transport (not stdio) for distributed deployments."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "@modelcontextprotocol/sdk==1.0",
+        "Node.js 20"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "mcp"
+    ],
+    "related_glossary_slugs": [
+      "mcp",
+      "tool-use"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "MCP vs OpenAI tools?",
+        "answer": "MCP is a protocol; tools are a feature. MCP lets ANY LLM client connect to ANY tool server. OpenAI tools is OpenAI-specific. MCP wraps tools + resources + prompts in a discoverable protocol."
+      },
+      {
+        "question": "Why TypeScript client?",
+        "answer": "Node.js apps (e.g., Claude Desktop, Cursor, Continue) embed TS code. The official MCP SDK is TS-first. Use this for Cursor extensions, custom IDE plugins, agent frameworks."
+      },
+      {
+        "question": "Stdio vs HTTP transport?",
+        "answer": "Stdio: server is a subprocess; simple ops, no auth needed (local trust). HTTP: distributed, needs auth, scalable. Use stdio for desktop/local; HTTP for prod/multi-tenant."
+      },
+      {
+        "question": "How discover MCP servers?",
+        "answer": "No central registry yet (early protocol). Discoverable via documented stdio commands or HTTP URLs. The Anthropic MCP marketplace is emerging."
+      }
+    ],
+    "github_url": "https://github.com/modelcontextprotocol/typescript-sdk",
+    "meta_title": "MCP TypeScript Client Starter",
+    "meta_description": "Connect to MCP servers from TypeScript: stdio + HTTP transports, tool discovery, retry, auth, production-grade defaults."
+  },
+  {
+    "slug": "mcp-server-resources-and-prompts",
+    "title": "MCP Server With Resources + Prompts (Full Spec)",
+    "tldr": "MCP server that exposes TOOLS, RESOURCES (read-only data refs), and PROMPTS (reusable templates). Used by Claude Desktop and Cursor for richer agent experiences.",
+    "category": "mcp-servers",
+    "language": "python",
+    "framework": "mcp Python SDK",
+    "tags": [
+      "mcp",
+      "resources",
+      "prompts",
+      "claude-desktop"
+    ],
+    "best_for_tags": [
+      "claude-desktop",
+      "cursor",
+      "internal-tooling"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Building MCP servers for Claude Desktop / Cursor / Continue. Tools alone are limiting; resources give the model passive context, prompts give reusable templates. Full MCP server > tools-only.",
+    "when_not_to_use": "Skip for stdio-only agent integrations that just need tool-calling. Skip if your data fits cleanly as tool outputs (no need for resources abstraction).",
+    "quick_start": "pip install mcp && python full_mcp_server.py",
+    "full_code": "\"\"\"Full MCP server: tools + resources + prompts.\"\"\"\nfrom __future__ import annotations\n\nimport json\nfrom pathlib import Path\n\nfrom mcp.server.fastmcp import FastMCP\nfrom mcp.types import TextContent, ImageContent\n\n\nmcp = FastMCP(\"docs-and-tools\")\n\n\n# ----------------- TOOLS -----------------\n\n@mcp.tool()\ndef search_docs(query: str, limit: int = 5) -> str:\n    \"\"\"Search internal documentation by keyword.\"\"\"\n    # Replace with real search\n    return json.dumps([\n        {\"title\": f\"Doc on {query}\", \"url\": \"/docs/example\", \"excerpt\": \"...\"},\n    ][:limit])\n\n\n@mcp.tool()\ndef create_ticket(title: str, body: str, priority: str = \"medium\") -> str:\n    \"\"\"Create a new support ticket. Returns ticket ID.\"\"\"\n    # Replace with real ticket-creation call\n    return json.dumps({\"ticket_id\": \"T-12345\", \"status\": \"created\"})\n\n\n# ----------------- RESOURCES (read-only data the model can browse) -----------------\n\nDOCS_DIR = Path(\"./docs\")  # adjust to your real docs folder\n\n\n@mcp.resource(\"docs://index\")\ndef docs_index() -> str:\n    \"\"\"The full doc index (list of available docs).\"\"\"\n    if not DOCS_DIR.exists():\n        return \"No docs available\"\n    return \"\\n\".join(f\"- {p.relative_to(DOCS_DIR)}\" for p in DOCS_DIR.rglob(\"*.md\"))\n\n\n@mcp.resource(\"docs://{path}\")\ndef doc_content(path: str) -> str:\n    \"\"\"Read a specific doc by path.\"\"\"\n    target = DOCS_DIR / path\n    if not target.is_file() or not target.suffix == \".md\":\n        return f\"Not found: {path}\"\n    # Security: ensure path doesn't escape DOCS_DIR\n    if DOCS_DIR.resolve() not in target.resolve().parents:\n        raise ValueError(\"Path traversal blocked\")\n    return target.read_text()\n\n\n@mcp.resource(\"config://current\")\ndef current_config() -> str:\n    \"\"\"Expose runtime config (read-only).\"\"\"\n    return json.dumps({\"env\": \"prod\", \"version\": \"1.4.0\"})\n\n\n# ----------------- PROMPTS (reusable templates the model can invoke) -----------------\n\n@mcp.prompt()\ndef write_pr_description(diff_summary: str, ticket_id: str) -> str:\n    \"\"\"Generate a PR description from a diff summary + ticket.\"\"\"\n    return f\"\"\"Write a clean PR description for:\n\nTicket: {ticket_id}\nDiff summary: {diff_summary}\n\nFormat:\n## What changed\n## Why\n## How to test\n## Risks\"\"\"\n\n\n@mcp.prompt()\ndef triage_ticket(ticket_text: str) -> list:\n    \"\"\"Triage a customer support ticket \u2014 returns multi-message conversation.\"\"\"\n    return [\n        {\"role\": \"user\", \"content\": {\"type\": \"text\", \"text\": f\"Triage this:\\n\\n{ticket_text}\"}},\n        {\"role\": \"assistant\", \"content\": {\"type\": \"text\", \"text\": \"I'll classify category + priority, then suggest a response.\"}},\n    ]\n\n\n# ----------------- RUN -----------------\n\nif __name__ == \"__main__\":\n    # Stdio mode for Claude Desktop / Cursor\n    mcp.run(transport=\"stdio\")\n",
+    "dependencies": [
+      {
+        "name": "mcp",
+        "version": ">=1.0",
+        "purpose": "Official MCP Python SDK"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "pip install mcp",
+      "Save full_mcp_server.py",
+      "Test directly: python full_mcp_server.py (will hang waiting for stdio)",
+      "Add to Claude Desktop config: ~/.../claude/claude_desktop_config.json",
+      "Config: {\"mcpServers\": {\"docs\": {\"command\": \"python\", \"args\": [\"/abs/path/full_mcp_server.py\"]}}}"
+    ],
+    "variations": [
+      {
+        "label": "HTTP transport (multi-tenant)",
+        "description": "Serve over HTTP/SSE instead of stdio.",
+        "code_snippet": "from mcp.server.fastmcp.server import http_server\\nhttp_server(mcp, host='0.0.0.0', port=8000)"
+      },
+      {
+        "label": "Image resources",
+        "description": "Expose images / files as resources.",
+        "code_snippet": "@mcp.resource('images://{name}')\\ndef get_image(name: str) -> bytes: return Path(f'./images/{name}').read_bytes()  # MCP handles base64"
+      },
+      {
+        "label": "Prompt with args",
+        "description": "Parameterized prompts.",
+        "code_snippet": "@mcp.prompt()\\ndef code_review(file_path: str, language: str = 'python') -> str: return f'Review {file_path}, lang={language}'"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Resource URI not matching",
+        "cause": "Wrong scheme/path format.",
+        "fix_snippet": "Resource URIs use scheme://path. Match the decorator pattern exactly. For dynamic paths, use {placeholder} syntax."
+      },
+      {
+        "error_text": "Path traversal vulnerability",
+        "cause": "Resource handler doesn't sanitize input.",
+        "fix_snippet": "Always resolve + check that the resolved path is INSIDE the allowed root. See the doc_content example."
+      },
+      {
+        "error_text": "Claude Desktop doesn't see server",
+        "cause": "Config error or path wrong.",
+        "fix_snippet": "Use absolute paths in claude_desktop_config.json. Restart Claude Desktop after config changes. Check stderr in /var/log or Console.app."
+      },
+      {
+        "error_text": "Resources too large for context",
+        "cause": "Returning megabytes of data.",
+        "fix_snippet": "Resources should be small-to-medium. For large data, use a TOOL that the model invokes when needed, not a passive resource."
+      }
+    ],
+    "production_checklist": [
+      "Sanitize all resource path inputs (path-traversal protection).",
+      "Add request-level rate limiting at the transport layer.",
+      "Authenticate (HTTP transport): use OAuth or API key.",
+      "Log every tool call / resource read for audit.",
+      "Document resources + prompts in README so users discover them.",
+      "Version the server (semver) \u2014 protocol additions could break clients."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "mcp==1.0"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "mcp",
+      "claude-desktop"
+    ],
+    "related_glossary_slugs": [
+      "mcp",
+      "resources"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Tools vs resources?",
+        "answer": "Tools: model EXPLICITLY calls them. Resources: model can BROWSE them as passive context. Use tools for actions; resources for read-only data the model wants to consult."
+      },
+      {
+        "question": "When use prompts?",
+        "answer": "Reusable templates for common tasks. Users invoke them by name. Good for: 'review code', 'write PR description', 'triage ticket'. Avoid for one-off prompts."
+      },
+      {
+        "question": "Resources size limit?",
+        "answer": "Practical limit ~50KB per resource (Claude Desktop UX). Past that, the resource gets unwieldy. Break large data into multiple resources."
+      },
+      {
+        "question": "Claude Desktop vs HTTP transport?",
+        "answer": "Desktop: stdio, local trust, no auth. HTTP: networked, needs auth, multi-user. Pick based on deployment model."
+      }
+    ],
+    "github_url": "https://github.com/modelcontextprotocol/python-sdk",
+    "meta_title": "MCP Server With Resources + Prompts Starter",
+    "meta_description": "Full MCP server: tools + resources (read-only data) + prompts (templates). Claude Desktop integration, security best practices."
+  },
+  {
+    "slug": "mcp-stdio-to-http-bridge",
+    "title": "MCP stdio-to-HTTP Bridge",
+    "tldr": "Wrap a stdio-based MCP server in an HTTP/SSE endpoint. Lets you deploy local stdio servers as networked services without rewriting them.",
+    "category": "mcp-servers",
+    "language": "python",
+    "framework": "FastAPI + mcp",
+    "tags": [
+      "mcp",
+      "bridge",
+      "stdio",
+      "http"
+    ],
+    "best_for_tags": [
+      "mcp-deployment",
+      "self-hosted",
+      "multi-tenant-mcp"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "You have a stdio MCP server (e.g., filesystem, git, db) and want to expose it as a networked service for multi-user / cloud use. The bridge spawns subprocesses per client connection.",
+    "when_not_to_use": "Skip for simple local use (just use stdio directly). Skip if you can rewrite the server to native HTTP (better perf, easier ops).",
+    "quick_start": "pip install mcp fastapi 'uvicorn[standard]' && python mcp_bridge.py",
+    "full_code": "\"\"\"MCP stdio\u2192HTTP bridge.\n\nEach client SSE connection spawns a stdio MCP server subprocess.\nThe bridge translates JSON-RPC over HTTP/SSE \u2194 stdio.\n\"\"\"\nfrom __future__ import annotations\n\nimport asyncio\nimport json\nimport os\nimport uuid\nfrom contextlib import asynccontextmanager\n\nfrom fastapi import FastAPI, HTTPException, Request, Header\nfrom fastapi.responses import StreamingResponse\n\n\n# Configuration: which stdio command to bridge\nSTDIO_COMMAND = os.environ.get(\"MCP_STDIO_CMD\", \"npx -y @modelcontextprotocol/server-filesystem /tmp\")\n\n\n# Per-connection state: subprocess + queues\nSESSIONS: dict[str, dict] = {}\n\n\n# ----------------- SUBPROCESS MANAGEMENT -----------------\n\nasync def spawn_stdio_server() -> asyncio.subprocess.Process:\n    cmd = STDIO_COMMAND.split()\n    return await asyncio.create_subprocess_exec(\n        *cmd,\n        stdin=asyncio.subprocess.PIPE,\n        stdout=asyncio.subprocess.PIPE,\n        stderr=asyncio.subprocess.PIPE,\n    )\n\n\n@asynccontextmanager\nasync def session_lifespan(app: FastAPI):\n    yield\n    # On shutdown: clean up all sessions\n    for sid, s in list(SESSIONS.items()):\n        try:\n            s[\"proc\"].terminate()\n            await s[\"proc\"].wait()\n        except Exception:\n            pass\n        SESSIONS.pop(sid, None)\n\n\napp = FastAPI(lifespan=session_lifespan)\n\n\n# ----------------- AUTH (minimal example) -----------------\n\ndef authenticate(authorization: str | None) -> str:\n    \"\"\"Map bearer token \u2192 tenant_id.\"\"\"\n    if not authorization or not authorization.startswith(\"Bearer \"):\n        raise HTTPException(401, \"Missing bearer token\")\n    token = authorization.removeprefix(\"Bearer \")\n    # Replace with real auth lookup\n    if token == \"demo-token\":\n        return \"demo-tenant\"\n    raise HTTPException(403, \"Invalid token\")\n\n\n# ----------------- SSE ENDPOINT (server \u2192 client events) -----------------\n\n@app.get(\"/sse\")\nasync def sse(authorization: str | None = Header(None)):\n    tenant = authenticate(authorization)\n    session_id = str(uuid.uuid4())\n\n    proc = await spawn_stdio_server()\n    SESSIONS[session_id] = {\"proc\": proc, \"tenant\": tenant}\n\n    async def event_stream():\n        # Send the endpoint URL the client should POST messages to\n        yield f\"event: endpoint\\ndata: /messages/{session_id}\\n\\n\"\n\n        # Pipe stdio.stdout to SSE\n        try:\n            while True:\n                line = await proc.stdout.readline()\n                if not line:\n                    break\n                # MCP stdio is JSON-RPC, one msg per line\n                yield f\"event: message\\ndata: {line.decode().strip()}\\n\\n\"\n        finally:\n            proc.terminate()\n            SESSIONS.pop(session_id, None)\n\n    return StreamingResponse(event_stream(), media_type=\"text/event-stream\")\n\n\n# ----------------- POST ENDPOINT (client \u2192 server messages) -----------------\n\n@app.post(\"/messages/{session_id}\")\nasync def post_message(session_id: str, request: Request):\n    if session_id not in SESSIONS:\n        raise HTTPException(404, \"Session not found\")\n    body = await request.body()\n    proc = SESSIONS[session_id][\"proc\"]\n    # Write line-delimited JSON-RPC to subprocess stdin\n    proc.stdin.write(body + b\"\\n\")\n    await proc.stdin.drain()\n    return {\"ok\": True}\n\n\n# ----------------- HEALTH -----------------\n\n@app.get(\"/health\")\nasync def health():\n    return {\"ok\": True, \"active_sessions\": len(SESSIONS)}\n\n\nif __name__ == \"__main__\":\n    import uvicorn\n    uvicorn.run(app, host=\"0.0.0.0\", port=8000)\n",
+    "dependencies": [
+      {
+        "name": "mcp",
+        "version": ">=1.0",
+        "purpose": "MCP SDK (for types)"
+      },
+      {
+        "name": "fastapi[standard]",
+        "version": ">=0.115",
+        "purpose": "HTTP + SSE server"
+      },
+      {
+        "name": "uvicorn[standard]",
+        "version": ">=0.30",
+        "purpose": "ASGI server"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "MCP_STDIO_CMD",
+        "required": true,
+        "description": "Command to spawn the stdio MCP server",
+        "example": "npx -y @modelcontextprotocol/server-filesystem /tmp"
+      }
+    ],
+    "setup_steps": [
+      "pip install mcp 'fastapi[standard]' 'uvicorn[standard]'",
+      "Set MCP_STDIO_CMD to your target stdio server command",
+      "Run: uvicorn mcp_bridge:app --host 0.0.0.0 --port 8000",
+      "Test: curl -H 'Authorization: Bearer demo-token' http://localhost:8000/sse"
+    ],
+    "variations": [
+      {
+        "label": "Process pooling",
+        "description": "Reuse subprocesses across sessions (lower cold-start).",
+        "code_snippet": "# Maintain a pool of pre-warm subprocesses; assign per session; recycle after N requests"
+      },
+      {
+        "label": "Multi-server bridge",
+        "description": "Route to different stdio servers by URL path.",
+        "code_snippet": "# /sse/filesystem \u2192 filesystem server; /sse/git \u2192 git server. Per-path STDIO_COMMAND map."
+      },
+      {
+        "label": "Bridge with sandboxing",
+        "description": "Run stdio server in Docker.",
+        "code_snippet": "# STDIO_COMMAND='docker run --rm -i mcp-fs-server'. Isolates per-tenant subprocess in container."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Subprocess hangs on stdin write",
+        "cause": "Buffer not flushed; line not newline-terminated.",
+        "fix_snippet": "Always append \\\\n to messages. Call await proc.stdin.drain() after write."
+      },
+      {
+        "error_text": "Memory growth over time",
+        "cause": "Subprocesses not cleaned up on disconnect.",
+        "fix_snippet": "Ensure finally: proc.terminate() in event_stream. Add a periodic janitor task to kill orphan subprocesses."
+      },
+      {
+        "error_text": "SSE disconnects randomly",
+        "cause": "Proxy / browser timeout.",
+        "fix_snippet": "Send heartbeat every 25s: yield ': keepalive\\\\n\\\\n'. Configure proxies (nginx) with proxy_buffering off + long timeouts."
+      },
+      {
+        "error_text": "Tenant A's data leaking to Tenant B",
+        "cause": "Subprocess shared across sessions.",
+        "fix_snippet": "ONE subprocess per session. Don't pool across tenants. Even within tenant, isolate by user."
+      }
+    ],
+    "production_checklist": [
+      "Per-session subprocess isolation (no pooling across tenants).",
+      "Real authentication (OAuth / JWT, not 'demo-token').",
+      "SSE keepalive heartbeats.",
+      "Subprocess resource limits (memory, CPU).",
+      "Cleanup orphans (janitor task).",
+      "Monitor: active sessions, subprocess CPU/memory, disconnect rate."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "fastapi==0.115",
+        "uvicorn==0.30"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "mcp",
+      "fastapi"
+    ],
+    "related_glossary_slugs": [
+      "mcp",
+      "sse"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why bridge instead of rewriting to HTTP?",
+        "answer": "Rewriting is cleaner long-term. Bridging is faster short-term \u2014 lets you deploy existing stdio servers without modification. Use bridge for prototyping; rewrite for production scale."
+      },
+      {
+        "question": "Performance vs native HTTP?",
+        "answer": "Bridge adds ~5-10ms latency per message. For tools (call rate <10/sec per session), negligible. For high-throughput, native HTTP wins."
+      },
+      {
+        "question": "How does Claude Desktop use SSE?",
+        "answer": "Desktop primarily uses stdio. SSE is for remote MCP \u2014 used by cloud-hosted MCP servers and the Anthropic MCP marketplace."
+      },
+      {
+        "question": "Authentication patterns?",
+        "answer": "Bearer token in Authorization header is simplest. Production: OAuth 2.0 client credentials, mutual TLS, or signed JWTs. Map tokens to tenant for multi-tenant isolation."
+      }
+    ],
+    "github_url": "https://github.com/modelcontextprotocol/python-sdk",
+    "meta_title": "MCP stdio-to-HTTP Bridge Starter",
+    "meta_description": "Wrap stdio MCP servers in HTTP/SSE for networked deployment. Per-session subprocess isolation, auth, tenant separation."
+  },
+  {
+    "slug": "mcp-server-testing-with-inspector",
+    "title": "MCP Server Testing With Inspector + Pytest",
+    "tldr": "Two-layer MCP server testing: (1) MCP Inspector for interactive QA, (2) pytest with the MCP SDK client for automated regression tests. Catches protocol + logic bugs before deploy.",
+    "category": "mcp-servers",
+    "language": "python",
+    "framework": "mcp Python SDK + pytest",
+    "tags": [
+      "mcp",
+      "testing",
+      "pytest",
+      "inspector"
+    ],
+    "best_for_tags": [
+      "mcp-server-developers",
+      "ci-quality",
+      "regression-prevention"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Authoring an MCP server. Use Inspector during dev to test interactively; use pytest for CI to catch regressions. Both rely on the same MCP client protocol.",
+    "when_not_to_use": "Skip for one-off MCP scripts (overhead). Skip for purely manual testing \u2014 Inspector alone is fine for hobby use.",
+    "quick_start": "pip install mcp pytest pytest-asyncio && pytest test_mcp_server.py",
+    "full_code": "\"\"\"MCP server testing: pytest harness using the SDK client.\"\"\"\nfrom __future__ import annotations\n\nimport pytest\nimport asyncio\nfrom mcp import ClientSession, StdioServerParameters\nfrom mcp.client.stdio import stdio_client\n\n\nSERVER_CMD = \"python\"\nSERVER_ARGS = [\"./full_mcp_server.py\"]  # path to your MCP server\n\n\n# ----------------- FIXTURE: CONNECTED CLIENT -----------------\n\n@pytest.fixture\nasync def mcp_client():\n    params = StdioServerParameters(command=SERVER_CMD, args=SERVER_ARGS)\n    async with stdio_client(params) as (read, write):\n        async with ClientSession(read, write) as session:\n            await session.initialize()\n            yield session\n\n\n# ----------------- TESTS: DISCOVERY -----------------\n\n@pytest.mark.asyncio\nasync def test_lists_expected_tools(mcp_client):\n    tools = await mcp_client.list_tools()\n    names = {t.name for t in tools.tools}\n    assert \"search_docs\" in names\n    assert \"create_ticket\" in names\n\n\n@pytest.mark.asyncio\nasync def test_tool_schemas_valid(mcp_client):\n    tools = await mcp_client.list_tools()\n    for tool in tools.tools:\n        assert tool.description, f\"{tool.name} missing description\"\n        assert tool.inputSchema, f\"{tool.name} missing inputSchema\"\n        # Pydantic / jsonschema check\n        assert tool.inputSchema.get(\"type\") == \"object\"\n\n\n@pytest.mark.asyncio\nasync def test_lists_resources(mcp_client):\n    resources = await mcp_client.list_resources()\n    uris = {r.uri for r in resources.resources}\n    assert any(\"docs://\" in str(u) for u in uris)\n\n\n# ----------------- TESTS: TOOL EXECUTION -----------------\n\n@pytest.mark.asyncio\nasync def test_search_docs_returns_results(mcp_client):\n    result = await mcp_client.call_tool(\"search_docs\", {\"query\": \"rate limit\", \"limit\": 3})\n    assert not result.isError\n    # result.content is a list of content blocks\n    text = \"\".join(c.text for c in result.content if c.type == \"text\")\n    assert text  # non-empty\n\n\n@pytest.mark.asyncio\nasync def test_invalid_args_handled(mcp_client):\n    result = await mcp_client.call_tool(\"search_docs\", {})  # missing query\n    # Server should return isError or raise a clear validation error\n    assert result.isError or \"required\" in str(result.content).lower()\n\n\n@pytest.mark.asyncio\nasync def test_create_ticket_priority_enum(mcp_client):\n    # Should accept valid priorities\n    for p in [\"low\", \"medium\", \"high\"]:\n        r = await mcp_client.call_tool(\"create_ticket\", {\"title\": \"test\", \"body\": \"...\", \"priority\": p})\n        assert not r.isError\n\n\n# ----------------- TESTS: RESOURCES -----------------\n\n@pytest.mark.asyncio\nasync def test_resource_read(mcp_client):\n    content = await mcp_client.read_resource(\"docs://index\")\n    assert content.contents\n    assert content.contents[0].text is not None\n\n\n# ----------------- TESTS: PROMPTS -----------------\n\n@pytest.mark.asyncio\nasync def test_prompt_with_args(mcp_client):\n    prompts = await mcp_client.list_prompts()\n    names = {p.name for p in prompts.prompts}\n    if \"write_pr_description\" in names:\n        result = await mcp_client.get_prompt(\"write_pr_description\", {\n            \"diff_summary\": \"Added auth flow\",\n            \"ticket_id\": \"T-123\",\n        })\n        assert result.messages\n\n\n# ----------------- INTERACTIVE: MCP INSPECTOR -----------------\n\nINSPECTOR_INSTRUCTIONS = \"\"\"\nFor interactive testing (during development):\n\n1. Install: npm install -g @modelcontextprotocol/inspector\n2. Run: npx @modelcontextprotocol/inspector python ./full_mcp_server.py\n3. Browser opens at http://localhost:5173\n4. Test tools, resources, prompts interactively\n5. View JSON-RPC traffic in the inspector log\n\"\"\"\n\nif __name__ == \"__main__\":\n    print(INSPECTOR_INSTRUCTIONS)\n",
+    "dependencies": [
+      {
+        "name": "mcp",
+        "version": ">=1.0",
+        "purpose": "MCP SDK"
+      },
+      {
+        "name": "pytest",
+        "version": ">=7.0",
+        "purpose": "Test runner"
+      },
+      {
+        "name": "pytest-asyncio",
+        "version": ">=0.23",
+        "purpose": "Async test support"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "pip install mcp pytest pytest-asyncio",
+      "npm install -g @modelcontextprotocol/inspector  # for interactive testing",
+      "Set SERVER_ARGS path to your MCP server",
+      "pytest test_mcp_server.py -v",
+      "(Interactive) npx @modelcontextprotocol/inspector python ./your_server.py"
+    ],
+    "variations": [
+      {
+        "label": "Snapshot testing",
+        "description": "Lock tool schemas.",
+        "code_snippet": "# Use syrupy or jsondiff: snapshot the listTools() response; fail CI if schema changes unexpectedly"
+      },
+      {
+        "label": "HTTP server tests",
+        "description": "Test HTTP/SSE servers.",
+        "code_snippet": "# Replace stdio_client with sse_client(URL). Same client interface; different transport."
+      },
+      {
+        "label": "Property-based tests",
+        "description": "Fuzz tool args with Hypothesis.",
+        "code_snippet": "from hypothesis import given\\n@given(query=st.text())\\nasync def test_search_does_not_crash(mcp_client, query): ..."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "RuntimeError: event loop closed",
+        "cause": "Fixture cleanup runs after loop closes.",
+        "fix_snippet": "Use pytest-asyncio's loop_scope='session' for shared loop. Or use module-scoped client fixture."
+      },
+      {
+        "error_text": "Tests pass locally, fail in CI",
+        "cause": "MCP server subprocess doesn't have deps in CI.",
+        "fix_snippet": "Install server deps in CI workflow. Pin Python version. Use --tb=long for clearer error trace."
+      },
+      {
+        "error_text": "Inspector doesn't connect",
+        "cause": "Wrong command path.",
+        "fix_snippet": "Use absolute path: npx @modelcontextprotocol/inspector $(pwd)/server.py. Or use venv-relative Python."
+      },
+      {
+        "error_text": "Tool tests slow (subprocess startup)",
+        "cause": "Fresh subprocess per test.",
+        "fix_snippet": "Module-scope the fixture if tests don't mutate server state. Or use a long-lived test server."
+      }
+    ],
+    "production_checklist": [
+      "Snapshot tool / resource / prompt schemas \u2014 flag breaking changes.",
+      "Test invalid-args / edge cases (empty strings, very long strings).",
+      "Run inspector before manual deploy \u2014 catch obvious bugs.",
+      "Run pytest in CI on every PR touching server code.",
+      "Include adversarial inputs (path-traversal, SQL-like).",
+      "Test both stdio + HTTP transports if you support both."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "mcp==1.0",
+        "pytest-asyncio==0.23"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "mcp"
+    ],
+    "related_glossary_slugs": [
+      "mcp",
+      "testing"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Inspector vs pytest?",
+        "answer": "Inspector: interactive, exploratory, no setup. Pytest: automated, CI-friendly, regression prevention. Use both \u2014 Inspector for dev, pytest for protection."
+      },
+      {
+        "question": "How to test against real LLMs?",
+        "answer": "End-to-end test: spin up your server + connect a real LLM. Slow + flaky. Reserve for nightly. Use mocked tool outputs for fast unit tests."
+      },
+      {
+        "question": "Snapshot testing \u2014 when?",
+        "answer": "When tool schemas are part of your public API. A schema change can break clients. Snapshot the listTools/listResources/listPrompts responses; review diffs."
+      },
+      {
+        "question": "Where's Inspector hosted?",
+        "answer": "Locally \u2014 Inspector is a Node CLI that runs a local web UI + connects to your MCP server. No data leaves your machine."
+      }
+    ],
+    "github_url": "https://github.com/modelcontextprotocol/inspector",
+    "meta_title": "MCP Server Testing With Inspector + Pytest Starter",
+    "meta_description": "Two-layer MCP server testing: Inspector for interactive QA, pytest with MCP SDK client for automated regression tests in CI."
   },
   {
     "slug": "conversation-memory-summarizer",
