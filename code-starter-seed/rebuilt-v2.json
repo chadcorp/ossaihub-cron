@@ -10996,6 +10996,535 @@
     "meta_description": "Run 70B models in 35GB VRAM via FP8 on H100. <0.5pp quality loss, 1.6x faster than BF16. Quantize + serve + regression-check."
   },
   {
+    "slug": "ollama-production-deployment",
+    "title": "Ollama Production Deployment (Concurrent Models)",
+    "tldr": "Ollama in production: keep multiple models loaded, serve concurrent users, custom Modelfiles, env tuning. Self-hosted LLM with the simplest ops story.",
+    "category": "llm-inference",
+    "language": "bash",
+    "framework": "Ollama",
+    "tags": [
+      "ollama",
+      "production",
+      "self-hosted",
+      "deployment"
+    ],
+    "best_for_tags": [
+      "self-hosted",
+      "rapid-deploy",
+      "indie-developers"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Self-hosting LLMs with minimum ops complexity. Ollama wraps llama.cpp with a clean HTTP API + model management. Good fit for solo / small-team production under 50 QPS.",
+    "when_not_to_use": "Skip for high QPS (vLLM has higher throughput). Skip for cluster deployments (Ollama is single-node; use Ollama + load balancer if you need scale-out).",
+    "quick_start": "curl -fsSL https://ollama.com/install.sh | sh && ollama pull llama3.1:8b && ollama serve",
+    "full_code": "# Ollama production deployment configuration\n# Save as deploy/ollama-prod.sh\n\n#!/bin/bash\nset -euo pipefail\n\n# ----------------- INSTALL -----------------\n# curl -fsSL https://ollama.com/install.sh | sh\n\n\n# ----------------- ENV TUNING (set in systemd unit) -----------------\n\n# Keep multiple models loaded simultaneously\nexport OLLAMA_MAX_LOADED_MODELS=3\n\n# Allow concurrent requests per model\nexport OLLAMA_NUM_PARALLEL=4\n\n# How long to keep idle models in memory\nexport OLLAMA_KEEP_ALIVE=15m\n\n# GPU memory utilization\nexport OLLAMA_GPU_OVERHEAD=512  # MB reserved per GPU\n\n# Bind to all interfaces (be sure to add auth in front!)\nexport OLLAMA_HOST=0.0.0.0:11434\n\n# Disable telemetry\nexport OLLAMA_NOPRUNE=true\n\n\n# ----------------- PULL MODELS -----------------\n\nollama pull llama3.1:8b              # general purpose\nollama pull llama3.1:70b-instruct-q4_K_M  # bigger; quantized\nollama pull qwen2.5-coder:7b         # for code tasks\nollama pull nomic-embed-text         # embeddings\n\n\n# ----------------- CUSTOM MODEL (Modelfile) -----------------\n\ncat > Modelfile.support <<'EOF'\nFROM llama3.1:8b\nPARAMETER temperature 0.2\nPARAMETER num_ctx 8192\nPARAMETER repeat_penalty 1.1\nSYSTEM \"\"\"You are Acme Support Bot. Answer in 50 words or less.\nAlways cite the documentation URL if relevant.\nIf you don't know, say 'I'll connect you with a human.'\"\"\"\nEOF\nollama create support-bot -f Modelfile.support\n\n\n# ----------------- SYSTEMD UNIT (linux) -----------------\n\ncat > /etc/systemd/system/ollama.service <<'EOF'\n[Unit]\nDescription=Ollama Service\nAfter=network-online.target\n\n[Service]\nExecStart=/usr/local/bin/ollama serve\nEnvironment=OLLAMA_HOST=0.0.0.0:11434\nEnvironment=OLLAMA_MAX_LOADED_MODELS=3\nEnvironment=OLLAMA_NUM_PARALLEL=4\nEnvironment=OLLAMA_KEEP_ALIVE=15m\nUser=ollama\nGroup=ollama\nRestart=on-failure\nRestartSec=3\nLimitNOFILE=65536\n\n[Install]\nWantedBy=default.target\nEOF\n\nsystemctl daemon-reload\nsystemctl enable --now ollama\n\n\n# ----------------- HEALTH CHECK -----------------\n\ncat > /usr/local/bin/ollama-health.sh <<'EOF'\n#!/bin/bash\ncurl -sf http://localhost:11434/api/tags > /dev/null\nEOF\nchmod +x /usr/local/bin/ollama-health.sh\n\n\n# ----------------- NGINX REVERSE PROXY WITH AUTH -----------------\n\ncat > /etc/nginx/sites-available/ollama <<'EOF'\nupstream ollama {\n    server 127.0.0.1:11434;\n}\n\nserver {\n    listen 443 ssl http2;\n    server_name llm.example.com;\n\n    ssl_certificate /etc/letsencrypt/live/llm.example.com/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/llm.example.com/privkey.pem;\n\n    # Basic auth (or use OAuth2 proxy for SSO)\n    auth_basic \"Ollama\";\n    auth_basic_user_file /etc/nginx/.htpasswd;\n\n    # Disable buffering for streaming\n    proxy_buffering off;\n    proxy_cache off;\n    proxy_request_buffering off;\n    proxy_http_version 1.1;\n\n    location / {\n        proxy_pass http://ollama;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_read_timeout 300s;\n    }\n}\nEOF\n\n\n# ----------------- USAGE FROM CLIENTS -----------------\n\necho \"Test:\"\necho \"curl https://llm.example.com/api/chat -u user:pass -d '{ \\\"model\\\": \\\"support-bot\\\", \\\"messages\\\": [{\\\"role\\\": \\\"user\\\", \\\"content\\\": \\\"How do I reset my password?\\\"}] }'\"\n",
+    "dependencies": [
+      {
+        "name": "ollama",
+        "version": ">=0.3",
+        "purpose": "Ollama server"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OLLAMA_HOST",
+        "required": false,
+        "description": "Bind address",
+        "example": "0.0.0.0:11434"
+      },
+      {
+        "name": "OLLAMA_NUM_PARALLEL",
+        "required": false,
+        "description": "Concurrent per model",
+        "example": "4"
+      }
+    ],
+    "setup_steps": [
+      "Install: curl -fsSL https://ollama.com/install.sh | sh",
+      "Pull models: ollama pull llama3.1:8b",
+      "Customize via Modelfile + ollama create",
+      "Configure systemd unit + env vars",
+      "Set up nginx + auth in front",
+      "Monitor /api/tags for health"
+    ],
+    "variations": [
+      {
+        "label": "Docker deployment",
+        "description": "Containerize Ollama.",
+        "code_snippet": "# docker run -d --gpus all -v ollama:/root/.ollama -p 11434:11434 ollama/ollama; mount /root/.ollama as volume for model persistence"
+      },
+      {
+        "label": "Kubernetes with GPU",
+        "description": "K8s deployment.",
+        "code_snippet": "# Use ollama/ollama image with nvidia-runtime; PVC for /root/.ollama; resource requests: nvidia.com/gpu: 1"
+      },
+      {
+        "label": "Load balancer (multiple Ollama nodes)",
+        "description": "Scale horizontally.",
+        "code_snippet": "# nginx least_conn upstream across 3 Ollama nodes; sticky sessions via consistent hashing for model affinity"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Model not found after install",
+        "cause": "Ollama running as different user.",
+        "fix_snippet": "Models live in /usr/share/ollama/.ollama (system) or ~/.ollama (user). Verify OLLAMA_MODELS env var if customized."
+      },
+      {
+        "error_text": "VRAM exhausted with multiple models",
+        "cause": "OLLAMA_MAX_LOADED_MODELS too high.",
+        "fix_snippet": "Each loaded model uses VRAM. 8B Q4 ~5GB; 70B Q4 ~40GB. Calculate: total_vram > sum of loaded models + headroom."
+      },
+      {
+        "error_text": "Streaming slow through proxy",
+        "cause": "Nginx buffering.",
+        "fix_snippet": "Set proxy_buffering off + proxy_cache off (in the location block). Critical for SSE/streaming."
+      },
+      {
+        "error_text": "Cold start on first request slow",
+        "cause": "Model load.",
+        "fix_snippet": "Pre-warm: 'curl -X POST localhost:11434/api/generate -d {model:llama3.1:8b}' on startup. Keeps model in memory; OLLAMA_KEEP_ALIVE controls how long."
+      }
+    ],
+    "production_checklist": [
+      "Reverse proxy with TLS + auth (basic / OAuth / mTLS).",
+      "Disable proxy buffering for streaming.",
+      "Pre-warm models on startup.",
+      "Monitor VRAM utilization (especially with multiple models).",
+      "Set systemd Restart=on-failure.",
+      "Backup ~/.ollama/models if you have custom models."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "llama3.1:8b",
+        "qwen2.5-coder:7b"
+      ],
+      "library_versions": [
+        "ollama 0.3"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "ollama"
+    ],
+    "related_glossary_slugs": [
+      "self-hosted-llm",
+      "ollama"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Ollama vs vLLM?",
+        "answer": "Ollama: easier ops, multi-model, slower throughput. vLLM: tuned for max throughput, single-model-per-server. Use Ollama for varied workloads + low ops; vLLM for high-QPS single-model serving."
+      },
+      {
+        "question": "Concurrent users \u2014 how many?",
+        "answer": "Depends on model size + GPU. Llama-3.1-8B on RTX 4090: ~5-10 concurrent at acceptable latency. 70B Q4 on H100: ~3-5 concurrent. Tune OLLAMA_NUM_PARALLEL."
+      },
+      {
+        "question": "Can it run without GPU?",
+        "answer": "Yes \u2014 falls back to CPU. ~10-30 tok/s for 8B on a modern CPU. Acceptable for low-volume internal tools."
+      },
+      {
+        "question": "Custom fine-tuned models?",
+        "answer": "Convert to GGUF (llama.cpp format) + import via Modelfile. Or use ollama create with a base model + LoRA adapter."
+      }
+    ],
+    "github_url": "https://github.com/ollama/ollama",
+    "meta_title": "Ollama Production Deployment Starter",
+    "meta_description": "Ollama in production: concurrent models, custom Modelfiles, systemd, nginx + auth, env tuning. Self-hosted LLM with simple ops."
+  },
+  {
+    "slug": "llama-cpp-server-with-grammar",
+    "title": "llama.cpp Server With Constrained Output (Grammar)",
+    "tldr": "llama.cpp server with GBNF grammar: force model output to match a strict grammar (JSON, SQL, custom DSL). Guaranteed structured output without strict-mode model.",
+    "category": "llm-inference",
+    "language": "bash",
+    "framework": "llama.cpp",
+    "tags": [
+      "llama-cpp",
+      "grammar",
+      "gbnf",
+      "structured-output"
+    ],
+    "best_for_tags": [
+      "edge-deployment",
+      "constrained-output",
+      "no-cloud"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "Self-hosting on a single machine and need GUARANTEED structured output (JSON, SQL, custom DSL). llama.cpp's grammar constrains decoding to match a GBNF grammar exactly.",
+    "when_not_to_use": "Skip if using OpenAI strict mode (works without local hosting). Skip for free-form generation. Skip if your model already produces clean structured output.",
+    "quick_start": "git clone llama.cpp; make; ./llama-server -m model.gguf --grammar-file json.gbnf",
+    "full_code": "# llama.cpp server with GBNF grammar for guaranteed structured output\n\n# ----------------- BUILD llama.cpp WITH GPU SUPPORT -----------------\n\n# git clone https://github.com/ggerganov/llama.cpp\n# cd llama.cpp\n# CUDA: cmake -B build -DGGML_CUDA=ON && cmake --build build --config Release -j\n# Metal (Apple): cmake -B build -DGGML_METAL=ON && cmake --build build --config Release -j\n\n# Download a GGUF model\n# huggingface-cli download bartowski/Llama-3.1-8B-Instruct-GGUF \\\n#   Llama-3.1-8B-Instruct-Q4_K_M.gguf --local-dir ./models\n\n\n# ----------------- GBNF GRAMMARS -----------------\n\n# json.gbnf \u2014 built-in; constrains output to valid JSON\n# Available at: llama.cpp/grammars/json.gbnf\n\n# Custom grammar for a specific JSON schema\ncat > ticket.gbnf <<'EOF'\nroot ::= \"{\" ws \"\"category\":\" ws category \",\" ws \"\"priority\":\" ws priority \",\" ws \"\"summary\":\" ws string \"}\" ws\ncategory ::= \"\"billing\"\" | \"\"technical\"\" | \"\"general\"\"\npriority ::= \"\"low\"\" | \"\"medium\"\" | \"\"high\"\"\nstring ::= \"\"\" ([^\"\\] | \"\\\" .){1,500} \"\"\"\nws ::= ([ \t\n] ws)?\nEOF\n\n# Custom grammar for SQL-like DSL\ncat > query.gbnf <<'EOF'\nroot ::= \"SELECT \" columns \" FROM \" table where? \";\"\ncolumns ::= column (\",\" ws column)*\ncolumn ::= [a-z_]+\ntable ::= [a-z_]+\nwhere ::= \" WHERE \" condition\ncondition ::= column ws \"=\" ws value\nvalue ::= \"'\" [^']* \"'\" | [0-9]+\nws ::= \" \"*\nEOF\n\n\n# ----------------- START SERVER WITH GRAMMAR -----------------\n\n./llama-server \\\n    --model ./models/Llama-3.1-8B-Instruct-Q4_K_M.gguf \\\n    --port 8080 \\\n    --n-gpu-layers 999 \\\n    --ctx-size 4096 \\\n    --n-parallel 4 \\\n    --cont-batching \\\n    --grammar-file ./ticket.gbnf \\\n    --threads 8\n\n\n# ----------------- CLIENT USAGE -----------------\n\n# The server exposes an OpenAI-compatible API\n# pip install openai\n\ncat > client.py <<'EOF'\nfrom openai import OpenAI\nimport json\n\nclient = OpenAI(\n    base_url=\"http://localhost:8080/v1\",\n    api_key=\"not-used\",\n)\n\n# Server-side grammar enforces structure\nresponse = client.chat.completions.create(\n    model=\"local\",\n    messages=[\n        {\"role\": \"user\", \"content\": \"Classify: I was charged twice in September.\"},\n    ],\n    temperature=0,\n)\n\n# Output is GUARANTEED to match the grammar\ndata = json.loads(response.choices[0].message.content)\nprint(data)  # {\"category\": \"billing\", \"priority\": \"high\", \"summary\": \"...\"}\nEOF\n\n\n# ----------------- PER-REQUEST GRAMMAR (no server restart) -----------------\n\ncat > per_request.sh <<'EOF'\n#!/bin/bash\n# Pass grammar in the request body \u2014 overrides server default\n\nGRAMMAR_JSON=$(jq -Rs . < ticket.gbnf)\n\ncurl http://localhost:8080/completion \\\n  -d \"{\n    \"prompt\": \"Classify: I want a refund.\",\n    \"grammar\": $GRAMMAR_JSON,\n    \"n_predict\": 200,\n    \"temperature\": 0\n  }\"\nEOF\n\nchmod +x per_request.sh\n",
+    "dependencies": [
+      {
+        "name": "llama.cpp",
+        "version": "latest",
+        "purpose": "C++ inference server"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Clone llama.cpp; build with GPU support",
+      "Download GGUF model from HuggingFace",
+      "Author GBNF grammar matching your schema",
+      "Start server with --grammar-file",
+      "Hit OpenAI-compatible /v1/chat/completions endpoint"
+    ],
+    "variations": [
+      {
+        "label": "Auto-generate grammar from JSON schema",
+        "description": "Use json-schema-to-gbnf tool.",
+        "code_snippet": "# python -m llama_cpp_python.tools.json_schema_to_gbnf schema.json > out.gbnf"
+      },
+      {
+        "label": "OpenAI-compatible Python",
+        "description": "Use llama-cpp-python's server.",
+        "code_snippet": "# pip install 'llama-cpp-python[server]'; python -m llama_cpp.server --model model.gguf --grammar json.gbnf"
+      },
+      {
+        "label": "Streaming + grammar",
+        "description": "Stream tokens that match grammar.",
+        "code_snippet": "# Add 'stream': true to request; tokens stream but ALL conform to grammar; final output is valid"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Grammar parse error",
+        "cause": "Malformed GBNF.",
+        "fix_snippet": "Test grammar with llama.cpp's --grammar-check flag. GBNF is sensitive to whitespace + escape chars."
+      },
+      {
+        "error_text": "Output halts mid-generation",
+        "cause": "Grammar terminates the generation early.",
+        "fix_snippet": "Grammar with root ::= ... ends generation when matched. Ensure grammar matches FULL desired output, not just prefix."
+      },
+      {
+        "error_text": "Slow generation with grammar",
+        "cause": "Grammar masks every token.",
+        "fix_snippet": "Grammar adds 10-30% latency. Acceptable for structured output. For free-form output, disable grammar."
+      },
+      {
+        "error_text": "Tokens look valid but JSON parser fails",
+        "cause": "Grammar allowed near-valid JSON.",
+        "fix_snippet": "Use built-in json.gbnf which is well-tested. Custom grammars need careful testing on edge cases."
+      }
+    ],
+    "production_checklist": [
+      "Test grammar on diverse outputs (edge cases).",
+      "Use built-in json.gbnf when output is JSON-shaped.",
+      "Monitor generation time impact of grammar.",
+      "Cache compiled grammars in server for performance.",
+      "Document the grammar version alongside model.",
+      "Pair with downstream JSON-schema validation for defense-in-depth."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "Llama-3.1-8B-Instruct-Q4_K_M"
+      ],
+      "library_versions": [
+        "llama.cpp (build 3700+)"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "llama-cpp"
+    ],
+    "related_glossary_slugs": [
+      "gbnf",
+      "constrained-decoding"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Grammar vs strict mode (OpenAI)?",
+        "answer": "Same end goal; different mechanism. Strict mode: provider enforces server-side. Grammar (llama.cpp): you enforce client-side with GBNF. Both produce guaranteed structured output."
+      },
+      {
+        "question": "GBNF vs JSON Schema?",
+        "answer": "GBNF: grammar-level constraint (low-level, flexible). JSON Schema: type-level constraint (higher-level, easier). Some tools auto-convert JSON Schema \u2192 GBNF; lossy for advanced features."
+      },
+      {
+        "question": "Performance overhead?",
+        "answer": "10-30% slower than ungrammar-constrained generation. For most apps, acceptable. For latency-critical, run benchmarks."
+      },
+      {
+        "question": "Multi-language grammars?",
+        "answer": "Yes \u2014 GBNF can describe any context-free grammar. Define grammars for SQL, regex, custom DSLs. Useful for code generation pipelines."
+      }
+    ],
+    "github_url": "https://github.com/ggerganov/llama.cpp",
+    "meta_title": "llama.cpp Server With Grammar Starter",
+    "meta_description": "llama.cpp + GBNF grammars: force model output to match strict structure (JSON, SQL, DSL). Self-hosted constrained decoding."
+  },
+  {
+    "slug": "sglang-fast-structured-inference",
+    "title": "SGLang For Fast Structured Inference",
+    "tldr": "SGLang: faster than vLLM for structured outputs (JSON schemas, regex constraints, multi-turn chains) due to RadixAttention + token-level constraint optimization.",
+    "category": "llm-inference",
+    "language": "python",
+    "framework": "SGLang",
+    "tags": [
+      "sglang",
+      "structured-output",
+      "fast-inference",
+      "constraints"
+    ],
+    "best_for_tags": [
+      "json-extraction",
+      "production-rag",
+      "throughput"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "Production workloads with heavy structured outputs (JSON extraction, classification, multi-turn agents). SGLang is often 2-5x faster than vLLM for these patterns.",
+    "when_not_to_use": "Skip for free-form chat (vLLM is comparable, more mature). Skip if you don't have time to learn SGLang's DSL (Python-embedded, but distinct).",
+    "quick_start": "pip install 'sglang[all]' && python -m sglang.launch_server --model meta-llama/Llama-3.1-8B-Instruct",
+    "full_code": "\"\"\"SGLang: fast structured inference with JSON-schema constraints.\"\"\"\nfrom __future__ import annotations\n\nimport sglang as sgl\nfrom sglang import function, gen, system, user, assistant\n\n\n# ----------------- SETUP -----------------\n\nsgl.set_default_backend(sgl.RuntimeEndpoint(\"http://localhost:30000\"))\n\n\n# ----------------- JSON-CONSTRAINED GENERATION -----------------\n\nTICKET_SCHEMA = \"\"\"{\n    \"type\": \"object\",\n    \"properties\": {\n        \"category\": {\"type\": \"string\", \"enum\": [\"billing\", \"technical\", \"general\"]},\n        \"priority\": {\"type\": \"string\", \"enum\": [\"low\", \"medium\", \"high\"]},\n        \"summary\": {\"type\": \"string\", \"maxLength\": 200},\n        \"next_action\": {\"type\": \"string\"}\n    },\n    \"required\": [\"category\", \"priority\", \"summary\", \"next_action\"]\n}\"\"\"\n\n\n@function\ndef classify_ticket(s, message: str):\n    s += system(\"Classify customer support tickets. Output JSON.\")\n    s += user(f\"Ticket: {message}\")\n    s += assistant(gen(\"output\", max_tokens=300, temperature=0,\n                       json_schema=TICKET_SCHEMA))\n\n\n# ----------------- MULTI-TURN WITH BRANCHING -----------------\n\n@function\ndef multi_turn(s, question: str):\n    \"\"\"SGLang shines on multi-turn with prefix sharing via RadixAttention.\"\"\"\n    s += system(\"Answer in 50 words or less.\")\n    s += user(question)\n    s += assistant(gen(\"first_response\", max_tokens=200))\n\n    # Branch \u2014 explore multiple follow-ups; RadixAttention caches the prefix\n    forks = s.fork(3)\n    for i, f in enumerate(forks):\n        f += user(f\"Now expand on point {i + 1}.\")\n        f += assistant(gen(\"follow_up\", max_tokens=150))\n\n    # Could merge / pick best, etc.\n\n\n# ----------------- REGEX-CONSTRAINED GEN -----------------\n\n@function\ndef extract_email(s, text: str):\n    \"\"\"Force output to match an email regex.\"\"\"\n    s += user(f\"What email is mentioned in: {text}\")\n    s += assistant(gen(\"email\", regex=r\"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\"))\n\n\n# ----------------- BATCH PROCESSING -----------------\n\ndef process_batch(messages: list[str]) -> list[dict]:\n    \"\"\"Process many tickets in parallel; SGLang batches them efficiently.\"\"\"\n    states = classify_ticket.run_batch(\n        [{\"message\": m} for m in messages],\n        max_new_tokens=300,\n    )\n    return [s[\"output\"] for s in states]\n\n\n# ----------------- RUN -----------------\n\nif __name__ == \"__main__\":\n    # Single ticket\n    state = classify_ticket.run(message=\"I was charged twice in September. Please refund.\")\n    print(state[\"output\"])\n\n    # Batch\n    results = process_batch([\n        \"I was charged twice in September.\",\n        \"Login button doesn't work \u2014 getting 500 error.\",\n        \"Just checking in!\",\n    ])\n    for r in results:\n        print(r)\n\n    # Email extraction with regex constraint\n    email_state = extract_email.run(text=\"Reach me at jane.smith@example.com for follow-up.\")\n    print(email_state[\"email\"])\n",
+    "dependencies": [
+      {
+        "name": "sglang",
+        "version": ">=0.3",
+        "purpose": "SGLang runtime + DSL"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Model downloads",
+        "example": "hf_..."
+      }
+    ],
+    "setup_steps": [
+      "pip install 'sglang[all]'",
+      "Launch server: python -m sglang.launch_server --model meta-llama/Llama-3.1-8B-Instruct --port 30000",
+      "Wait for 'server is fired up' log",
+      "Run client script"
+    ],
+    "variations": [
+      {
+        "label": "Multi-GPU tensor-parallel",
+        "description": "Scale across GPUs.",
+        "code_snippet": "python -m sglang.launch_server --model ... --tp 4  # tensor-parallel size 4"
+      },
+      {
+        "label": "Quantized model",
+        "description": "FP8 / INT4 for memory.",
+        "code_snippet": "python -m sglang.launch_server --model ... --quantization fp8  # H100; or awq for older GPUs"
+      },
+      {
+        "label": "OpenAI-compatible API",
+        "description": "Drop-in OpenAI replacement.",
+        "code_snippet": "# SGLang server exposes /v1/chat/completions; use openai client with base_url='http://localhost:30000/v1'"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "ImportError flashinfer",
+        "cause": "Missing CUDA wheel.",
+        "fix_snippet": "Install matching CUDA wheel: pip install flashinfer-python -i https://flashinfer.ai/whl/cu121/torch2.4/. Match your CUDA version."
+      },
+      {
+        "error_text": "Server hangs on first request",
+        "cause": "Warm-up.",
+        "fix_snippet": "First request triggers CUDA-graph capture (~30s). Pre-warm at startup with a dummy request."
+      },
+      {
+        "error_text": "JSON schema not respected",
+        "cause": "Older SGLang versions or invalid schema.",
+        "fix_snippet": "Upgrade to >=0.3. Test schema is valid JSON Schema Draft 7. Use additionalProperties: false."
+      },
+      {
+        "error_text": "Slower than expected",
+        "cause": "Not using RadixAttention features.",
+        "fix_snippet": "Use s.fork() for branching workloads, and reuse prefixes (system prompts) across requests. That's where SGLang wins."
+      }
+    ],
+    "production_checklist": [
+      "Use RadixAttention (default) \u2014 biggest perf advantage.",
+      "Batch via run_batch for parallel inference.",
+      "Pin SGLang + CUDA + flashinfer versions.",
+      "Monitor GPU utilization (should be 80-95% under load).",
+      "Quantize models (FP8 / AWQ) if memory-constrained.",
+      "Pre-warm CUDA graphs at startup."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "Llama-3.1-8B-Instruct"
+      ],
+      "library_versions": [
+        "sglang==0.3"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "sglang",
+      "vllm"
+    ],
+    "related_glossary_slugs": [
+      "radix-attention",
+      "structured-output"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "SGLang vs vLLM?",
+        "answer": "vLLM: more mature, broader model support, simpler. SGLang: faster for structured outputs + multi-turn (RadixAttention). Pick SGLang for JSON-heavy / agentic workloads."
+      },
+      {
+        "question": "OpenAI-compatible?",
+        "answer": "Yes \u2014 SGLang exposes /v1/chat/completions. You can use openai Python client with base_url. JSON schema via response_format works."
+      },
+      {
+        "question": "Production-ready?",
+        "answer": "Yes, used by major orgs. Newer than vLLM but stable. Pin version. CUDA version matching is the main pain point."
+      },
+      {
+        "question": "Multi-modal support?",
+        "answer": "Yes \u2014 supports Llava, Qwen-VL, and others. Multi-modal inference is a strong SGLang differentiator."
+      }
+    ],
+    "github_url": "https://github.com/sgl-project/sglang",
+    "meta_title": "SGLang Fast Structured Inference Starter",
+    "meta_description": "SGLang: faster than vLLM for structured outputs + multi-turn. JSON-schema constraints, regex constraints, RadixAttention caching."
+  },
+  {
+    "slug": "mlx-llm-on-apple-silicon",
+    "title": "MLX LLM Inference On Apple Silicon",
+    "tldr": "MLX: Apple's ML framework, optimized for Apple Silicon (M1/M2/M3/M4). Run quantized Llama-3 / Mistral on Mac at usable speeds. Lower power, no GPU rental.",
+    "category": "llm-inference",
+    "language": "python",
+    "framework": "MLX",
+    "tags": [
+      "mlx",
+      "apple-silicon",
+      "metal",
+      "local"
+    ],
+    "best_for_tags": [
+      "mac-developers",
+      "edge-inference",
+      "privacy-conscious"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Developing on Apple Silicon and want LOCAL LLM inference at reasonable speed. MLX is faster than llama.cpp on Mac for most models. Privacy + offline + zero-cost.",
+    "when_not_to_use": "Skip for non-Mac. Skip for very large models (32GB unified memory limits practical model size to ~30B). Skip for production scale (consumer Macs aren't servers).",
+    "quick_start": "pip install mlx-lm && python -m mlx_lm.generate --model mlx-community/Llama-3.1-8B-Instruct-4bit --prompt 'Hello'",
+    "full_code": "\"\"\"MLX LLM inference on Apple Silicon: load, generate, server.\"\"\"\nfrom __future__ import annotations\n\nimport argparse\nimport mlx.core as mx\nfrom mlx_lm import load, generate, stream_generate\n\n\n# ----------------- LOAD MODEL -----------------\n\n# Pre-quantized models for Mac:\n#   mlx-community/Llama-3.1-8B-Instruct-4bit       (~4GB)\n#   mlx-community/Mistral-7B-Instruct-v0.3-4bit    (~4GB)\n#   mlx-community/Qwen2.5-Coder-7B-Instruct-4bit   (~4GB)\n#   mlx-community/Llama-3.1-70B-Instruct-4bit      (~40GB, M2 Ultra / M3 Max only)\n\nMODEL = \"mlx-community/Llama-3.1-8B-Instruct-4bit\"\n\n\ndef get_model():\n    \"\"\"Load model + tokenizer once.\"\"\"\n    model, tokenizer = load(MODEL)\n    return model, tokenizer\n\n\n# ----------------- ONE-SHOT GENERATION -----------------\n\ndef chat_once(prompt: str) -> str:\n    model, tokenizer = get_model()\n    messages = [{\"role\": \"user\", \"content\": prompt}]\n    formatted = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)\n    response = generate(model, tokenizer, prompt=formatted, max_tokens=512, temp=0.0)\n    return response\n\n\n# ----------------- STREAMING -----------------\n\ndef chat_stream(prompt: str):\n    model, tokenizer = get_model()\n    messages = [{\"role\": \"user\", \"content\": prompt}]\n    formatted = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)\n    for token in stream_generate(model, tokenizer, prompt=formatted, max_tokens=512):\n        print(token, end=\"\", flush=True)\n    print()\n\n\n# ----------------- BENCHMARK -----------------\n\ndef benchmark():\n    import time\n    model, tokenizer = get_model()\n    prompts = [\"Explain caching.\", \"What's an LLM?\", \"Write a haiku.\"]\n    total_tokens = 0\n    start = time.time()\n    for p in prompts:\n        messages = [{\"role\": \"user\", \"content\": p}]\n        formatted = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)\n        response = generate(model, tokenizer, prompt=formatted, max_tokens=200)\n        total_tokens += len(tokenizer.encode(response))\n    elapsed = time.time() - start\n    print(f\"Generated {total_tokens} tokens in {elapsed:.1f}s = {total_tokens/elapsed:.0f} tok/s\")\n\n\n# ----------------- SIMPLE HTTP SERVER (OpenAI-compatible) -----------------\n\n# pip install mlx-lm[server]\n# python -m mlx_lm.server --model mlx-community/Llama-3.1-8B-Instruct-4bit --port 8080\n# Then use the OpenAI client with base_url=http://localhost:8080/v1\n\n\n# ----------------- CLI -----------------\n\nif __name__ == \"__main__\":\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--prompt\", default=\"Hello, world!\")\n    parser.add_argument(\"--stream\", action=\"store_true\")\n    parser.add_argument(\"--bench\", action=\"store_true\")\n    args = parser.parse_args()\n\n    if args.bench:\n        benchmark()\n    elif args.stream:\n        chat_stream(args.prompt)\n    else:\n        print(chat_once(args.prompt))\n",
+    "dependencies": [
+      {
+        "name": "mlx-lm",
+        "version": ">=0.18",
+        "purpose": "MLX LLM convenience layer"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "Ensure macOS 14+ and Apple Silicon Mac",
+      "pip install mlx-lm",
+      "python -m mlx_lm.generate --model mlx-community/Llama-3.1-8B-Instruct-4bit --prompt 'Hello'",
+      "For server: pip install 'mlx-lm[server]' && python -m mlx_lm.server"
+    ],
+    "variations": [
+      {
+        "label": "Convert HF model to MLX",
+        "description": "Use models not on mlx-community.",
+        "code_snippet": "from mlx_lm import convert\\nconvert.convert(hf_path='meta-llama/Llama-3.1-8B-Instruct', mlx_path='./out', quantize=True, q_bits=4)"
+      },
+      {
+        "label": "LoRA fine-tuning on Mac",
+        "description": "MLX supports LoRA training.",
+        "code_snippet": "# python -m mlx_lm.lora --model ... --train --data ./data.jsonl --lora-layers 16"
+      },
+      {
+        "label": "Multi-model server",
+        "description": "Swap models via HTTP request.",
+        "code_snippet": "# mlx-lm.server accepts 'model' param per request; swaps loaded model on demand. Slow first call after swap."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "OOM on 70B model",
+        "cause": "Insufficient unified memory.",
+        "fix_snippet": "70B 4-bit needs ~40GB unified RAM. M2 Ultra (64GB) or M3 Max (36GB) only. Use 8B or 13B on smaller Macs."
+      },
+      {
+        "error_text": "Slow generation (5 tok/s on M2)",
+        "cause": "First-call warm-up.",
+        "fix_snippet": "First request always slow (model load + Metal kernel compile). Steady-state: 30-50 tok/s for 8B on M2 Pro."
+      },
+      {
+        "error_text": "ImportError: mlx not found",
+        "cause": "Wrong Python (x86 Rosetta).",
+        "fix_snippet": "Use NATIVE arm64 Python: 'arch -arm64 python -m venv venv'. MLX requires arm64 Python on Apple Silicon."
+      },
+      {
+        "error_text": "Performance worse than llama.cpp Metal",
+        "cause": "Older MLX version.",
+        "fix_snippet": "Upgrade mlx-lm. MLX has been catching up + surpassing llama.cpp for many models on recent versions."
+      }
+    ],
+    "production_checklist": [
+      "Mac Studio / Mac Pro for production workloads (steadier power).",
+      "Pre-load model at server start.",
+      "Use quantized 4-bit models for memory efficiency.",
+      "Profile actual tok/s; benchmarks vary by quantization.",
+      "Apple Silicon is consumer hw \u2014 don't expect H100 throughput.",
+      "Cache models on local SSD; symlink mlx-lm model dir."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "Llama-3.1-8B-Instruct-4bit"
+      ],
+      "library_versions": [
+        "mlx-lm==0.18"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "mlx"
+    ],
+    "related_glossary_slugs": [
+      "apple-silicon",
+      "quantization"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "MLX vs llama.cpp on Mac?",
+        "answer": "MLX is now generally faster on Apple Silicon (better Metal kernels). llama.cpp Metal backend still works. MLX has lower API friction for Python."
+      },
+      {
+        "question": "What can a Mac realistically run?",
+        "answer": "M1 Pro (16GB): up to 7B 4-bit. M2 Max (32GB): up to 13B 4-bit or 70B 2-bit (slow). M3 Max (36-128GB): up to 70B 4-bit. Real-world tok/s varies."
+      },
+      {
+        "question": "Production on Mac?",
+        "answer": "For internal tools / small teams: yes. For external SaaS scale: no \u2014 Macs aren't designed for 24/7 inference. Use Modal / Cloud Run for production."
+      },
+      {
+        "question": "Fine-tuning on Mac?",
+        "answer": "LoRA fine-tuning works on Apple Silicon via MLX. Slower than NVIDIA but viable for small datasets + 7B models. Full fine-tuning of 70B not practical."
+      }
+    ],
+    "github_url": "https://github.com/ml-explore/mlx-examples",
+    "meta_title": "MLX LLM On Apple Silicon Starter",
+    "meta_description": "Run quantized LLMs on M1/M2/M3 Macs with MLX: faster than llama.cpp on Apple Silicon, OpenAI-compatible server, LoRA fine-tuning."
+  },
+  {
     "slug": "fastmcp-tool-server-stdio",
     "title": "FastMCP Tool Server Over Stdio",
     "tldr": "Minimal MCP (Model Context Protocol) server exposing tools to Claude Desktop / Cursor / any MCP client over stdio. Type-hinted tools become callable from the host LLM in under 50 lines.",
@@ -18467,6 +18996,552 @@
     "github_url": "https://github.com/pgvector/pgvector",
     "meta_title": "pgvector HNSW + Prefilter \u2014 Vector DB Starter",
     "meta_description": "pgvector HNSW with metadata prefilter via WHERE clause. iterative_scan strict_order, B-tree indexes for filters, production checklist."
+  },
+  {
+    "slug": "qdrant-cluster-with-payload-filter",
+    "title": "Qdrant Cluster With Payload Filtering",
+    "tldr": "Qdrant cluster: horizontal scale via sharding + replication. Payload-indexed filters keep queries fast at scale. Native gRPC + REST. Production-grade.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "Qdrant",
+    "tags": [
+      "qdrant",
+      "cluster",
+      "filtering",
+      "production"
+    ],
+    "best_for_tags": [
+      "production",
+      "large-scale",
+      "filtered-search"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "when_to_use": "Production vector search at scale (10M+ vectors) with rich metadata filtering. Qdrant's payload index makes filter-then-search fast. Cluster mode for HA + horizontal scale.",
+    "when_not_to_use": "Skip for <1M vectors (pgvector / Chroma simpler). Skip if you don't need filtering (FAISS is faster pure-vector). Skip without ops capacity to run a cluster.",
+    "quick_start": "docker run -d -p 6333:6333 -p 6334:6334 qdrant/qdrant && pip install qdrant-client",
+    "full_code": "\"\"\"Qdrant cluster: sharding, replication, payload filters, named vectors.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom qdrant_client import QdrantClient, models\n\n\nclient = QdrantClient(\n    url=os.environ.get(\"QDRANT_URL\", \"http://localhost:6333\"),\n    api_key=os.environ.get(\"QDRANT_API_KEY\"),  # required for cloud / production\n    prefer_grpc=True,  # faster than HTTP\n)\n\n\n# ----------------- COLLECTION (sharded + replicated) -----------------\n\nCOLLECTION = \"documents\"\nDIM = 1536\n\n\ndef setup_collection():\n    client.recreate_collection(\n        collection_name=COLLECTION,\n        vectors_config=models.VectorParams(\n            size=DIM,\n            distance=models.Distance.COSINE,\n            on_disk=False,                          # in-memory for speed\n            hnsw_config=models.HnswConfigDiff(m=16, ef_construct=200),\n            quantization_config=models.ScalarQuantization(  # 4x storage saving\n                scalar=models.ScalarQuantizationConfig(\n                    type=models.ScalarType.INT8,\n                    always_ram=True,\n                )\n            ),\n        ),\n        shard_number=3,                              # horizontal sharding\n        replication_factor=2,                        # HA\n        write_consistency_factor=2,                  # writes must hit 2 replicas\n        on_disk_payload=False,\n    )\n\n    # Payload indexes \u2014 critical for fast filtering\n    client.create_payload_index(COLLECTION, \"tenant_id\", models.KeywordIndexParams(type=\"keyword\"))\n    client.create_payload_index(COLLECTION, \"category\", models.KeywordIndexParams(type=\"keyword\"))\n    client.create_payload_index(COLLECTION, \"published_at\", models.IntegerIndexParams(type=\"integer\"))\n\n\n# ----------------- UPSERT -----------------\n\ndef upsert(points: list[dict]):\n    \"\"\"points: [{id, vector, payload}]\"\"\"\n    client.upsert(\n        collection_name=COLLECTION,\n        points=[\n            models.PointStruct(id=p[\"id\"], vector=p[\"vector\"], payload=p[\"payload\"])\n            for p in points\n        ],\n        wait=True,  # wait for write to be acknowledged\n    )\n\n\n# ----------------- SEARCH WITH FILTER -----------------\n\ndef search(query_vec: list[float], tenant_id: str, category: str | None = None,\n           after_timestamp: int | None = None, k: int = 5):\n    \"\"\"Search WITH metadata filters.\"\"\"\n    filter_conditions = [\n        models.FieldCondition(key=\"tenant_id\", match=models.MatchValue(value=tenant_id)),\n    ]\n    if category:\n        filter_conditions.append(\n            models.FieldCondition(key=\"category\", match=models.MatchValue(value=category))\n        )\n    if after_timestamp:\n        filter_conditions.append(\n            models.FieldCondition(key=\"published_at\", range=models.Range(gte=after_timestamp))\n        )\n\n    return client.search(\n        collection_name=COLLECTION,\n        query_vector=query_vec,\n        query_filter=models.Filter(must=filter_conditions),\n        limit=k,\n        with_payload=True,\n        score_threshold=0.5,  # filter out poor matches\n    )\n\n\n# ----------------- HYBRID: vector + sparse (BM25-like) -----------------\n\ndef search_hybrid(query_vec: list[float], sparse_vec: dict[int, float],\n                  tenant_id: str, k: int = 5):\n    \"\"\"Hybrid search using named vectors (dense + sparse).\"\"\"\n    return client.query_points(\n        collection_name=COLLECTION,\n        prefetch=[\n            models.Prefetch(query=query_vec, using=\"dense\", limit=k * 2),\n            models.Prefetch(query=sparse_vec, using=\"sparse\", limit=k * 2),\n        ],\n        query=models.FusionQuery(fusion=models.Fusion.RRF),  # Reciprocal Rank Fusion\n        limit=k,\n        query_filter=models.Filter(must=[\n            models.FieldCondition(key=\"tenant_id\", match=models.MatchValue(value=tenant_id))\n        ]),\n    )\n\n\n# ----------------- SCROLL (pagination) -----------------\n\ndef scroll_all(tenant_id: str):\n    \"\"\"Iterate all points for a tenant \u2014 useful for migrations / re-indexing.\"\"\"\n    offset = None\n    while True:\n        points, offset = client.scroll(\n            collection_name=COLLECTION,\n            scroll_filter=models.Filter(must=[\n                models.FieldCondition(key=\"tenant_id\", match=models.MatchValue(value=tenant_id))\n            ]),\n            limit=100,\n            offset=offset,\n            with_payload=True,\n            with_vectors=False,\n        )\n        if not points:\n            break\n        yield from points\n        if offset is None:\n            break\n\n\n# ----------------- DEMO -----------------\n\nif __name__ == \"__main__\":\n    import random\n    setup_collection()\n\n    sample = [\n        {\n            \"id\": i,\n            \"vector\": [random.random() for _ in range(DIM)],\n            \"payload\": {\n                \"tenant_id\": \"acme\",\n                \"category\": random.choice([\"billing\", \"tech\", \"general\"]),\n                \"published_at\": 1700000000 + i * 86400,\n                \"text\": f\"Document {i}\",\n            },\n        }\n        for i in range(100)\n    ]\n    upsert(sample)\n\n    query = [random.random() for _ in range(DIM)]\n    results = search(query, tenant_id=\"acme\", category=\"tech\", k=3)\n    for r in results:\n        print(f\"  {r.score:.3f}: {r.payload['text']}\")\n",
+    "dependencies": [
+      {
+        "name": "qdrant-client",
+        "version": ">=1.12",
+        "purpose": "Qdrant Python client"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "QDRANT_URL",
+        "required": false,
+        "description": "Qdrant cluster URL",
+        "example": "https://...qdrant.io"
+      },
+      {
+        "name": "QDRANT_API_KEY",
+        "required": false,
+        "description": "API key for cloud",
+        "example": "..."
+      }
+    ],
+    "setup_steps": [
+      "Run local: docker run -d -p 6333:6333 -p 6334:6334 qdrant/qdrant",
+      "Or sign up at qdrant.tech (cloud)",
+      "pip install qdrant-client",
+      "Set env vars",
+      "python qdrant_demo.py"
+    ],
+    "variations": [
+      {
+        "label": "Disk-based collection",
+        "description": "Cheaper, slower queries.",
+        "code_snippet": "VectorParams(..., on_disk=True); on_disk_payload=True. Used for huge collections that don't fit in RAM."
+      },
+      {
+        "label": "Binary quantization",
+        "description": "32x smaller; minor recall loss.",
+        "code_snippet": "quantization_config=BinaryQuantization(binary=BinaryQuantizationConfig(always_ram=True))"
+      },
+      {
+        "label": "Multi-vector points",
+        "description": "Per-point multiple embeddings.",
+        "code_snippet": "vectors_config={'title': VectorParams(size=...), 'body': VectorParams(size=...)} # named vectors per point"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Slow filtering",
+        "cause": "Missing payload index.",
+        "fix_snippet": "Create payload index for every filtered field via create_payload_index. Without index, filter is full-scan."
+      },
+      {
+        "error_text": "WriteConsistencyError",
+        "cause": "Replicas not all healthy.",
+        "fix_snippet": "Lower write_consistency_factor to 1 for availability (over consistency). Or wait for replica recovery."
+      },
+      {
+        "error_text": "Cluster reshard takes hours",
+        "cause": "Sharding designed for upfront, not online.",
+        "fix_snippet": "Plan shard_number at collection creation. Changing later requires recreate + reindex."
+      },
+      {
+        "error_text": "Memory blow-up over time",
+        "cause": "HNSW indexes grow.",
+        "fix_snippet": "Monitor segment count. Run optimizer: client.update_collection_aliases(...). Or schedule re-indexing during low-traffic."
+      }
+    ],
+    "production_checklist": [
+      "Payload indexes on every filter field.",
+      "Shard count = expected size / 1M (e.g., 10M vectors \u2192 10 shards).",
+      "Replication factor 2+ for HA.",
+      "Use gRPC (prefer_grpc=True) over HTTP for perf.",
+      "Quantize (scalar or binary) for storage savings.",
+      "Backup with snapshot API; test restore."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "qdrant-client==1.12",
+        "Qdrant 1.12"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "qdrant"
+    ],
+    "related_glossary_slugs": [
+      "qdrant",
+      "vector-search"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Qdrant vs Weaviate vs Milvus?",
+        "answer": "Qdrant: Rust, fast, good filtering. Weaviate: schema-first, GraphQL. Milvus: scale champion (1B+). Pick Qdrant for filtered-search at moderate scale; Milvus for huge scale; Weaviate for schema-first GraphQL flows."
+      },
+      {
+        "question": "Cloud vs self-host?",
+        "answer": "Cloud: managed, free tier, fast to start. Self-host: data control, cheaper at scale. Both run same software."
+      },
+      {
+        "question": "How big can collection get?",
+        "answer": "Single-node: ~50M vectors with HNSW. Cluster: billions. Past 50M single-node, shard."
+      },
+      {
+        "question": "Schema?",
+        "answer": "Schemaless payloads (any JSON). Define payload indexes for fields you filter on. More flexible than Weaviate, less rigid."
+      }
+    ],
+    "github_url": "https://github.com/qdrant/qdrant",
+    "meta_title": "Qdrant Cluster With Payload Filter Starter",
+    "meta_description": "Qdrant cluster: sharding, replication, payload-indexed filters, HNSW + scalar quantization, hybrid sparse+dense search."
+  },
+  {
+    "slug": "turbopuffer-serverless-vector-search",
+    "title": "Turbopuffer Serverless Vector Search",
+    "tldr": "Turbopuffer: object-storage-backed vector DB. Pay per query + GB-stored, no servers. Cold queries are slower; warm queries fast. Cheap for sporadic / multi-tenant workloads.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "Turbopuffer",
+    "tags": [
+      "turbopuffer",
+      "serverless",
+      "object-storage",
+      "multi-tenant"
+    ],
+    "best_for_tags": [
+      "multi-tenant",
+      "sporadic-traffic",
+      "cost-sensitive"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Multi-tenant SaaS where each tenant has sparse vector workloads. Pay-per-query model wins over always-on databases. Cold queries ~200ms; warm queries <50ms.",
+    "when_not_to_use": "Skip for steady high-QPS (always-on DB is cheaper). Skip for very low latency (<50ms p99) \u2014 cold queries hit object-storage latency.",
+    "quick_start": "pip install turbopuffer && python turbopuffer_demo.py",
+    "full_code": "\"\"\"Turbopuffer: serverless vector search backed by object storage.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport turbopuffer as tpuf\n\n\ntpuf.api_key = os.environ[\"TURBOPUFFER_API_KEY\"]\n\n\n# ----------------- NAMESPACE PER TENANT -----------------\n\ndef get_namespace(tenant_id: str):\n    \"\"\"Each tenant gets a namespace \u2014 fully isolated.\"\"\"\n    return tpuf.Namespace(tenant_id)\n\n\n# ----------------- UPSERT -----------------\n\ndef upsert_docs(tenant_id: str, docs: list[dict]):\n    \"\"\"docs: [{id, vector, attributes (any JSON-like)}]\"\"\"\n    ns = get_namespace(tenant_id)\n    ns.upsert(\n        ids=[d[\"id\"] for d in docs],\n        vectors=[d[\"vector\"] for d in docs],\n        attributes={\n            \"title\": [d[\"title\"] for d in docs],\n            \"category\": [d[\"category\"] for d in docs],\n            \"created_at\": [d[\"created_at\"] for d in docs],\n        },\n        distance_metric=\"cosine_distance\",\n        schema={\n            \"title\": \"string\",\n            \"category\": \"string\",\n            \"created_at\": \"uint\",\n        },\n    )\n\n\n# ----------------- QUERY WITH FILTERS -----------------\n\ndef search(tenant_id: str, query_vec: list[float], category: str | None = None,\n           k: int = 10):\n    ns = get_namespace(tenant_id)\n    filters = []\n    if category:\n        filters.append([\"category\", \"Eq\", category])\n    return ns.query(\n        vector=query_vec,\n        top_k=k,\n        filters=filters if filters else None,\n        include_attributes=[\"title\", \"category\"],\n        include_vectors=False,\n    )\n\n\n# ----------------- BM25 + VECTOR HYBRID -----------------\n\ndef search_hybrid(tenant_id: str, query_text: str, query_vec: list[float], k: int = 10):\n    \"\"\"Turbopuffer supports full-text + vector via separate calls + RRF.\"\"\"\n    ns = get_namespace(tenant_id)\n\n    # Full-text result (BM25)\n    bm25 = ns.query(\n        rank_by=(\"title\", \"BM25\", query_text),\n        top_k=k * 2,\n    )\n    # Vector result\n    vec = ns.query(vector=query_vec, top_k=k * 2)\n\n    # Reciprocal Rank Fusion in application\n    from collections import defaultdict\n    rrf_scores = defaultdict(float)\n    for r in (bm25, vec):\n        for rank, item in enumerate(r):\n            rrf_scores[item.id] += 1.0 / (60 + rank + 1)\n    return sorted(rrf_scores.items(), key=lambda x: -x[1])[:k]\n\n\n# ----------------- BULK OPERATIONS -----------------\n\ndef list_tenants() -> list[str]:\n    \"\"\"Enumerate all namespaces (tenants).\"\"\"\n    return [ns.name for ns in tpuf.Namespace.list()]\n\n\ndef delete_tenant(tenant_id: str):\n    \"\"\"GDPR / offboarding: nuke a tenant's namespace.\"\"\"\n    get_namespace(tenant_id).delete_all()\n\n\n# ----------------- DEMO -----------------\n\nif __name__ == \"__main__\":\n    import random\n    DIM = 1536\n    sample = [\n        {\n            \"id\": str(i),\n            \"vector\": [random.random() for _ in range(DIM)],\n            \"title\": f\"Document {i}\",\n            \"category\": random.choice([\"billing\", \"tech\", \"general\"]),\n            \"created_at\": 1700000000 + i,\n        }\n        for i in range(50)\n    ]\n    upsert_docs(\"acme\", sample)\n\n    query = [random.random() for _ in range(DIM)]\n    for r in search(\"acme\", query, category=\"tech\", k=3):\n        print(f\"  {r.dist:.3f}: {r.attributes['title']}\")\n",
+    "dependencies": [
+      {
+        "name": "turbopuffer",
+        "version": ">=0.5",
+        "purpose": "Turbopuffer Python SDK"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "TURBOPUFFER_API_KEY",
+        "required": true,
+        "description": "From turbopuffer.com",
+        "example": "tpuf-..."
+      }
+    ],
+    "setup_steps": [
+      "Sign up at turbopuffer.com (free tier: 100k vectors)",
+      "pip install turbopuffer",
+      "export TURBOPUFFER_API_KEY=tpuf-...",
+      "python turbopuffer_demo.py"
+    ],
+    "variations": [
+      {
+        "label": "Multi-region",
+        "description": "Pick region for residency.",
+        "code_snippet": "tpuf.api_base_url = 'https://api.turbopuffer.com'  # us-central; or eu-central for EU residency"
+      },
+      {
+        "label": "Streaming bulk insert",
+        "description": "Large initial loads.",
+        "code_snippet": "# Use batches of 1000-10000; turbopuffer handles concurrent uploads"
+      },
+      {
+        "label": "Custom distance metric",
+        "description": "Beyond cosine.",
+        "code_snippet": "ns.upsert(..., distance_metric='euclidean_squared')  # or 'dot_product'"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "First query slow (~200ms)",
+        "cause": "Cold namespace.",
+        "fix_snippet": "Pre-warm critical tenants with a dummy query. Or accept cold latency as part of serverless model."
+      },
+      {
+        "error_text": "Schema mismatch on upsert",
+        "cause": "Different attribute types across upserts.",
+        "fix_snippet": "Define schema on first upsert; subsequent upserts must match. Or use schemaless mode (less optimized)."
+      },
+      {
+        "error_text": "BM25 not finding obvious matches",
+        "cause": "Index not yet built.",
+        "fix_snippet": "BM25 index builds async after upsert. Wait a few seconds or use ns.refresh(). For instant search, fall back to vector."
+      },
+      {
+        "error_text": "Per-tenant cost adds up",
+        "cause": "Many small tenants.",
+        "fix_snippet": "Use single namespace with tenant_id as filter. Trades isolation for cost. Pick based on workload."
+      }
+    ],
+    "production_checklist": [
+      "Use per-tenant namespaces for isolation OR tenant_id filter for cost.",
+      "Define schema for filtered/sorted attributes.",
+      "Pre-warm critical tenants periodically.",
+      "Monitor: cold query rate, p99 latency.",
+      "Backup: export to your own storage periodically.",
+      "Use BM25 + vector hybrid for best recall."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "turbopuffer==0.5"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "turbopuffer"
+    ],
+    "related_glossary_slugs": [
+      "serverless-vector-db",
+      "multi-tenant"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Turbopuffer vs Pinecone Serverless?",
+        "answer": "Both: serverless, pay-per-use. Turbopuffer: object-storage-backed (cheaper at scale), Rust-built. Pinecone: more mature, broader ecosystem. Pick by cost + features."
+      },
+      {
+        "question": "How serverless really?",
+        "answer": "TRUE serverless: scales to zero. No idle cost. Cold queries hit object storage (~200ms). Warm queries cached locally (<50ms). Trade-off: latency variability."
+      },
+      {
+        "question": "Best for what use case?",
+        "answer": "Multi-tenant SaaS with sparse per-tenant traffic. E.g., 10k tenants, each making 100 queries/day. Always-on DBs would cost 100x more."
+      },
+      {
+        "question": "Replication / SLA?",
+        "answer": "Replicated across regions in same continent. SLA: see docs. For STRICT availability, run a backup on a different provider."
+      }
+    ],
+    "github_url": "https://github.com/turbopuffer/turbopuffer-py",
+    "meta_title": "Turbopuffer Serverless Vector Search Starter",
+    "meta_description": "Turbopuffer: serverless vector DB on object storage. Pay-per-query, scale to zero, per-tenant namespaces, hybrid BM25 + vector."
+  },
+  {
+    "slug": "redis-vl-vector-search",
+    "title": "Redis VL: Vector Search In Redis",
+    "tldr": "Redis VL (redis-vector-library): use Redis Stack for vector + structured search. If you already have Redis, free vector store, no new DB. HNSW + flat indexes.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "Redis VL",
+    "tags": [
+      "redis",
+      "vector-search",
+      "redis-vl",
+      "hybrid"
+    ],
+    "best_for_tags": [
+      "redis-shops",
+      "small-mid-scale",
+      "low-ops"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Already running Redis Stack for cache / pub-sub. Adding vector search lets you skip introducing a new DB. Good fit up to ~10M vectors.",
+    "when_not_to_use": "Skip past 50M vectors (dedicated vector DBs scale better). Skip if not on Redis Stack (need RediSearch module). Skip for sparse Top-K (Redis SET ops are better than vector for some workloads).",
+    "quick_start": "docker run -d -p 6379:6379 redis/redis-stack:latest && pip install redisvl && python redis_vl_demo.py",
+    "full_code": "\"\"\"Redis VL: vector + structured search using Redis Stack.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport numpy as np\nfrom redisvl.index import SearchIndex\nfrom redisvl.query import VectorQuery, FilterQuery, RangeQuery\nfrom redisvl.query.filter import Tag, Num\n\n\n# ----------------- INDEX SCHEMA -----------------\n\nschema = {\n    \"index\": {\n        \"name\": \"docs-idx\",\n        \"prefix\": \"doc:\",\n        \"key_separator\": \":\",\n        \"storage_type\": \"json\",  # or \"hash\"\n    },\n    \"fields\": [\n        {\"name\": \"title\", \"type\": \"text\"},\n        {\"name\": \"category\", \"type\": \"tag\"},\n        {\"name\": \"tenant_id\", \"type\": \"tag\"},\n        {\"name\": \"created_at\", \"type\": \"numeric\"},\n        {\n            \"name\": \"embedding\",\n            \"type\": \"vector\",\n            \"attrs\": {\n                \"dims\": 1536,\n                \"algorithm\": \"hnsw\",\n                \"distance_metric\": \"cosine\",\n                \"datatype\": \"float32\",\n            },\n        },\n    ],\n}\n\n\nindex = SearchIndex.from_dict(\n    schema,\n    redis_url=os.environ.get(\"REDIS_URL\", \"redis://localhost:6379\"),\n)\n\n\n# ----------------- INDEX SETUP -----------------\n\ndef setup():\n    if not index.exists():\n        index.create()\n    print(f\"Index: {index.name}, fields: {[f['name'] for f in schema['fields']]}\")\n\n\n# ----------------- LOAD DATA -----------------\n\ndef load(docs: list[dict]):\n    index.load(docs)\n\n\n# ----------------- VECTOR SEARCH -----------------\n\ndef search(query_vec: np.ndarray, tenant_id: str, category: str | None = None, k: int = 5):\n    filter_expr = Tag(\"tenant_id\") == tenant_id\n    if category:\n        filter_expr = filter_expr & (Tag(\"category\") == category)\n\n    query = VectorQuery(\n        vector=query_vec.tolist(),\n        vector_field_name=\"embedding\",\n        return_fields=[\"title\", \"category\"],\n        num_results=k,\n        filter_expression=filter_expr,\n    )\n    return index.query(query)\n\n\n# ----------------- TEXT-ONLY FILTER QUERY (no vector) -----------------\n\ndef filter_only(tenant_id: str, category: str):\n    query = FilterQuery(\n        return_fields=[\"title\", \"category\"],\n        filter_expression=(Tag(\"tenant_id\") == tenant_id) & (Tag(\"category\") == category),\n    )\n    return index.query(query)\n\n\n# ----------------- DEMO -----------------\n\nif __name__ == \"__main__\":\n    setup()\n\n    import random\n    docs = [\n        {\n            \"id\": f\"d{i}\",\n            \"title\": f\"Document {i}\",\n            \"category\": random.choice([\"billing\", \"tech\", \"general\"]),\n            \"tenant_id\": \"acme\",\n            \"created_at\": 1700000000 + i * 86400,\n            \"embedding\": np.random.random(1536).astype(np.float32).tobytes(),\n        }\n        for i in range(100)\n    ]\n    load(docs)\n\n    query_vec = np.random.random(1536).astype(np.float32)\n    for r in search(query_vec, tenant_id=\"acme\", category=\"tech\", k=3):\n        print(f\"  {r['vector_distance']:.4f}: {r['title']}\")\n",
+    "dependencies": [
+      {
+        "name": "redisvl",
+        "version": ">=0.3",
+        "purpose": "Redis Vector Library"
+      },
+      {
+        "name": "redis",
+        "version": ">=5.0",
+        "purpose": "Redis driver"
+      },
+      {
+        "name": "numpy",
+        "version": ">=1.26",
+        "purpose": "Vectors"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "REDIS_URL",
+        "required": false,
+        "description": "Redis connection",
+        "example": "redis://localhost:6379"
+      }
+    ],
+    "setup_steps": [
+      "Run Redis Stack: docker run -d -p 6379:6379 redis/redis-stack:latest",
+      "pip install redisvl redis numpy",
+      "python redis_vl_demo.py",
+      "Check Redis Insight at http://localhost:8001 for UI"
+    ],
+    "variations": [
+      {
+        "label": "Flat index for small datasets",
+        "description": "Exact search if <100k vectors.",
+        "code_snippet": "embedding field: 'algorithm': 'flat'  # exact, no HNSW overhead, fine up to ~100k"
+      },
+      {
+        "label": "Use semantic-cache decorator",
+        "description": "Cache LLM responses by query similarity.",
+        "code_snippet": "from redisvl.extensions.llmcache import SemanticCache; cache = SemanticCache(name='llm', redis_url=...); cache.store(prompt, response)"
+      },
+      {
+        "label": "Streamlined upserts",
+        "description": "Pipelined writes.",
+        "code_snippet": "# index.load supports concurrent writes; use chunks of 1000 for throughput"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "WRONGTYPE error on load",
+        "cause": "Storage type mismatch (json vs hash).",
+        "fix_snippet": "Schema's storage_type must match how you load. For JSON storage, fields are JSONPath. For Hash, use HSET-compatible flat dicts."
+      },
+      {
+        "error_text": "Filter query slow",
+        "cause": "Tag/numeric field not indexed.",
+        "fix_snippet": "Add field to schema 'fields'. Index must be recreated when schema changes (or use alter)."
+      },
+      {
+        "error_text": "OOM on huge collection",
+        "cause": "All vectors in Redis RAM.",
+        "fix_snippet": "Redis is in-memory. Plan RAM: vectors_count \u00d7 dim \u00d7 4 bytes. Use HNSW (less RAM than flat) or shard via Redis Cluster."
+      },
+      {
+        "error_text": "Hash vs JSON output confusion",
+        "cause": "Different return formats.",
+        "fix_snippet": "Hash storage returns flat dicts; JSON returns nested. Pick at schema creation; can't swap easily."
+      }
+    ],
+    "production_checklist": [
+      "Use Redis Stack (or Redis 8+) \u2014 vanilla Redis doesn't have RediSearch.",
+      "Use HNSW for >100k vectors.",
+      "Add Tag indexes on every filtered field.",
+      "Persist: enable Redis AOF for durability.",
+      "Backup: BGSAVE + offsite RDB dumps.",
+      "For >10M vectors, consider Redis Cluster or dedicated vector DB."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "redisvl==0.3",
+        "Redis Stack 7"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "redis"
+    ],
+    "related_glossary_slugs": [
+      "vector-search",
+      "redis-vl"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Redis VL vs dedicated vector DB?",
+        "answer": "Redis VL: piggyback on Redis you already have. Dedicated DB: purpose-built, better at scale. Use Redis VL if you're already Redis-heavy AND <10M vectors."
+      },
+      {
+        "question": "Vector dims limit?",
+        "answer": "Up to 32k dims per vector. Typical is 768-1536. Storage scales linearly with dim."
+      },
+      {
+        "question": "Semantic cache use case?",
+        "answer": "Built-in SemanticCache decorator: cache LLM responses; future queries with similar embeddings reuse. ~30-70% cache hits typical for chat applications."
+      },
+      {
+        "question": "Redis Cloud?",
+        "answer": "Redis Cloud has managed Redis Stack tiers. Works with redisvl out of the box. Higher cost than self-host but zero ops."
+      }
+    ],
+    "github_url": "https://github.com/redis/redis-vl-python",
+    "meta_title": "Redis VL Vector Search Starter",
+    "meta_description": "Redis Stack + redisvl: vector + structured search in Redis. HNSW, tag/numeric filters, semantic cache. Skip a new DB."
+  },
+  {
+    "slug": "marqo-managed-vector-search",
+    "title": "Marqo Managed Vector Search With Multi-Modal",
+    "tldr": "Marqo: open-source vector search with built-in embedding generation. Index text + images + structured data in one API. Avoids the 'embed separately, store separately' dance.",
+    "category": "vector-databases",
+    "language": "python",
+    "framework": "Marqo",
+    "tags": [
+      "marqo",
+      "multi-modal",
+      "vector-search",
+      "managed-embeddings"
+    ],
+    "best_for_tags": [
+      "multi-modal",
+      "rapid-prototyping",
+      "e-commerce"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Multi-modal search (text + images) where you want embedding generation handled BY the DB. Cleaner than embedding separately + storing. Good for e-commerce product search.",
+    "when_not_to_use": "Skip if you already have an embedding pipeline (extra abstraction adds friction). Skip for extremely large scale (>50M docs) \u2014 dedicated solutions scale better.",
+    "quick_start": "docker run --name marqo -d -p 8882:8882 marqoai/marqo:latest && pip install marqo",
+    "full_code": "\"\"\"Marqo: integrated vector + embedding generation + multi-modal.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport marqo\n\n\nmq = marqo.Client(url=os.environ.get(\"MARQO_URL\", \"http://localhost:8882\"))\n\n\nINDEX_NAME = \"products\"\n\n\n# ----------------- CREATE INDEX -----------------\n\ndef setup_index():\n    if INDEX_NAME in [i.index_name for i in mq.get_indexes().get(\"results\", [])]:\n        return\n    mq.create_index(\n        INDEX_NAME,\n        settings_dict={\n            \"type\": \"unstructured\",\n            # Multi-modal: text + image via CLIP-like model\n            \"model\": \"open_clip/ViT-B-32/laion2b_s34b_b79k\",\n            \"treatUrlsAndPointersAsImages\": True,\n            \"normalizeEmbeddings\": True,\n        },\n    )\n\n\n# ----------------- INGEST (with embedding auto-generation) -----------------\n\ndef add_products(products: list[dict]):\n    \"\"\"Marqo generates embeddings server-side from designated fields.\"\"\"\n    mq.index(INDEX_NAME).add_documents(\n        products,\n        tensor_fields=[\"title\", \"description\", \"image_url\"],  # which fields to embed\n        client_batch_size=100,\n    )\n\n\n# ----------------- SEARCH (text or image) -----------------\n\ndef search_text(query: str, k: int = 5):\n    return mq.index(INDEX_NAME).search(query, limit=k)\n\n\ndef search_image(image_url: str, k: int = 5):\n    \"\"\"Multi-modal: search with an image.\"\"\"\n    return mq.index(INDEX_NAME).search(image_url, limit=k)\n\n\ndef search_combined(text_weight: float, image_url: str, text: str, k: int = 5):\n    \"\"\"Weighted combination of text + image queries.\"\"\"\n    return mq.index(INDEX_NAME).search(\n        q={text: text_weight, image_url: 1 - text_weight},\n        limit=k,\n    )\n\n\n# ----------------- FILTERED SEARCH -----------------\n\ndef search_with_filter(query: str, category: str, min_price: float, k: int = 5):\n    return mq.index(INDEX_NAME).search(\n        query,\n        filter_string=f\"category:({category}) AND price:[{min_price} TO *]\",\n        limit=k,\n    )\n\n\n# ----------------- DEMO -----------------\n\nif __name__ == \"__main__\":\n    setup_index()\n\n    sample_products = [\n        {\n            \"_id\": \"p1\",\n            \"title\": \"Wireless Headphones\",\n            \"description\": \"Noise-cancelling over-ear headphones with 40h battery.\",\n            \"image_url\": \"https://example.com/headphones.jpg\",\n            \"category\": \"audio\",\n            \"price\": 299.99,\n        },\n        {\n            \"_id\": \"p2\",\n            \"title\": \"Mechanical Keyboard\",\n            \"description\": \"Tactile switches, RGB backlight, USB-C.\",\n            \"image_url\": \"https://example.com/keyboard.jpg\",\n            \"category\": \"peripherals\",\n            \"price\": 149.99,\n        },\n    ]\n    add_products(sample_products)\n\n    # Text search\n    for r in search_text(\"noise-cancelling audio\")[\"hits\"]:\n        print(f\"  {r['_score']:.3f}: {r['title']}\")\n\n    # Filter search\n    for r in search_with_filter(\"typing accessory\", \"peripherals\", 100)[\"hits\"]:\n        print(f\"  {r['title']}\")\n",
+    "dependencies": [
+      {
+        "name": "marqo",
+        "version": ">=3.0",
+        "purpose": "Marqo Python client"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "MARQO_URL",
+        "required": false,
+        "description": "Marqo server URL",
+        "example": "http://localhost:8882"
+      }
+    ],
+    "setup_steps": [
+      "Run server: docker run --name marqo -d -p 8882:8882 marqoai/marqo:latest",
+      "pip install marqo",
+      "Create index with multi-modal model",
+      "Add documents \u2014 embeddings generated server-side",
+      "Search by text or image URL"
+    ],
+    "variations": [
+      {
+        "label": "Custom embedding model",
+        "description": "Use HF model.",
+        "code_snippet": "settings_dict={'model': 'hf/all-MiniLM-L6-v2'}; loads sentence-transformers model"
+      },
+      {
+        "label": "Structured index",
+        "description": "Predefined schema.",
+        "code_snippet": "create_index(..., settings_dict={'type': 'structured', 'allFields': [{'name': 'title', 'type': 'text'}, ...]})"
+      },
+      {
+        "label": "Marqo Cloud",
+        "description": "Managed hosting.",
+        "code_snippet": "mq = marqo.Client(url='https://api.marqo.ai', api_key='...')  # managed cloud"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Image URL not loaded",
+        "cause": "Marqo couldn't download.",
+        "fix_snippet": "Verify URL is public (Marqo fetches server-side). For private images: pre-encode + send embeddings directly."
+      },
+      {
+        "error_text": "Model download slow on first index",
+        "cause": "Open-CLIP model is large.",
+        "fix_snippet": "First-time: 5-10 min. Cache to host volume (-v marqo_data:/data) to persist across restarts."
+      },
+      {
+        "error_text": "Memory growth over time",
+        "cause": "Marqo holds many indexes.",
+        "fix_snippet": "Delete unused indexes. Use Marqo Cloud for scale. Self-host: monitor RAM, restart if necessary."
+      },
+      {
+        "error_text": "Filter syntax mismatch",
+        "cause": "Lucene-like syntax.",
+        "fix_snippet": "Marqo uses Lucene query syntax for filters: 'field:value AND otherfield:[min TO max]'. Not standard JSON filter."
+      }
+    ],
+    "production_checklist": [
+      "Use Marqo Cloud for production unless heavy ops capacity.",
+      "Pin model version (changing model needs full re-index).",
+      "Mount /data volume for model + index persistence.",
+      "Test filter syntax (Lucene quirks).",
+      "Pre-warm by adding sample data to keep model loaded.",
+      "Monitor RAM \u2014 Marqo is memory-heavy."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "open_clip/ViT-B-32"
+      ],
+      "library_versions": [
+        "marqo==3.0"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "marqo"
+    ],
+    "related_glossary_slugs": [
+      "multi-modal-search",
+      "marqo"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Marqo vs Qdrant + CLIP?",
+        "answer": "Marqo: integrated (DB + embedding + multi-modal). Qdrant: bring-your-own embeddings. Marqo is faster to start; Qdrant is more flexible at scale."
+      },
+      {
+        "question": "Multi-modal benefit?",
+        "answer": "Search by text OR image with SAME index. E-commerce: search product images by description. News: search articles by accompanying image. Avoids parallel infra."
+      },
+      {
+        "question": "Cost?",
+        "answer": "Self-host: free + hosting cost. Marqo Cloud: starts ~$50/mo. Compare to: separate embedding API + separate vector DB which is usually cheaper at scale."
+      },
+      {
+        "question": "When NOT to use Marqo?",
+        "answer": "If you have an existing embedding pipeline (extra abstraction). If you need ultra-scale (>50M docs). For pure text RAG, leaner DBs are simpler."
+      }
+    ],
+    "github_url": "https://github.com/marqo-ai/marqo",
+    "meta_title": "Marqo Multi-Modal Vector Search Starter",
+    "meta_description": "Marqo: integrated DB + embedding generation + multi-modal. Search text or images with one API. Self-host or cloud."
   },
   {
     "slug": "fastapi-ollama-streaming-chat",

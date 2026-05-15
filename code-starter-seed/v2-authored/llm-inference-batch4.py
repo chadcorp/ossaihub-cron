@@ -391,7 +391,7 @@ sgl.set_default_backend(sgl.RuntimeEndpoint("http://localhost:30000"))
 
 # ----------------- JSON-CONSTRAINED GENERATION -----------------
 
-TICKET_SCHEMA = '''{
+TICKET_SCHEMA = """{
     "type": "object",
     "properties": {
         "category": {"type": "string", "enum": ["billing", "technical", "general"]},
@@ -400,7 +400,7 @@ TICKET_SCHEMA = '''{
         "next_action": {"type": "string"}
     },
     "required": ["category", "priority", "summary", "next_action"]
-}'''
+}"""
 
 
 @function
