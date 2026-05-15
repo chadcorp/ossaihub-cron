@@ -12047,6 +12047,604 @@
     "meta_description": "Local LLM tracing UI: launch Phoenix on your machine, auto-instrument OpenAI/Anthropic/LangChain, OTEL-based, free."
   },
   {
+    "slug": "helicone-proxy-llm-observability",
+    "title": "Helicone Proxy LLM Observability (Drop-In)",
+    "tldr": "Helicone: change one URL in your OpenAI client and get logging, caching, retries, cost tracking, rate-limiting for free. Drop-in observability with no code change.",
+    "category": "observability",
+    "language": "python",
+    "framework": "Helicone",
+    "tags": [
+      "helicone",
+      "proxy",
+      "observability",
+      "cost-tracking"
+    ],
+    "best_for_tags": [
+      "minimal-code-change",
+      "managed-observability",
+      "production"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": true,
+    "when_to_use": "Want LLM observability NOW without instrumenting code. Change OpenAI/Anthropic base URL to Helicone's proxy \u2192 automatic traces + costs + caching.",
+    "when_not_to_use": "Skip if you want self-hosted observability (use Langfuse OSS instead). Skip for SaaS-averse environments \u2014 your prompts go through Helicone.",
+    "quick_start": "Sign up at helicone.ai \u2192 change OpenAI base_url to Helicone proxy",
+    "full_code": "\"\"\"Helicone proxy: drop-in observability for OpenAI / Anthropic / generic.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom openai import OpenAI\n\n\n# ----------------- WAY 1: OPENAI VIA HELICONE PROXY -----------------\n\nclient = OpenAI(\n    base_url=\"https://oai.helicone.ai/v1\",  # Helicone proxy URL\n    api_key=os.environ[\"OPENAI_API_KEY\"],\n    default_headers={\n        \"Helicone-Auth\": f\"Bearer {os.environ['HELICONE_API_KEY']}\",\n\n        # Metadata for filtering / grouping in dashboard\n        \"Helicone-User-Id\": \"user_123\",\n        \"Helicone-Session-Id\": \"session_abc\",\n        \"Helicone-Property-Feature\": \"checkout\",\n        \"Helicone-Property-Tenant\": \"acme-corp\",\n\n        # Enable caching (free tier 1k cache hits/mo)\n        \"Helicone-Cache-Enabled\": \"true\",\n        \"Helicone-Cache-Bucket-Max-Size\": \"5\",\n        \"Helicone-Cache-Seed\": \"v1\",  # bump to invalidate\n\n        # Per-user rate limit (set in Helicone dashboard)\n        \"Helicone-RateLimit-Policy\": \"10;w=60;u=cents;s=user\",  # 10 cents/min per user\n\n        # Retry policy\n        \"Helicone-Retry-Enabled\": \"true\",\n        \"Helicone-Retry-Num\": \"3\",\n        \"Helicone-Retry-Factor\": \"2\",\n    },\n)\n\n\ndef chat(prompt: str) -> str:\n    response = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n    )\n    return response.choices[0].message.content\n\n\n# ----------------- WAY 2: ANTHROPIC VIA HELICONE -----------------\n\nfrom anthropic import Anthropic\n\nanthropic_client = Anthropic(\n    base_url=\"https://anthropic.helicone.ai\",\n    api_key=os.environ[\"ANTHROPIC_API_KEY\"],\n    default_headers={\n        \"Helicone-Auth\": f\"Bearer {os.environ['HELICONE_API_KEY']}\",\n    },\n)\n\n\ndef chat_anthropic(prompt: str) -> str:\n    response = anthropic_client.messages.create(\n        model=\"claude-3-5-haiku-20241022\",\n        max_tokens=512,\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n    )\n    return response.content[0].text\n\n\n# ----------------- WAY 3: GENERIC HTTP (any LLM) -----------------\n\nimport httpx\n\n\nasync def custom_llm(prompt: str) -> str:\n    \"\"\"Wrap any LLM API by proxying through Helicone.\"\"\"\n    async with httpx.AsyncClient() as http:\n        r = await http.post(\n            \"https://gateway.helicone.ai/v1/chat/completions\",\n            headers={\n                \"Helicone-Auth\": f\"Bearer {os.environ['HELICONE_API_KEY']}\",\n                \"Helicone-Target-URL\": \"https://api.your-llm.com/v1/chat/completions\",\n                \"Authorization\": f\"Bearer {os.environ['YOUR_LLM_KEY']}\",\n                \"Content-Type\": \"application/json\",\n            },\n            json={\"prompt\": prompt, \"model\": \"your-model\"},\n        )\n        return r.json()[\"choices\"][0][\"message\"][\"content\"]\n\n\n# ----------------- VIEW IN HELICONE DASHBOARD -----------------\n\nDASHBOARD = \"https://us.helicone.ai/requests\"\n\n\nif __name__ == \"__main__\":\n    print(chat(\"What's the rate limit pattern?\"))\n    print(chat_anthropic(\"Same question, different model.\"))\n    print(f\"\\nView traces: {DASHBOARD}\")\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "OpenAI client (Helicone is a proxy)"
+      },
+      {
+        "name": "anthropic",
+        "version": ">=0.36",
+        "purpose": "Anthropic via Helicone"
+      },
+      {
+        "name": "httpx",
+        "version": ">=0.27",
+        "purpose": "Custom HTTP proxying"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HELICONE_API_KEY",
+        "required": true,
+        "description": "From helicone.ai dashboard",
+        "example": "sk-helicone-..."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": false,
+        "description": "Original OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "Sign up at helicone.ai (free tier: 100k requests/mo)",
+      "Generate API key in dashboard",
+      "Change base_url and add Helicone-Auth header",
+      "Run any LLM call \u2014 view in dashboard within seconds"
+    ],
+    "variations": [
+      {
+        "label": "Self-host Helicone",
+        "description": "OSS version for control.",
+        "code_snippet": "# git clone github.com/Helicone/helicone; docker-compose up. Same SDK pattern, swap base_url to your domain."
+      },
+      {
+        "label": "Prompt templating + versioning",
+        "description": "Track prompts in Helicone.",
+        "code_snippet": "# Helicone-Prompt-Id header registers the template; versions are auto-tracked. Useful for prompt-engineering workflows."
+      },
+      {
+        "label": "Async with httpx",
+        "description": "Same proxy works for async.",
+        "code_snippet": "from openai import AsyncOpenAI\\nasync_client = AsyncOpenAI(base_url='https://oai.helicone.ai/v1', ...)"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "401 Unauthorized",
+        "cause": "Helicone-Auth header missing or wrong.",
+        "fix_snippet": "Header is 'Helicone-Auth: Bearer sk-helicone-...'. Note 'Bearer' prefix. Use exact header name."
+      },
+      {
+        "error_text": "Higher latency than direct API",
+        "cause": "Helicone adds ~50ms.",
+        "fix_snippet": "Free tier is shared infrastructure. Pro tier has dedicated regions / sub-10ms overhead. Or self-host."
+      },
+      {
+        "error_text": "Cache not hitting",
+        "cause": "Different request body each time.",
+        "fix_snippet": "Same prompt + same params \u2192 cache hit. Set Helicone-Cache-Seed: 'vN' to invalidate cache batches."
+      },
+      {
+        "error_text": "Tracking missing user info",
+        "cause": "Forgot to set Helicone-User-Id.",
+        "fix_snippet": "Pass Helicone-User-Id on every request. Per-user analytics + rate limiting depend on it."
+      }
+    ],
+    "production_checklist": [
+      "Tag requests with Helicone-User-Id + Property-* for filtering.",
+      "Set per-user rate limits via Helicone-RateLimit-Policy.",
+      "Enable caching for repetitive queries.",
+      "Monitor: cost-per-user, error rates, latency by model.",
+      "Set up Slack / email alerts for cost spikes in dashboard.",
+      "For sensitive workloads, self-host Helicone."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "claude-3-5-haiku"
+      ],
+      "library_versions": [
+        "openai==1.51",
+        "anthropic==0.36"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "helicone",
+      "openai"
+    ],
+    "related_glossary_slugs": [
+      "llm-proxy",
+      "observability"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Helicone vs LangSmith vs Langfuse?",
+        "answer": "Helicone: drop-in proxy, no code change, automatic. LangSmith: deeper LangChain integration. Langfuse: OSS, self-hostable, decorator-based. Helicone wins on ZERO code change."
+      },
+      {
+        "question": "Privacy concerns?",
+        "answer": "Self-host Helicone for full control. SaaS option has SOC2; prompts are stored encrypted. For PII, scrub client-side before sending."
+      },
+      {
+        "question": "Cost?",
+        "answer": "Free tier: 100k requests/mo, generous. Pro: $50+/mo unlimited. Self-host: free, your own infra. Compare to LangSmith Plus ($39/mo)."
+      },
+      {
+        "question": "Does it slow my app?",
+        "answer": "Free tier: +50-100ms typical. Pro: <30ms. Self-hosted: depends on your infra. For latency-critical apps, self-host or use async."
+      }
+    ],
+    "github_url": "https://github.com/Helicone/helicone",
+    "meta_title": "Helicone Proxy LLM Observability Starter",
+    "meta_description": "Helicone proxy for LLM observability: change one URL, get logging + caching + retries + cost tracking. No code change."
+  },
+  {
+    "slug": "traceloop-openllmetry-cost-tracking",
+    "title": "OpenLLMetry Cost Tracking With OTel",
+    "tldr": "Traceloop OpenLLMetry: OpenTelemetry-native LLM observability. Auto-instruments OpenAI / Anthropic / LangChain. Pipe traces to ANY OTel backend (Honeycomb, Datadog, Jaeger).",
+    "category": "observability",
+    "language": "python",
+    "framework": "Traceloop OpenLLMetry",
+    "tags": [
+      "opentelemetry",
+      "traceloop",
+      "cost-tracking",
+      "vendor-neutral"
+    ],
+    "best_for_tags": [
+      "otel-shops",
+      "vendor-neutral",
+      "production"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Already have OpenTelemetry infrastructure (Honeycomb, Datadog, Grafana Tempo). Want LLM traces in the same backend as your service traces. OpenLLMetry is the standard.",
+    "when_not_to_use": "Skip for greenfield projects without OTel \u2014 adopt a managed LLM-specific tool (Langfuse, Helicone) first. Skip for tiny apps (overhead).",
+    "quick_start": "pip install traceloop-sdk && set env vars && Traceloop.init()",
+    "full_code": "\"\"\"OpenLLMetry: OpenTelemetry-native LLM tracing + cost tracking.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom traceloop.sdk import Traceloop\nfrom traceloop.sdk.decorators import task, workflow\n\n\n# ----------------- INIT (auto-instruments OpenAI, Anthropic, etc.) -----------------\n\nTraceloop.init(\n    app_name=\"my-llm-app\",\n    api_endpoint=os.environ.get(\"TRACELOOP_BASE_URL\", \"https://api.traceloop.com\"),\n    api_key=os.environ.get(\"TRACELOOP_API_KEY\"),\n    disable_batch=False,  # batch spans for efficiency\n)\n\n\n# ----------------- AUTO-INSTRUMENTED LLM CALLS -----------------\n\n# After Traceloop.init(), all OpenAI / Anthropic / LangChain calls are traced automatically.\n\nfrom openai import OpenAI\nclient = OpenAI()\n\n\n@task(name=\"classify_ticket\")\ndef classify(message: str) -> str:\n    \"\"\"Decorated task \u2014 surfaces as a span in the trace.\"\"\"\n    response = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[{\"role\": \"user\", \"content\": f\"Classify: {message}\"}],\n    )\n    return response.choices[0].message.content\n\n\n@task(name=\"suggest_response\")\ndef suggest_response(classification: str, message: str) -> str:\n    response = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[{\"role\": \"user\", \"content\": f\"Reply to {classification} message: {message}\"}],\n    )\n    return response.choices[0].message.content\n\n\n# ----------------- WORKFLOW (groups tasks into a parent span) -----------------\n\n@workflow(name=\"handle_ticket\")\ndef handle_ticket(message: str) -> dict:\n    \"\"\"Workflow groups all child tasks under one parent span.\"\"\"\n    classification = classify(message)\n    response = suggest_response(classification, message)\n    return {\"classification\": classification, \"response\": response}\n\n\n# ----------------- ADD METADATA TO SPANS -----------------\n\nfrom traceloop.sdk.tracing.context_manager import set_association_properties\n\n\ndef handle_with_metadata(message: str, user_id: str, session_id: str):\n    set_association_properties({\n        \"user_id\": user_id,\n        \"session_id\": session_id,\n        \"tier\": \"pro\",  # custom attributes\n    })\n    return handle_ticket(message)\n\n\n# ----------------- EXPORT TO YOUR OTEL BACKEND -----------------\n\n# To export to Honeycomb / Datadog / etc., set OpenTelemetry env vars BEFORE Traceloop.init():\n#\n#   export OTEL_EXPORTER_OTLP_ENDPOINT=https://api.honeycomb.io\n#   export OTEL_EXPORTER_OTLP_HEADERS=\"x-honeycomb-team=$HONEYCOMB_KEY\"\n#   export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf\n#\n# Or to Traceloop's hosted backend:\n#   export TRACELOOP_API_KEY=tl_...\n\n\nif __name__ == \"__main__\":\n    result = handle_with_metadata(\n        \"Hi, I was charged twice for September.\",\n        user_id=\"u_123\",\n        session_id=\"s_abc\",\n    )\n    print(result)\n    print(\"\\nView traces in your OTel backend (Honeycomb / Traceloop dashboard / etc.)\")\n",
+    "dependencies": [
+      {
+        "name": "traceloop-sdk",
+        "version": ">=0.20",
+        "purpose": "OpenLLMetry SDK"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "LLM client (auto-instrumented)"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "TRACELOOP_API_KEY",
+        "required": false,
+        "description": "Traceloop hosted backend",
+        "example": "tl_..."
+      },
+      {
+        "name": "OTEL_EXPORTER_OTLP_ENDPOINT",
+        "required": false,
+        "description": "Generic OTel backend URL",
+        "example": "https://api.honeycomb.io"
+      }
+    ],
+    "setup_steps": [
+      "pip install traceloop-sdk openai",
+      "Decide backend: Traceloop hosted OR generic OTel (Honeycomb, Datadog, Jaeger)",
+      "Set env vars",
+      "Call Traceloop.init() once at app startup",
+      "Decorate workflows with @workflow and tasks with @task"
+    ],
+    "variations": [
+      {
+        "label": "Async OpenAI",
+        "description": "Same instrumentation works for async.",
+        "code_snippet": "from openai import AsyncOpenAI\\nclient = AsyncOpenAI()  # auto-traced"
+      },
+      {
+        "label": "Without Traceloop SDK",
+        "description": "Use raw OpenTelemetry SDK directly.",
+        "code_snippet": "# from openllmetry.instrumentation.openai import OpenAIInstrumentor\\n# OpenAIInstrumentor().instrument()  # OpenLLMetry instrumentation libs are OSS"
+      },
+      {
+        "label": "Custom span attributes",
+        "description": "Add domain-specific attrs.",
+        "code_snippet": "from opentelemetry import trace\\nspan = trace.get_current_span()\\nspan.set_attribute('custom.attr', 'value')"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Traces not appearing",
+        "cause": "Backend endpoint wrong.",
+        "fix_snippet": "Check OTEL_EXPORTER_OTLP_ENDPOINT. Run with TRACELOOP_DEBUG=true to see what's being sent. Verify headers (auth)."
+      },
+      {
+        "error_text": "Auto-instrumentation missing OpenAI calls",
+        "cause": "Traceloop.init() called AFTER OpenAI import.",
+        "fix_snippet": "Call Traceloop.init() FIRST, before importing openai. Or use explicit OpenAIInstrumentor().instrument()."
+      },
+      {
+        "error_text": "Span performance overhead",
+        "cause": "Sync export.",
+        "fix_snippet": "Use disable_batch=False (batched export). For very high QPS, lower sample rate via OTEL_TRACES_SAMPLER."
+      },
+      {
+        "error_text": "Cost metric missing",
+        "cause": "Model not in cost map.",
+        "fix_snippet": "Custom model? Set TRACELOOP_TRACK_TOKENS=true; emit usage manually if needed. Standard OpenAI/Anthropic models are auto-priced."
+      }
+    ],
+    "production_checklist": [
+      "Initialize ONCE at app startup, before LLM imports.",
+      "Use @workflow / @task for logical grouping.",
+      "Add user_id / session_id via set_association_properties.",
+      "Set OTel sampling rate for high QPS apps (1% sampling is plenty).",
+      "Pin Traceloop + OpenTelemetry versions (rapid evolution).",
+      "Monitor span ingestion rate at your OTel backend."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "traceloop-sdk==0.20",
+        "openai==1.51"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "traceloop-openllmetry",
+      "opentelemetry"
+    ],
+    "related_glossary_slugs": [
+      "opentelemetry",
+      "tracing"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "OpenLLMetry vs proprietary tools?",
+        "answer": "OpenLLMetry: vendor-neutral, OpenTelemetry standard, works with any OTel backend. Proprietary (Helicone, LangSmith): more polished UI, opinionated. Pick OpenLLMetry if you already use OTel."
+      },
+      {
+        "question": "Traceloop SDK vs raw OTel?",
+        "answer": "Traceloop SDK: convenience layer (decorators, defaults). Raw OTel + OpenLLMetry instrumentation libs: more control, less magic. Both produce the same traces."
+      },
+      {
+        "question": "Cost?",
+        "answer": "Traceloop hosted backend: free tier 10k traces/mo, then ~$0.10/1k. Self-host with Jaeger / Tempo: free + ops cost. Honeycomb/Datadog: per their pricing."
+      },
+      {
+        "question": "Privacy \u2014 does it log prompts?",
+        "answer": "Yes by default. Set TRACELOOP_TRACK_PROMPTS=false to log metadata only. For sensitive prompts, scrub before sending or self-host."
+      }
+    ],
+    "github_url": "https://github.com/traceloop/openllmetry",
+    "meta_title": "OpenLLMetry Cost Tracking With OTel Starter",
+    "meta_description": "OpenLLMetry: OpenTelemetry-native LLM observability. Auto-instrument OpenAI/Anthropic/LangChain. Send traces to Honeycomb/Datadog/Jaeger."
+  },
+  {
+    "slug": "langfuse-self-hosted-llm-traces",
+    "title": "Langfuse Self-Hosted LLM Traces (Open Source)",
+    "tldr": "Langfuse: self-hostable, OSS LLM observability with traces, evals, datasets, prompt versioning. Docker-compose up + decorate your code. Full data control.",
+    "category": "observability",
+    "language": "python",
+    "framework": "Langfuse",
+    "tags": [
+      "langfuse",
+      "self-hosted",
+      "oss",
+      "observability"
+    ],
+    "best_for_tags": [
+      "data-control",
+      "compliance",
+      "production"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Compliance-sensitive shop that needs LLM observability with data-control. Langfuse OSS runs in your VPC. Comparable feature set to LangSmith / Helicone hosted.",
+    "when_not_to_use": "Skip for solo / hobby (Langfuse hosted free tier is plenty). Skip for teams without infra capacity to maintain it.",
+    "quick_start": "docker compose up -d # from langfuse repo && pip install langfuse",
+    "full_code": "\"\"\"Langfuse self-hosted: full LLM observability stack.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom langfuse.decorators import observe, langfuse_context\nfrom langfuse.openai import openai  # drop-in replacement\n\n\n# ----------------- SETUP (env vars) -----------------\n\n# os.environ[\"LANGFUSE_HOST\"] = \"http://localhost:3000\"  # self-hosted\n# os.environ[\"LANGFUSE_PUBLIC_KEY\"] = \"pk-lf-...\"\n# os.environ[\"LANGFUSE_SECRET_KEY\"] = \"sk-lf-...\"\n\n\n# ----------------- @observe DECORATOR (single line) -----------------\n\n@observe(name=\"classify_ticket\")\ndef classify(message: str) -> str:\n    \"\"\"Decorated functions show as spans in Langfuse.\"\"\"\n    response = openai.chat.completions.create(  # langfuse.openai wraps it\n        model=\"gpt-4o-mini\",\n        messages=[{\"role\": \"user\", \"content\": f\"Classify: {message}\"}],\n        temperature=0,\n    )\n    return response.choices[0].message.content\n\n\n@observe(name=\"generate_response\")\ndef respond(classification: str, message: str) -> str:\n    response = openai.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[{\"role\": \"user\", \"content\": f\"Reply to {classification}: {message}\"}],\n    )\n    return response.choices[0].message.content\n\n\n# ----------------- TRACE WITH METADATA -----------------\n\n@observe(name=\"ticket_pipeline\")\ndef handle_ticket(message: str, user_id: str, session_id: str) -> dict:\n    # Attach metadata to the trace\n    langfuse_context.update_current_trace(\n        user_id=user_id,\n        session_id=session_id,\n        tags=[\"production\", \"tier:pro\"],\n        metadata={\"source\": \"web\"},\n    )\n\n    classification = classify(message)\n    response = respond(classification, message)\n\n    # Manual scoring (for offline eval)\n    langfuse_context.score_current_trace(\n        name=\"quality\",\n        value=0.9,\n        comment=\"LGTM (auto-scored)\",\n    )\n\n    return {\"classification\": classification, \"response\": response}\n\n\n# ----------------- PROMPT VERSIONING (Langfuse-managed) -----------------\n\nfrom langfuse import Langfuse\n\nlangfuse = Langfuse()  # uses env vars\n\n\ndef get_prompt(name: str = \"classify-v1\") -> str:\n    \"\"\"Pull a prompt from Langfuse \u2014 versioned, can be edited in UI.\"\"\"\n    return langfuse.get_prompt(name).prompt\n\n\n# Push a prompt programmatically (or in the UI)\ndef push_prompt():\n    langfuse.create_prompt(\n        name=\"classify-v1\",\n        prompt=\"Classify the customer message: {{message}}\",\n        labels=[\"production\"],\n        config={\"model\": \"gpt-4o-mini\", \"temperature\": 0},\n    )\n\n\n# ----------------- DATASET (for eval) -----------------\n\ndef create_eval_dataset():\n    langfuse.create_dataset(name=\"classify-eval-set\")\n    examples = [\n        {\"input\": {\"message\": \"I want a refund\"}, \"expected\": {\"category\": \"billing\"}},\n        {\"input\": {\"message\": \"App is broken\"}, \"expected\": {\"category\": \"technical\"}},\n    ]\n    for ex in examples:\n        langfuse.create_dataset_item(\n            dataset_name=\"classify-eval-set\",\n            input=ex[\"input\"],\n            expected_output=ex[\"expected\"],\n        )\n\n\n# ----------------- DEMO -----------------\n\nif __name__ == \"__main__\":\n    result = handle_ticket(\n        \"I was charged $99 twice last month, please refund.\",\n        user_id=\"u_42\",\n        session_id=\"s_xyz\",\n    )\n    print(result)\n    print(\"\\nView traces: http://localhost:3000 (or your Langfuse host)\")\n",
+    "dependencies": [
+      {
+        "name": "langfuse",
+        "version": ">=2.50",
+        "purpose": "Langfuse SDK"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "LANGFUSE_HOST",
+        "required": true,
+        "description": "Langfuse server URL",
+        "example": "http://localhost:3000"
+      },
+      {
+        "name": "LANGFUSE_PUBLIC_KEY",
+        "required": true,
+        "description": "Public key from project settings",
+        "example": "pk-lf-..."
+      },
+      {
+        "name": "LANGFUSE_SECRET_KEY",
+        "required": true,
+        "description": "Secret key",
+        "example": "sk-lf-..."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "Underlying LLM",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "Self-host: git clone github.com/langfuse/langfuse && docker compose up -d",
+      "Create project in Langfuse UI, copy keys",
+      "Export LANGFUSE_HOST, LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY",
+      "pip install langfuse",
+      "Replace `from openai import OpenAI` with `from langfuse.openai import openai`"
+    ],
+    "variations": [
+      {
+        "label": "Langfuse Cloud (managed)",
+        "description": "Skip Docker; use hosted.",
+        "code_snippet": "# Sign up at cloud.langfuse.com, free tier 50k traces/mo. Set LANGFUSE_HOST=https://cloud.langfuse.com"
+      },
+      {
+        "label": "LangChain integration",
+        "description": "Auto-trace LangChain.",
+        "code_snippet": "from langfuse.callback import CallbackHandler\\nllm = ChatOpenAI(callbacks=[CallbackHandler()])"
+      },
+      {
+        "label": "Async client",
+        "description": "AsyncIO patterns.",
+        "code_snippet": "from langfuse.openai import AsyncOpenAI; async_client = AsyncOpenAI(); # full instrumented async"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Traces not appearing in UI",
+        "cause": "Wrong host or key.",
+        "fix_snippet": "Verify env vars; LANGFUSE_HOST should NOT have trailing slash. langfuse.flush() at app exit to push buffered traces."
+      },
+      {
+        "error_text": "@observe decorator missing imports",
+        "cause": "Old SDK or wrong package.",
+        "fix_snippet": "pip install -U langfuse>=2.50. from langfuse.decorators import observe (singular). Old syntax langfuse_observability is deprecated."
+      },
+      {
+        "error_text": "High memory usage",
+        "cause": "Buffer not flushing.",
+        "fix_snippet": "Set LANGFUSE_FLUSH_INTERVAL=1.0 for faster flushing. Or call langfuse.flush() periodically in long-running services."
+      },
+      {
+        "error_text": "DB grows quickly",
+        "cause": "All traces stored.",
+        "fix_snippet": "Self-hosted: configure data retention policy. Sample non-error traces. Aggressive cleanup of old traces."
+      }
+    ],
+    "production_checklist": [
+      "Run Langfuse in same VPC as your app (low latency).",
+      "Backup Langfuse Postgres + ClickHouse regularly.",
+      "Set retention policy (90 days typical).",
+      "Sample non-error traces if QPS high (1-10%).",
+      "Use Langfuse prompt-versioning to track prompt changes.",
+      "Run Langfuse evals on subset of production traces."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "langfuse==2.50"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "langfuse"
+    ],
+    "related_glossary_slugs": [
+      "langfuse",
+      "self-hosted-observability"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Langfuse vs LangSmith?",
+        "answer": "Langfuse: OSS, self-hostable, framework-agnostic. LangSmith: managed SaaS, deep LangChain integration. Pick Langfuse for data-control needs."
+      },
+      {
+        "question": "Self-host requirements?",
+        "answer": "Docker compose: Postgres + ClickHouse + Langfuse app. ~4GB RAM for small workloads. K8s helm chart available for scale."
+      },
+      {
+        "question": "Cost of Cloud?",
+        "answer": "Free: 50k traces/mo. Pro: $50+/mo. Team: $250+/mo. Includes evals + prompt management."
+      },
+      {
+        "question": "Migrate from LangSmith?",
+        "answer": "Both use similar trace schemas. Langfuse has a LangSmith importer. The Decorator API is comparable; instrumentation is similar effort."
+      }
+    ],
+    "github_url": "https://github.com/langfuse/langfuse",
+    "meta_title": "Langfuse Self-Hosted LLM Traces Starter",
+    "meta_description": "Langfuse self-hosted: OSS LLM observability with traces, evals, datasets, prompt versioning. Docker compose + decorator-based instrumentation."
+  },
+  {
+    "slug": "llm-cost-budget-with-alerts",
+    "title": "Per-Tenant LLM Cost Budget With Alerts",
+    "tldr": "Track LLM cost per tenant in real-time. Hard cap (block) + soft cap (alert). Pairs with any LLM provider. Don't get surprised by a $10k Anthropic bill.",
+    "category": "observability",
+    "language": "python",
+    "framework": "Redis + Custom",
+    "tags": [
+      "cost-tracking",
+      "budgets",
+      "alerting",
+      "multi-tenant"
+    ],
+    "best_for_tags": [
+      "multi-tenant-saas",
+      "cost-control",
+      "production"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Multi-tenant LLM app where tenants can burn through cost. This pattern caps cost per tenant per period + alerts when approaching the cap. Saves you from surprise bills.",
+    "when_not_to_use": "Skip for single-tenant apps. Skip if you're using a provider with built-in budgets (most SaaS LLMs have account-level caps; this adds per-tenant).",
+    "quick_start": "pip install redis litellm && python cost_budget.py",
+    "full_code": "\"\"\"Per-tenant LLM cost budget with Redis counters + alerts.\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport time\nfrom dataclasses import dataclass\nfrom datetime import datetime\n\nimport redis\nfrom litellm import cost_per_token, completion\n\n\nredis_client = redis.from_url(os.environ.get(\"REDIS_URL\", \"redis://localhost:6379\"))\n\n\n# ----------------- BUDGET CONFIG -----------------\n\n@dataclass\nclass TenantBudget:\n    tenant_id: str\n    daily_soft_cap_usd: float       # alert at this point\n    daily_hard_cap_usd: float       # block at this point\n    monthly_hard_cap_usd: float\n\n\nBUDGETS: dict[str, TenantBudget] = {\n    \"acme_corp\": TenantBudget(\"acme_corp\", daily_soft_cap_usd=10.0,\n                              daily_hard_cap_usd=20.0, monthly_hard_cap_usd=500.0),\n    \"demo_user\": TenantBudget(\"demo_user\", daily_soft_cap_usd=0.5,\n                              daily_hard_cap_usd=1.0, monthly_hard_cap_usd=10.0),\n}\n\n\n# ----------------- BUDGET CHECK + INCREMENT -----------------\n\nclass BudgetExceeded(Exception):\n    pass\n\n\ndef _bucket_key(tenant_id: str, period: str) -> str:\n    if period == \"daily\":\n        return f\"cost:daily:{tenant_id}:{datetime.utcnow().strftime('%Y-%m-%d')}\"\n    elif period == \"monthly\":\n        return f\"cost:monthly:{tenant_id}:{datetime.utcnow().strftime('%Y-%m')}\"\n    raise ValueError(period)\n\n\ndef get_spend(tenant_id: str, period: str = \"daily\") -> float:\n    key = _bucket_key(tenant_id, period)\n    val = redis_client.get(key)\n    return float(val) if val else 0.0\n\n\ndef check_budget(tenant_id: str) -> None:\n    \"\"\"Raise BudgetExceeded if over hard cap. Side-effect: log soft-cap warning.\"\"\"\n    budget = BUDGETS.get(tenant_id)\n    if not budget:\n        raise ValueError(f\"Unknown tenant {tenant_id}\")\n\n    daily = get_spend(tenant_id, \"daily\")\n    monthly = get_spend(tenant_id, \"monthly\")\n\n    if daily >= budget.daily_hard_cap_usd:\n        raise BudgetExceeded(f\"Daily cap ${budget.daily_hard_cap_usd:.2f} hit (${daily:.2f})\")\n    if monthly >= budget.monthly_hard_cap_usd:\n        raise BudgetExceeded(f\"Monthly cap ${budget.monthly_hard_cap_usd:.2f} hit\")\n\n    if daily >= budget.daily_soft_cap_usd:\n        notify_soft_cap(tenant_id, daily, budget.daily_soft_cap_usd)\n\n\ndef increment_spend(tenant_id: str, cost_usd: float) -> None:\n    pipe = redis_client.pipeline()\n    daily_key = _bucket_key(tenant_id, \"daily\")\n    monthly_key = _bucket_key(tenant_id, \"monthly\")\n    pipe.incrbyfloat(daily_key, cost_usd)\n    pipe.expire(daily_key, 86400 * 2)        # auto-expire 2 days\n    pipe.incrbyfloat(monthly_key, cost_usd)\n    pipe.expire(monthly_key, 86400 * 35)     # auto-expire ~1 month later\n    pipe.execute()\n\n\n# ----------------- WRAP LLM CALL -----------------\n\ndef llm_call(tenant_id: str, model: str, messages: list[dict], **kwargs) -> str:\n    check_budget(tenant_id)  # raises if over hard cap\n\n    response = completion(model=model, messages=messages, **kwargs)\n    usage = response.usage\n\n    # Compute cost using LiteLLM's cost map\n    input_cost, output_cost = cost_per_token(\n        model=model,\n        prompt_tokens=usage.prompt_tokens,\n        completion_tokens=usage.completion_tokens,\n    )\n    total = input_cost + output_cost\n\n    increment_spend(tenant_id, total)\n\n    return response.choices[0].message.content\n\n\n# ----------------- ALERTING -----------------\n\ndef notify_soft_cap(tenant_id: str, current: float, threshold: float):\n    \"\"\"Hit Slack / PagerDuty / email \u2014 once per day per tenant.\"\"\"\n    flag_key = f\"soft_cap_alerted:{tenant_id}:{datetime.utcnow().strftime('%Y-%m-%d')}\"\n    if redis_client.setnx(flag_key, \"1\"):\n        redis_client.expire(flag_key, 86400)\n        # Send actual alert here\n        print(f\"\u26a0\ufe0f  SOFT CAP HIT: {tenant_id} at ${current:.2f} (threshold ${threshold:.2f})\")\n        # Example: requests.post(SLACK_WEBHOOK, json={\"text\": f\"...\"})\n\n\n# ----------------- DEMO -----------------\n\nif __name__ == \"__main__\":\n    try:\n        for i in range(5):\n            result = llm_call(\n                tenant_id=\"demo_user\",\n                model=\"gpt-4o-mini\",\n                messages=[{\"role\": \"user\", \"content\": f\"Iteration {i}: explain caching.\"}],\n            )\n            print(f\"[{i}] OK; spent: ${get_spend('demo_user'):.4f}\")\n            time.sleep(0.1)\n    except BudgetExceeded as e:\n        print(f\"Blocked: {e}\")\n",
+    "dependencies": [
+      {
+        "name": "redis",
+        "version": ">=5.0",
+        "purpose": "Counters + alerting flag"
+      },
+      {
+        "name": "litellm",
+        "version": ">=1.50",
+        "purpose": "Universal LLM + cost lookup"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "REDIS_URL",
+        "required": true,
+        "description": "Redis connection",
+        "example": "redis://localhost:6379"
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "Provider key for LLM",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install redis litellm",
+      "Run Redis: docker run -d -p 6379:6379 redis:7",
+      "Define BUDGETS dict for your tenants",
+      "Wire llm_call() into your application code",
+      "Connect notify_soft_cap to Slack/PagerDuty/email"
+    ],
+    "variations": [
+      {
+        "label": "Per-feature budget",
+        "description": "Budget per FEATURE within a tenant.",
+        "code_snippet": "# Bucket key: f'cost:daily:{tenant_id}:{feature}'. Separate budgets per use case (search, summarize, chat)."
+      },
+      {
+        "label": "Rolling-window budget",
+        "description": "Last-hour or last-7-day window.",
+        "code_snippet": "# Use Redis sorted set with timestamps. ZADD on each call; ZREMRANGEBYSCORE old entries. Sum recent."
+      },
+      {
+        "label": "Soft fail (warn user)",
+        "description": "Instead of blocking, surface warning to user.",
+        "code_snippet": "# Replace 'raise BudgetExceeded' with: return {'error': 'usage_cap_reached', 'reset_at': end_of_day}. App handles UX."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Redis race condition on increment",
+        "cause": "Multiple workers updating simultaneously.",
+        "fix_snippet": "INCRBYFLOAT is atomic in Redis. The pattern works under concurrency. Verify with redis-cli MONITOR if suspicious."
+      },
+      {
+        "error_text": "Cost off vs provider billing",
+        "cause": "LiteLLM cost map slightly out of date.",
+        "fix_snippet": "Pin LiteLLM version. Compare monthly counters vs actual invoice. Adjust hard caps with 5-10% buffer."
+      },
+      {
+        "error_text": "Alert flood (re-alerting every call)",
+        "cause": "Forgot the SETNX flag.",
+        "fix_snippet": "Use SETNX with daily expiry. notify_soft_cap pattern in the code prevents floods."
+      },
+      {
+        "error_text": "Hard cap blocks legitimate burst",
+        "cause": "Cap too aggressive.",
+        "fix_snippet": "Soft + hard caps with buffer between (e.g., soft=$10, hard=$20). Allow short bursts; alert on soft to investigate."
+      }
+    ],
+    "production_checklist": [
+      "Monthly + daily caps (different rates of growth).",
+      "Soft cap (alert) + hard cap (block) layered.",
+      "Per-tenant + per-feature budgets if multi-feature app.",
+      "Alert deduplication (SETNX flag per day).",
+      "Audit log: every block, every alert, every increment.",
+      "Daily reconciliation against provider billing."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "redis==5.0",
+        "litellm==1.51"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "litellm",
+      "redis"
+    ],
+    "related_glossary_slugs": [
+      "cost-tracking",
+      "rate-limiting"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Soft vs hard caps?",
+        "answer": "Soft cap: alert internally, keep serving. Hard cap: block requests. Both exist to give you time to investigate before customers lose service."
+      },
+      {
+        "question": "Per-tenant vs per-user?",
+        "answer": "Depends on your SaaS model. Tenant (org) typical for B2B; user typical for consumer. Can layer: per-user inside per-tenant."
+      },
+      {
+        "question": "Counter precision concerns?",
+        "answer": "Redis INCRBYFLOAT uses floats; tiny rounding errors at scale. For STRICT accuracy, store cents (int) instead of dollars (float)."
+      },
+      {
+        "question": "What about retries / failed calls?",
+        "answer": "Failed calls (cost=0 from provider) don't increment. Successful retries DO. Pattern naturally tracks actual spend."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Per-Tenant LLM Cost Budget Starter",
+    "meta_description": "Real-time LLM cost tracking per tenant: soft + hard caps, Redis counters, alert dedup, LiteLLM cost lookup. Prevent surprise bills."
+  },
+  {
     "slug": "llm-rate-limiter-token-bucket",
     "title": "LLM Rate Limiter Using Token Bucket",
     "tldr": "Token-bucket rate limiter that respects both request-per-minute and tokens-per-minute caps. Honors OpenAI/Anthropic's rate-limit headers to recover gracefully from 429s instead of fixed backoff.",
@@ -12314,6 +12912,555 @@
     "github_url": "",
     "meta_title": "Circuit Breaker for LLM API Calls \u2014 Starter",
     "meta_description": "Production circuit breaker: opens after N failures, half-open probe after cool-down, fallback when OPEN. Prevents cascading failures."
+  },
+  {
+    "slug": "multi-tenant-llm-isolation",
+    "title": "Multi-Tenant LLM Isolation (Quotas + Data Isolation)",
+    "tldr": "Multi-tenant LLM app pattern: per-tenant rate limit, cost budget, data isolation in retrieval, and tenant-scoped audit log. Production must-haves.",
+    "category": "production",
+    "language": "python",
+    "framework": "FastAPI + Redis",
+    "tags": [
+      "multi-tenant",
+      "isolation",
+      "quotas",
+      "production"
+    ],
+    "best_for_tags": [
+      "saas",
+      "b2b",
+      "regulated-industries"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "when_to_use": "Multi-tenant SaaS LLM app. Each customer needs: isolated data, separate rate limits, separate budgets, audit trail. Skip these and you'll have a security incident.",
+    "when_not_to_use": "Skip for single-tenant apps. Skip for prototypes (overhead). Skip if your LLM is purely user-facing with no per-customer state.",
+    "quick_start": "pip install fastapi redis 'uvicorn[standard]' && python multi_tenant_llm.py",
+    "full_code": "\"\"\"Multi-tenant LLM service with quotas + isolation + audit.\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport time\nfrom contextlib import asynccontextmanager\n\nfrom fastapi import FastAPI, HTTPException, Depends, Request, Header\nfrom pydantic import BaseModel\nimport redis.asyncio as aioredis\n\n\nREDIS_URL = os.environ.get(\"REDIS_URL\", \"redis://localhost:6379\")\n\n\n# ----------------- TENANT CONFIG -----------------\n\nTENANTS = {\n    \"acme_corp\": {\n        \"rpm\": 100,\n        \"tpm\": 100_000,\n        \"daily_budget_usd\": 50.0,\n        \"allowed_models\": [\"gpt-4o-mini\", \"gpt-4o\"],\n        \"data_namespace\": \"acme\",\n    },\n    \"demo_user\": {\n        \"rpm\": 10,\n        \"tpm\": 5_000,\n        \"daily_budget_usd\": 1.0,\n        \"allowed_models\": [\"gpt-4o-mini\"],\n        \"data_namespace\": \"demo\",\n    },\n}\n\n\n# ----------------- LIFESPAN -----------------\n\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    app.state.redis = aioredis.from_url(REDIS_URL)\n    yield\n    await app.state.redis.close()\n\n\napp = FastAPI(lifespan=lifespan)\n\n\n# ----------------- AUTH + TENANT RESOLUTION -----------------\n\nasync def get_tenant(authorization: str | None = Header(None)) -> dict:\n    \"\"\"Map bearer token \u2192 tenant config.\"\"\"\n    if not authorization or not authorization.startswith(\"Bearer \"):\n        raise HTTPException(401, \"Missing bearer token\")\n    token = authorization.removeprefix(\"Bearer \")\n\n    # Real: lookup token \u2192 tenant in DB. Stub:\n    token_map = {\"acme_token_123\": \"acme_corp\", \"demo_token_456\": \"demo_user\"}\n    tenant_id = token_map.get(token)\n    if not tenant_id:\n        raise HTTPException(403, \"Invalid token\")\n    return {\"tenant_id\": tenant_id, **TENANTS[tenant_id]}\n\n\n# ----------------- RATE LIMIT (sliding window) -----------------\n\nasync def enforce_rate_limit(tenant: dict, app: FastAPI):\n    redis = app.state.redis\n    now = int(time.time())\n    rpm_key = f\"rl:rpm:{tenant['tenant_id']}:{now // 60}\"\n    pipe = redis.pipeline()\n    pipe.incr(rpm_key)\n    pipe.expire(rpm_key, 120)\n    count, _ = await pipe.execute()\n    if count > tenant[\"rpm\"]:\n        raise HTTPException(429, f\"Rate limit exceeded ({tenant['rpm']} rpm)\")\n\n\n# ----------------- BUDGET CHECK -----------------\n\nasync def enforce_budget(tenant: dict, app: FastAPI):\n    from datetime import datetime\n    today = datetime.utcnow().strftime(\"%Y-%m-%d\")\n    key = f\"cost:daily:{tenant['tenant_id']}:{today}\"\n    spent = float(await app.state.redis.get(key) or 0)\n    if spent >= tenant[\"daily_budget_usd\"]:\n        raise HTTPException(402, f\"Daily budget ${tenant['daily_budget_usd']:.2f} exhausted\")\n\n\n# ----------------- DATA ISOLATION (retrieval namespace) -----------------\n\ndef retrieve(query: str, namespace: str) -> list[str]:\n    \"\"\"Stub \u2014 replace with vector store call SCOPED to the tenant's namespace.\"\"\"\n    # E.g., Pinecone: index.query(namespace=namespace, ...)\n    # NEVER allow cross-namespace queries.\n    return [f\"[doc in {namespace} matching '{query}']\"]\n\n\n# ----------------- AUDIT LOG -----------------\n\nasync def audit_log(app: FastAPI, tenant_id: str, action: str, details: dict):\n    entry = {\n        \"tenant_id\": tenant_id,\n        \"ts\": int(time.time()),\n        \"action\": action,\n        **details,\n    }\n    # Real: write to Postgres / Loki / Splunk. Stub:\n    await app.state.redis.xadd(f\"audit:{tenant_id}\", {\"data\": json.dumps(entry)})\n\n\n# ----------------- ENDPOINT -----------------\n\nclass ChatRequest(BaseModel):\n    message: str\n    model: str = \"gpt-4o-mini\"\n\n\n@app.post(\"/chat\")\nasync def chat(request: Request, body: ChatRequest, tenant: dict = Depends(get_tenant)):\n    # 1. Model allowed?\n    if body.model not in tenant[\"allowed_models\"]:\n        raise HTTPException(403, f\"Model {body.model} not allowed for tenant\")\n\n    # 2. Rate limit\n    await enforce_rate_limit(tenant, request.app)\n\n    # 3. Budget\n    await enforce_budget(tenant, request.app)\n\n    # 4. Data isolation (retrieval scoped to namespace)\n    context = retrieve(body.message, namespace=tenant[\"data_namespace\"])\n\n    # 5. Call LLM (stub)\n    response_text = f\"[response using {body.model} with context: {context}]\"\n\n    # 6. Increment counters\n    # Real: compute actual cost from token usage\n    estimated_cost = 0.001\n    await request.app.state.redis.incrbyfloat(\n        f\"cost:daily:{tenant['tenant_id']}:\" + time.strftime(\"%Y-%m-%d\"),\n        estimated_cost,\n    )\n\n    # 7. Audit\n    await audit_log(request.app, tenant[\"tenant_id\"], \"chat\",\n                    {\"model\": body.model, \"cost_usd\": estimated_cost})\n\n    return {\"response\": response_text, \"cost_usd\": estimated_cost}\n\n\n# ----------------- USAGE ENDPOINT (transparency for tenant) -----------------\n\n@app.get(\"/usage\")\nasync def usage(request: Request, tenant: dict = Depends(get_tenant)):\n    from datetime import datetime\n    today = datetime.utcnow().strftime(\"%Y-%m-%d\")\n    spent = float(await request.app.state.redis.get(\n        f\"cost:daily:{tenant['tenant_id']}:{today}\"\n    ) or 0)\n    return {\n        \"tenant_id\": tenant[\"tenant_id\"],\n        \"spent_today_usd\": spent,\n        \"budget_usd\": tenant[\"daily_budget_usd\"],\n        \"remaining_usd\": max(0, tenant[\"daily_budget_usd\"] - spent),\n    }\n\n\nif __name__ == \"__main__\":\n    import uvicorn\n    uvicorn.run(app, host=\"0.0.0.0\", port=8000)\n",
+    "dependencies": [
+      {
+        "name": "fastapi[standard]",
+        "version": ">=0.115",
+        "purpose": "Web framework"
+      },
+      {
+        "name": "redis",
+        "version": ">=5.0",
+        "purpose": "Counters + audit"
+      },
+      {
+        "name": "uvicorn[standard]",
+        "version": ">=0.30",
+        "purpose": "ASGI server"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "REDIS_URL",
+        "required": true,
+        "description": "Redis connection",
+        "example": "redis://localhost:6379"
+      }
+    ],
+    "setup_steps": [
+      "pip install 'fastapi[standard]' redis 'uvicorn[standard]'",
+      "Run Redis",
+      "Replace TENANTS stub with real tenant DB lookup",
+      "Wire retrieve() to your vector store with namespace=tenant",
+      "uvicorn multi_tenant_llm:app --host 0.0.0.0 --port 8000"
+    ],
+    "variations": [
+      {
+        "label": "Token bucket rate limit",
+        "description": "Smoother than sliding-window.",
+        "code_snippet": "# Use Redis Lua script for atomic token-bucket: refill at rate, consume per-request. More natural for bursty traffic."
+      },
+      {
+        "label": "Per-user within tenant",
+        "description": "Two-level isolation.",
+        "code_snippet": "# Key: f'cost:daily:{tenant_id}:{user_id}:{date}'. Layer per-user budget INSIDE per-tenant budget."
+      },
+      {
+        "label": "Audit to Loki / S3",
+        "description": "Persist audit logs.",
+        "code_snippet": "# Replace XADD with: write to Loki via Promtail, or batched JSONL to S3. Required for compliance."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Cross-tenant data leak",
+        "cause": "Forgot namespace= on vector store query.",
+        "fix_snippet": "Enforce at wrapper layer: every retrieval function REQUIRES namespace param. Code review for any call missing it."
+      },
+      {
+        "error_text": "Rate limit too tight",
+        "cause": "Bursty traffic patterns.",
+        "fix_snippet": "Use token bucket instead of sliding window. Allow short bursts; enforce average rate."
+      },
+      {
+        "error_text": "Budget race condition",
+        "cause": "Multiple workers check then increment.",
+        "fix_snippet": "INCRBYFLOAT first (atomic); check if exceeded; refund if needed. Or use Redis Lua for atomic check-and-increment."
+      },
+      {
+        "error_text": "Auth check missing on /usage endpoint",
+        "cause": "Forgot Depends(get_tenant).",
+        "fix_snippet": "EVERY endpoint should have Depends(get_tenant). Audit code review checklist."
+      }
+    ],
+    "production_checklist": [
+      "Every endpoint requires tenant authentication.",
+      "Retrieval scoped to tenant namespace \u2014 enforce at wrapper.",
+      "Rate limits per tenant, with sensible bursts.",
+      "Budgets daily AND monthly, soft + hard caps.",
+      "Audit log every action (write somewhere durable).",
+      "Tenant config in DB, not code (so non-eng can adjust)."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "fastapi==0.115",
+        "redis==5.0"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "fastapi",
+      "redis"
+    ],
+    "related_glossary_slugs": [
+      "multi-tenant",
+      "rate-limiting"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Hardest part of multi-tenant LLM?",
+        "answer": "Data isolation. One forgotten 'namespace=' in retrieval = cross-tenant leak. Enforce at wrapper level; never trust calling code."
+      },
+      {
+        "question": "How to handle a noisy tenant?",
+        "answer": "Per-tenant rate limit catches sustained noise. Per-tenant budget catches expensive noise. Together: noisy tenant degrades only themselves."
+      },
+      {
+        "question": "Audit log retention?",
+        "answer": "90 days minimum for compliance. 1 year for SOC2. 7 years for regulated industries (financial, healthcare). Compute storage budget accordingly."
+      },
+      {
+        "question": "Where store tenant config?",
+        "answer": "Database (Postgres). Cache hot lookups in Redis. Don't put in code \u2014 non-eng need to adjust tenant limits without deploys."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Multi-Tenant LLM Isolation Starter",
+    "meta_description": "Multi-tenant LLM: per-tenant rate limit, cost budget, data isolation, audit log. FastAPI + Redis production pattern."
+  },
+  {
+    "slug": "prompt-versioning-with-rollback",
+    "title": "Prompt Versioning With Instant Rollback",
+    "tldr": "Treat prompts like code: version them, A/B test new versions, instant-rollback when they regress. Pattern works with any LLM provider; Redis-backed for sub-ms reads.",
+    "category": "production",
+    "language": "python",
+    "framework": "Redis + Custom",
+    "tags": [
+      "prompt-versioning",
+      "rollback",
+      "ab-testing",
+      "production"
+    ],
+    "best_for_tags": [
+      "prompt-engineering",
+      "production-llm-app",
+      "team-workflows"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Production LLM app with multiple prompts. Allows: rollback bad prompts in seconds (no deploy), A/B test new versions, audit who changed what.",
+    "when_not_to_use": "Skip for single-prompt apps (just hardcode it). Skip if your prompt-changes are tied to model deployments anyway.",
+    "quick_start": "pip install redis && python prompt_registry.py",
+    "full_code": "\"\"\"Prompt versioning + rollback registry.\"\"\"\nfrom __future__ import annotations\n\nimport hashlib\nimport json\nimport os\nimport time\nfrom dataclasses import dataclass, asdict\nfrom typing import Literal\n\nimport redis\n\n\nredis_client = redis.from_url(os.environ.get(\"REDIS_URL\", \"redis://localhost:6379\"))\n\n\n# ----------------- DATA STRUCTURES -----------------\n\n@dataclass\nclass PromptVersion:\n    name: str\n    version: int           # monotonically increasing\n    template: str\n    model: str\n    temperature: float\n    max_tokens: int\n    created_at: int        # unix ts\n    created_by: str\n    notes: str = \"\"\n\n    @property\n    def hash(self) -> str:\n        return hashlib.sha256(json.dumps(asdict(self), sort_keys=True).encode()).hexdigest()[:8]\n\n\n# ----------------- STORAGE -----------------\n\ndef _key_active(name: str) -> str: return f\"prompt:active:{name}\"\ndef _key_version(name: str, v: int) -> str: return f\"prompt:v:{name}:{v}\"\ndef _key_history(name: str) -> str: return f\"prompt:history:{name}\"\n\n\ndef publish(prompt: PromptVersion) -> None:\n    \"\"\"Save a new version + mark as active.\"\"\"\n    pipe = redis_client.pipeline()\n    pipe.set(_key_version(prompt.name, prompt.version), json.dumps(asdict(prompt)))\n    pipe.set(_key_active(prompt.name), prompt.version)\n    pipe.zadd(_key_history(prompt.name), {str(prompt.version): prompt.created_at})\n    pipe.execute()\n    print(f\"\u2705 Published {prompt.name} v{prompt.version} (hash {prompt.hash})\")\n\n\ndef get_active(name: str) -> PromptVersion:\n    v = int(redis_client.get(_key_active(name)) or 0)\n    if v == 0:\n        raise ValueError(f\"No active version of {name}\")\n    raw = redis_client.get(_key_version(name, v))\n    return PromptVersion(**json.loads(raw))\n\n\ndef list_versions(name: str) -> list[PromptVersion]:\n    versions = redis_client.zrevrange(_key_history(name), 0, -1)\n    return [PromptVersion(**json.loads(redis_client.get(_key_version(name, int(v)))))\n            for v in versions]\n\n\n# ----------------- ROLLBACK (instant) -----------------\n\ndef rollback(name: str, to_version: int) -> None:\n    \"\"\"Switch active to a prior version. No deploy.\"\"\"\n    if not redis_client.exists(_key_version(name, to_version)):\n        raise ValueError(f\"Version {to_version} of {name} doesn't exist\")\n    redis_client.set(_key_active(name), to_version)\n    print(f\"\u23ea Rolled back {name} to v{to_version}\")\n\n\n# ----------------- A/B TESTING (route % to new version) -----------------\n\ndef get_for_user(name: str, user_id: str, ab_pct: int = 0,\n                 new_version: int | None = None) -> PromptVersion:\n    \"\"\"If ab_pct > 0, route ab_pct % of users to new_version (stable per user).\n\n    Sticky routing: same user always gets same version during the experiment.\n    \"\"\"\n    if ab_pct > 0 and new_version is not None:\n        bucket = int(hashlib.sha256(user_id.encode()).hexdigest()[:8], 16) % 100\n        if bucket < ab_pct:\n            raw = redis_client.get(_key_version(name, new_version))\n            return PromptVersion(**json.loads(raw))\n    return get_active(name)\n\n\n# ----------------- USE IT -----------------\n\ndef render(name: str, user_id: str, variables: dict) -> dict:\n    \"\"\"Render the active prompt with variables; return prompt + config.\"\"\"\n    prompt = get_for_user(name, user_id, ab_pct=10, new_version=2)  # 10% to v2\n    rendered = prompt.template\n    for k, v in variables.items():\n        rendered = rendered.replace(f\"{{{{{k}}}}}\", str(v))\n    return {\n        \"prompt\": rendered,\n        \"model\": prompt.model,\n        \"temperature\": prompt.temperature,\n        \"max_tokens\": prompt.max_tokens,\n        \"version\": prompt.version,\n        \"hash\": prompt.hash,\n    }\n\n\n# ----------------- DEMO -----------------\n\nif __name__ == \"__main__\":\n    publish(PromptVersion(\n        name=\"classify\",\n        version=1,\n        template=\"Classify the customer message: {{message}}\",\n        model=\"gpt-4o-mini\",\n        temperature=0.0,\n        max_tokens=200,\n        created_at=int(time.time()),\n        created_by=\"alice@example.com\",\n        notes=\"Initial version\",\n    ))\n\n    publish(PromptVersion(\n        name=\"classify\",\n        version=2,\n        template=\"You are a support classifier. Classify: {{message}}. Output JSON.\",\n        model=\"gpt-4o-mini\",\n        temperature=0.0,\n        max_tokens=200,\n        created_at=int(time.time()),\n        created_by=\"bob@example.com\",\n        notes=\"Improved JSON output\",\n    ))\n\n    # A/B test\n    for user in [\"u1\", \"u2\", \"u3\", \"u4\", \"u5\"]:\n        r = render(\"classify\", user, {\"message\": \"I want a refund\"})\n        print(f\"{user}: v{r['version']} hash={r['hash']}\")\n\n    # Bad version \u2192 rollback\n    rollback(\"classify\", to_version=1)\n\n    # All users now on v1\n    print(\"After rollback:\")\n    for user in [\"u1\", \"u2\", \"u3\"]:\n        r = render(\"classify\", user, {\"message\": \"I want a refund\"})\n        print(f\"{user}: v{r['version']}\")\n",
+    "dependencies": [
+      {
+        "name": "redis",
+        "version": ">=5.0",
+        "purpose": "Prompt registry store"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "REDIS_URL",
+        "required": true,
+        "description": "Redis",
+        "example": "redis://localhost:6379"
+      }
+    ],
+    "setup_steps": [
+      "pip install redis",
+      "Run Redis",
+      "Publish initial versions of each prompt",
+      "Wire render() into your LLM call sites",
+      "Build a small admin UI for non-eng to publish + rollback"
+    ],
+    "variations": [
+      {
+        "label": "PostgreSQL backend",
+        "description": "Audit trail in SQL.",
+        "code_snippet": "# Store versions in Postgres; Redis is cache. Postgres for queries / audit; Redis for sub-ms reads."
+      },
+      {
+        "label": "Use Langfuse prompt management",
+        "description": "Managed solution.",
+        "code_snippet": "# from langfuse import Langfuse; prompt = langfuse.get_prompt('classify'). Same versioning, hosted."
+      },
+      {
+        "label": "Auto-rollback on regression",
+        "description": "Connect to eval metrics.",
+        "code_snippet": "# If eval score for new version drops > threshold, auto-call rollback(). Pair with regression eval CI."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Active version pointer stale",
+        "cause": "Multiple writers race.",
+        "fix_snippet": "Use Redis WATCH/MULTI/EXEC or Lua script to atomically check current + set new. Or accept eventual consistency (most cases fine)."
+      },
+      {
+        "error_text": "A/B test users flip between versions",
+        "cause": "Routing not sticky.",
+        "fix_snippet": "Hash user_id, modulo 100. Same user always gets same bucket. NEVER use random.random() \u2014 flips per request."
+      },
+      {
+        "error_text": "Rollback didn't take effect",
+        "cause": "Cached at higher layer.",
+        "fix_snippet": "Disable caching for prompt config OR cache with short TTL (1 min). Rollback should propagate in seconds."
+      },
+      {
+        "error_text": "Lost old versions after restart",
+        "cause": "Used in-memory Redis (volatile).",
+        "fix_snippet": "Persist Redis AOF or use Postgres backend. In-memory is fine for cache; not for source-of-truth."
+      }
+    ],
+    "production_checklist": [
+      "Persistent storage (Postgres) \u2014 Redis is cache.",
+      "Audit log every publish + rollback (who, when, why).",
+      "Sticky A/B routing (hash user_id, not random).",
+      "Tie to regression eval: auto-rollback on metric drop.",
+      "Build admin UI for non-eng \u2014 prompt iterations are PM-driven.",
+      "Test rollback path in CI \u2014 should switch in <5s."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "redis==5.0"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "redis",
+      "langfuse"
+    ],
+    "related_glossary_slugs": [
+      "prompt-engineering",
+      "ab-testing"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why version prompts?",
+        "answer": "Prompts ARE code. Code is versioned. Prompt changes can regress quality silently. Versioning + audit + rollback = production discipline."
+      },
+      {
+        "question": "Build vs use Langfuse?",
+        "answer": "Build: full control, custom UI. Langfuse: managed, built-in eval integration. Pick by team size \u2014 solo: Langfuse; bigger teams: build for fit."
+      },
+      {
+        "question": "How fast should rollback be?",
+        "answer": "<10 seconds. The point of versioning is INSTANT recovery. If rollback requires deploy, you've just rebuilt deploy machinery."
+      },
+      {
+        "question": "Auto-rollback safe?",
+        "answer": "Only with confidence intervals. A 2pp metric drop in 5 minutes could be noise. Auto-rollback after 3 consecutive checks, or use Bayesian framework. Otherwise: alerts to humans."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Prompt Versioning With Rollback Starter",
+    "meta_description": "Treat prompts like code: version, A/B test, rollback in seconds. Redis-backed registry with sticky routing."
+  },
+  {
+    "slug": "llm-sla-monitoring-alerts",
+    "title": "LLM SLA Monitoring + Alerting (Latency / Error / Cost)",
+    "tldr": "Production SLA monitoring for LLM APIs: latency p50/p95/p99, error rate, cost-per-request. Prometheus + Grafana + Alertmanager. Catch degradation before customers do.",
+    "category": "production",
+    "language": "python",
+    "framework": "Prometheus + Custom",
+    "tags": [
+      "sla",
+      "monitoring",
+      "alerts",
+      "prometheus"
+    ],
+    "best_for_tags": [
+      "production",
+      "sre",
+      "team-discipline"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "Production LLM apps where you've made SLA commitments to customers. Track latency / error / cost; alert when SLO budgets burn. Standard SRE practice for LLM workloads.",
+    "when_not_to_use": "Skip for prototypes (overhead). Skip if you're using a managed observability tool that does this (Helicone, LangSmith have dashboards).",
+    "quick_start": "pip install prometheus-client && python sla_metrics.py",
+    "full_code": "\"\"\"LLM SLA metrics: latency, errors, cost. Prometheus-exposed.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport time\nimport contextlib\nfrom prometheus_client import Counter, Histogram, Gauge, start_http_server\nfrom openai import OpenAI\n\n\n# ----------------- METRICS -----------------\n\nREQUEST_LATENCY = Histogram(\n    \"llm_request_duration_seconds\",\n    \"LLM request latency in seconds\",\n    labelnames=[\"model\", \"tenant\", \"status\"],\n    buckets=[0.1, 0.5, 1, 2, 5, 10, 30, 60],\n)\n\nREQUEST_COUNT = Counter(\n    \"llm_requests_total\",\n    \"Total LLM requests\",\n    labelnames=[\"model\", \"tenant\", \"status\"],\n)\n\nTOKEN_COUNT = Counter(\n    \"llm_tokens_total\",\n    \"Total tokens (input + output)\",\n    labelnames=[\"model\", \"tenant\", \"type\"],  # type = input | output\n)\n\nCOST_USD = Counter(\n    \"llm_cost_usd_total\",\n    \"Total cost in USD\",\n    labelnames=[\"model\", \"tenant\"],\n)\n\nERROR_COUNT = Counter(\n    \"llm_errors_total\",\n    \"LLM errors by type\",\n    labelnames=[\"model\", \"error_type\"],\n)\n\nINFLIGHT = Gauge(\n    \"llm_inflight_requests\",\n    \"Currently in-flight LLM requests\",\n    labelnames=[\"model\"],\n)\n\n\n# ----------------- WRAPPER -----------------\n\nclient = OpenAI()\n\n\n@contextlib.contextmanager\ndef track_request(model: str, tenant: str):\n    INFLIGHT.labels(model=model).inc()\n    start = time.time()\n    status = \"success\"\n    try:\n        yield\n    except Exception as e:\n        status = \"error\"\n        ERROR_COUNT.labels(model=model, error_type=type(e).__name__).inc()\n        raise\n    finally:\n        elapsed = time.time() - start\n        REQUEST_LATENCY.labels(model=model, tenant=tenant, status=status).observe(elapsed)\n        REQUEST_COUNT.labels(model=model, tenant=tenant, status=status).inc()\n        INFLIGHT.labels(model=model).dec()\n\n\ndef chat_with_metrics(prompt: str, model: str, tenant: str) -> str:\n    with track_request(model=model, tenant=tenant):\n        response = client.chat.completions.create(\n            model=model,\n            messages=[{\"role\": \"user\", \"content\": prompt}],\n        )\n\n        # Token + cost tracking\n        TOKEN_COUNT.labels(model=model, tenant=tenant, type=\"input\").inc(response.usage.prompt_tokens)\n        TOKEN_COUNT.labels(model=model, tenant=tenant, type=\"output\").inc(response.usage.completion_tokens)\n\n        # Cost lookup (simplified)\n        cost = (response.usage.prompt_tokens * 0.00015 +\n                response.usage.completion_tokens * 0.0006) / 1000\n        COST_USD.labels(model=model, tenant=tenant).inc(cost)\n\n        return response.choices[0].message.content\n\n\n# ----------------- ALERT RULES (Prometheus) -----------------\n\nALERT_RULES = \"\"\"\n# Save as prometheus/llm-alerts.yml\ngroups:\n- name: llm_sla\n  interval: 30s\n  rules:\n  - alert: LLMHighErrorRate\n    expr: |\n      sum(rate(llm_requests_total{status=\"error\"}[5m])) by (model)\n        / sum(rate(llm_requests_total[5m])) by (model) > 0.05\n    for: 3m\n    labels:\n      severity: warning\n    annotations:\n      summary: \"LLM error rate > 5% for model {{ $labels.model }}\"\n\n  - alert: LLMLatencyHigh\n    expr: |\n      histogram_quantile(0.95,\n        sum(rate(llm_request_duration_seconds_bucket[5m])) by (model, le)\n      ) > 10\n    for: 5m\n    labels:\n      severity: warning\n    annotations:\n      summary: \"LLM p95 latency > 10s for {{ $labels.model }}\"\n\n  - alert: LLMCostSpike\n    expr: |\n      sum(rate(llm_cost_usd_total[1h])) by (tenant)\n        > 5\n        and sum(rate(llm_cost_usd_total[1h] offset 1h)) by (tenant) < 1\n    for: 10m\n    labels:\n      severity: warning\n    annotations:\n      summary: \"5x cost spike for tenant {{ $labels.tenant }}\"\n\n  - alert: LLMNoTraffic\n    expr: |\n      sum(rate(llm_requests_total[10m])) by (model) == 0\n        and sum(rate(llm_requests_total[10m] offset 1h)) by (model) > 1\n    for: 5m\n    labels:\n      severity: critical\n    annotations:\n      summary: \"No LLM traffic for {{ $labels.model }} but baseline was active\"\n\"\"\"\n\n\n# ----------------- RUN -----------------\n\nif __name__ == \"__main__\":\n    start_http_server(9090)  # Prometheus scrapes here\n    print(\"Metrics on :9090/metrics. Generate load via chat_with_metrics().\")\n    while True:\n        try:\n            chat_with_metrics(\"Test\", model=\"gpt-4o-mini\", tenant=\"demo\")\n        except Exception as e:\n            print(f\"Error: {e}\")\n        time.sleep(1)\n",
+    "dependencies": [
+      {
+        "name": "prometheus-client",
+        "version": ">=0.20",
+        "purpose": "Prometheus metrics"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "LLM client"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "LLM access",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install prometheus-client openai",
+      "Run Prometheus pointing at :9090/metrics",
+      "Configure Alertmanager with the rules in ALERT_RULES",
+      "Set up Grafana dashboard using the metric names",
+      "Test alerts: induce errors / high latency / cost spike"
+    ],
+    "variations": [
+      {
+        "label": "OpenTelemetry instead",
+        "description": "Use OTel metrics for vendor-neutral.",
+        "code_snippet": "# Replace prometheus-client with opentelemetry-api + metric reader to Prometheus/Honeycomb/Datadog"
+      },
+      {
+        "label": "Service-mesh layer",
+        "description": "Sidecar collects metrics.",
+        "code_snippet": "# Istio / Linkerd auto-collect HTTP metrics. Less granular than in-app; works for any service without code change."
+      },
+      {
+        "label": "SLO burn-rate alerts",
+        "description": "Multi-window burn-rate alerting.",
+        "code_snippet": "# Track error budget burn (1h vs 6h vs 24h windows). Page only when burning too fast across windows. Reduces noise."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Metrics cardinality explosion",
+        "cause": "User IDs / request IDs as labels.",
+        "fix_snippet": "Labels should be LOW-cardinality (model, tenant, status). NEVER user_id, request_id. Use exemplars or logs for high-cardinality."
+      },
+      {
+        "error_text": "Alerts firing constantly (false positives)",
+        "cause": "Thresholds too tight.",
+        "fix_snippet": "Use burn-rate alerts (multi-window). Increase 'for: 5m' delays. Alert on USER IMPACT (error %, latency) not RAW metrics."
+      },
+      {
+        "error_text": "Cost metric inaccurate vs invoice",
+        "cause": "Hardcoded prices stale.",
+        "fix_snippet": "Use LiteLLM cost_per_token (auto-updated). Reconcile monthly against provider invoice."
+      },
+      {
+        "error_text": "Inflight gauge stuck high",
+        "cause": "Exception path missed dec().",
+        "fix_snippet": "Use contextmanager pattern (try/finally always runs). The track_request decorator in this code handles this correctly."
+      }
+    ],
+    "production_checklist": [
+      "Low-cardinality labels only.",
+      "Latency p50/p95/p99 (not just average).",
+      "Error rate by type (rate-limit, timeout, refusal, etc.).",
+      "Cost per tenant + per model.",
+      "Burn-rate alerts (multi-window) over raw thresholds.",
+      "Runbook linked from each alert (what to do)."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "prometheus-client==0.20"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "prometheus",
+      "grafana"
+    ],
+    "related_glossary_slugs": [
+      "sla",
+      "slo"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "What's a good LLM SLO?",
+        "answer": "Depends on use case. Chat: p95 < 5s, error rate < 1%. Batch: p95 < 60s. Set conservatively first; tighten as you learn workload."
+      },
+      {
+        "question": "Burn-rate alerting vs threshold?",
+        "answer": "Threshold: 'error rate > 5%' fires every blip. Burn-rate: 'burning error budget faster than sustainable' fires only on real degradation. Burn-rate reduces alert fatigue."
+      },
+      {
+        "question": "Tracing vs metrics?",
+        "answer": "Both. Metrics: aggregates, dashboard, alerts. Traces: per-request detail, debugging. Use OpenLLMetry/Helicone for traces; this pattern for metrics."
+      },
+      {
+        "question": "How many SLOs?",
+        "answer": "3-5 max. Latency, error rate, availability cover most cases. Each extra SLO = more cognitive load + more alert noise."
+      }
+    ],
+    "github_url": "https://github.com/prometheus/client_python",
+    "meta_title": "LLM SLA Monitoring + Alerts Starter",
+    "meta_description": "Production LLM SLA monitoring: latency, errors, cost via Prometheus. Burn-rate alerts. Multi-tenant labels."
+  },
+  {
+    "slug": "canary-deploy-prompt-changes",
+    "title": "Canary Deploy For Prompt Changes",
+    "tldr": "Roll out prompt changes gradually: 1% \u2192 5% \u2192 25% \u2192 100%. Auto-pause if error rate or quality score regresses. Limits blast radius of bad prompts.",
+    "category": "production",
+    "language": "python",
+    "framework": "Custom + Redis",
+    "tags": [
+      "canary",
+      "deploy",
+      "prompt",
+      "production"
+    ],
+    "best_for_tags": [
+      "production-llm-app",
+      "risk-management",
+      "team-discipline"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "Production LLM with measurable quality / error metrics. Canary lets you test new prompts on a slice of traffic with auto-revert if metrics regress.",
+    "when_not_to_use": "Skip without an automated quality metric (canary needs auto-evaluable signal). Skip for very-low-traffic apps (canary stages need enough volume to be significant).",
+    "quick_start": "pip install redis && python canary_deploy.py",
+    "full_code": "\"\"\"Canary deploy for prompt versions with auto-revert.\"\"\"\nfrom __future__ import annotations\n\nimport hashlib\nimport json\nimport os\nimport time\nfrom dataclasses import dataclass\nfrom datetime import datetime\n\nimport redis\n\n\nredis_client = redis.from_url(os.environ.get(\"REDIS_URL\", \"redis://localhost:6379\"))\n\n\n# ----------------- CANARY CONFIG -----------------\n\nCANARY_STAGES = [1, 5, 25, 100]  # % of traffic\nSTAGE_DURATION_SECONDS = 600     # 10 min per stage (typical: 1-24 hours)\nERROR_RATE_THRESHOLD = 0.05      # 5% error rate \u2192 revert\nQUALITY_REGRESSION_THRESHOLD = 0.05  # 5pp quality drop \u2192 revert\n\n\n@dataclass\nclass CanaryStatus:\n    prompt_name: str\n    candidate_version: int\n    baseline_version: int\n    current_pct: int            # current stage\n    stage_started_at: int\n    state: str                  # \"rolling\" | \"paused\" | \"promoted\" | \"reverted\"\n\n\n# ----------------- ROUTING -----------------\n\ndef route_request(prompt_name: str, user_id: str) -> int:\n    \"\"\"Return version to use for this request.\"\"\"\n    status_raw = redis_client.get(f\"canary:status:{prompt_name}\")\n    if not status_raw:\n        return _get_stable_version(prompt_name)\n\n    status = CanaryStatus(**json.loads(status_raw))\n    if status.state != \"rolling\":\n        return _get_stable_version(prompt_name)\n\n    # Sticky routing: same user \u2192 same version\n    bucket = int(hashlib.sha256(user_id.encode()).hexdigest()[:8], 16) % 100\n    return status.candidate_version if bucket < status.current_pct else status.baseline_version\n\n\ndef _get_stable_version(prompt_name: str) -> int:\n    return int(redis_client.get(f\"prompt:active:{prompt_name}\") or 1)\n\n\n# ----------------- METRICS PER VERSION -----------------\n\ndef record_outcome(prompt_name: str, version: int, success: bool, quality_score: float):\n    \"\"\"Track per-version outcomes for canary decision.\"\"\"\n    today = datetime.utcnow().strftime(\"%Y-%m-%d-%H\")  # hourly buckets\n    key_base = f\"canary:metrics:{prompt_name}:{version}:{today}\"\n    pipe = redis_client.pipeline()\n    pipe.incr(f\"{key_base}:total\")\n    if not success:\n        pipe.incr(f\"{key_base}:errors\")\n    pipe.incrbyfloat(f\"{key_base}:quality_sum\", quality_score)\n    for k in [f\"{key_base}:total\", f\"{key_base}:errors\", f\"{key_base}:quality_sum\"]:\n        pipe.expire(k, 86400)\n    pipe.execute()\n\n\ndef get_metrics(prompt_name: str, version: int, hours: int = 1) -> dict:\n    \"\"\"Aggregate last N hours.\"\"\"\n    total = errors = 0\n    quality_sum = 0.0\n    for h in range(hours):\n        bucket = (datetime.utcnow().timestamp() // 3600 - h) * 3600\n        ts = datetime.utcfromtimestamp(bucket).strftime(\"%Y-%m-%d-%H\")\n        key_base = f\"canary:metrics:{prompt_name}:{version}:{ts}\"\n        total += int(redis_client.get(f\"{key_base}:total\") or 0)\n        errors += int(redis_client.get(f\"{key_base}:errors\") or 0)\n        quality_sum += float(redis_client.get(f\"{key_base}:quality_sum\") or 0)\n    return {\n        \"total\": total,\n        \"error_rate\": errors / total if total else 0,\n        \"avg_quality\": quality_sum / total if total else 0,\n    }\n\n\n# ----------------- AUTO-PROMOTE / REVERT -----------------\n\ndef evaluate_canary(prompt_name: str) -> str:\n    \"\"\"Decide: promote / pause / revert. Called every minute.\"\"\"\n    status_raw = redis_client.get(f\"canary:status:{prompt_name}\")\n    if not status_raw:\n        return \"no_canary\"\n    status = CanaryStatus(**json.loads(status_raw))\n\n    if status.state != \"rolling\":\n        return status.state\n\n    cand = get_metrics(prompt_name, status.candidate_version)\n    base = get_metrics(prompt_name, status.baseline_version)\n\n    # Need enough volume to decide\n    if cand[\"total\"] < 30:\n        return \"rolling\"\n\n    # Auto-revert checks\n    if cand[\"error_rate\"] > ERROR_RATE_THRESHOLD:\n        _set_state(status, \"reverted\")\n        alert(f\"REVERTED {prompt_name} v{status.candidate_version}: error rate {cand['error_rate']:.1%}\")\n        return \"reverted\"\n    if base[\"avg_quality\"] - cand[\"avg_quality\"] > QUALITY_REGRESSION_THRESHOLD:\n        _set_state(status, \"reverted\")\n        alert(f\"REVERTED {prompt_name} v{status.candidate_version}: quality regression\")\n        return \"reverted\"\n\n    # Auto-promote if stage duration elapsed\n    if time.time() - status.stage_started_at > STAGE_DURATION_SECONDS:\n        next_pct = next((p for p in CANARY_STAGES if p > status.current_pct), None)\n        if next_pct is None:\n            # Final stage cleared \u2014 promote to stable\n            redis_client.set(f\"prompt:active:{prompt_name}\", status.candidate_version)\n            _set_state(status, \"promoted\")\n            alert(f\"PROMOTED {prompt_name} v{status.candidate_version}\")\n            return \"promoted\"\n        status.current_pct = next_pct\n        status.stage_started_at = int(time.time())\n        redis_client.set(f\"canary:status:{prompt_name}\", json.dumps(status.__dict__))\n        alert(f\"ADVANCED {prompt_name} v{status.candidate_version} to {next_pct}%\")\n\n    return \"rolling\"\n\n\ndef _set_state(status: CanaryStatus, state: str):\n    status.state = state\n    redis_client.set(f\"canary:status:{status.prompt_name}\", json.dumps(status.__dict__))\n\n\ndef alert(msg: str):\n    print(f\"[CANARY ALERT] {msg}\")\n\n\n# ----------------- START CANARY -----------------\n\ndef start_canary(prompt_name: str, candidate_version: int):\n    baseline = _get_stable_version(prompt_name)\n    status = CanaryStatus(\n        prompt_name=prompt_name,\n        candidate_version=candidate_version,\n        baseline_version=baseline,\n        current_pct=CANARY_STAGES[0],\n        stage_started_at=int(time.time()),\n        state=\"rolling\",\n    )\n    redis_client.set(f\"canary:status:{prompt_name}\", json.dumps(status.__dict__))\n    print(f\"Started canary {prompt_name}: v{baseline} \u2192 v{candidate_version} (start at {CANARY_STAGES[0]}%)\")\n\n\nif __name__ == \"__main__\":\n    start_canary(\"classify\", candidate_version=2)\n    # In production: cronjob calls evaluate_canary every minute\n    while True:\n        state = evaluate_canary(\"classify\")\n        if state in (\"promoted\", \"reverted\"):\n            print(f\"Final state: {state}\")\n            break\n        time.sleep(60)\n",
+    "dependencies": [
+      {
+        "name": "redis",
+        "version": ">=5.0",
+        "purpose": "Canary state + metrics"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "REDIS_URL",
+        "required": true,
+        "description": "Redis",
+        "example": "redis://localhost:6379"
+      }
+    ],
+    "setup_steps": [
+      "pip install redis",
+      "Wire route_request() into your LLM call sites",
+      "Wire record_outcome() to capture success + quality post-LLM",
+      "Schedule evaluate_canary() every minute (cron / k8s CronJob)",
+      "Set up alert() to Slack / PagerDuty"
+    ],
+    "variations": [
+      {
+        "label": "Bayesian decision",
+        "description": "Statistical confidence in promotion.",
+        "code_snippet": "# Replace threshold check with Bayesian A/B test. Promote when P(candidate > baseline) > 0.95. More robust."
+      },
+      {
+        "label": "Manual gates between stages",
+        "description": "Human approval at each stage.",
+        "code_snippet": "# Add 'paused' state at each stage; require manual API call to advance. Slower but safer."
+      },
+      {
+        "label": "Multi-metric SLOs",
+        "description": "Beyond error rate + quality.",
+        "code_snippet": "# Include latency, cost, user-satisfaction in decision matrix. Weight each by importance."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Canary 'works' but quality score is uninformative",
+        "cause": "Auto-quality score doesn't reflect user value.",
+        "fix_snippet": "Use multiple signals: LLM judge + thumbs-up rate + downstream conversion. Single signal is brittle."
+      },
+      {
+        "error_text": "Volume too low to decide",
+        "cause": "Small app, first stage takes hours to get N=30.",
+        "fix_snippet": "Lower MIN_SAMPLES or increase first-stage % (e.g., start at 10% instead of 1%). Tradeoff: blast radius."
+      },
+      {
+        "error_text": "Reverts too aggressive",
+        "cause": "Threshold too tight.",
+        "fix_snippet": "Use confidence intervals. Don't revert on noisy signal. Require 3-5 consecutive evaluations showing regression."
+      },
+      {
+        "error_text": "Canary state inconsistent across replicas",
+        "cause": "Local caching beats Redis.",
+        "fix_snippet": "Don't cache canary state locally (or cache with very short TTL). Read from Redis on each request."
+      }
+    ],
+    "production_checklist": [
+      "Use sticky routing (hash user_id) \u2014 same user, same version.",
+      "Minimum volume per stage before deciding.",
+      "Auto-revert on error spike OR quality regression.",
+      "Alert team on every state change.",
+      "Audit log: who started canary, when, decisions made.",
+      "Manual override: stop / force-promote / force-revert."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "redis==5.0"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "redis"
+    ],
+    "related_glossary_slugs": [
+      "canary-deployment",
+      "feature-flag"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How long to keep each stage?",
+        "answer": "Depends on volume + risk. Chat apps: 30 min - 2 hours per stage. Batch jobs: longer. Use enough volume that metrics are stable (~1000 samples per arm minimum)."
+      },
+      {
+        "question": "When auto-revert vs alert humans?",
+        "answer": "Auto-revert for CLEAR signals (error rate 2x baseline). Alert + wait for SUBTLE signals (small quality drift). Tune by team comfort."
+      },
+      {
+        "question": "Canary vs A/B test?",
+        "answer": "Canary: rolling deploy with safety. A/B: extended experiment for decision-making. Canary's goal is safe rollout; A/B's is which-is-better."
+      },
+      {
+        "question": "Multiple concurrent canaries?",
+        "answer": "Possible but tricky \u2014 different prompts can interact. Better: serialize canaries per service. Run multiple in parallel only if FULLY independent."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Canary Deploy For Prompt Changes Starter",
+    "meta_description": "Canary deploy LLM prompt changes: gradual % rollout, auto-revert on error/quality regression, sticky routing, audit log."
   },
   {
     "slug": "rag-langchain-qdrant-basic",
