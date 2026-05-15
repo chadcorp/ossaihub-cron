@@ -3753,6 +3753,544 @@
     "meta_description": "Deploy FastAPI + LangChain + Postgres + Redis on Railway: git push, get URL. MVP-ready in 5 minutes."
   },
   {
+    "slug": "kubernetes-vllm-deployment",
+    "title": "Kubernetes vLLM Deployment With HPA",
+    "tldr": "Production K8s deployment for vLLM: GPU node pool, HorizontalPodAutoscaler on GPU utilization, PVC for model weights, readiness probes. The 'serious' self-hosted LLM stack.",
+    "category": "deployment",
+    "language": "yaml",
+    "framework": "Kubernetes",
+    "tags": [
+      "kubernetes",
+      "vllm",
+      "hpa",
+      "production"
+    ],
+    "best_for_tags": [
+      "production-scale",
+      "self-hosted",
+      "enterprise"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "Production LLM service expected to run 24/7 with auto-scaling. Kubernetes + vLLM + HPA gives reliable scale-up/down. Best when you already operate K8s clusters.",
+    "when_not_to_use": "Skip for prototypes (Modal / Cloud Run is faster). Skip without K8s expertise (operational complexity outweighs benefits at small scale).",
+    "quick_start": "kubectl apply -f vllm-deployment.yaml",
+    "full_code": "# Kubernetes manifests for vLLM with autoscaling\n# Save as vllm-deployment.yaml\n\n# ----------------- NAMESPACE -----------------\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: llm-serving\n\n---\n# ----------------- SECRET (HF token) -----------------\napiVersion: v1\nkind: Secret\nmetadata:\n  name: hf-token\n  namespace: llm-serving\ntype: Opaque\nstringData:\n  token: \"REPLACE_WITH_HF_TOKEN\"\n\n---\n# ----------------- PVC (model weights cache) -----------------\napiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: model-cache\n  namespace: llm-serving\nspec:\n  accessModes: [ReadWriteMany]\n  resources:\n    requests:\n      storage: 200Gi\n  storageClassName: efs-sc          # use ReadWriteMany-capable SC\n\n---\n# ----------------- DEPLOYMENT -----------------\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: vllm-llama-8b\n  namespace: llm-serving\nspec:\n  replicas: 2                       # min instances\n  selector:\n    matchLabels: {app: vllm-llama-8b}\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxSurge: 1\n      maxUnavailable: 0             # zero downtime\n  template:\n    metadata:\n      labels: {app: vllm-llama-8b}\n    spec:\n      nodeSelector:\n        node.kubernetes.io/instance-type: g5.xlarge   # A10G GPU\n      tolerations:\n        - key: nvidia.com/gpu\n          operator: Exists\n          effect: NoSchedule\n      containers:\n        - name: vllm\n          image: vllm/vllm-openai:v0.6.3\n          imagePullPolicy: IfNotPresent\n          args:\n            - \"--model\"\n            - \"meta-llama/Llama-3.1-8B-Instruct\"\n            - \"--port\"\n            - \"8000\"\n            - \"--max-model-len\"\n            - \"8192\"\n            - \"--gpu-memory-utilization\"\n            - \"0.90\"\n            - \"--enable-prefix-caching\"\n          env:\n            - name: HUGGING_FACE_HUB_TOKEN\n              valueFrom:\n                secretKeyRef: {name: hf-token, key: token}\n            - name: HF_HOME\n              value: /cache\n          ports:\n            - containerPort: 8000\n              name: http\n          resources:\n            requests:\n              memory: 16Gi\n              cpu: \"4\"\n              nvidia.com/gpu: 1\n            limits:\n              memory: 32Gi\n              nvidia.com/gpu: 1\n          volumeMounts:\n            - name: model-cache\n              mountPath: /cache\n          readinessProbe:\n            httpGet:\n              path: /health\n              port: 8000\n            initialDelaySeconds: 120  # vLLM cold-start\n            periodSeconds: 10\n            failureThreshold: 3\n          livenessProbe:\n            httpGet:\n              path: /health\n              port: 8000\n            initialDelaySeconds: 180\n            periodSeconds: 30\n            failureThreshold: 5\n          lifecycle:\n            preStop:\n              exec:\n                command: [\"sleep\", \"30\"]   # graceful drain\n      terminationGracePeriodSeconds: 60\n      volumes:\n        - name: model-cache\n          persistentVolumeClaim:\n            claimName: model-cache\n\n---\n# ----------------- SERVICE -----------------\napiVersion: v1\nkind: Service\nmetadata:\n  name: vllm-llama-8b\n  namespace: llm-serving\nspec:\n  type: ClusterIP\n  selector: {app: vllm-llama-8b}\n  ports:\n    - port: 80\n      targetPort: 8000\n\n---\n# ----------------- HPA (autoscale on GPU utilization via custom metric) -----------------\napiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: vllm-llama-8b\n  namespace: llm-serving\nspec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: vllm-llama-8b\n  minReplicas: 2\n  maxReplicas: 10\n  metrics:\n    # Scale on queue depth (custom metric from vLLM /metrics)\n    - type: Pods\n      pods:\n        metric:\n          name: vllm_num_requests_running\n        target:\n          type: AverageValue\n          averageValue: \"10\"        # scale up if avg > 10 in-flight per pod\n  behavior:\n    scaleUp:\n      stabilizationWindowSeconds: 60\n      policies: [{type: Percent, value: 100, periodSeconds: 60}]\n    scaleDown:\n      stabilizationWindowSeconds: 300\n      policies: [{type: Percent, value: 50, periodSeconds: 60}]\n\n---\n# ----------------- INGRESS (with rate limiting) -----------------\napiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: vllm-llama-8b\n  namespace: llm-serving\n  annotations:\n    nginx.ingress.kubernetes.io/proxy-buffering: \"off\"   # streaming\n    nginx.ingress.kubernetes.io/proxy-read-timeout: \"300\"\n    nginx.ingress.kubernetes.io/limit-rps: \"100\"\nspec:\n  ingressClassName: nginx\n  tls:\n    - hosts: [llm.example.com]\n      secretName: llm-tls\n  rules:\n    - host: llm.example.com\n      http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: vllm-llama-8b\n                port:\n                  number: 80\n",
+    "dependencies": [],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": true,
+        "description": "Stored in K8s Secret",
+        "example": "hf_..."
+      }
+    ],
+    "setup_steps": [
+      "Provision K8s cluster with GPU node pool (EKS / GKE / AKS)",
+      "Install NVIDIA device plugin, cert-manager, nginx-ingress",
+      "Replace HF token in vllm-deployment.yaml",
+      "kubectl apply -f vllm-deployment.yaml",
+      "Wait for pods Ready; test via ingress",
+      "Set up prometheus-adapter for custom metrics (HPA needs it)"
+    ],
+    "variations": [
+      {
+        "label": "KEDA for queue-based scaling",
+        "description": "Scale on external queue depth.",
+        "code_snippet": "# Install KEDA; ScaledObject pointing at SQS/Redis queue. Scale to zero when no traffic."
+      },
+      {
+        "label": "GKE Autopilot",
+        "description": "GCP managed K8s, less ops.",
+        "code_snippet": "# Autopilot handles node pools automatically; specify GPU type via nodeSelector + tolerations as usual"
+      },
+      {
+        "label": "Kustomize overlay per env",
+        "description": "Dev/staging/prod with shared base.",
+        "code_snippet": "# base/, overlays/dev/, overlays/prod/ with kustomization.yaml. Patch replicas + resources per env."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Pod stuck in ImagePullBackOff",
+        "cause": "vLLM image too large or registry slow.",
+        "fix_snippet": "Pre-pull on nodes via DaemonSet or use a local mirror. vLLM images are ~10GB."
+      },
+      {
+        "error_text": "HPA not scaling",
+        "cause": "Custom metric not exposed.",
+        "fix_snippet": "Install prometheus-adapter; verify metric available via 'kubectl get --raw /apis/custom.metrics.k8s.io/v1beta1/'. Without it, HPA can only use CPU/memory."
+      },
+      {
+        "error_text": "Pod kills before request completes",
+        "cause": "No graceful drain.",
+        "fix_snippet": "Add preStop sleep + terminationGracePeriodSeconds. Set drain logic in vLLM (it supports graceful shutdown via SIGTERM)."
+      },
+      {
+        "error_text": "Model download per pod (slow + bandwidth)",
+        "cause": "No shared PVC.",
+        "fix_snippet": "Use ReadWriteMany PVC (EFS, GCS Fuse, Azure Files). All pods share the cache; first pod downloads, rest read from cache."
+      }
+    ],
+    "production_checklist": [
+      "Shared PVC for model weights (avoid re-download per pod).",
+      "Readiness probe respects vLLM warm-up (~2 min for 8B).",
+      "PreStop drain so in-flight requests finish.",
+      "Custom metric scaling (queue depth) not just CPU/memory.",
+      "Ingress with proxy buffering OFF for streaming.",
+      "Resource limits + Pod Disruption Budget."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "Llama-3.1-8B-Instruct"
+      ],
+      "library_versions": [
+        "vllm 0.6.3",
+        "Kubernetes 1.30"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "kubernetes",
+      "vllm"
+    ],
+    "related_glossary_slugs": [
+      "kubernetes",
+      "horizontal-pod-autoscaler"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "K8s vs Modal vs Cloud Run for LLMs?",
+        "answer": "K8s: full control, cluster-level ops. Modal/Cloud Run: managed, less control. K8s pays off above ~$5k/mo in spend or with existing K8s expertise."
+      },
+      {
+        "question": "Scale-to-zero on K8s?",
+        "answer": "Vanilla HPA: no. Use KEDA for scale-to-zero. Or Cluster Autoscaler to decommission GPU nodes when no pods need them."
+      },
+      {
+        "question": "Cost vs Cloud Run / Modal?",
+        "answer": "K8s: $0.30/hr per A10G ($220/mo per always-on pod). Modal: pay-per-second of usage. K8s cheaper for steady high traffic; serverless for spiky."
+      },
+      {
+        "question": "GPU sharing?",
+        "answer": "MIG (NVIDIA Multi-Instance GPU) lets one A100/H100 host multiple smaller pods. Good for many small models. Configure via NVIDIA device plugin."
+      }
+    ],
+    "github_url": "https://github.com/kubernetes/kubernetes",
+    "meta_title": "Kubernetes vLLM Deployment Starter",
+    "meta_description": "Production K8s for vLLM: HPA, shared PVC, readiness/liveness probes, graceful drain, ingress with streaming support."
+  },
+  {
+    "slug": "bentoml-model-serving",
+    "title": "BentoML LLM Model Serving",
+    "tldr": "BentoML: package model + code into a 'Bento', deploy locally / Docker / K8s / BentoCloud. Python-first; abstracts ops. Good for ML teams without devops.",
+    "category": "deployment",
+    "language": "python",
+    "framework": "BentoML",
+    "tags": [
+      "bentoml",
+      "model-serving",
+      "deployment",
+      "packaging"
+    ],
+    "best_for_tags": [
+      "ml-teams",
+      "python-first",
+      "model-zoo"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "ML team without dedicated devops, packaging multiple model variants. BentoML abstracts Docker / K8s; you write Python services. Deploy anywhere.",
+    "when_not_to_use": "Skip if you have devops team + standard K8s patterns (vLLM directly is simpler). Skip for ultra-high QPS \u2014 BentoML adds Python overhead.",
+    "quick_start": "pip install bentoml && bentoml deploy ./service.py",
+    "full_code": "\"\"\"BentoML LLM service: package + serve.\"\"\"\nfrom __future__ import annotations\n\nimport os\nfrom typing import AsyncGenerator\nimport bentoml\nfrom openai import AsyncOpenAI\n\n\n# ----------------- SERVICE -----------------\n\n@bentoml.service(\n    name=\"llm-service\",\n    resources={\"cpu\": \"2\", \"memory\": \"4Gi\"},\n    traffic={\"timeout\": 300, \"concurrency\": 16},\n)\nclass LLMService:\n    def __init__(self):\n        # Initialize once per worker\n        self.client = AsyncOpenAI(api_key=os.environ[\"OPENAI_API_KEY\"])\n\n    @bentoml.api\n    async def chat(self, prompt: str, model: str = \"gpt-4o-mini\",\n                   max_tokens: int = 512) -> dict:\n        response = await self.client.chat.completions.create(\n            model=model,\n            messages=[{\"role\": \"user\", \"content\": prompt}],\n            max_tokens=max_tokens,\n        )\n        return {\n            \"response\": response.choices[0].message.content,\n            \"tokens\": response.usage.completion_tokens,\n        }\n\n    @bentoml.api\n    async def stream(self, prompt: str, model: str = \"gpt-4o-mini\") -> AsyncGenerator[str, None]:\n        response = await self.client.chat.completions.create(\n            model=model,\n            messages=[{\"role\": \"user\", \"content\": prompt}],\n            stream=True,\n            max_tokens=512,\n        )\n        async for chunk in response:\n            delta = chunk.choices[0].delta.content\n            if delta:\n                yield delta\n\n\n# ----------------- SERVE LOCALLY -----------------\n\n# bentoml serve service:LLMService --port 3000\n\n# ----------------- BUILD A BENTO (deployable artifact) -----------------\n\nBENTOFILE = \"\"\"\n# bentofile.yaml\nservice: \"service:LLMService\"\nlabels:\n  team: ml-platform\ninclude:\n  - \"*.py\"\npython:\n  packages:\n    - openai>=1.40\n    - pydantic>=2.0\n\"\"\"\n\n\n# ----------------- DEPLOY TARGETS -----------------\n\n# 1. Local:           bentoml serve service:LLMService\n# 2. Containerize:    bentoml containerize llm-service:latest\n# 3. BentoCloud:      bentoml deploy llm-service --cluster aws-prod\n# 4. Kubernetes:      bentoml yatai-deployment-controller (yatai operator)\n\n\n# ----------------- CLIENT -----------------\n\nCLIENT = \"\"\"\n# Programmatic client (BentoML generates one)\nfrom bentoml.client import SyncHTTPClient\nclient = SyncHTTPClient('http://localhost:3000')\nresult = client.chat(prompt='Hello, world!')\nprint(result)\n\"\"\"\n",
+    "dependencies": [
+      {
+        "name": "bentoml",
+        "version": ">=1.3",
+        "purpose": "BentoML framework"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "LLM client (could be any)"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "If proxying OpenAI",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install bentoml openai",
+      "Save service.py",
+      "Test locally: bentoml serve service:LLMService",
+      "Build: bentoml build (creates a Bento artifact)",
+      "Deploy: bentoml containerize OR bentoml deploy to BentoCloud"
+    ],
+    "variations": [
+      {
+        "label": "Local model serving (transformers)",
+        "description": "Wrap a local model.",
+        "code_snippet": "@bentoml.service\\nclass LocalLLM:\\n    def __init__(self):\\n        from transformers import pipeline\\n        self.pipe = pipeline('text-generation', model='gpt2')\\n    @bentoml.api\\n    def gen(self, prompt: str) -> str: return self.pipe(prompt)[0]['generated_text']"
+      },
+      {
+        "label": "Multi-model service",
+        "description": "Multiple endpoints, different models.",
+        "code_snippet": "@bentoml.service\\nclass MultiLLM:\\n    @bentoml.api\\n    def gpt4(self, ...): ...\\n    @bentoml.api\\n    def haiku(self, ...): ..."
+      },
+      {
+        "label": "vLLM in BentoML",
+        "description": "Wrap vLLM with BentoML for managed ops.",
+        "code_snippet": "# bentoml-vllm extension: @bentoml.service with vLLM AsyncEngine inside __init__"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Slow worker startup",
+        "cause": "Model load in __init__.",
+        "fix_snippet": "Initialize model in __init__ \u2014 runs once per worker, not per request. Use @bentoml.service(workers=N) to parallelize cold starts."
+      },
+      {
+        "error_text": "Memory leaks over time",
+        "cause": "Async loop accumulating tasks.",
+        "fix_snippet": "Ensure async generators close properly. Use bentoml's built-in lifespan hooks for cleanup."
+      },
+      {
+        "error_text": "Container too large",
+        "cause": "Including dev deps.",
+        "fix_snippet": "Use docker_options.distro slim. Pin python.packages tightly. Exclude .pyc, __pycache__, tests."
+      },
+      {
+        "error_text": "BentoCloud auth fails",
+        "cause": "Token not set.",
+        "fix_snippet": "bentoml cloud login; verify with bentoml cloud current-user. Pin SDK version matching BentoCloud server."
+      }
+    ],
+    "production_checklist": [
+      "Use async APIs for I/O-bound services.",
+      "Set workers based on CPU + model load time.",
+      "Define resources= so K8s can right-size.",
+      "Set traffic.concurrency to control per-pod parallelism.",
+      "Use BentoCloud or Yatai for managed K8s deploy.",
+      "Monitor: BentoML exposes Prometheus metrics by default."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "bentoml==1.3"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "bentoml"
+    ],
+    "related_glossary_slugs": [
+      "model-serving",
+      "bento"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "BentoML vs vLLM directly?",
+        "answer": "vLLM: high-throughput inference server. BentoML: model serving framework (can wrap vLLM). Use BentoML when packaging matters; vLLM directly when raw throughput matters."
+      },
+      {
+        "question": "BentoCloud vs self-host?",
+        "answer": "BentoCloud: managed, pay-per-use, fast deploys. Self-host (K8s via Yatai): more control, cheaper at scale. Pick by ops capacity."
+      },
+      {
+        "question": "Vs FastAPI / Flask?",
+        "answer": "BentoML adds: model packaging, build-once-deploy-anywhere, model registry. FastAPI: just the web framework. BentoML is FastAPI + ML lifecycle tools."
+      },
+      {
+        "question": "Multi-model serving?",
+        "answer": "Yes \u2014 multiple @bentoml.api methods on one service, OR multiple services in one Bento. Helpful for serving classifier + LLM together."
+      }
+    ],
+    "github_url": "https://github.com/bentoml/BentoML",
+    "meta_title": "BentoML LLM Model Serving Starter",
+    "meta_description": "BentoML: Python-first model serving framework. Package as Bento, deploy locally / Docker / K8s / BentoCloud. Async-native."
+  },
+  {
+    "slug": "fly-io-llm-edge-deployment",
+    "title": "Fly.io Edge LLM Deployment",
+    "tldr": "Fly.io: deploy your LLM app to 30+ regions with one config. Anycast routing puts users on the nearest edge. Good for global apps where latency-to-LLM-API is a factor.",
+    "category": "deployment",
+    "language": "toml",
+    "framework": "Fly.io",
+    "tags": [
+      "fly-io",
+      "edge",
+      "global",
+      "deployment"
+    ],
+    "best_for_tags": [
+      "global-apps",
+      "low-latency",
+      "indie-developers"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Globally-distributed users + LLM SaaS proxy. Fly's edge presence makes the proxy fast everywhere; the underlying LLM API call goes to the nearest provider region.",
+    "when_not_to_use": "Skip for single-region apps (Railway/Render are simpler). Skip for self-hosted LLMs (Fly has limited GPU support; not designed for it).",
+    "quick_start": "brew install flyctl && flyctl auth login && flyctl launch",
+    "full_code": "# Fly.io LLM proxy with multi-region deployment\n# Save as fly.toml\n\napp = \"my-llm-proxy\"\nprimary_region = \"iad\"     # primary (closest to OpenAI us-east)\n\n[build]\n  dockerfile = \"Dockerfile\"\n\n[env]\n  PORT = \"8080\"\n\n[http_service]\n  internal_port = 8080\n  force_https = true\n  auto_stop_machines = \"stop\"     # scale to zero when idle\n  auto_start_machines = true\n  min_machines_running = 0        # cold-start trade-off\n  processes = [\"app\"]\n\n  [[http_service.checks]]\n    interval = \"30s\"\n    grace_period = \"5s\"\n    method = \"GET\"\n    path = \"/health\"\n    timeout = \"5s\"\n\n[[vm]]\n  size = \"shared-cpu-1x\"\n  memory = \"512mb\"\n\n# ----------------- DOCKERFILE -----------------\n\n# # Save as Dockerfile alongside fly.toml\n# FROM python:3.12-slim\n# WORKDIR /app\n# COPY requirements.txt .\n# RUN pip install --no-cache-dir -r requirements.txt\n# COPY . .\n# CMD [\"uvicorn\", \"main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8080\"]\n\n\n# ----------------- MAIN.PY (FastAPI LLM proxy) -----------------\n\n# from fastapi import FastAPI\n# from openai import AsyncOpenAI\n# import os\n#\n# app = FastAPI()\n# client = AsyncOpenAI(api_key=os.environ[\"OPENAI_API_KEY\"])\n#\n# @app.post(\"/chat\")\n# async def chat(body: dict):\n#     resp = await client.chat.completions.create(\n#         model=\"gpt-4o-mini\",\n#         messages=body[\"messages\"],\n#     )\n#     return {\"response\": resp.choices[0].message.content}\n#\n# @app.get(\"/health\")\n# def health():\n#     return {\"ok\": True}\n\n\n# ----------------- DEPLOY COMMANDS -----------------\n\n# flyctl auth login\n# flyctl launch                       # create app, generate fly.toml\n# flyctl secrets set OPENAI_API_KEY=sk-...\n# flyctl deploy\n#\n# # Add regions\n# flyctl scale count 1 --region iad\n# flyctl scale count 1 --region ams   # Amsterdam (EU)\n# flyctl scale count 1 --region syd   # Sydney (APAC)\n#\n# # Now traffic routes to nearest region automatically\n",
+    "dependencies": [],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "Set via flyctl secrets",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "brew install flyctl (macOS) or curl -L fly.io/install.sh (linux)",
+      "flyctl auth login",
+      "Create fly.toml + Dockerfile + main.py",
+      "flyctl launch (auto-creates app)",
+      "flyctl secrets set OPENAI_API_KEY=sk-...",
+      "flyctl deploy",
+      "Add regions: flyctl scale count 1 --region <region>"
+    ],
+    "variations": [
+      {
+        "label": "Postgres on Fly (managed)",
+        "description": "Co-locate DB.",
+        "code_snippet": "flyctl postgres create --name mydb --region iad; flyctl postgres attach --app my-llm-proxy mydb"
+      },
+      {
+        "label": "Redis cache via Upstash",
+        "description": "Edge-friendly Redis.",
+        "code_snippet": "# Add to fly.toml: [env] UPSTASH_REDIS_URL = '...'. Upstash has Fly integration."
+      },
+      {
+        "label": "GPU machines (limited)",
+        "description": "Fly has A10 / L40s in some regions.",
+        "code_snippet": "# [[vm]] size = 'a10' . Limited availability; check fly.io/docs/gpus before relying"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Cold start ~5s per region",
+        "cause": "auto_stop_machines + min_machines_running = 0.",
+        "fix_snippet": "Set min_machines_running = 1 per region for always-warm. Costs ~$2/mo per always-on Machine."
+      },
+      {
+        "error_text": "Multi-region routing not working",
+        "cause": "Only deployed to one region.",
+        "fix_snippet": "flyctl scale count N --region <region> per region. Verify: flyctl status. Anycast IP works only with multi-region."
+      },
+      {
+        "error_text": "Deploy fails: image too large",
+        "cause": "Dockerfile pulls big deps.",
+        "fix_snippet": "Use python:3.12-slim (not python:3.12). Multi-stage build. Cache pip via requirements.txt."
+      },
+      {
+        "error_text": "Secret not in container",
+        "cause": "Set after deploy without redeploy.",
+        "fix_snippet": "After flyctl secrets set, redeploy with flyctl deploy. Secrets are baked into the running machines."
+      }
+    ],
+    "production_checklist": [
+      "Multi-region deploy for global users.",
+      "Set min_machines_running for latency-critical paths.",
+      "Health checks for auto-recovery.",
+      "Secrets via flyctl, never in repo / Dockerfile.",
+      "Slim base image (python:3.12-slim).",
+      "Monitor: flyctl logs, flyctl status; Prometheus via fly_app_metrics."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "flyctl==0.3"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "fly-io",
+      "fastapi"
+    ],
+    "related_glossary_slugs": [
+      "edge-deployment",
+      "anycast"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Fly vs Railway vs Render?",
+        "answer": "Fly: global edge, slightly less polished UX. Railway: simplest DX. Render: middle ground. For multi-region needs, Fly wins. For single-region MVP, Railway / Render are easier."
+      },
+      {
+        "question": "Cost?",
+        "answer": "Hobby tier: $5/mo. Pay-per-resource: $2/mo per always-on shared CPU. 3 regions \u00d7 24/7 ~$6/mo. Spike pricing for traffic."
+      },
+      {
+        "question": "GPU support?",
+        "answer": "Limited \u2014 A10 / L40s in select regions. For real GPU LLM hosting, Modal / Cloud Run are better. Fly is great for LLM-PROXY (SaaS APIs) not LLM-SERVING."
+      },
+      {
+        "question": "Database options?",
+        "answer": "Fly Postgres (managed), Upstash Redis (integration), connect to any external. Co-locating DB with Fly app keeps query latency low."
+      }
+    ],
+    "github_url": "https://github.com/superfly/flyctl",
+    "meta_title": "Fly.io Edge LLM Deployment Starter",
+    "meta_description": "Fly.io: multi-region LLM proxy deployment. Edge presence in 30+ regions, auto-stop/start, anycast routing."
+  },
+  {
+    "slug": "huggingface-spaces-gradio-llm",
+    "title": "HuggingFace Spaces Gradio LLM Demo",
+    "tldr": "HF Spaces: free-tier hosting for Gradio demos. Best for: research demos, shareable prototypes, public-facing tools. Free CPU, optional GPU.",
+    "category": "deployment",
+    "language": "python",
+    "framework": "Gradio + HF Spaces",
+    "tags": [
+      "huggingface",
+      "gradio",
+      "spaces",
+      "demos"
+    ],
+    "best_for_tags": [
+      "research",
+      "demos",
+      "public-prototypes"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": false,
+    "when_to_use": "Building a shareable LLM demo. HF Spaces: free CPU tier, integrated with HF model hub, automatic HTTPS, easy to share. Best PoC/demo path.",
+    "when_not_to_use": "Skip for production traffic (rate limits, no SLA). Skip for private apps (Spaces are public by default; PRO/private requires paid).",
+    "quick_start": "Create Space at huggingface.co/new-space, choose Gradio SDK, push app.py",
+    "full_code": "\"\"\"HuggingFace Spaces Gradio LLM demo.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport gradio as gr\nfrom huggingface_hub import InferenceClient\n\n\n# Use HF Inference API (free tier; rate-limited)\nclient = InferenceClient(\n    model=\"meta-llama/Llama-3.1-8B-Instruct\",\n    token=os.environ.get(\"HF_TOKEN\"),\n)\n\n\n# ----------------- CHAT FUNCTION -----------------\n\ndef chat(message: str, history: list[tuple[str, str]], temperature: float = 0.7,\n         max_tokens: int = 512) -> str:\n    \"\"\"Gradio's chat interface calls this with current message + history.\"\"\"\n    messages = [{\"role\": \"system\", \"content\": \"You are a helpful assistant.\"}]\n    for user_msg, bot_msg in history:\n        messages.append({\"role\": \"user\", \"content\": user_msg})\n        messages.append({\"role\": \"assistant\", \"content\": bot_msg})\n    messages.append({\"role\": \"user\", \"content\": message})\n\n    response = \"\"\n    for chunk in client.chat_completion(\n        messages=messages,\n        max_tokens=max_tokens,\n        temperature=temperature,\n        stream=True,\n    ):\n        token = chunk.choices[0].delta.content or \"\"\n        response += token\n        yield response  # streaming\n\n\n# ----------------- UI -----------------\n\nwith gr.Blocks(theme=gr.themes.Soft(), title=\"LLM Chat Demo\") as demo:\n    gr.Markdown(\"# LLM Chat Demo\")\n    gr.Markdown(\"Free HF Inference API \u2014 rate-limited.\")\n\n    chatbot = gr.ChatInterface(\n        fn=chat,\n        chatbot=gr.Chatbot(height=400),\n        additional_inputs=[\n            gr.Slider(minimum=0, maximum=2, value=0.7, step=0.1, label=\"Temperature\"),\n            gr.Slider(minimum=64, maximum=2048, value=512, step=64, label=\"Max Tokens\"),\n        ],\n        examples=[\n            [\"What's caching?\"],\n            [\"Explain rate limiting in 3 sentences.\"],\n            [\"Write a haiku about deadlines.\"],\n        ],\n    )\n\n\n# ----------------- LAUNCH -----------------\n\nif __name__ == \"__main__\":\n    demo.launch()\n\n\n# ============== FILES FOR HF SPACE ==============\n\n# README.md (required, with metadata header)\nREADME = \"\"\"\n---\ntitle: LLM Chat Demo\nemoji: \ud83e\udd16\ncolorFrom: blue\ncolorTo: indigo\nsdk: gradio\nsdk_version: 4.44.0\napp_file: app.py\npinned: false\nlicense: mit\n---\n\n# LLM Chat Demo\n\nChat with Llama-3.1-8B via HuggingFace Inference API.\n\"\"\"\n\n# requirements.txt\nREQS = \"\"\"\ngradio==4.44.0\nhuggingface-hub>=0.25\n\"\"\"\n",
+    "dependencies": [
+      {
+        "name": "gradio",
+        "version": ">=4.44",
+        "purpose": "UI framework"
+      },
+      {
+        "name": "huggingface-hub",
+        "version": ">=0.25",
+        "purpose": "HF Inference API client"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "HF_TOKEN",
+        "required": false,
+        "description": "Set via Space secrets (for higher rate limits)",
+        "example": "hf_..."
+      }
+    ],
+    "setup_steps": [
+      "Sign in at huggingface.co",
+      "huggingface.co/new-space \u2192 SDK: Gradio, hardware: CPU basic (free)",
+      "Clone the empty Space repo",
+      "Add app.py + requirements.txt + README.md (with metadata)",
+      "git push \u2014 Space auto-builds + deploys",
+      "Set HF_TOKEN in Space settings for higher rate limits"
+    ],
+    "variations": [
+      {
+        "label": "GPU Space (Inference Endpoints)",
+        "description": "Pay for dedicated GPU.",
+        "code_snippet": "# Space settings \u2192 hardware \u2192 T4 / A10 / A100. ~$0.50-3/hr. Use local model via transformers."
+      },
+      {
+        "label": "ZeroGPU (free GPU sometimes)",
+        "description": "HF's free GPU pool for PRO accounts.",
+        "code_snippet": "# Add @spaces.GPU decorator: @spaces.GPU(duration=30) def chat(...): ..."
+      },
+      {
+        "label": "Multi-model demo",
+        "description": "Compare outputs side-by-side.",
+        "code_snippet": "# Use gr.Row() with two ChatInterfaces, different models. Useful for model evaluation."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Inference API 429 rate limit",
+        "cause": "Free tier limit.",
+        "fix_snippet": "Set HF_TOKEN in Space secrets (paid token has higher limits). Or use PRO account. Or rotate models that have higher quota."
+      },
+      {
+        "error_text": "Space stuck in 'Building'",
+        "cause": "requirements.txt error.",
+        "fix_snippet": "Check Space's Logs tab. Common: typo in requirements, missing dep, version mismatch. Restart build after fix."
+      },
+      {
+        "error_text": "Streaming not working",
+        "cause": "Old gradio.",
+        "fix_snippet": "Use gradio>=4.0 for streaming yields. Use ChatInterface (not Chatbot directly) for built-in streaming."
+      },
+      {
+        "error_text": "Space goes to sleep",
+        "cause": "Free tier auto-sleeps after inactivity.",
+        "fix_snippet": "PRO subscription keeps Spaces awake. Or set up a cron to ping (against ToS for some plans)."
+      }
+    ],
+    "production_checklist": [
+      "Use HF_TOKEN secrets, never inline.",
+      "Free tier: expect rate limits + sleeps.",
+      "Pin gradio + huggingface-hub versions.",
+      "README metadata correct (sdk, sdk_version).",
+      "For real prod, use HF Inference Endpoints (dedicated, $$$).",
+      "Track usage to avoid surprise rate-limit periods."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "Llama-3.1-8B-Instruct"
+      ],
+      "library_versions": [
+        "gradio==4.44"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "huggingface",
+      "gradio"
+    ],
+    "related_glossary_slugs": [
+      "gradio",
+      "huggingface-spaces"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Spaces vs Streamlit Cloud?",
+        "answer": "Spaces: HF-integrated, better for ML demos. Streamlit Cloud: better for general data apps. Both have free tiers; pick by ecosystem."
+      },
+      {
+        "question": "GPU options?",
+        "answer": "T4 ($0.40/hr), A10 ($1.50/hr), A100 ($3-4/hr). Paid tier. PRO accounts get ZeroGPU pool (free, time-limited)."
+      },
+      {
+        "question": "Private Spaces?",
+        "answer": "PRO tier ($9/mo) or Enterprise. Private Spaces only visible to specified users / org."
+      },
+      {
+        "question": "When NOT to use Spaces?",
+        "answer": "Production SaaS (SLA-required), private apps (need paid), high traffic (rate limits hurt UX). For these, real cloud hosting wins."
+      }
+    ],
+    "github_url": "https://github.com/gradio-app/gradio",
+    "meta_title": "HuggingFace Spaces Gradio LLM Demo Starter",
+    "meta_description": "HuggingFace Spaces: free Gradio LLM demos with streaming, examples, model selector. Best for research demos + shareable prototypes."
+  },
+  {
     "slug": "openai-embeddings-batch-cached",
     "title": "OpenAI Embeddings With Batching and Disk Cache",
     "tldr": "Production-shape OpenAI embeddings client: batches up to 2048 inputs per call (API limit), retries with exponential backoff, and caches results to disk keyed by content hash.",
