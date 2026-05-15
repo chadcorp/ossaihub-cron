@@ -2277,6 +2277,290 @@
     "meta_description": "Code agent helper for git operations: create branch, apply edits, commit, push, open PR. Safety guards: no force push, no main edits."
   },
   {
+    "slug": "aider-coding-agent-config",
+    "title": "Aider Coding Agent Configuration",
+    "tldr": "Aider: terminal-based coding agent. Edits files, runs tests, makes commits. Configure with .aider.conf.yml; pick a model; let it work on your repo.",
+    "category": "code-agents",
+    "language": "yaml",
+    "framework": "Aider",
+    "tags": [
+      "aider",
+      "coding-agent",
+      "terminal",
+      "git"
+    ],
+    "best_for_tags": [
+      "solo-developers",
+      "feature-implementation",
+      "refactoring"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Want a hands-off coding agent that lives in your terminal. Aider iterates on tasks, edits multiple files, runs tests, commits to git. Great solo dev productivity tool.",
+    "when_not_to_use": "Skip for team-shared dev workflows (no shared state). Skip without git (Aider expects git repos). Skip for huge monorepos \u2014 context-limited.",
+    "quick_start": "pip install aider-chat && cd your-repo && aider",
+    "full_code": "# Aider configuration: .aider.conf.yml (place in repo root)\n\n#######################################################################\n# MODEL SELECTION\n#######################################################################\n\n# Best quality (expensive)\nmodel: anthropic/claude-3-5-sonnet-20241022\n\n# Cheaper alternatives\n# model: anthropic/claude-3-5-haiku-20241022\n# model: openai/gpt-4o\n# model: openai/gpt-4o-mini\n\n# Editor model (smaller; used for edit-apply mode)\neditor-model: anthropic/claude-3-5-haiku-20241022\n\n# Weak model (for cheap operations like commit messages)\nweak-model: openai/gpt-4o-mini\n\n\n#######################################################################\n# EDIT FORMAT\n#######################################################################\n\n# 'diff' format: tightest edits; works with most models\nedit-format: diff\n\n# 'whole' format: full file rewrites; safer but more expensive\n# edit-format: whole\n\n# 'udiff' format: unified diff output\n# edit-format: udiff\n\n\n#######################################################################\n# AUTO-COMMIT BEHAVIOR\n#######################################################################\n\n# Aider auto-commits successful edits with descriptive messages\nauto-commits: true\n\n# Generate commit messages with the weak model\nattribute-author: true\nattribute-committer: true\n\n# Run pre-commit hooks\nauto-test: true\ntest-cmd: \"pytest -x --tb=short\"\n\n# Run linter\nauto-lint: true\nlint-cmd: \"ruff check --fix\"\n\n\n#######################################################################\n# CONTEXT MANAGEMENT\n#######################################################################\n\n# Repository map: shows aider the codebase structure\nmap-tokens: 4096\n\n# Files to ALWAYS include in context\nread:\n  - README.md\n  - pyproject.toml\n\n# Files to EXCLUDE (besides .gitignore)\n# Aider respects .gitignore by default\n\n\n#######################################################################\n# WORKFLOW\n#######################################################################\n\n# Confirm before each edit (slower but safer)\nyes: false\n\n# Stream LLM output as it generates\nstream: true\n\n# Output format\npretty: true\ndark-mode: true\n\n# Show diffs before applying\nshow-diffs: true\n\n\n#######################################################################\n# CACHING\n#######################################################################\n\n# Cache prompts with Anthropic for cost savings\ncache-prompts: true\n\n\n#######################################################################\n# ENVIRONMENT\n#######################################################################\n\n# Set in shell: export ANTHROPIC_API_KEY=sk-ant-...\n# Or set via env-file:\nenv-file: .env\n\n\n#######################################################################\n# USAGE\n#######################################################################\n\n# Basic invocation\n#   aider\n#   aider src/auth.py src/users.py  # specify files\n#\n# Tell aider what to do\n#   /add src/billing.py           # add file to context\n#   /drop src/legacy.py           # remove from context\n#   /test                         # run tests\n#   /commit                       # commit pending changes\n#   /undo                         # undo last edit\n#   /ask <question>               # read-only mode\n#   /code <prompt>                # explicit edit mode\n#\n# Then just type natural-language requests:\n#   \"Add a rate limiter to the /api/login endpoint\"\n#   \"Refactor the billing module to use the new Stripe API\"\n#   \"Write tests for the new logic\"\n\n\n#######################################################################\n# PRODUCTION-LIKE WORKFLOW\n#######################################################################\n\n# Best practices:\n# 1. Always start with a clean git working tree.\n# 2. Let aider auto-commit each successful change.\n# 3. Review diffs before merging to main.\n# 4. Use --yes for trusted small changes; manual confirmation for big.\n# 5. Maintain a CLAUDE.md or AIDER.md with project conventions.\n",
+    "dependencies": [
+      {
+        "name": "aider-chat",
+        "version": ">=0.60",
+        "purpose": "Aider CLI"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": false,
+        "description": "For Claude models",
+        "example": "sk-ant-..."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": false,
+        "description": "For GPT models",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install aider-chat",
+      "cd into your git repo",
+      "Save .aider.conf.yml at repo root",
+      "Set API key (e.g., export ANTHROPIC_API_KEY=...)",
+      "Run: aider",
+      "Type natural-language requests; aider edits + commits"
+    ],
+    "variations": [
+      {
+        "label": "Voice mode",
+        "description": "Talk to aider.",
+        "code_snippet": "# pip install 'aider-chat[voice]'; then aider --voice. Useful for hands-busy iteration."
+      },
+      {
+        "label": "Pair with linter",
+        "description": "Auto-fix style issues post-edit.",
+        "code_snippet": "auto-lint: true\\nlint-cmd: 'ruff check --fix && black .'"
+      },
+      {
+        "label": "Architect + editor models",
+        "description": "Two models: planner + writer.",
+        "code_snippet": "model: anthropic/claude-3-5-sonnet-20241022  # architect\\neditor-model: openai/gpt-4o-mini       # cheaper edit-apply"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Aider applies edits to wrong file",
+        "cause": "Multiple files with similar content.",
+        "fix_snippet": "Use /add and /drop explicitly to manage context. Aider works best with SMALL focused contexts."
+      },
+      {
+        "error_text": "Tests fail after edit (auto-rollback)",
+        "cause": "Edit broke something else.",
+        "fix_snippet": "auto-test catches this. Aider rolls back. Review failed-test output and provide more context."
+      },
+      {
+        "error_text": "High API costs",
+        "cause": "Large repo map + verbose context.",
+        "fix_snippet": "Reduce map-tokens to 2048. Use editor-model for cheaper edits. Enable cache-prompts with Anthropic."
+      },
+      {
+        "error_text": "Loses context across sessions",
+        "cause": "No persistent memory.",
+        "fix_snippet": "Save important context in CLAUDE.md / AIDER.md at repo root. Aider reads it automatically."
+      }
+    ],
+    "production_checklist": [
+      "Use Claude 3.5 Sonnet as architect; cheaper model for editor.",
+      "Enable cache-prompts (Anthropic) for cost savings.",
+      "Auto-commit + auto-test + auto-lint catches regressions.",
+      "Maintain AIDER.md with project conventions.",
+      "Review every diff before pushing.",
+      "Pair with CI \u2014 if CI catches what auto-test missed, refine test-cmd."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-3-5-sonnet-20241022",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "aider-chat==0.60"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "aider"
+    ],
+    "related_glossary_slugs": [
+      "coding-agent",
+      "ai-pair-programmer"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Aider vs Cursor vs Cline?",
+        "answer": "Aider: CLI, model-agnostic, git-native. Cursor: GUI IDE, model-agnostic. Cline: VS Code extension. Pick by interface preference; Aider for terminal-first devs."
+      },
+      {
+        "question": "Multi-file edits?",
+        "answer": "Yes \u2014 Aider handles them well. Add relevant files to context (/add). Aider produces a coherent multi-file diff."
+      },
+      {
+        "question": "Cost?",
+        "answer": "Sonnet-only: $5-20/day for active use. With caching + cheaper editor: $2-10/day. Significantly cheaper than Cursor Pro for heavy users."
+      },
+      {
+        "question": "Pair with vim / emacs?",
+        "answer": "Aider is its own REPL. For inline assistance in vim: codecompanion.nvim or copilot.vim. Aider is for delegated work, not inline."
+      }
+    ],
+    "github_url": "https://github.com/paul-gauthier/aider",
+    "meta_title": "Aider Coding Agent Configuration Starter",
+    "meta_description": "Aider: terminal coding agent. Edits files, runs tests, commits via git. Configure with .aider.conf.yml; works with Claude, GPT-4, local models."
+  },
+  {
+    "slug": "openhands-autonomous-coding-agent",
+    "title": "OpenHands Autonomous Coding Agent",
+    "tldr": "OpenHands (formerly OpenDevin): open-source autonomous coding agent. Plans, executes, runs in sandbox. Web UI or headless. Solves multi-step coding tasks end-to-end.",
+    "category": "code-agents",
+    "language": "python",
+    "framework": "OpenHands",
+    "tags": [
+      "openhands",
+      "autonomous",
+      "coding-agent",
+      "sandbox"
+    ],
+    "best_for_tags": [
+      "autonomous-tasks",
+      "research",
+      "swe-bench"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "when_to_use": "Want an OSS alternative to Devin. OpenHands executes coding tasks autonomously in a sandbox. Best for: well-defined ticket \u2192 working code workflows. Strong on SWE-bench.",
+    "when_not_to_use": "Skip for interactive pair-programming (Aider / Cursor better). Skip without time to set up sandbox (Docker required). Skip for production without close oversight.",
+    "quick_start": "docker run -it --rm -p 3000:3000 -v /var/run/docker.sock:/var/run/docker.sock docker.all-hands.dev/all-hands-ai/openhands:0.10",
+    "full_code": "\"\"\"OpenHands: autonomous coding agent.\n\nTwo modes:\n1. Web UI: docker run with the OpenHands image.\n2. Headless: invoke via Python SDK for integration into pipelines.\n\"\"\"\n\n# ----------------- WEB UI (one-shot Docker) -----------------\n\n# docker run -it --rm \\\n#   -p 3000:3000 \\\n#   -v /var/run/docker.sock:/var/run/docker.sock \\\n#   -v ~/.openhands-state:/.openhands-state \\\n#   --add-host host.docker.internal:host-gateway \\\n#   docker.all-hands.dev/all-hands-ai/openhands:0.10\n\n# Browser to http://localhost:3000\n# - Choose LLM provider (Claude / GPT / local)\n# - Optionally connect a GitHub repo\n# - Give a task: \"Add a CSV export endpoint to the /api/users route\"\n# - Watch it plan + execute\n\n\n# ----------------- HEADLESS MODE (Python) -----------------\n\nfrom __future__ import annotations\n\nimport asyncio\nimport os\nfrom openhands.controller import AgentController\nfrom openhands.controller.agent import Agent\nfrom openhands.events.action import MessageAction\nfrom openhands.events.stream import EventStream\nfrom openhands.llm import LLM\nfrom openhands.runtime import get_runtime_cls\nfrom openhands.runtime.base import Runtime\n\n\nasync def run_task(task: str, workspace: str) -> str:\n    \"\"\"Run a coding task autonomously.\"\"\"\n    llm = LLM(\n        config={\n            \"model\": \"anthropic/claude-3-5-sonnet-20241022\",\n            \"api_key\": os.environ[\"ANTHROPIC_API_KEY\"],\n            \"max_input_tokens\": 100_000,\n        }\n    )\n\n    # Sandboxed Docker runtime for code execution\n    RuntimeCls = get_runtime_cls(\"docker\")\n    runtime: Runtime = RuntimeCls(\n        config={\n            \"workspace_base\": workspace,\n            \"container_image\": \"docker.all-hands.dev/all-hands-ai/runtime:0.10-nikolaik\",\n            \"use_host_network\": False,\n        },\n        event_stream=EventStream(sid=\"task-1\"),\n        sid=\"task-1\",\n        plugins=[],\n    )\n\n    agent = Agent.from_name(\"CodeActAgent\", llm=llm)\n\n    controller = AgentController(\n        agent=agent,\n        runtime=runtime,\n        max_iterations=30,\n        max_budget_per_task=5.0,  # USD cap\n        event_stream=runtime.event_stream,\n    )\n\n    await runtime.connect()\n    controller.event_stream.add_event(\n        MessageAction(content=task),\n        source=\"user\",\n    )\n\n    # Drive the loop\n    while controller.state.iteration < controller.state.max_iterations:\n        await controller.step()\n        if controller.state.is_done():\n            break\n\n    return controller.state.last_action.content if controller.state.last_action else \"No output\"\n\n\n# ----------------- BATCH TASKS (CI integration) -----------------\n\nasync def batch_solve(tickets: list[dict], workspace: str):\n    \"\"\"Run multiple tickets in sequence (or parallel with separate workspaces).\"\"\"\n    results = []\n    for ticket in tickets:\n        task = f\"{ticket['title']}\\n\\n{ticket['description']}\"\n        try:\n            result = await run_task(task, workspace=f\"{workspace}/ticket-{ticket['id']}\")\n            results.append({\"ticket\": ticket[\"id\"], \"status\": \"ok\", \"output\": result})\n        except Exception as e:\n            results.append({\"ticket\": ticket[\"id\"], \"status\": \"failed\", \"error\": str(e)})\n    return results\n\n\n# ----------------- DEMO -----------------\n\nif __name__ == \"__main__\":\n    task = \"Add a CSV export endpoint to the /api/users route. Include tests.\"\n    result = asyncio.run(run_task(task, workspace=\"/tmp/openhands-workspace\"))\n    print(result)\n",
+    "dependencies": [
+      {
+        "name": "openhands-ai",
+        "version": ">=0.10",
+        "purpose": "OpenHands Python package"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": false,
+        "description": "Claude as the underlying LLM",
+        "example": "sk-ant-..."
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "required": false,
+        "description": "Or GPT-4o",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "Install Docker (required for sandbox)",
+      "Pull image: docker pull docker.all-hands.dev/all-hands-ai/openhands:0.10",
+      "Web UI: docker run with the command above",
+      "Headless: pip install openhands-ai + write Python driver",
+      "Provide LLM API key",
+      "Give task; let it work"
+    ],
+    "variations": [
+      {
+        "label": "GitHub Actions integration",
+        "description": "Trigger OpenHands on issue creation.",
+        "code_snippet": "# Use openhands GitHub Action to assign labeled issues. Agent opens PR with proposed fix."
+      },
+      {
+        "label": "Custom agent",
+        "description": "Subclass Agent for domain-specific logic.",
+        "code_snippet": "from openhands.controller.agent import Agent\\nclass CustomAgent(Agent):\\n    def step(self, state): ... # custom planning logic"
+      },
+      {
+        "label": "Read-only mode",
+        "description": "Agent analyzes but doesn't execute.",
+        "code_snippet": "# Set runtime to a sandboxed FS that's read-only; agent reasons + proposes changes without applying"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Docker socket permission denied",
+        "cause": "User not in docker group.",
+        "fix_snippet": "sudo usermod -aG docker $USER; logout/login. OpenHands needs Docker socket to spawn runtime containers."
+      },
+      {
+        "error_text": "Agent loops on same problem",
+        "cause": "Insufficient context or unclear task.",
+        "fix_snippet": "Set max_iterations cap (30 default). Provide more context upfront. Improve task description with constraints."
+      },
+      {
+        "error_text": "Budget exceeded mid-task",
+        "cause": "Complex task + expensive model.",
+        "fix_snippet": "Increase max_budget_per_task. Or switch to cheaper model. Or break task into smaller sub-tasks."
+      },
+      {
+        "error_text": "Sandbox container fails to start",
+        "cause": "Image not pulled or wrong architecture.",
+        "fix_snippet": "docker pull docker.all-hands.dev/all-hands-ai/runtime:0.10-nikolaik. For ARM (M1/M2 Mac), use arm64 image tag."
+      }
+    ],
+    "production_checklist": [
+      "Always run in Docker sandbox (never on bare host).",
+      "Set max_iterations + max_budget_per_task caps.",
+      "Audit logs for every code change.",
+      "Run agent in isolated workspace per task.",
+      "Use Sonnet or GPT-4o for best results (vs cheaper models).",
+      "Combine with code-review tooling on output."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-3-5-sonnet-20241022",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "openhands-ai==0.10"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "openhands"
+    ],
+    "related_glossary_slugs": [
+      "autonomous-agent",
+      "swe-bench"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "OpenHands vs Devin?",
+        "answer": "Devin: managed SaaS. OpenHands: OSS alternative; you run it. Comparable capabilities on SWE-bench. OpenHands is the open community successor to OpenDevin."
+      },
+      {
+        "question": "Safe to run on production code?",
+        "answer": "Run in sandbox + on a feature branch. Review every diff. Don't grant write access to main. For untrusted tasks, use throwaway workspaces."
+      },
+      {
+        "question": "Token cost?",
+        "answer": "Complex SWE-bench-style tasks: $1-5 per task with Sonnet. Simple tasks: $0.10-0.50. Set budget caps to prevent runaway."
+      },
+      {
+        "question": "Compare to Aider?",
+        "answer": "Aider: interactive pair-programmer. OpenHands: fully autonomous. OpenHands plans + executes WITHOUT human in the loop. Aider iterates WITH you."
+      }
+    ],
+    "github_url": "https://github.com/All-Hands-AI/OpenHands",
+    "meta_title": "OpenHands Autonomous Coding Agent Starter",
+    "meta_description": "OpenHands: OSS autonomous coding agent. Plans + executes in sandbox. Headless Python SDK or web UI."
+  },
+  {
     "slug": "document-ingestion-pipeline-batched",
     "title": "Document Ingestion Pipeline With Batched Embedding",
     "tldr": "End-to-end ingest pipeline: walk a folder/S3, chunk text intelligently (paragraph-aware), embed in batches with retry, upsert to vector DB. Includes progress tracking and resume.",
@@ -7781,6 +8065,575 @@
     "github_url": "",
     "meta_title": "React Streaming Markdown Renderer \u2014 Starter",
     "meta_description": "Render streaming AI markdown in React: handles partial code fences, syntax highlighting, copy button, cursor animation."
+  },
+  {
+    "slug": "nextjs-ai-sdk-chat-streaming",
+    "title": "Next.js + Vercel AI SDK Chat With Streaming",
+    "tldr": "Next.js 15 App Router + Vercel AI SDK 5: streaming chat UI in 100 lines. Provider-agnostic, server actions, type-safe tool calling. Production-grade frontend.",
+    "category": "frontend",
+    "language": "typescript",
+    "framework": "Next.js + Vercel AI SDK",
+    "tags": [
+      "nextjs",
+      "ai-sdk",
+      "vercel",
+      "streaming"
+    ],
+    "best_for_tags": [
+      "typescript-stack",
+      "vercel-hosting",
+      "saas-apps"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Building a customer-facing chat product on Next.js. Vercel AI SDK + useChat hook handles streaming, conversation state, tool calls. Production-grade out of the box.",
+    "when_not_to_use": "Skip for non-Next.js apps (use AI SDK directly with React Native / SvelteKit / Vue adapters). Skip for batch inference (server actions or worker queue).",
+    "quick_start": "npx create-next-app@latest && npm i ai @ai-sdk/openai && code .",
+    "full_code": "/**\n * Next.js 15 + Vercel AI SDK 5: streaming chat with tools.\n *\n * Files:\n *   app/page.tsx           <- client component with useChat\n *   app/api/chat/route.ts  <- streaming chat endpoint\n */\n\n// =============== app/api/chat/route.ts ===============\nimport { openai } from \"@ai-sdk/openai\";\nimport { streamText, tool } from \"ai\";\nimport { z } from \"zod\";\n\nexport const maxDuration = 60;\n\nexport async function POST(req: Request) {\n  const { messages } = await req.json();\n\n  const result = streamText({\n    model: openai(\"gpt-4o-mini\"),\n    system: \"You are a helpful assistant. Use the search tool when asked about current events.\",\n    messages,\n    tools: {\n      search: tool({\n        description: \"Search the web for current information.\",\n        parameters: z.object({\n          query: z.string().describe(\"The search query\"),\n        }),\n        execute: async ({ query }) => {\n          // Replace with real search API\n          return { results: [`Stub result for: ${query}`] };\n        },\n      }),\n      getCurrentTime: tool({\n        description: \"Get current UTC time.\",\n        parameters: z.object({}),\n        execute: async () => ({ time: new Date().toISOString() }),\n      }),\n    },\n    maxSteps: 5, // allow multi-turn tool calling\n  });\n\n  return result.toDataStreamResponse();\n}\n\n\n// =============== app/page.tsx ===============\n\"use client\";\n\nimport { useChat } from \"ai/react\";\n\nexport default function Page() {\n  const { messages, input, handleInputChange, handleSubmit, isLoading, stop, error } =\n    useChat({\n      api: \"/api/chat\",\n      onError: (err) => console.error(\"Chat error:\", err),\n    });\n\n  return (\n    <div className=\"max-w-3xl mx-auto p-6 flex flex-col h-screen\">\n      <h1 className=\"text-2xl font-bold mb-4\">AI Chat</h1>\n\n      <div className=\"flex-1 overflow-y-auto space-y-4 mb-4\">\n        {messages.map((m) => (\n          <div\n            key={m.id}\n            className={`p-3 rounded ${m.role === \"user\" ? \"bg-blue-100 ml-12\" : \"bg-gray-100 mr-12\"}`}\n          >\n            <div className=\"text-xs text-gray-500 mb-1\">{m.role}</div>\n            <div className=\"whitespace-pre-wrap\">{m.content}</div>\n\n            {/* Show tool invocations */}\n            {m.toolInvocations?.map((ti, i) => (\n              <div key={i} className=\"mt-2 text-xs bg-yellow-50 p-2 rounded\">\n                <code>{ti.toolName}({JSON.stringify(ti.args)})</code>\n                {ti.state === \"result\" && (\n                  <pre className=\"mt-1\">{JSON.stringify(ti.result, null, 2)}</pre>\n                )}\n              </div>\n            ))}\n          </div>\n        ))}\n\n        {isLoading && (\n          <div className=\"text-sm text-gray-500 italic\">\n            Generating...\n            <button onClick={stop} className=\"ml-2 underline\">stop</button>\n          </div>\n        )}\n\n        {error && (\n          <div className=\"text-sm text-red-600\">Error: {error.message}</div>\n        )}\n      </div>\n\n      <form onSubmit={handleSubmit} className=\"flex gap-2\">\n        <input\n          value={input}\n          onChange={handleInputChange}\n          placeholder=\"Ask anything...\"\n          className=\"flex-1 p-3 border rounded\"\n          disabled={isLoading}\n        />\n        <button\n          type=\"submit\"\n          disabled={isLoading || !input}\n          className=\"px-6 bg-blue-600 text-white rounded disabled:opacity-50\"\n        >\n          Send\n        </button>\n      </form>\n    </div>\n  );\n}\n",
+    "dependencies": [
+      {
+        "name": "ai",
+        "version": ">=4.0",
+        "purpose": "Vercel AI SDK"
+      },
+      {
+        "name": "@ai-sdk/openai",
+        "version": ">=1.0",
+        "purpose": "OpenAI provider"
+      },
+      {
+        "name": "next",
+        "version": ">=15.0",
+        "purpose": "Next.js"
+      },
+      {
+        "name": "zod",
+        "version": ">=3.23",
+        "purpose": "Tool param schemas"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "npx create-next-app@latest my-chat (TypeScript + App Router)",
+      "cd my-chat && npm i ai @ai-sdk/openai zod",
+      "Create app/api/chat/route.ts + app/page.tsx",
+      "export OPENAI_API_KEY=sk-... (or add to .env.local)",
+      "npm run dev \u2192 http://localhost:3000"
+    ],
+    "variations": [
+      {
+        "label": "Anthropic provider",
+        "description": "Swap to Claude.",
+        "code_snippet": "import { anthropic } from '@ai-sdk/anthropic';\\nmodel: anthropic('claude-3-5-sonnet-latest')"
+      },
+      {
+        "label": "Persisted conversation",
+        "description": "Save messages to DB.",
+        "code_snippet": "// onFinish: save messages to DB. useChat({ initialMessages: <load from DB> }) restores."
+      },
+      {
+        "label": "Generative UI",
+        "description": "Stream React components.",
+        "code_snippet": "// Use streamUI from 'ai/rsc'; tools can return JSX. Renders rich UI server-side during streaming."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "useChat not streaming",
+        "cause": "Wrong return type from route handler.",
+        "fix_snippet": "Use result.toDataStreamResponse() (not toTextStreamResponse for useChat). They send different formats."
+      },
+      {
+        "error_text": "Tool not invoked",
+        "cause": "Description too vague.",
+        "fix_snippet": "Improve tool descriptions: 'Search the web' beats 'Search'. LLM reads descriptions to decide when to use tools."
+      },
+      {
+        "error_text": "Hydration mismatch",
+        "cause": "Messages rendered server vs client differently.",
+        "fix_snippet": "Keep messages state client-only. Don't try to SSR the chat list. Initial empty state is fine."
+      },
+      {
+        "error_text": "maxDuration exceeded on Vercel",
+        "cause": "Long tool chains.",
+        "fix_snippet": "Vercel Hobby: 10s. Pro: 60s. Increase maxDuration; for >60s, use Vercel Functions Pro tier or alternative hosting."
+      }
+    ],
+    "production_checklist": [
+      "Use App Router (Pages Router lacks streaming features).",
+      "Add rate limiting via middleware (per-IP / per-user).",
+      "Persist messages to DB on onFinish.",
+      "Set maxDuration to match worst-case multi-step tool calls.",
+      "Add user auth before allowing chat (cost protection).",
+      "Use streamText (not generateText) for streaming UX."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "ai==4.0",
+        "next==15.0"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "vercel-ai-sdk",
+      "nextjs"
+    ],
+    "related_glossary_slugs": [
+      "server-actions",
+      "streaming-ui"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Vercel AI SDK vs Mastra?",
+        "answer": "Vercel AI SDK: minimal, frontend-focused, perfect for chat UIs. Mastra: full agent framework, BUILT ON top of AI SDK. Use AI SDK for chat; Mastra when you need agents + workflows."
+      },
+      {
+        "question": "useChat options?",
+        "answer": "Many: api, initialMessages, onFinish, onError, body (extra data), headers, sendExtraMessageFields. Check the AI SDK docs for full list."
+      },
+      {
+        "question": "How to handle long conversations?",
+        "answer": "Truncate or summarize older messages server-side. Or use AI SDK's experimental_useAssistant for thread-based conversations with persisted state."
+      },
+      {
+        "question": "Mobile?",
+        "answer": "Use React Native + @ai-sdk/react-native (experimental) or use AI SDK Core directly with custom UI. Web works in PWA mode out of the box."
+      }
+    ],
+    "github_url": "https://github.com/vercel/ai",
+    "meta_title": "Next.js Vercel AI SDK Chat Starter",
+    "meta_description": "Next.js 15 + Vercel AI SDK 5: streaming chat UI with tools, useChat hook, server actions. Production-grade frontend."
+  },
+  {
+    "slug": "streamlit-llm-chat-with-memory",
+    "title": "Streamlit LLM Chat With Memory + RAG",
+    "tldr": "Streamlit: Python LLM apps in 50 lines. Chat memory via st.session_state, RAG via embedded vector search, file upload. Perfect for internal tools + prototypes.",
+    "category": "frontend",
+    "language": "python",
+    "framework": "Streamlit",
+    "tags": [
+      "streamlit",
+      "chat",
+      "rag",
+      "internal-tools"
+    ],
+    "best_for_tags": [
+      "internal-tools",
+      "research-demos",
+      "python-first-teams"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": false,
+    "when_to_use": "Internal tool or research demo where Python-first development beats JS frontend overhead. Streamlit gives you a chat UI in minutes. Easy auth via Streamlit Community Cloud.",
+    "when_not_to_use": "Skip for customer-facing prod (UX limited, can't customize deeply). Skip for high-traffic (Streamlit's request-per-rerun model is slow at scale).",
+    "quick_start": "pip install streamlit openai && streamlit run app.py",
+    "full_code": "\"\"\"Streamlit chat with memory + simple RAG.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport streamlit as st\nfrom openai import OpenAI\nimport numpy as np\n\n\n# ----------------- SETUP -----------------\n\nst.set_page_config(page_title=\"LLM Chat\", layout=\"wide\", initial_sidebar_state=\"expanded\")\nst.title(\"LLM Chat with RAG\")\n\n\n@st.cache_resource\ndef get_client():\n    return OpenAI(api_key=os.environ[\"OPENAI_API_KEY\"])\n\n\nclient = get_client()\n\n\n# ----------------- SIDEBAR (settings + uploads) -----------------\n\nwith st.sidebar:\n    model = st.selectbox(\"Model\", [\"gpt-4o-mini\", \"gpt-4o\", \"gpt-4o-2024-08-06\"])\n    temperature = st.slider(\"Temperature\", 0.0, 2.0, 0.0, 0.1)\n    max_tokens = st.slider(\"Max tokens\", 64, 4096, 1024, 64)\n\n    st.divider()\n    st.subheader(\"Upload docs for RAG\")\n    files = st.file_uploader(\"Markdown / text files\", accept_multiple_files=True, type=[\"md\", \"txt\"])\n\n    if st.button(\"Clear conversation\"):\n        st.session_state.messages = []\n        st.rerun()\n\n\n# ----------------- RAG (simple in-memory) -----------------\n\n@st.cache_data\ndef embed(texts: tuple[str, ...]) -> np.ndarray:\n    response = client.embeddings.create(\n        model=\"text-embedding-3-small\",\n        input=list(texts),\n    )\n    return np.array([e.embedding for e in response.data])\n\n\ndef ingest_files(files) -> tuple[list[str], np.ndarray]:\n    \"\"\"Extract + chunk + embed uploaded files.\"\"\"\n    chunks: list[str] = []\n    for f in files:\n        text = f.read().decode(\"utf-8\", errors=\"replace\")\n        # Simple chunker: 500 words per chunk\n        words = text.split()\n        for i in range(0, len(words), 400):\n            chunks.append(\" \".join(words[i:i + 500]))\n    if not chunks:\n        return [], np.array([])\n    return chunks, embed(tuple(chunks))\n\n\ndef retrieve(query: str, chunks: list[str], chunk_emb: np.ndarray, k: int = 3) -> list[str]:\n    \"\"\"Cosine similarity retrieval.\"\"\"\n    q_emb = embed((query,))[0]\n    sims = chunk_emb @ q_emb / (np.linalg.norm(chunk_emb, axis=1) * np.linalg.norm(q_emb))\n    top_k = np.argsort(-sims)[:k]\n    return [chunks[i] for i in top_k]\n\n\nif files:\n    if \"rag_chunks\" not in st.session_state or st.session_state.get(\"rag_files\") != [f.name for f in files]:\n        with st.spinner(\"Embedding documents...\"):\n            chunks, chunk_emb = ingest_files(files)\n        st.session_state.rag_chunks = chunks\n        st.session_state.rag_emb = chunk_emb\n        st.session_state.rag_files = [f.name for f in files]\n        st.sidebar.success(f\"Indexed {len(chunks)} chunks from {len(files)} files\")\n\n\n# ----------------- CHAT MEMORY -----------------\n\nif \"messages\" not in st.session_state:\n    st.session_state.messages = []\n\n\n# Display history\nfor msg in st.session_state.messages:\n    with st.chat_message(msg[\"role\"]):\n        st.markdown(msg[\"content\"])\n\n\n# ----------------- HANDLE NEW MESSAGE -----------------\n\nif prompt := st.chat_input(\"Ask anything...\"):\n    # Add user message\n    st.session_state.messages.append({\"role\": \"user\", \"content\": prompt})\n    with st.chat_message(\"user\"):\n        st.markdown(prompt)\n\n    # Build context (RAG if files uploaded)\n    system_msg = \"You are a helpful assistant.\"\n    if st.session_state.get(\"rag_chunks\"):\n        retrieved = retrieve(prompt, st.session_state.rag_chunks, st.session_state.rag_emb)\n        context = \"\\n\\n---\\n\\n\".join(retrieved)\n        system_msg = f\"Answer using ONLY this context:\\n\\n{context}\\n\\nIf not in context, say so.\"\n\n    api_messages = [{\"role\": \"system\", \"content\": system_msg}] + st.session_state.messages\n\n    # Stream response\n    with st.chat_message(\"assistant\"):\n        message_placeholder = st.empty()\n        full_response = \"\"\n\n        stream = client.chat.completions.create(\n            model=model,\n            messages=api_messages,\n            temperature=temperature,\n            max_tokens=max_tokens,\n            stream=True,\n        )\n        for chunk in stream:\n            delta = chunk.choices[0].delta.content\n            if delta:\n                full_response += delta\n                message_placeholder.markdown(full_response + \"\u258c\")\n        message_placeholder.markdown(full_response)\n\n    st.session_state.messages.append({\"role\": \"assistant\", \"content\": full_response})\n",
+    "dependencies": [
+      {
+        "name": "streamlit",
+        "version": ">=1.40",
+        "purpose": "Streamlit framework"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "OpenAI client"
+      },
+      {
+        "name": "numpy",
+        "version": ">=1.26",
+        "purpose": "Vector math for RAG"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install streamlit openai numpy",
+      "Save app.py with the code above",
+      "export OPENAI_API_KEY=sk-...",
+      "streamlit run app.py",
+      "Browser auto-opens at http://localhost:8501"
+    ],
+    "variations": [
+      {
+        "label": "Deploy on Streamlit Community Cloud",
+        "description": "Free hosting.",
+        "code_snippet": "# Push to GitHub; connect at share.streamlit.io; secrets via dashboard. Free tier: public apps only."
+      },
+      {
+        "label": "Use persistent vector DB",
+        "description": "RAG that survives restarts.",
+        "code_snippet": "# Replace in-memory embeddings with Chroma or pgvector. Survives reruns + page refreshes."
+      },
+      {
+        "label": "Auth via streamlit-authenticator",
+        "description": "Private apps.",
+        "code_snippet": "# pip install streamlit-authenticator; basic-auth or OAuth. Gates app behind login."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "App resets on every interaction",
+        "cause": "Not using session_state.",
+        "fix_snippet": "Streamlit re-runs the whole script per interaction. Use st.session_state for state that should persist (messages, uploaded files)."
+      },
+      {
+        "error_text": "Streaming markdown looks broken",
+        "cause": "Mid-stream partial markdown.",
+        "fix_snippet": "Use st.empty() + .markdown() to overwrite cleanly. The placeholder.markdown(text + cursor) pattern in code works."
+      },
+      {
+        "error_text": "Slow first response",
+        "cause": "Embedding model warm-up.",
+        "fix_snippet": "Use @st.cache_resource for client and @st.cache_data for embeddings. Streamlit caches across reruns."
+      },
+      {
+        "error_text": "Memory grows with uploads",
+        "cause": "Files held in session_state forever.",
+        "fix_snippet": "Clear st.session_state.rag_chunks when user uploads new files. Pattern in code does this on filename change."
+      }
+    ],
+    "production_checklist": [
+      "Use @st.cache_resource for clients (OpenAI, DB).",
+      "Use @st.cache_data for expensive computations (embeddings).",
+      "Persist session_state to DB for multi-user.",
+      "Add streamlit-authenticator for private apps.",
+      "Deploy on Streamlit Community Cloud (free) or self-host.",
+      "Monitor: Streamlit logs everything; pipe to Loki / Datadog."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "text-embedding-3-small"
+      ],
+      "library_versions": [
+        "streamlit==1.40",
+        "openai==1.51"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "streamlit"
+    ],
+    "related_glossary_slugs": [
+      "streamlit",
+      "internal-tools"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Streamlit vs Gradio?",
+        "answer": "Streamlit: more flexible, better for complex layouts, slower per-interaction. Gradio: simpler, ML-demo-optimized, integrated with HF Spaces. Pick by app shape."
+      },
+      {
+        "question": "Multi-user app on Streamlit?",
+        "answer": "Possible but tricky \u2014 Streamlit's session model assumes single user per session. For real multi-user: external state store (Postgres / Redis) + session-tied user_id."
+      },
+      {
+        "question": "Production traffic?",
+        "answer": "Streamlit handles ~5-20 concurrent users per pod well. Past that: scale-out via Streamlit Cloud Enterprise or self-host with Kubernetes."
+      },
+      {
+        "question": "Can I customize the UI?",
+        "answer": "Within Streamlit's constraints. Custom CSS via st.markdown allows tweaks. For full pixel-perfect control, switch to Next.js / Gradio Blocks."
+      }
+    ],
+    "github_url": "https://github.com/streamlit/streamlit",
+    "meta_title": "Streamlit LLM Chat With RAG Starter",
+    "meta_description": "Streamlit chat with memory, file upload RAG, streaming, settings sidebar. Python LLM UI in 100 lines."
+  },
+  {
+    "slug": "react-chat-with-anthropic",
+    "title": "Pure React Chat With Anthropic Streaming",
+    "tldr": "React chat without a framework \u2014 just fetch() + ReadableStream + SSE parsing. Direct Anthropic streaming endpoint. Tiny dep footprint; works in any React app.",
+    "category": "frontend",
+    "language": "typescript",
+    "framework": "React + Anthropic",
+    "tags": [
+      "react",
+      "anthropic",
+      "streaming",
+      "sse"
+    ],
+    "best_for_tags": [
+      "react-purists",
+      "tiny-deps",
+      "embed-in-existing-app"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Adding chat to an existing React app without pulling in Vercel AI SDK or other heavy frameworks. Direct streaming from your backend. Minimal deps.",
+    "when_not_to_use": "Skip if you have time to use Vercel AI SDK (it's well-designed). Skip for complex chat (tool calling, multi-turn) \u2014 AI SDK handles edge cases.",
+    "quick_start": "Save the component + backend route into your existing React app",
+    "full_code": "/**\n * React chat with raw fetch + streaming.\n *\n * Pair with a backend route that streams Anthropic SSE.\n */\nimport { useState, useRef, useEffect } from \"react\";\n\n\n// =============== Component ===============\n\ntype Message = { role: \"user\" | \"assistant\"; content: string };\n\n\nexport function Chat() {\n  const [messages, setMessages] = useState<Message[]>([]);\n  const [input, setInput] = useState(\"\");\n  const [isStreaming, setIsStreaming] = useState(false);\n  const abortRef = useRef<AbortController | null>(null);\n  const scrollRef = useRef<HTMLDivElement>(null);\n\n\n  useEffect(() => {\n    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });\n  }, [messages]);\n\n\n  async function send() {\n    if (!input.trim() || isStreaming) return;\n    const userMsg: Message = { role: \"user\", content: input };\n    const newMessages = [...messages, userMsg];\n    setMessages(newMessages);\n    setInput(\"\");\n    setIsStreaming(true);\n\n    // Insert empty assistant placeholder; stream fills it\n    setMessages([...newMessages, { role: \"assistant\", content: \"\" }]);\n\n    abortRef.current = new AbortController();\n    try {\n      const response = await fetch(\"/api/chat\", {\n        method: \"POST\",\n        headers: { \"Content-Type\": \"application/json\" },\n        body: JSON.stringify({ messages: newMessages }),\n        signal: abortRef.current.signal,\n      });\n\n      if (!response.ok || !response.body) {\n        throw new Error(`HTTP ${response.status}`);\n      }\n\n      const reader = response.body.getReader();\n      const decoder = new TextDecoder();\n      let buffer = \"\";\n\n      while (true) {\n        const { value, done } = await reader.read();\n        if (done) break;\n        buffer += decoder.decode(value, { stream: true });\n\n        // Parse SSE-style events (data: {...}\\n\\n)\n        const lines = buffer.split(\"\\n\\n\");\n        buffer = lines.pop() || \"\";\n        for (const line of lines) {\n          if (!line.startsWith(\"data:\")) continue;\n          const payload = line.slice(5).trim();\n          if (payload === \"[DONE]\") break;\n          try {\n            const event = JSON.parse(payload);\n            if (event.type === \"content_block_delta\" && event.delta?.text) {\n              setMessages((prev) => {\n                const copy = [...prev];\n                copy[copy.length - 1] = {\n                  ...copy[copy.length - 1],\n                  content: copy[copy.length - 1].content + event.delta.text,\n                };\n                return copy;\n              });\n            }\n          } catch {}\n        }\n      }\n    } catch (err: any) {\n      if (err.name !== \"AbortError\") {\n        console.error(err);\n        setMessages((prev) => [...prev.slice(0, -1), { role: \"assistant\", content: `Error: ${err.message}` }]);\n      }\n    } finally {\n      setIsStreaming(false);\n      abortRef.current = null;\n    }\n  }\n\n\n  function stop() {\n    abortRef.current?.abort();\n  }\n\n\n  return (\n    <div className=\"flex flex-col h-screen max-w-2xl mx-auto p-4\">\n      <div ref={scrollRef} className=\"flex-1 overflow-y-auto space-y-3 mb-4\">\n        {messages.map((m, i) => (\n          <div key={i} className={m.role === \"user\" ? \"text-right\" : \"text-left\"}>\n            <div className={`inline-block p-3 rounded-lg ${m.role === \"user\" ? \"bg-blue-500 text-white\" : \"bg-gray-100\"}`}>\n              {m.content || (isStreaming && i === messages.length - 1 ? \"...\" : \"\")}\n            </div>\n          </div>\n        ))}\n      </div>\n      <div className=\"flex gap-2\">\n        <input\n          value={input}\n          onChange={(e) => setInput(e.target.value)}\n          onKeyDown={(e) => e.key === \"Enter\" && send()}\n          disabled={isStreaming}\n          className=\"flex-1 p-3 border rounded\"\n          placeholder=\"Type a message...\"\n        />\n        {isStreaming ? (\n          <button onClick={stop} className=\"px-4 bg-red-500 text-white rounded\">Stop</button>\n        ) : (\n          <button onClick={send} disabled={!input} className=\"px-4 bg-blue-500 text-white rounded disabled:opacity-50\">\n            Send\n          </button>\n        )}\n      </div>\n    </div>\n  );\n}\n\n\n// =============== Backend route (Node / Bun / Express) ===============\n// app.post('/api/chat', async (req, res) => {\n//   const Anthropic = (await import('@anthropic-ai/sdk')).default;\n//   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });\n//\n//   res.setHeader('Content-Type', 'text/event-stream');\n//   res.setHeader('Cache-Control', 'no-cache');\n//   res.setHeader('Connection', 'keep-alive');\n//\n//   const stream = await client.messages.stream({\n//     model: 'claude-3-5-haiku-20241022',\n//     max_tokens: 1024,\n//     messages: req.body.messages,\n//   });\n//\n//   for await (const event of stream) {\n//     res.write(`data: ${JSON.stringify(event)}\\n\\n`);\n//   }\n//   res.write('data: [DONE]\\n\\n');\n//   res.end();\n// });\n",
+    "dependencies": [
+      {
+        "name": "react",
+        "version": ">=18",
+        "purpose": "React"
+      },
+      {
+        "name": "@anthropic-ai/sdk",
+        "version": ">=0.36",
+        "purpose": "Backend Anthropic client"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": true,
+        "description": "Backend only",
+        "example": "sk-ant-..."
+      }
+    ],
+    "setup_steps": [
+      "Drop Chat component into existing React app",
+      "Add backend route /api/chat (Node / Bun / Express / Next.js / etc.)",
+      "Set ANTHROPIC_API_KEY in backend env",
+      "Wire backend to your hosting (Express, Fastify, Next.js API route, etc.)"
+    ],
+    "variations": [
+      {
+        "label": "Tool calling support",
+        "description": "Handle tool_use events.",
+        "code_snippet": "// In streaming parser: switch on event.type === 'content_block_start' with type='tool_use'; track partial_json; execute after content_block_stop"
+      },
+      {
+        "label": "Conversation persistence",
+        "description": "Save + load chats.",
+        "code_snippet": "// useEffect to fetch from /api/conversations/:id on mount. Save messages to backend after each user/assistant pair."
+      },
+      {
+        "label": "Token counter UI",
+        "description": "Show usage live.",
+        "code_snippet": "// Track event.usage.input_tokens + output_tokens from message_start / message_delta events; display in footer"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Stream hangs / never completes",
+        "cause": "Backend not flushing properly.",
+        "fix_snippet": "Express: res.write() + res.flushHeaders() at start. Bun / Next.js streaming responses handle this natively."
+      },
+      {
+        "error_text": "Partial JSON parse failures",
+        "cause": "SSE event split across chunks.",
+        "fix_snippet": "Buffer incomplete lines; the buffer.pop() pattern in the code keeps the last partial line for next iteration."
+      },
+      {
+        "error_text": "CORS errors",
+        "cause": "Frontend on different origin.",
+        "fix_snippet": "Backend: Access-Control-Allow-Origin: <your-frontend>. Or proxy backend through Next.js / Vite dev server."
+      },
+      {
+        "error_text": "Multiple connections per click",
+        "cause": "useEffect cleanup missing.",
+        "fix_snippet": "Track AbortController in ref; abort on unmount or new send. Pattern in code handles this with abortRef."
+      }
+    ],
+    "production_checklist": [
+      "Abort controller for clean unmount.",
+      "Server-side: stream from backend, never expose API key client-side.",
+      "Add rate limiting (per-IP / per-user).",
+      "Set up CORS correctly.",
+      "Handle network errors gracefully (retry / friendly message).",
+      "Test connection drop mid-stream."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "claude-3-5-haiku-20241022"
+      ],
+      "library_versions": [
+        "react==18",
+        "@anthropic-ai/sdk==0.36"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "anthropic",
+      "react"
+    ],
+    "related_glossary_slugs": [
+      "streaming-ui",
+      "server-sent-events"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why raw vs Vercel AI SDK?",
+        "answer": "Raw: minimal deps, full control, learn how streaming works. Vercel AI SDK: less code, more features (tools, generative UI), framework-tied. Use raw for embedding into existing apps; AI SDK for greenfield."
+      },
+      {
+        "question": "SSE format from Anthropic?",
+        "answer": "Anthropic SDK emits events: message_start, content_block_start, content_block_delta (text chunks), content_block_stop, message_stop. Parse content_block_delta.delta.text to accumulate."
+      },
+      {
+        "question": "Browser SSE alternatives?",
+        "answer": "EventSource API works but is GET-only. For POST with streaming, use fetch + ReadableStream (what this code does). Or use WebSockets for bidirectional."
+      },
+      {
+        "question": "Mobile React Native?",
+        "answer": "Same fetch + ReadableStream pattern works in RN with polyfills. Or use the AI SDK's react-native adapter for smoother experience."
+      }
+    ],
+    "github_url": "https://github.com/anthropics/anthropic-sdk-typescript",
+    "meta_title": "React Chat With Anthropic Streaming Starter",
+    "meta_description": "Pure React chat: fetch + ReadableStream + SSE parsing. Direct Anthropic streaming. Tiny dep footprint, embed in any React app."
+  },
+  {
+    "slug": "vue-pinia-llm-chat-store",
+    "title": "Vue 3 + Pinia LLM Chat Store",
+    "tldr": "Vue 3 with Composition API + Pinia store for chat state. Provider-agnostic (OpenAI / Anthropic). Streaming via fetch + ReadableStream. Production-grade Vue chat.",
+    "category": "frontend",
+    "language": "typescript",
+    "framework": "Vue 3 + Pinia",
+    "tags": [
+      "vue",
+      "pinia",
+      "chat",
+      "composition-api"
+    ],
+    "best_for_tags": [
+      "vue-stack",
+      "nuxt-apps",
+      "ts-strict"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Vue 3 / Nuxt 3 app adding LLM chat. Pinia store manages messages + streaming state. Pattern works in any Vue context \u2014 full app, micro-frontend, embedded widget.",
+    "when_not_to_use": "Skip for vanilla JS (use raw fetch). Skip for Vue 2 (Composition API patterns won't translate cleanly). Skip for non-streaming workloads.",
+    "quick_start": "npm i pinia vue@3 && code .",
+    "full_code": "// Vue 3 + Pinia chat store with streaming\n\n// =============== stores/chat.ts ===============\nimport { defineStore } from \"pinia\";\nimport { ref, computed } from \"vue\";\n\n\ninterface Message {\n  id: string;\n  role: \"user\" | \"assistant\" | \"system\";\n  content: string;\n}\n\n\nexport const useChatStore = defineStore(\"chat\", () => {\n  // ----- STATE -----\n  const messages = ref<Message[]>([]);\n  const isStreaming = ref(false);\n  const error = ref<string | null>(null);\n  const abortController = ref<AbortController | null>(null);\n\n\n  // ----- GETTERS -----\n  const hasMessages = computed(() => messages.value.length > 0);\n  const lastMessage = computed(() => messages.value[messages.value.length - 1]);\n\n\n  // ----- ACTIONS -----\n\n  function addMessage(role: Message[\"role\"], content: string) {\n    messages.value.push({\n      id: crypto.randomUUID(),\n      role,\n      content,\n    });\n  }\n\n\n  function appendToLast(text: string) {\n    const last = messages.value[messages.value.length - 1];\n    if (last) last.content += text;\n  }\n\n\n  function clear() {\n    messages.value = [];\n    error.value = null;\n  }\n\n\n  function stop() {\n    abortController.value?.abort();\n    abortController.value = null;\n    isStreaming.value = false;\n  }\n\n\n  async function send(userText: string, options: { endpoint?: string; system?: string } = {}) {\n    if (isStreaming.value || !userText.trim()) return;\n\n    addMessage(\"user\", userText);\n    addMessage(\"assistant\", \"\"); // placeholder for streaming\n    isStreaming.value = true;\n    error.value = null;\n    abortController.value = new AbortController();\n\n    try {\n      const apiMessages = options.system\n        ? [{ role: \"system\", content: options.system }, ...messages.value.slice(0, -1)]\n        : messages.value.slice(0, -1);\n\n      const response = await fetch(options.endpoint || \"/api/chat\", {\n        method: \"POST\",\n        headers: { \"Content-Type\": \"application/json\" },\n        body: JSON.stringify({ messages: apiMessages }),\n        signal: abortController.value.signal,\n      });\n\n      if (!response.ok || !response.body) {\n        throw new Error(`HTTP ${response.status}`);\n      }\n\n      const reader = response.body.getReader();\n      const decoder = new TextDecoder();\n      let buffer = \"\";\n\n      while (true) {\n        const { value, done } = await reader.read();\n        if (done) break;\n        buffer += decoder.decode(value, { stream: true });\n\n        const lines = buffer.split(\"\\n\\n\");\n        buffer = lines.pop() || \"\";\n        for (const line of lines) {\n          if (!line.startsWith(\"data:\")) continue;\n          const payload = line.slice(5).trim();\n          if (payload === \"[DONE]\") break;\n          try {\n            const event = JSON.parse(payload);\n            // Adapt to your backend's stream format\n            const delta = event.choices?.[0]?.delta?.content || event.delta?.text;\n            if (delta) appendToLast(delta);\n          } catch {}\n        }\n      }\n    } catch (err: any) {\n      if (err.name !== \"AbortError\") {\n        error.value = err.message;\n        appendToLast(`\\n\\n[Error: ${err.message}]`);\n      }\n    } finally {\n      isStreaming.value = false;\n      abortController.value = null;\n    }\n  }\n\n\n  return {\n    messages, isStreaming, error,\n    hasMessages, lastMessage,\n    addMessage, clear, stop, send,\n  };\n});\n\n\n// =============== components/ChatView.vue ===============\nconst TEMPLATE = `<template>\n  <div class=\"flex flex-col h-screen max-w-2xl mx-auto p-4\">\n    <div ref=\"scrollEl\" class=\"flex-1 overflow-y-auto space-y-3 mb-4\">\n      <div v-for=\"m in store.messages\" :key=\"m.id\"\n           :class=\"m.role === 'user' ? 'text-right' : 'text-left'\">\n        <div :class=\"['inline-block p-3 rounded-lg max-w-prose',\n                      m.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-100']\">\n          <pre class=\"whitespace-pre-wrap font-sans\">{{ m.content || '...' }}</pre>\n        </div>\n      </div>\n    </div>\n\n    <div v-if=\"store.error\" class=\"text-red-600 text-sm mb-2\">{{ store.error }}</div>\n\n    <div class=\"flex gap-2\">\n      <input v-model=\"input\"\n             @keydown.enter=\"onSend\"\n             :disabled=\"store.isStreaming\"\n             placeholder=\"Ask anything...\"\n             class=\"flex-1 p-3 border rounded\" />\n      <button v-if=\"store.isStreaming\" @click=\"store.stop()\"\n              class=\"px-4 bg-red-500 text-white rounded\">Stop</button>\n      <button v-else @click=\"onSend\" :disabled=\"!input\"\n              class=\"px-4 bg-blue-500 text-white rounded disabled:opacity-50\">\n        Send\n      </button>\n      <button @click=\"store.clear()\" class=\"px-3 text-gray-500\">Clear</button>\n    </div>\n  </div>\n</template>\n\n<script setup lang=\"ts\">\nimport { ref, watch, nextTick } from 'vue';\nimport { useChatStore } from '../stores/chat';\n\nconst store = useChatStore();\nconst input = ref('');\nconst scrollEl = ref<HTMLElement | null>(null);\n\nwatch(() => store.messages.length, async () => {\n  await nextTick();\n  scrollEl.value?.scrollTo({ top: scrollEl.value.scrollHeight, behavior: 'smooth' });\n});\n\nfunction onSend() {\n  const text = input.value;\n  input.value = '';\n  store.send(text);\n}\n</script>`;\n",
+    "dependencies": [
+      {
+        "name": "vue",
+        "version": ">=3.4",
+        "purpose": "Vue 3"
+      },
+      {
+        "name": "pinia",
+        "version": ">=2.2",
+        "purpose": "State management"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "npm create vue@latest my-chat (TypeScript + Pinia)",
+      "Save stores/chat.ts + components/ChatView.vue",
+      "Add backend route streaming SSE",
+      "Import ChatView into App.vue",
+      "npm run dev"
+    ],
+    "variations": [
+      {
+        "label": "Nuxt 3 with server route",
+        "description": "Use Nuxt's nitro server.",
+        "code_snippet": "// server/api/chat.post.ts: defineEventHandler with sendStream() for SSE"
+      },
+      {
+        "label": "Persistent state with VueUse",
+        "description": "Save to localStorage.",
+        "code_snippet": "import { useStorage } from '@vueuse/core'; const messages = useStorage('chat-msgs', [])"
+      },
+      {
+        "label": "Multiple chat threads",
+        "description": "Store threads by ID.",
+        "code_snippet": "// Pinia state: threads: Record<string, Message[]>; switch via activeThreadId"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Reactivity lost on append",
+        "cause": "Modifying nested object incorrectly.",
+        "fix_snippet": "Use last.content += text directly on the array element (Vue 3 tracks deep). DON'T spread into new objects mid-stream."
+      },
+      {
+        "error_text": "Pinia store not auto-imported in Nuxt",
+        "cause": "Missing pinia module.",
+        "fix_snippet": "npm i @pinia/nuxt; add to nuxt.config.ts modules: ['@pinia/nuxt']. Stores then auto-import."
+      },
+      {
+        "error_text": "Scroll lagging behind",
+        "cause": "DOM not updated yet.",
+        "fix_snippet": "Use nextTick() after state change, BEFORE scrolling. Pattern in template handles this."
+      },
+      {
+        "error_text": "CORS preflight",
+        "cause": "Backend on different origin.",
+        "fix_snippet": "Backend: Access-Control-Allow-* headers. Or use Vite proxy in development; reverse proxy in prod."
+      }
+    ],
+    "production_checklist": [
+      "Use Pinia store for chat state (single source of truth).",
+      "Abort controller for clean unmount.",
+      "Persist messages to localStorage / backend for resilience.",
+      "Add rate limiting on backend (per-user / per-IP).",
+      "Validate user input client-side + server-side.",
+      "Use Vue's <script setup> + TypeScript strict mode."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "vue==3.4",
+        "pinia==2.2"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "vue",
+      "pinia"
+    ],
+    "related_glossary_slugs": [
+      "composition-api",
+      "state-management"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Pinia vs Vuex?",
+        "answer": "Pinia: Composition API native, TypeScript-friendly, simpler. Vuex: older, Options API era. Pinia is the official recommendation for Vue 3."
+      },
+      {
+        "question": "Vue AI SDK?",
+        "answer": "Vercel's AI SDK has a Vue adapter (useChat for Vue). Easier than rolling your own; this starter is for when you want full control."
+      },
+      {
+        "question": "Nuxt 3 specifics?",
+        "answer": "Server routes via /server/api. Use sendStream() in defineEventHandler for SSE. Auto-imports of components. Pinia auto-imports with @pinia/nuxt."
+      },
+      {
+        "question": "Performance?",
+        "answer": "Vue 3 reactivity is fast. Pinia adds minimal overhead. For 1k+ message threads, virtualize the list (vue-virtual-scroller)."
+      }
+    ],
+    "github_url": "https://github.com/vuejs/pinia",
+    "meta_title": "Vue 3 + Pinia LLM Chat Store Starter",
+    "meta_description": "Vue 3 chat with Pinia store: streaming, abort control, persistent state, Nuxt 3 ready. Production-grade Vue LLM frontend."
   },
   {
     "slug": "openai-function-calling-parallel",
