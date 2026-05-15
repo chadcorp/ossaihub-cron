@@ -57,14 +57,35 @@ def load_legacy() -> list[dict]:
     return json.loads(LEGACY_PATH.read_text(encoding="utf-8"))
 
 
+def is_thick(r: dict) -> bool:
+    """v2 depth = 3+ use_cases AND 3+ failure_modes AND 2+ faq AND 2+ variations.
+
+    Records that don't meet this bar are considered legacy thin and DROPPED from merge.
+    This is the quality gate that prevents resurrected legacy from drifting into the public site.
+    """
+    return (
+        len(r.get("use_cases") or []) >= 3
+        and len(r.get("failure_modes") or []) >= 3
+        and len(r.get("faq") or []) >= 2
+        and len(r.get("variations") or []) >= 2
+    )
+
+
 def merge(authored: list[dict], legacy: list[dict]) -> list[dict]:
-    """Authored wins over legacy by slug; legacy slugs without authored version pass through."""
+    """Authored wins over legacy by slug; legacy slugs without authored version pass through
+    ONLY IF they pass the thickness quality gate."""
     authored_slugs = {r["slug"] for r in authored if r.get("slug")}
     out = list(authored)
+    skipped_thin = 0
     for r in legacy:
         if r.get("slug") in authored_slugs:
             continue
+        if not is_thick(r):
+            skipped_thin += 1
+            continue
         out.append(r)
+    if skipped_thin:
+        print(f"  filtered {skipped_thin} legacy thin records (failed quality gate)")
     return out
 
 

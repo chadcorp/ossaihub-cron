@@ -415,7 +415,7 @@ print(result)
         "title": "Fly.io Edge LLM Deployment",
         "tldr": "Fly.io: deploy your LLM app to 30+ regions with one config. Anycast routing puts users on the nearest edge. Good for global apps where latency-to-LLM-API is a factor.",
         "category": "deployment",
-        "language": "toml",
+        "language": "bash",
         "framework": "Fly.io",
         "tags": ["fly-io", "edge", "global", "deployment"],
         "best_for_tags": ["global-apps", "low-latency", "indie-developers"],

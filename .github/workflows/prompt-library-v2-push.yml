@@ -52,8 +52,8 @@ jobs:
         env:
           API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}
           DRY_RUN: ${{ github.event.inputs.dry_run }}
-          INTER_BATCH_MS: "25000"   # 25s between chunks to stay under Cloudflare rate limit
-          CHUNK: "8"                # smaller chunks reduce CF flagging
+          INTER_BATCH_MS: "15000"   # 15s between chunks — smaller chunks mean we can sleep less between them
+          CHUNK: "4"                # 4-record chunks: smallest stable unit to stay well under 45-min job timeout
         run: |
           python prompt-library-seed/v2-scripts/push_v2.py \
             --file prompt-library-seed/rebuilt-v2.json \
