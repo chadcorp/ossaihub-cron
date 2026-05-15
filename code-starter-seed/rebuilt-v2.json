@@ -3619,6 +3619,570 @@
     "meta_description": "Multilingual RAG with Cohere: embed-multilingual-v3 + rerank-multilingual-v3. Cross-lingual retrieval (query EN, find FR/ZH content)."
   },
   {
+    "slug": "matryoshka-embeddings-truncation",
+    "title": "Matryoshka Embeddings (Truncate For Speed + Storage)",
+    "tldr": "Matryoshka embeddings (e.g., text-embedding-3-large) let you TRUNCATE the vector to fewer dimensions without re-embedding. 1536 \u2192 512 dims saves 3x storage + RAM with minor recall loss.",
+    "category": "embeddings",
+    "language": "python",
+    "framework": "OpenAI / sentence-transformers",
+    "tags": [
+      "matryoshka",
+      "embeddings",
+      "dimension-reduction",
+      "openai"
+    ],
+    "best_for_tags": [
+      "storage-cost",
+      "ram-constraint",
+      "large-corpora"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Large-scale embedding storage. Truncate matryoshka embeddings to fewer dimensions for cheaper storage / faster ANN. The model was trained for this \u2014 recall stays close.",
+    "when_not_to_use": "Skip for non-matryoshka models (truncation destroys recall). Skip when storage / RAM isn't a constraint. Skip if you need every last % of recall.",
+    "quick_start": "pip install openai numpy && python matryoshka.py",
+    "full_code": "\"\"\"Matryoshka embeddings: truncate-then-normalize for storage savings.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport numpy as np\nfrom openai import OpenAI\n\n\nclient = OpenAI(api_key=os.environ[\"OPENAI_API_KEY\"])\n\n\ndef embed_matryoshka(texts: list[str], target_dim: int = 512,\n                     model: str = \"text-embedding-3-large\") -> np.ndarray:\n    \"\"\"Get embeddings; truncate to target_dim (server-side, normalized).\"\"\"\n    response = client.embeddings.create(\n        model=model,\n        input=texts,\n        dimensions=target_dim,\n    )\n    return np.array([e.embedding for e in response.data])\n\n\ndef sweep_dimensions(texts: list[str], queries: list[str]):\n    \"\"\"Compare recall@5 across truncated dims vs full-dim baseline.\"\"\"\n    full_dim = embed_matryoshka(texts, target_dim=3072)\n    full_queries = embed_matryoshka(queries, target_dim=3072)\n\n    full_sims = full_queries @ full_dim.T\n    ground_truth_per_q = [np.argsort(-row)[:5].tolist() for row in full_sims]\n\n    for dim in [256, 512, 768, 1024, 1536, 3072]:\n        trunc_corpus = embed_matryoshka(texts, target_dim=dim)\n        trunc_queries = embed_matryoshka(queries, target_dim=dim)\n        trunc_sims = trunc_queries @ trunc_corpus.T\n\n        recalls = []\n        for i, gt in enumerate(ground_truth_per_q):\n            top_k = np.argsort(-trunc_sims[i])[:5].tolist()\n            recalls.append(len(set(top_k) & set(gt)) / 5)\n\n        storage_kb = (len(texts) * dim * 4) / 1024\n        print(f\"dim={dim:>4} | recall@5 vs 3072: {np.mean(recalls):.3f} | storage: {storage_kb:.1f} KB\")\n\n\ndef hierarchical_search(query: str, texts: list[str], k_initial: int = 50, k_final: int = 10):\n    \"\"\"Two-pass: small-dim for initial recall, full-dim for final precision.\"\"\"\n    small_corpus = embed_matryoshka(texts, target_dim=256)\n    small_query = embed_matryoshka([query], target_dim=256)\n    small_sims = (small_query @ small_corpus.T).flatten()\n    candidates_idx = np.argsort(-small_sims)[:k_initial]\n\n    candidate_texts = [texts[i] for i in candidates_idx]\n    full_corpus = embed_matryoshka(candidate_texts, target_dim=3072)\n    full_query = embed_matryoshka([query], target_dim=3072)\n    full_sims = (full_query @ full_corpus.T).flatten()\n    final_local = np.argsort(-full_sims)[:k_final]\n    return [(candidates_idx[i], full_sims[i]) for i in final_local]\n\n\nif __name__ == \"__main__\":\n    corpus = [\n        \"Rate limiting prevents API abuse.\",\n        \"Caching reduces latency by storing responses.\",\n        \"OAuth 2.0 is the standard for authentication flows.\",\n        \"PostgreSQL is a relational database.\",\n        \"Vector databases store high-dimensional embeddings.\",\n    ]\n    queries = [\"How do I limit requests?\", \"Speed up my API\"]\n    sweep_dimensions(corpus, queries)\n\n    print(\"\\nHierarchical search:\")\n    for idx, sim in hierarchical_search(\"speed up my API\", corpus, k_final=3):\n        print(f\"  {sim:.3f}: {corpus[idx][:60]}\")\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "OpenAI embedding API"
+      },
+      {
+        "name": "numpy",
+        "version": ">=1.26",
+        "purpose": "Vector math"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI key",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai numpy",
+      "export OPENAI_API_KEY=sk-...",
+      "python matryoshka.py",
+      "Run sweep_dimensions on your corpus to find the right truncation"
+    ],
+    "variations": [
+      {
+        "label": "Local matryoshka (Nomic-embed)",
+        "description": "OSS model with matryoshka support.",
+        "code_snippet": "from sentence_transformers import SentenceTransformer\\nmodel = SentenceTransformer('nomic-ai/nomic-embed-text-v1.5', truncate_dim=512)"
+      },
+      {
+        "label": "PCA on non-matryoshka",
+        "description": "Approximate dimension reduction for non-matryoshka models.",
+        "code_snippet": "# Train PCA on your corpus; apply to all embeds. Lossy but works for any model."
+      },
+      {
+        "label": "Quantize after truncate",
+        "description": "Combine for max compression.",
+        "code_snippet": "# Truncate to 512, then quantize to int8 (1/4 storage). Use FAISS IndexBinaryFlat or pgvector halfvec."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Recall drops sharply at low dim",
+        "cause": "Non-matryoshka model.",
+        "fix_snippet": "Truncation only works for models TRAINED with matryoshka loss. text-embedding-3, nomic-embed-text-v1.5, mxbai-embed-large. Most older models DON'T."
+      },
+      {
+        "error_text": "Vectors not L2-normalized after truncation",
+        "cause": "Forgot to renormalize.",
+        "fix_snippet": "OpenAI handles via 'dimensions' parameter. Manual: emb = emb[:dim]; emb /= np.linalg.norm(emb)."
+      },
+      {
+        "error_text": "Re-ranker doesn't beat single-pass",
+        "cause": "k_initial too small.",
+        "fix_snippet": "Set k_initial high enough for recall (typically 5-10x final k)."
+      },
+      {
+        "error_text": "Cost not lower as expected",
+        "cause": "OpenAI charges per token, not dim.",
+        "fix_snippet": "Matryoshka saves STORAGE/RAM/query-time, not embedding cost. Cost is fixed per token."
+      }
+    ],
+    "production_checklist": [
+      "Verify your model supports matryoshka before truncating.",
+      "Run recall@k sweep on YOUR data; don't trust benchmarks.",
+      "Re-embed at full dim if you change truncation target.",
+      "Combine with int8 quantization for max compression.",
+      "Use hierarchical search for biggest wins on large corpora.",
+      "Document target_dim in your vector schema / model card."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "text-embedding-3-large"
+      ],
+      "library_versions": [
+        "openai==1.51"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "openai",
+      "nomic-embed"
+    ],
+    "related_glossary_slugs": [
+      "matryoshka-embeddings",
+      "dimension-reduction"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How much recall is lost?",
+        "answer": "For matryoshka models, 1536\u2192512 typically loses 2-5pp recall@10. 1536\u2192256 can lose 10-15pp. Sweep YOUR data to find acceptable tradeoff."
+      },
+      {
+        "question": "Matryoshka vs binary quantization?",
+        "answer": "Matryoshka: trade DIMS for accuracy. Binary: trade PRECISION (1 bit/dim) for storage. Combine: truncate then binary-quantize for 32x compression."
+      },
+      {
+        "question": "When is hierarchical search worth it?",
+        "answer": "Large corpora (>1M vectors) where full-dim search is expensive. Small-dim ANN narrows fast; full-dim re-ranks for precision. ~10x speedup typical."
+      },
+      {
+        "question": "Which models support matryoshka?",
+        "answer": "OpenAI text-embedding-3 family, nomic-embed-text-v1.5, mxbai-embed-large-v1, snowflake-arctic-embed-l. Check model card."
+      }
+    ],
+    "github_url": "https://github.com/openai/openai-python",
+    "meta_title": "Matryoshka Embeddings Truncation Starter",
+    "meta_description": "Truncate matryoshka embeddings (text-embedding-3) for 3x storage savings: dimension-sweep recall test + hierarchical search."
+  },
+  {
+    "slug": "batched-async-embeddings-pipeline",
+    "title": "Batched Async Embeddings Pipeline",
+    "tldr": "Embed 100k+ documents efficiently: batch by tokens, parallelize with asyncio, retry transient errors, checkpoint progress. Pattern handles real-world corpora.",
+    "category": "embeddings",
+    "language": "python",
+    "framework": "OpenAI + asyncio",
+    "tags": [
+      "embeddings",
+      "batch",
+      "async",
+      "ingestion"
+    ],
+    "best_for_tags": [
+      "large-corpora",
+      "ingestion-pipelines",
+      "data-engineering"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Embedding hundreds of thousands or millions of documents. Sequential calls take days; this pattern does it in hours. Includes checkpointing so failures don't lose progress.",
+    "when_not_to_use": "Skip for small corpora (<10k docs; sync is fine). Skip if you can use OpenAI Batch API for cheaper non-real-time embedding.",
+    "quick_start": "pip install openai tiktoken tqdm && python batch_embed.py --input docs.jsonl",
+    "full_code": "\"\"\"Batched async embedding pipeline with checkpointing.\"\"\"\nfrom __future__ import annotations\n\nimport argparse\nimport asyncio\nimport json\nimport os\nfrom pathlib import Path\n\nimport numpy as np\nimport tiktoken\nfrom openai import AsyncOpenAI\nfrom tqdm import tqdm\n\n\nclient = AsyncOpenAI(api_key=os.environ[\"OPENAI_API_KEY\"])\nencoder = tiktoken.encoding_for_model(\"text-embedding-3-small\")\n\nMAX_TOKENS_PER_BATCH = 8000\nMAX_CONCURRENT_REQUESTS = 10\nMAX_DOC_TOKENS = 8000\n\n\ndef batch_by_tokens(docs: list[dict], max_tokens: int = MAX_TOKENS_PER_BATCH):\n    \"\"\"Group docs into batches each under max_tokens.\"\"\"\n    batches: list[list[dict]] = []\n    current: list[dict] = []\n    current_tokens = 0\n    for doc in docs:\n        n = len(encoder.encode(doc[\"text\"]))\n        if n > MAX_DOC_TOKENS:\n            doc[\"text\"] = encoder.decode(encoder.encode(doc[\"text\"])[:MAX_DOC_TOKENS])\n            n = MAX_DOC_TOKENS\n        if current_tokens + n > max_tokens:\n            if current:\n                batches.append(current)\n            current, current_tokens = [], 0\n        current.append(doc)\n        current_tokens += n\n    if current:\n        batches.append(current)\n    return batches\n\n\nasync def embed_batch(batch: list[dict], semaphore: asyncio.Semaphore,\n                      model: str = \"text-embedding-3-small\") -> list[dict]:\n    async with semaphore:\n        for attempt in range(5):\n            try:\n                response = await client.embeddings.create(\n                    model=model,\n                    input=[d[\"text\"] for d in batch],\n                )\n                for d, e in zip(batch, response.data):\n                    d[\"embedding\"] = e.embedding\n                return batch\n            except Exception as e:\n                if attempt == 4:\n                    print(f\"FAIL batch (ids={[d['id'] for d in batch]}): {e}\")\n                    for d in batch:\n                        d[\"embedding\"] = None\n                    return batch\n                await asyncio.sleep(2 ** attempt)\n\n\ndef load_checkpoint(output_path: Path) -> set[str]:\n    if not output_path.exists():\n        return set()\n    with output_path.open() as f:\n        return {json.loads(line)[\"id\"] for line in f}\n\n\ndef append_checkpoint(output_path: Path, batch: list[dict]):\n    with output_path.open(\"a\") as f:\n        for d in batch:\n            f.write(json.dumps(d) + \"\\n\")\n\n\nasync def run(input_path: Path, output_path: Path):\n    docs = [json.loads(line) for line in input_path.read_text().splitlines() if line.strip()]\n    done = load_checkpoint(output_path)\n    todo = [d for d in docs if d[\"id\"] not in done]\n    print(f\"Total: {len(docs)}, done: {len(done)}, todo: {len(todo)}\")\n\n    batches = batch_by_tokens(todo)\n    semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)\n    pbar = tqdm(total=len(todo))\n    tasks = [embed_batch(batch, semaphore) for batch in batches]\n    for task in asyncio.as_completed(tasks):\n        batch = await task\n        append_checkpoint(output_path, batch)\n        pbar.update(len(batch))\n    pbar.close()\n\n\ndef to_npz(output_path: Path, npz_path: Path):\n    embeddings, ids = [], []\n    with output_path.open() as f:\n        for line in f:\n            d = json.loads(line)\n            if d.get(\"embedding\"):\n                ids.append(d[\"id\"])\n                embeddings.append(d[\"embedding\"])\n    np.savez(npz_path, embeddings=np.array(embeddings), ids=np.array(ids))\n    print(f\"Saved {npz_path}: {len(ids)} embeddings\")\n\n\nif __name__ == \"__main__\":\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--input\", required=True)\n    parser.add_argument(\"--output\", default=\"embeddings.jsonl\")\n    parser.add_argument(\"--npz\", default=\"embeddings.npz\")\n    args = parser.parse_args()\n    asyncio.run(run(Path(args.input), Path(args.output)))\n    to_npz(Path(args.output), Path(args.npz))\n",
+    "dependencies": [
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Async client"
+      },
+      {
+        "name": "tiktoken",
+        "version": ">=0.7",
+        "purpose": "Token counting"
+      },
+      {
+        "name": "numpy",
+        "version": ">=1.26",
+        "purpose": "Array packing"
+      },
+      {
+        "name": "tqdm",
+        "version": ">=4.66",
+        "purpose": "Progress bar"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "OpenAI",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install openai tiktoken numpy tqdm",
+      "Prepare JSONL: {id, text} per line",
+      "python batch_embed.py --input docs.jsonl --output embeddings.jsonl --npz embeddings.npz",
+      "Resume on crash: re-run; skips already-embedded IDs"
+    ],
+    "variations": [
+      {
+        "label": "OpenAI Batch API (50% cheaper)",
+        "description": "Non-real-time, batched async API.",
+        "code_snippet": "# Upload JSONL via client.files.create; create batch via client.batches.create(endpoint='/v1/embeddings'). 24h SLA. Half cost."
+      },
+      {
+        "label": "Multi-provider failover",
+        "description": "Fall back between embedding providers.",
+        "code_snippet": "# Try OpenAI first; if 429s, switch to Voyage/Cohere. Useful for huge ingest jobs."
+      },
+      {
+        "label": "Streaming to vector DB",
+        "description": "Insert as you go.",
+        "code_snippet": "# In append_checkpoint: also call vector_db.upsert(batch). Data is queryable as soon as embedded."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "RateLimit 429 even with retry",
+        "cause": "Per-minute / per-day quota.",
+        "fix_snippet": "Reduce MAX_CONCURRENT_REQUESTS. Watch retry-after headers. Request quota increase via OpenAI dashboard."
+      },
+      {
+        "error_text": "Embedding pipeline hangs",
+        "cause": "Asyncio deadlock or stuck connection.",
+        "fix_snippet": "Add timeout to embed_batch: asyncio.wait_for(... , timeout=60). Logs identify which batch is hanging."
+      },
+      {
+        "error_text": "Out of memory on large corpora",
+        "cause": "Loading all docs into memory.",
+        "fix_snippet": "Stream docs line-by-line. Tasks generated lazily."
+      },
+      {
+        "error_text": "Mismatched IDs vs embeddings on resume",
+        "cause": "Crash mid-batch.",
+        "fix_snippet": "Checkpoint per-batch (atomic file append). Pattern in code handles this."
+      }
+    ],
+    "production_checklist": [
+      "Token-based batching (not count-based).",
+      "Checkpoint after every batch.",
+      "Concurrent requests bounded by semaphore.",
+      "Exponential backoff on transient errors.",
+      "Use Batch API for non-real-time ingest (50% cheaper).",
+      "Pack NPZ for fast load downstream."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "text-embedding-3-small"
+      ],
+      "library_versions": [
+        "openai==1.51",
+        "tiktoken==0.7"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "openai",
+      "tiktoken"
+    ],
+    "related_glossary_slugs": [
+      "embeddings",
+      "batch-processing"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Real-time vs Batch API?",
+        "answer": "Real-time (this code): seconds; full price. Batch API: 24-hour SLA; 50% off. Use Batch for ingest, real-time for query embeddings."
+      },
+      {
+        "question": "Why batch by tokens, not count?",
+        "answer": "Token limits are per-request, not per-document. 50 long docs > 8k tokens fails; 200 short docs < 8k succeeds. Batch by tokens for max throughput."
+      },
+      {
+        "question": "How many concurrent requests?",
+        "answer": "OpenAI Tier 4: 30 concurrent works well. Lower tiers: 5-10. Watch for 429s; reduce until stable."
+      },
+      {
+        "question": "Checkpointing \u2014 JSONL or DB?",
+        "answer": "JSONL is simple, append-only safe. NPZ at end for fast loading. DB checkpoint is overkill for typical ingest."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "Batched Async Embeddings Pipeline Starter",
+    "meta_description": "Embed 100k+ docs efficiently: token-based batching, async parallelism, retry, checkpointing for crash recovery, NPZ output."
+  },
+  {
+    "slug": "embedding-quality-evaluation",
+    "title": "Embedding Quality Evaluation (BEIR-Style)",
+    "tldr": "Evaluate embedding models on YOUR data: build a (query, relevant_doc) pairs set, measure recall@k / MRR / nDCG. Pick the model that wins on YOUR domain, not arXiv benchmarks.",
+    "category": "embeddings",
+    "language": "python",
+    "framework": "Custom + sentence-transformers",
+    "tags": [
+      "embedding-eval",
+      "recall",
+      "mrr",
+      "ndcg"
+    ],
+    "best_for_tags": [
+      "model-selection",
+      "ml-engineers",
+      "rag-quality"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Choosing between embedding models for YOUR corpus. arXiv benchmarks (MTEB) are useful starting points but not ground truth for YOUR domain. Build a 100-200 pair eval set.",
+    "when_not_to_use": "Skip for one-off experiments (just pick the popular model). Skip without ANY labeled data (need at least 50 (query, doc) pairs).",
+    "quick_start": "pip install sentence-transformers numpy && python embed_eval.py",
+    "full_code": "\"\"\"Evaluate multiple embedding models on YOUR (query, relevant-doc) pairs.\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport math\nfrom pathlib import Path\n\nimport numpy as np\nfrom sentence_transformers import SentenceTransformer\n\n\n# ----------------- EVAL SET FORMAT -----------------\n\n# Each line in eval_set.jsonl is:\n#   {\"query\": \"how to limit api requests\", \"relevant_doc_ids\": [\"doc_3\", \"doc_7\"]}\n# Corpus is a separate JSONL: {\"id\": \"doc_3\", \"text\": \"...\"}\n\n\n# ----------------- LOAD -----------------\n\ndef load_corpus(path: Path) -> tuple[list[str], list[str]]:\n    \"\"\"Returns (ids, texts) in parallel arrays.\"\"\"\n    ids, texts = [], []\n    with path.open() as f:\n        for line in f:\n            d = json.loads(line)\n            ids.append(d[\"id\"])\n            texts.append(d[\"text\"])\n    return ids, texts\n\n\ndef load_eval_set(path: Path) -> list[dict]:\n    with path.open() as f:\n        return [json.loads(line) for line in f]\n\n\n# ----------------- METRICS -----------------\n\ndef recall_at_k(retrieved_ids: list[str], relevant_ids: set[str], k: int) -> float:\n    top_k = retrieved_ids[:k]\n    return len(set(top_k) & relevant_ids) / max(len(relevant_ids), 1)\n\n\ndef mrr(retrieved_ids: list[str], relevant_ids: set[str]) -> float:\n    \"\"\"Mean Reciprocal Rank: 1 / position-of-first-relevant.\"\"\"\n    for i, rid in enumerate(retrieved_ids):\n        if rid in relevant_ids:\n            return 1.0 / (i + 1)\n    return 0.0\n\n\ndef ndcg_at_k(retrieved_ids: list[str], relevant_ids: set[str], k: int) -> float:\n    \"\"\"Normalized Discounted Cumulative Gain.\"\"\"\n    dcg = sum(\n        (1 if rid in relevant_ids else 0) / math.log2(i + 2)\n        for i, rid in enumerate(retrieved_ids[:k])\n    )\n    ideal_dcg = sum(1 / math.log2(i + 2) for i in range(min(len(relevant_ids), k)))\n    return dcg / ideal_dcg if ideal_dcg else 0.0\n\n\n# ----------------- EVAL ONE MODEL -----------------\n\ndef evaluate_model(model_name: str, corpus_ids: list[str], corpus_texts: list[str],\n                   eval_set: list[dict]) -> dict:\n    print(f\"\\nEvaluating {model_name}...\")\n    model = SentenceTransformer(model_name, trust_remote_code=True)\n\n    corpus_emb = model.encode(corpus_texts, show_progress_bar=True, convert_to_numpy=True,\n                              normalize_embeddings=True)\n    query_emb = model.encode([e[\"query\"] for e in eval_set], show_progress_bar=True,\n                             convert_to_numpy=True, normalize_embeddings=True)\n\n    metrics = {\"recall@1\": [], \"recall@5\": [], \"recall@10\": [], \"mrr\": [], \"ndcg@10\": []}\n    for i, ex in enumerate(eval_set):\n        sims = corpus_emb @ query_emb[i]\n        ranked = np.argsort(-sims)\n        ranked_ids = [corpus_ids[j] for j in ranked]\n        relevant = set(ex[\"relevant_doc_ids\"])\n\n        metrics[\"recall@1\"].append(recall_at_k(ranked_ids, relevant, 1))\n        metrics[\"recall@5\"].append(recall_at_k(ranked_ids, relevant, 5))\n        metrics[\"recall@10\"].append(recall_at_k(ranked_ids, relevant, 10))\n        metrics[\"mrr\"].append(mrr(ranked_ids, relevant))\n        metrics[\"ndcg@10\"].append(ndcg_at_k(ranked_ids, relevant, 10))\n\n    return {k: float(np.mean(v)) for k, v in metrics.items()}\n\n\n# ----------------- COMPARE -----------------\n\ndef compare_models(corpus_path: Path, eval_set_path: Path, models: list[str]):\n    corpus_ids, corpus_texts = load_corpus(corpus_path)\n    eval_set = load_eval_set(eval_set_path)\n    print(f\"Corpus: {len(corpus_ids)} docs; Eval: {len(eval_set)} queries\")\n\n    results = {}\n    for m in models:\n        results[m] = evaluate_model(m, corpus_ids, corpus_texts, eval_set)\n\n    # Pretty-print\n    print(f\"\\n{'Model':<50} {'R@1':>6} {'R@5':>6} {'R@10':>6} {'MRR':>6} {'nDCG@10':>8}\")\n    for m, scores in results.items():\n        print(f\"{m:<50} {scores['recall@1']:>.3f} {scores['recall@5']:>.3f} \"\n              f\"{scores['recall@10']:>.3f} {scores['mrr']:>.3f} {scores['ndcg@10']:>.3f}\")\n\n\nif __name__ == \"__main__\":\n    compare_models(\n        corpus_path=Path(\"./corpus.jsonl\"),\n        eval_set_path=Path(\"./eval_set.jsonl\"),\n        models=[\n            \"sentence-transformers/all-MiniLM-L6-v2\",\n            \"BAAI/bge-base-en-v1.5\",\n            \"BAAI/bge-large-en-v1.5\",\n            \"intfloat/e5-large-v2\",\n            \"mixedbread-ai/mxbai-embed-large-v1\",\n        ],\n    )\n",
+    "dependencies": [
+      {
+        "name": "sentence-transformers",
+        "version": ">=3.0",
+        "purpose": "Run local embedding models"
+      },
+      {
+        "name": "numpy",
+        "version": ">=1.26",
+        "purpose": "Vector math"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "pip install sentence-transformers numpy",
+      "Build eval_set.jsonl: 100-200 (query, relevant_doc_ids) pairs from YOUR domain",
+      "Build corpus.jsonl: all docs as (id, text)",
+      "python embed_eval.py",
+      "Pick winner by R@5 or MRR per your priority"
+    ],
+    "variations": [
+      {
+        "label": "OpenAI / Cohere via API",
+        "description": "Eval API-based models too.",
+        "code_snippet": "# Replace SentenceTransformer with API call (openai.embeddings.create / cohere.embed). Same metric code applies."
+      },
+      {
+        "label": "MTEB benchmark",
+        "description": "Use the standard MTEB suite.",
+        "code_snippet": "# pip install mteb; from mteb import MTEB; MTEB(tasks=['MSMARCO', 'NQ']).run(model)"
+      },
+      {
+        "label": "Cost-vs-quality plot",
+        "description": "Trade quality and cost.",
+        "code_snippet": "# Compute cost-per-query for each model (API: per-token; local: GPU-cost-per-call). Plot R@5 vs cost."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Eval set too small (n<50)",
+        "cause": "Metrics noisy.",
+        "fix_snippet": "Build 100-200 pairs minimum. For statistically meaningful diffs (3pp+), need 200+. Use bootstrap CI."
+      },
+      {
+        "error_text": "Eval set has same examples as training data",
+        "cause": "Embedding model 'sees' eval as training.",
+        "fix_snippet": "Use queries / docs NOT scraped from public web (private docs). Or use the MTEB held-out tasks."
+      },
+      {
+        "error_text": "OOM loading large corpus",
+        "cause": "Encoding all at once.",
+        "fix_snippet": "Stream encoding: batch_size=32 in model.encode. Or chunk corpus into N pieces, encode each."
+      },
+      {
+        "error_text": "Embed model from HF requires trust_remote_code",
+        "cause": "Some models have custom code.",
+        "fix_snippet": "Set trust_remote_code=True in SentenceTransformer init. Review the model's HF page for what code runs."
+      }
+    ],
+    "production_checklist": [
+      "Build eval set from YOUR domain, not public datasets.",
+      "Include hard negatives in eval (similar-but-wrong docs).",
+      "Test multiple metrics: recall@k, MRR, nDCG \u2014 they tell different stories.",
+      "Compare API vs OSS models (cost vs quality).",
+      "Bootstrap CIs \u2014 3pp diff at n=100 is noise; not signal.",
+      "Re-run yearly \u2014 new models come out constantly."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "bge-large-en-v1.5",
+        "mxbai-embed-large-v1"
+      ],
+      "library_versions": [
+        "sentence-transformers==3.0"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "sentence-transformers",
+      "mteb"
+    ],
+    "related_glossary_slugs": [
+      "embedding-evaluation",
+      "mrr"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why not just trust MTEB?",
+        "answer": "MTEB benchmarks GENERAL English. Your domain may be biomedical / legal / code. Models that top MTEB sometimes underperform on niche domains. Build your own eval."
+      },
+      {
+        "question": "How many queries in eval set?",
+        "answer": "100-200 minimum for stable metrics. 500+ for confident model selection. Each query needs at least 1 relevant doc labeled."
+      },
+      {
+        "question": "Hard negatives \u2014 how to find?",
+        "answer": "Use a baseline model to retrieve top-k for each query; label false positives as hard negatives. Or use BM25 high-score-low-relevance docs."
+      },
+      {
+        "question": "Best embedding model right now?",
+        "answer": "For English: bge-large-en-v1.5, mxbai-embed-large, text-embedding-3-large. For multilingual: BGE-M3, Cohere v3 multilingual. Run YOUR eval; trust YOUR data."
+      }
+    ],
+    "github_url": "https://github.com/embeddings-benchmark/mteb",
+    "meta_title": "Embedding Quality Evaluation Starter",
+    "meta_description": "Evaluate embedding models on YOUR data: recall@k / MRR / nDCG metrics. Pick the model that wins on YOUR domain, not arXiv benchmarks."
+  },
+  {
+    "slug": "voyage-ai-domain-specialized-embed",
+    "title": "Voyage AI Domain-Specialized Embeddings",
+    "tldr": "Voyage AI: domain-tuned embedding models (voyage-law, voyage-finance, voyage-code, voyage-3). Outperforms general models on these domains. API-based, drop-in.",
+    "category": "embeddings",
+    "language": "python",
+    "framework": "Voyage AI",
+    "tags": [
+      "voyage",
+      "domain-specialized",
+      "embeddings",
+      "legal-finance-code"
+    ],
+    "best_for_tags": [
+      "legal-tech",
+      "fintech",
+      "code-search"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": false,
+    "when_to_use": "RAG in a SPECIFIC domain (legal, finance, code, multilingual). Voyage models trained on that domain often beat general-purpose embeddings by 5-15pp recall.",
+    "when_not_to_use": "Skip for general-purpose RAG (text-embedding-3 is fine + cheaper). Skip if data-residency matters (Voyage is SaaS).",
+    "quick_start": "pip install voyageai && python voyage_demo.py",
+    "full_code": "\"\"\"Voyage AI embeddings: domain-specialized + general.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport voyageai\nimport numpy as np\n\n\nvo = voyageai.Client(api_key=os.environ[\"VOYAGE_API_KEY\"])\n\n\n# ----------------- AVAILABLE MODELS -----------------\n\nMODELS = {\n    \"general\": \"voyage-3\",                  # default; competitive vs OpenAI\n    \"general-large\": \"voyage-3-large\",       # better quality, higher cost\n    \"code\": \"voyage-code-3\",                 # code retrieval\n    \"law\": \"voyage-law-2\",                   # legal documents\n    \"finance\": \"voyage-finance-2\",           # financial documents\n    \"multilingual\": \"voyage-multilingual-2\", # 25+ languages\n}\n\n\n# ----------------- EMBED DOCUMENTS -----------------\n\ndef embed_docs(texts: list[str], model: str = \"voyage-3\") -> np.ndarray:\n    \"\"\"input_type='document' for indexable content.\"\"\"\n    response = vo.embed(\n        texts=texts,\n        model=model,\n        input_type=\"document\",\n    )\n    return np.array(response.embeddings)\n\n\ndef embed_query(text: str, model: str = \"voyage-3\") -> np.ndarray:\n    \"\"\"input_type='query' for queries.\"\"\"\n    response = vo.embed(\n        texts=[text],\n        model=model,\n        input_type=\"query\",\n    )\n    return np.array(response.embeddings[0])\n\n\n# ----------------- RERANK -----------------\n\ndef rerank(query: str, candidates: list[str], top_k: int = 5,\n           model: str = \"rerank-2\"):\n    \"\"\"Voyage rerank for final-pass precision.\"\"\"\n    result = vo.rerank(\n        query=query,\n        documents=candidates,\n        model=model,\n        top_k=top_k,\n    )\n    return [(r.document, r.relevance_score) for r in result.results]\n\n\n# ----------------- DOMAIN-SPECIFIC PIPELINE -----------------\n\ndef legal_search(query: str, corpus: list[str], k: int = 5):\n    \"\"\"Use voyage-law-2 + rerank-2 for legal documents.\"\"\"\n    corpus_emb = embed_docs(corpus, model=\"voyage-law-2\")\n    q_emb = embed_query(query, model=\"voyage-law-2\")\n    sims = (corpus_emb @ q_emb)\n\n    # Initial top-25\n    top_25_idx = np.argsort(-sims)[:25]\n    candidates = [corpus[i] for i in top_25_idx]\n\n    # Rerank top-5\n    return rerank(query, candidates, top_k=k)\n\n\ndef code_search(query: str, corpus: list[str], k: int = 5):\n    \"\"\"Use voyage-code-3 for code retrieval.\"\"\"\n    corpus_emb = embed_docs(corpus, model=\"voyage-code-3\")\n    q_emb = embed_query(query, model=\"voyage-code-3\")\n    sims = (corpus_emb @ q_emb)\n    return sorted(zip(corpus, sims), key=lambda x: -x[1])[:k]\n\n\n# ----------------- DEMO -----------------\n\nif __name__ == \"__main__\":\n    legal_corpus = [\n        \"Section 230 immunity protects platforms from user content liability.\",\n        \"GDPR Article 17 requires data deletion within 30 days.\",\n        \"PCI-DSS compliance requires encryption at rest for cardholder data.\",\n        \"FERPA limits disclosure of student education records.\",\n    ]\n    print(\"Legal search:\")\n    for doc, score in legal_search(\"what's the deletion timeline under European privacy law?\", legal_corpus, k=2):\n        print(f\"  {score:.3f}: {doc}\")\n",
+    "dependencies": [
+      {
+        "name": "voyageai",
+        "version": ">=0.3",
+        "purpose": "Voyage AI Python SDK"
+      },
+      {
+        "name": "numpy",
+        "version": ">=1.26",
+        "purpose": "Vector math"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "VOYAGE_API_KEY",
+        "required": true,
+        "description": "From dashboard.voyageai.com",
+        "example": "..."
+      }
+    ],
+    "setup_steps": [
+      "Sign up at voyageai.com",
+      "pip install voyageai numpy",
+      "export VOYAGE_API_KEY=...",
+      "python voyage_demo.py"
+    ],
+    "variations": [
+      {
+        "label": "Hybrid: voyage-3 + bm25",
+        "description": "Pair with BM25 for legal/finance.",
+        "code_snippet": "# Combine voyage embeddings with BM25 via RRF; legal terminology often needs keyword match too"
+      },
+      {
+        "label": "Voyage on AWS Bedrock",
+        "description": "Use via Bedrock.",
+        "code_snippet": "# Voyage models available on Bedrock for AWS-native shops; same model IDs"
+      },
+      {
+        "label": "Compare with general models",
+        "description": "Quantify the domain lift.",
+        "code_snippet": "# Run YOUR eval set with voyage-3 vs voyage-law-2; legal-specific often 5-15pp better"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "input_type missing",
+        "cause": "Voyage requires it.",
+        "fix_snippet": "ALWAYS pass input_type='document' or 'query'. Voyage's asymmetric encoder requires the hint."
+      },
+      {
+        "error_text": "Wrong model for domain",
+        "cause": "Using voyage-3 on legal corpus.",
+        "fix_snippet": "Use the SPECIFIC model: voyage-law-2 for legal, voyage-code-3 for code. The lift over general is what you're paying for."
+      },
+      {
+        "error_text": "Cost higher than expected",
+        "cause": "Specialized models cost more.",
+        "fix_snippet": "voyage-law-2 ~$0.12/1M tokens vs $0.10 for general. For 5-15pp lift, usually worth it. Compare on YOUR eval."
+      },
+      {
+        "error_text": "Rate limit hit during ingest",
+        "cause": "Free tier has tight limits.",
+        "fix_snippet": "Pay tier removes; or batch + retry. Voyage docs list current rate limits per tier."
+      }
+    ],
+    "production_checklist": [
+      "Pick the SPECIFIC domain model for your data.",
+      "Set input_type correctly per call.",
+      "Pair with rerank-2 for final-pass precision.",
+      "Benchmark vs general model on YOUR data.",
+      "Pin SDK version.",
+      "Monitor cost per query (specialized > general)."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "voyage-3",
+        "voyage-law-2",
+        "voyage-code-3",
+        "rerank-2"
+      ],
+      "library_versions": [
+        "voyageai==0.3"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "voyage-ai"
+    ],
+    "related_glossary_slugs": [
+      "domain-specialized-embedding",
+      "reranking"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Voyage vs OpenAI vs Cohere?",
+        "answer": "Voyage: domain-specialized leader, slightly higher cost. OpenAI: cheap, broad, slightly behind on specialized. Cohere: multilingual leader. Pick by domain + cost."
+      },
+      {
+        "question": "When does domain-tuning matter?",
+        "answer": "Strongest lift on legal, finance, biomedical, code. General domains (news, blogs): general models are fine. Run YOUR eval \u2014 sometimes the lift is bigger or smaller than expected."
+      },
+      {
+        "question": "Voyage-3 free tier?",
+        "answer": "50M free tokens for new accounts. Generous for prototypes. Production: paid tier, but cost is comparable to OpenAI."
+      },
+      {
+        "question": "Compatible with rerank-1?",
+        "answer": "Yes \u2014 rerank-1 and rerank-2 both work with Voyage embeddings. rerank-2 is newer + multilingual. Use it for new projects."
+      }
+    ],
+    "github_url": "https://github.com/voyage-ai/voyageai-python",
+    "meta_title": "Voyage AI Domain-Specialized Embeddings Starter",
+    "meta_description": "Voyage AI: domain-tuned embeddings for legal / finance / code. 5-15pp recall lift vs general models on these domains."
+  },
+  {
     "slug": "llm-as-judge-pairwise",
     "title": "LLM-as-Judge Pairwise Evaluator With Position Bias Mitigation",
     "tldr": "Pairwise LLM judge for comparing two model outputs against the same prompt. Mitigates position bias by running both orderings and detecting flips. Includes rubric-based scoring.",
