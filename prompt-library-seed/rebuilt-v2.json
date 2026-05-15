@@ -4365,6 +4365,718 @@
     "meta_description": "Build segments from behavioral data with JTBD names, hypothesized segments, validation questions, and honest data-limitation acknowledgment."
   },
   {
+    "slug": "board-update-monthly",
+    "title": "Monthly Board Update Draft",
+    "tldr": "Drafts a structured monthly board update: TL;DR with the one number that matters, what changed, asks for the board, risks. ~600 words. Calibrated for startup boards, not corporate.",
+    "category": "business",
+    "tags": [
+      "board-update",
+      "investor-comms",
+      "startup",
+      "monthly"
+    ],
+    "best_for_tags": [
+      "founders",
+      "ceos",
+      "board-prep"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "First-time founder monthly cadence",
+        "example": "Establish the rhythm; consistent format makes board members faster readers."
+      },
+      {
+        "scenario": "Pre-board-meeting prep",
+        "example": "Send the written update 48h before the meeting; meeting is for discussion, not status."
+      },
+      {
+        "scenario": "Async-only board",
+        "example": "When you don't have monthly meetings, the written update IS the board interaction."
+      },
+      {
+        "scenario": "Board change",
+        "example": "New board members coming in; consistent format helps them onboard."
+      }
+    ],
+    "when_not_to_use": "Skip for boards expecting formal corporate format (heavy GAAP, audited financials). Skip for IPO-track companies \u2014 those need fully-templated formats per SEC.",
+    "full_prompt": "You are drafting a monthly startup board update. ~600 words. Honest over polished.\n\nINPUT\n- Reporting month: {month}\n- Headline metric (the ONE number that matters this month): {headline_metric}\n- Changes from last month (raw notes): {changes_notes}\n- Key wins (raw notes): {wins_notes}\n- Key challenges / misses (raw notes): {misses_notes}\n- Asks for the board (what you need): {board_asks}\n- Risks (what could go wrong in next 60 days): {risks_notes}\n- Runway / financial state: {financial_state}\n- Hiring update: {hiring}\n\nOUTPUT STRUCTURE\n\n## 1. Subject line\n`<Company> board update \u2014 <Month Year> \u2014 <one-phrase headline>`\n\nHeadline example: \"first $1M ARR month, churn ticked up\", \"Q3 plan landing, two key hires made\", \"tough month, here's what we're doing\".\n\n## 2. TL;DR (4-5 bullets max)\n- The ONE NUMBER that matters this month\n- Up or down from last month\n- One headline win\n- One headline concern\n- One thing you need the board to do\n\n## 3. The numbers (5-8 metrics)\nEach: name | this month | last month | trend | 1-line context.\nNumbers I expect to see: ARR or MRR, growth rate, runway months, cash on hand, headcount, new logos, churn.\n\n## 4. What's working\n2-3 paragraphs. SPECIFIC wins with numbers/named customers. Avoid 'momentum' and 'traction' as standalone words.\n\n## 5. What's not working\n2-3 paragraphs. Honest about misses. State the missed target + reason + what you're doing.\nHARD RULE: never spin a miss into a win.\n\n## 6. The asks\nNumbered list. Examples:\n- \"Intro to 3 CISOs at $100M+ companies \u2014 we're in evaluation with 2, would help with 3 more.\"\n- \"Approve hiring backfill for Head of Sales (departed last month) \u2014 proposed comp band attached.\"\n- \"Feedback on attached competitive positioning deck.\"\nEach ask is specific + actionable + has a timeline.\n\n## 7. Risks (60-day window)\n3-5 specific risks + mitigation in 1 line each.\nBad: \"Macro environment uncertainty\"\nGood: \"Our top 3 customers all renewing in next 60 days; if any churn, ARR drops 14%. Mitigation: weekly check-ins with each, retention bonus for CS lead.\"\n\n## 8. Hiring / team\nWho joined, who left, what's open. Don't hide departures.\n\n## 9. Financial state\nCash on hand, runway months, burn rate. If raising soon, note timing.\n\n## 10. Closing (1-2 sentences)\nHonest mood. \"Solid month, on plan.\" \"Tough month, see misses section, we have a plan.\" Don't fake.\n\nRULES\n- Numbers > adjectives. \"23% MoM growth\" not \"strong growth\".\n- If a metric moved >20%, EXPLAIN it. Either it's a real change or a measurement change.\n- Banned phrases: \"crushing it\", \"lots of momentum\", \"exciting things on the horizon\", \"going forward\".\n- Board members read 5-10 of these a month. CONSISTENT FORMAT lets them skim.\n\nINPUTS\n\nMonth: {month}\nHeadline: {headline_metric}\nWins: {wins_notes}\nMisses: {misses_notes}\nAsks: {board_asks}\nRisks: {risks_notes}\nFinancial: {financial_state}\nHiring: {hiring}\n\nNow draft.",
+    "input_variables": [
+      {
+        "name": "month",
+        "type": "string",
+        "description": "Reporting month",
+        "required": true,
+        "example": "April 2026"
+      },
+      {
+        "name": "headline_metric",
+        "type": "string",
+        "description": "The ONE number",
+        "required": true,
+        "example": "ARR crossed $5M (+18% MoM)"
+      },
+      {
+        "name": "changes_notes",
+        "type": "string",
+        "description": "Raw notes on changes",
+        "required": false,
+        "example": "Launched analytics dashboard. Lost a Fortune 500 deal at last second. Hired VP Product."
+      },
+      {
+        "name": "wins_notes",
+        "type": "string",
+        "description": "Wins",
+        "required": true,
+        "example": "Closed 4 enterprise deals incl Acme ($240k). Reduced cloud cost 31%."
+      },
+      {
+        "name": "misses_notes",
+        "type": "string",
+        "description": "Misses + reasons",
+        "required": true,
+        "example": "Missed lead gen goal (180 SQLs vs 250 target) due to mid-month content pause."
+      },
+      {
+        "name": "board_asks",
+        "type": "string",
+        "description": "What you need",
+        "required": true,
+        "example": "Intro to enterprise CISOs. Sign-off on $500k marketing reallocation. Feedback on the attached pricing v3 deck."
+      },
+      {
+        "name": "risks_notes",
+        "type": "string",
+        "description": "Risks 60d",
+        "required": true,
+        "example": "Three top-10 accounts renew in May. Engineering bottleneck on new feature."
+      },
+      {
+        "name": "financial_state",
+        "type": "string",
+        "description": "Cash + runway",
+        "required": true,
+        "example": "Cash: $14.2M. Runway: 19 months. Burn: $740k/mo."
+      },
+      {
+        "name": "hiring",
+        "type": "string",
+        "description": "Hiring news",
+        "required": true,
+        "example": "Added VP Product (Jane Doe, ex-Stripe). Two engineering roles open."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Subject + TL;DR + 5-8 metrics + working + not-working + asks + risks + hiring + financial + close. ~600 words."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Resists spin; consistent structure."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes adds \u2018momentum\u2019/'traction' \u2014 call out banned words."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; risks section can be generic \u2014 re-pin specificity."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for short routine updates; thin nuance."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Crisis variant",
+        "description": "Hard month / hard news.",
+        "prompt_snippet": "Add: \u2018this is a tough month \u2014 lead with the harm + plan; don't sugar-coat. Asks should focus on near-term survival actions.\u2019"
+      },
+      {
+        "label": "Fundraise-pending",
+        "description": "When raising in next 60-90d.",
+        "prompt_snippet": "Add Section after Financial: \u2018Fundraise status \u2014 target raise, lead progress, timeline, what board members can help with.\u2019"
+      },
+      {
+        "label": "Multi-year context",
+        "description": "Add YoY comparison.",
+        "prompt_snippet": "In \u2018The numbers\u2019 table, add YoY column (same month last year) alongside MoM."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Misses spun as wins.",
+        "fix": "Re-pin: \u2018never spin. Acknowledge misses directly; the \u2018what we're doing\u2019 is the redemption, not framing.\u2019"
+      },
+      {
+        "symptom": "Vague asks (\u2018any introductions appreciated\u2019).",
+        "fix": "Force specificity: \u2018ask names role + segment + reason + timing. Vague asks get ignored.\u2019"
+      },
+      {
+        "symptom": "Risks are clich\u00e9s (\u2018market uncertainty\u2019).",
+        "fix": "Force: \u2018every risk names a specific event + likelihood + impact + mitigation. No macro hand-waving.\u2019"
+      },
+      {
+        "symptom": "Format drifts month-to-month.",
+        "fix": "Use this prompt EVERY month with same sections. Consistency lets board skim.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "investor-update-monthly",
+      "executive-summary-1-page",
+      "fundraise-pitch-deck-outline"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "board-update",
+      "startup-comms"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How is this different from an investor update?",
+        "answer": "Board update is for ACTIVE board members (more strategic asks, more honesty about misses). Investor update is for SHAREHOLDERS broadly (more polished, less in the weeds)."
+      },
+      {
+        "question": "Length?",
+        "answer": "600 words is the sweet spot. Under 400, you're hiding things. Over 1,000, board members skim and miss the point."
+      },
+      {
+        "question": "When to send?",
+        "answer": "Same day each month (e.g., 5th of next month). Predictability matters."
+      }
+    ],
+    "meta_title": "Monthly Board Update Draft \u2014 Prompt",
+    "meta_description": "Draft a startup monthly board update: TL;DR, numbers, what's working, what's not, specific asks, real risks, hiring, financial. ~600 words."
+  },
+  {
+    "slug": "sales-objection-handling-playbook",
+    "title": "Sales Objection Handling Playbook",
+    "tldr": "Generates a playbook for a specific sales objection: the underlying concern, three response angles (acknowledge / reframe / proof), proof points to gather, and when to walk away.",
+    "category": "business",
+    "tags": [
+      "sales",
+      "objection-handling",
+      "enablement",
+      "playbook"
+    ],
+    "best_for_tags": [
+      "sales-teams",
+      "enablement",
+      "founder-led-sales"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "New rep onboarding",
+        "example": "Top 10 objections each get a playbook; rep practices before going live."
+      },
+      {
+        "scenario": "Objection pattern emerging",
+        "example": "\u2018Build vs buy\u2019 pushback rising; build the playbook before it kills the quarter."
+      },
+      {
+        "scenario": "Competitive deal-loss review",
+        "example": "Lost to competitor on [reason]; build the response for next time."
+      },
+      {
+        "scenario": "Founder-led sales discipline",
+        "example": "Founder is winging it; this prompt forces them to structure their best responses."
+      }
+    ],
+    "when_not_to_use": "Skip for objections that mask a real product gap (build the product first). Skip when the objection is genuinely \u2018we don't need this\u2019 \u2014 qualifying out is correct.",
+    "full_prompt": "You are building a sales objection handling playbook. The goal: rep can respond confidently, not script-recite.\n\nINPUT\n- The specific objection: {objection}\n- Customer segment: {segment}\n- What we sell: {product_summary}\n- Top 2 competitors: {competitors}\n- Existing proof points / customers: {proof_assets}\n\nOUTPUT\n\n## 1. The actual concern behind the objection\nWhat's the customer REALLY worried about? Objections are often coded.\n- \"It's too expensive\" might mean: ROI unclear / budget cycle / competitor cheaper / authority not committed.\n- \"We're not ready\" might mean: not their priority / fear of switching cost / no internal champion yet.\n\nState 2-3 plausible underlying concerns. Indicate which is most common in {segment}.\n\n## 2. Three response angles (NOT scripts)\nFor each angle, give the rep:\n- What to do (action, not words)\n- Sample phrasing (1-2 sentences they can adapt)\n- When to use this angle (signals to listen for)\n\n### Angle A: ACKNOWLEDGE\nThe honest yes. Where the objection IS valid. Don't deflect.\n\n### Angle B: REFRAME\nWhere the customer is comparing to the wrong baseline. Shift the frame.\n\n### Angle C: PROOF\nWhere data settles it. Specific customer, specific result, specific situation matching theirs.\n\n## 3. Proof points to ALWAYS have ready for this objection\n- 1-2 customer stories with specifics (name with permission, role, outcome with number)\n- 1 ROI calculation (anchor for \"expensive\" objections)\n- 1 implementation timeline (for \"we're not ready\" objections)\n\nIf proof_assets is thin, NOTE the gap explicitly.\n\n## 4. When to walk away\nA list of disqualifying signals. If you see these, this is not the right deal:\n- E.g., \"Budget cycle is 9+ months away with no flex\"\n- E.g., \"No identified user pain \u2014 being shopped for vague modernization\"\n- E.g., \"Competitor already chosen, just doing diligence\"\n\n3-5 signals. Specific.\n\n## 5. Trap responses to AVOID\nWhat new reps reach for that BACKFIRES:\n- \"Let me put together a custom proposal\" (extends sales cycle, sounds desperate)\n- \"We can give you a discount\" (signals price was the only lever, weakens future negotiations)\n- \"Let me check with my manager\" (when not necessary \u2014 burns authority)\n\n3-5 traps with WHY they backfire.\n\n## 6. After the call: follow-up template\nThe brief follow-up that should go out within 2h. Specific to this objection. Includes:\n- Quote of the objection back to them (acknowledges you heard)\n- The single best proof point\n- A specific next step\n\nCRITICAL RULES\n- Sample phrasings are conversational, not corporate.\n- Proof points must be SPECIFIC (named, numbered) or marked as gap.\n- Walking away IS a successful outcome on bad-fit deals.\n- Don't manufacture confidence \u2014 if the objection is valid, name what would change it.\n\nOBJECTION: {objection}\n\nPRODUCT: {product_summary}\n\nNow build the playbook.",
+    "input_variables": [
+      {
+        "name": "objection",
+        "type": "string",
+        "description": "Specific objection",
+        "required": true,
+        "example": "Your pricing is 2x what [Competitor X] charges"
+      },
+      {
+        "name": "segment",
+        "type": "string",
+        "description": "Customer segment",
+        "required": true,
+        "example": "Mid-market B2B SaaS (200-2000 employees)"
+      },
+      {
+        "name": "product_summary",
+        "type": "string",
+        "description": "What you sell",
+        "required": true,
+        "example": "Customer data platform \u2014 unifies marketing/sales/product event streams"
+      },
+      {
+        "name": "competitors",
+        "type": "string",
+        "description": "Top competitors",
+        "required": true,
+        "example": "Segment, Rudderstack"
+      },
+      {
+        "name": "proof_assets",
+        "type": "string",
+        "description": "Existing proof",
+        "required": true,
+        "example": "Acme Inc case study (43% data quality lift). 3 named customers willing to take ref calls. ROI calculator with industry benchmarks."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: actual concern, 3 angles (acknowledge/reframe/proof), proof points, walk-away signals, traps to avoid, follow-up template."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on the \u2018actual concern\u2019 layer; honest about disqualifying signals."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can produce corporate-speak phrasings \u2014 call out conversational tone."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; \u2018trap responses\u2019 section sometimes generic."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for routine objections; thin on nuance."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Multi-objection bundle",
+        "description": "Build playbooks for top 10 objections at once.",
+        "prompt_snippet": "Accept a list of objections; produce one playbook each. Then meta-analyze: which objections cluster around the same underlying concern?"
+      },
+      {
+        "label": "Role-play training script",
+        "description": "Convert to practice script.",
+        "prompt_snippet": "Add: \u2018also produce a role-play script where the trainer asks the objection in 3 different ways (mild, firm, hostile) and the rep practices each response angle.\u2019"
+      },
+      {
+        "label": "Competitive-specific",
+        "description": "Tied to a specific competitor.",
+        "prompt_snippet": "Add: \u2018competitor-specific section \u2014 what tradeoffs THEY make that we don't; how to surface those without disparaging.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Sample phrasings sound corporate.",
+        "fix": "Re-pin: \u2018conversational. \u2018What I'm hearing is...\u2019 not \u2018I understand your concern about pricing.\u2019\u2019"
+      },
+      {
+        "symptom": "Proof points are unsourced/vague.",
+        "fix": "Add: \u2018proof must be specific (named customer + specific outcome). If you don't have it, label as gap; don't invent.\u2019"
+      },
+      {
+        "symptom": "Walk-away section empty.",
+        "fix": "Force: \u2018good salespeople walk away from bad-fit deals; list 3-5 disqualifying signals.\u2019"
+      },
+      {
+        "symptom": "Traps are generic (\u2018don't be pushy\u2019).",
+        "fix": "Add: \u2018traps must reference SPECIFIC moves new reps make + the second-order cost.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "competitive-feature-matrix",
+      "customer-segmentation-from-data"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "objection-handling",
+      "sales-enablement"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Should I script the responses?",
+        "answer": "No \u2014 sample phrasings, not scripts. Reps who recite scripts sound robotic. The playbook gives them confident handles; the words emerge in conversation."
+      },
+      {
+        "question": "How often update?",
+        "answer": "When the underlying-concern landscape shifts (new competitor, new product launch, new buyer persona). Otherwise once a year as a refresh."
+      },
+      {
+        "question": "What if every deal hits the same objection?",
+        "answer": "Then the objection points at a product/positioning gap. Build the playbook AND raise the strategic issue with product."
+      }
+    ],
+    "meta_title": "Sales Objection Handling Playbook \u2014 Prompt",
+    "meta_description": "Build a structured objection-handling playbook: underlying concern, 3 response angles, proof points, walk-away signals, traps to avoid."
+  },
+  {
+    "slug": "okr-quality-audit",
+    "title": "OKR Quality Audit",
+    "tldr": "Reviews a set of OKRs and flags vague objectives, sandbagged key results, activity-disguised-as-outcome, missing leading indicators. Returns specific rewrite suggestions per OKR.",
+    "category": "business",
+    "tags": [
+      "okrs",
+      "goal-setting",
+      "review",
+      "leadership"
+    ],
+    "best_for_tags": [
+      "okr-leads",
+      "managers",
+      "exec-staff"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Quarterly OKR review before announcement",
+        "example": "Draft OKRs from each team \u2192 audit before locking \u2192 fix vague ones."
+      },
+      {
+        "scenario": "Onboarding manager to OKR culture",
+        "example": "New manager submits first OKRs; audit teaches OKR discipline."
+      },
+      {
+        "scenario": "Mid-quarter check-in",
+        "example": "OKRs that looked solid now look fake \u2014 audit identifies which got sandbagged."
+      },
+      {
+        "scenario": "OKR retrospective",
+        "example": "At quarter end, audit reveals which OKRs were poorly written vs which were genuinely missed."
+      }
+    ],
+    "when_not_to_use": "Skip when the team isn't using OKRs (don't impose). Skip for OKRs already approved and in-flight \u2014 audit then is too late.",
+    "full_prompt": "You are auditing a set of OKRs. Apply the OKR discipline: outcomes over activities, specific over vague, falsifiable over fuzzy.\n\nINPUT\n- The OKRs (objective + 3-5 key results each): {okrs}\n- Team / function context: {team_context}\n- Quarter / time horizon: {time_horizon}\n\nOUTPUT\n\nFor each OKR, output:\n\n## OKR <number>: <objective>\n\n### Objective audit\n- VAGUE / SPECIFIC: rate 1-5\n- ASPIRATIONAL or DELIVERABLE: which is intended?\n- One-line critique\n- Suggested rewrite (if needed)\n\n### Key Results audit\nFor each KR:\n- KR text\n- Type: OUTCOME / OUTPUT / ACTIVITY (with definition: outcome=result for customers/business; output=thing we ship; activity=thing we do)\n- MEASURABLE? Yes / No / Soft (subjective)\n- AMBITION: sandbag / appropriate / moonshot \u2014 based on what's known about base rate\n- LEADING INDICATOR: present or missing? (Without one, you can't course-correct mid-quarter)\n- Suggested rewrite\n\n### Overall OKR grade\n- A: outcome-focused, measurable, ambitious-but-achievable, leading indicators included\n- B: minor issues\n- C: vague or activity-disguised\n- F: fundamentally broken (not actually an OKR)\n\n### Top recommendation for this OKR\nOne sentence the team should act on.\n\n## Cross-OKR observations\nAfter all individual audits:\n- Patterns across OKRs (e.g., everything is output, no real outcomes)\n- Conflicting / overlapping OKRs across teams (if visible)\n- Missing OKRs \u2014 important things this team is doing that aren't reflected\n- Capacity check: how realistic is this load given team size?\n\nPRINCIPLES TO APPLY\n- OUTCOMES > OUTPUTS > ACTIVITIES. Most failing OKRs hide activities as KRs.\n- AMBITION: a sandbagged OKR demoralizes; a moonshot OKR teaches nothing if missed. Sweet spot is ~70% confidence.\n- LEADING INDICATORS: every KR needs at least one observable signal you'll see BEFORE the deadline that tells you it's on track.\n- FALSIFIABILITY: if you can't tell at end-of-quarter whether the KR was hit, it's not a KR.\n\nBANNED PHRASES IN KRs (auto-mark as ACTIVITY):\n- \"Launch X\" (when launching IS the outcome, no further measure)\n- \"Improve X\" (no number \u2014 vague)\n- \"Drive growth\" / \"Drive engagement\" (verbs without nouns)\n- \"Achieve N customer satisfaction\" (without defining how measured)\n\nOKRs TO AUDIT\n{okrs}\n\nCONTEXT\n{team_context}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "okrs",
+        "type": "string",
+        "description": "OKRs in any format",
+        "required": true,
+        "example": "Objective: Become category leader in mid-market data privacy. KR1: Sign 12 new mid-market customers. KR2: Launch SOC2 Type II. KR3: Hit $3M new ARR. KR4: Maintain NPS > 50."
+      },
+      {
+        "name": "team_context",
+        "type": "string",
+        "description": "Team info",
+        "required": true,
+        "example": "Sales + marketing team, 8 people, $2M ARR last quarter, mid-market segment ($50k-$250k deals)"
+      },
+      {
+        "name": "time_horizon",
+        "type": "string",
+        "description": "Quarter",
+        "required": true,
+        "example": "Q3 2026 (Jul-Sep)"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Per-OKR audit with objective/KR grades + rewrites; cross-OKR observations + patterns + recommendations."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Honest about sandbagged ambition + activity-disguised-as-outcome."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can rubber-stamp objectives \u2014 re-pin specific critique requirement."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; cross-OKR observations sometimes shallow."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for routine reviews."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Cross-team coordination check",
+        "description": "Audit OKRs from multiple teams for alignment.",
+        "prompt_snippet": "Add: \u2018accept OKRs from 2+ teams; check for explicit alignment (team A's KR depends on team B's KR? Is that named?) and conflicting goals (A wants growth, B wants quality cap \u2014 surface tension).\u2019"
+      },
+      {
+        "label": "OKR coach mode",
+        "description": "Output as Socratic questions, not directives.",
+        "prompt_snippet": "Instead of rewrites, output the THREE QUESTIONS the OKR owner should answer about each KR before locking it. Forces self-discovery."
+      },
+      {
+        "label": "Mid-quarter re-grade",
+        "description": "Audit OKRs at mid-quarter with actuals.",
+        "prompt_snippet": "Accept actuals at mid-quarter; per-KR mark: on-track / off-track / dead. Critique the original OKR quality with hindsight."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Lets \u2018launch X\u2019 pass as a KR.",
+        "fix": "Re-pin: \u2018launching is an output. Outcome KR specifies what happens AFTER launch (adoption, revenue, retention).\u2019"
+      },
+      {
+        "symptom": "Doesn't flag missing leading indicators.",
+        "fix": "Force: \u2018every KR section MUST address leading indicator presence/absence.\u2019"
+      },
+      {
+        "symptom": "Vague \u2018B\u2019 grade without specific critique.",
+        "fix": "Add: \u2018every grade below A has a specific critique that the owner can act on.\u2019"
+      },
+      {
+        "symptom": "Patterns section empty.",
+        "fix": "Force: \u2018even when individual OKRs are solid, cross-OKR patterns (all-outcomes, all-activities, conflicting) deserve commentary.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "okr-quarterly-drafter",
+      "decomposition-into-subgoals"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "okr",
+      "leading-indicator"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Will the team accept the feedback?",
+        "answer": "Depends on framing. Audit results presented as \u2018here's how to make these stronger\u2019 go better than \u2018these are bad.\u2019 The prompt focuses on specific rewrites, which makes feedback actionable not personal."
+      },
+      {
+        "question": "What's the right number of OKRs?",
+        "answer": "3-5 per team, 3-5 KRs per objective. Below that, you're losing scope. Above that, focus disappears."
+      },
+      {
+        "question": "Should OKRs cascade?",
+        "answer": "Loosely. Team OKRs should support company OKRs, but verbatim cascading produces fake-aligned theater. Pattern: company OKRs set direction; team OKRs commit to deliverables."
+      }
+    ],
+    "meta_title": "OKR Quality Audit \u2014 Prompt",
+    "meta_description": "Audit OKRs for vagueness, sandbagged ambition, activity-disguised-as-outcome, missing leading indicators. Per-OKR rewrites + cross-team patterns."
+  },
+  {
+    "slug": "go-no-go-decision-meeting-prep",
+    "title": "Go/No-Go Decision Meeting Prep",
+    "tldr": "Prepares a 1-page brief for a go/no-go meeting: the decision, the criteria, the data, the recommendation, the asks. Forces the team to commit to criteria BEFORE seeing the data.",
+    "category": "business",
+    "tags": [
+      "decision-making",
+      "meeting-prep",
+      "go-no-go",
+      "leadership"
+    ],
+    "best_for_tags": [
+      "product-launches",
+      "investment-decisions",
+      "ship-decisions"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Pre-launch readiness review",
+        "example": "Should we launch Friday? Criteria + data + recommendation in one page."
+      },
+      {
+        "scenario": "Major investment",
+        "example": "Should we hire 5 sales reps next quarter? Same structure."
+      },
+      {
+        "scenario": "Project kill decision",
+        "example": "Project X has been struggling. Should we kill it? Structured analysis avoids sunk-cost reasoning."
+      },
+      {
+        "scenario": "Vendor selection",
+        "example": "After RFP and evals, the go/no-go on chosen vendor."
+      }
+    ],
+    "when_not_to_use": "Skip for trivial decisions. Skip when criteria genuinely can't be defined upfront (then it's an exploratory meeting, not a go/no-go).",
+    "full_prompt": "You are preparing a 1-page brief for a go/no-go decision meeting.\n\nINPUT\n- The decision: {decision}\n- Criteria the team COMMITTED to upfront (before seeing data): {criteria}\n- Data / status against each criterion: {data}\n- Decision-maker(s): {decision_makers}\n- Meeting time: {meeting_time}\n\nOUTPUT (1 page, ~500 words)\n\n## DECISION: <one sentence>\n\n## TL;DR\n- Recommendation (go / no-go / conditional-go / delay)\n- Confidence (high / medium / low)\n- Single strongest reason\n\n## Criteria scorecard\n| Criterion | Threshold | Actual | Status |\n|---|---|---|---|\n\nEach criterion gets \u2713 (met) / \u26a0 (partial) / \u2717 (missed). Status reasoning in 1 line per row.\n\n## What's going right\n2-3 specific things. With numbers.\n\n## What's not going right\n2-3 specific things. With numbers. HARD RULE: don't downplay.\n\n## What we don't know\n2-4 specific things the data doesn't tell us. Important for honest decisions.\n\n## Recommendation\nOne paragraph. The path forward, with confidence + reasoning.\n\nIf GO: what changes? Who owns the next 7 days?\nIf NO-GO: what triggers a re-evaluation? When?\nIf CONDITIONAL-GO: what conditions, by when, owned by whom?\nIf DELAY: what would change to enable a go? Expected timing of re-decision?\n\n## Asks for the decision-maker\n3 specific asks:\n- A decision (go/no-go) by <when>\n- Approval of contingency plan (if go)\n- Sign-off on what happens to people/budget if no-go\n\n## What this brief is NOT\n- Not a sales pitch\n- Not the place for the FULL data dump (link to appendix)\n- Not where you discover criteria mid-stream (those were locked upfront)\n\nCRITICAL RULES\n- The criteria in section 2 must match the criteria in section 1 input \u2014 no shifting goalposts.\n- If actual data missed a threshold, mark \u2717 honestly. Don't fudge.\n- The recommendation should NOT be \u2018defer to discussion.\u2019 Have a point of view.\n- One page total. Discipline.\n\nINPUTS\n\nDECISION: {decision}\nCRITERIA: {criteria}\nDATA: {data}\n\nNow draft.",
+    "input_variables": [
+      {
+        "name": "decision",
+        "type": "string",
+        "description": "The decision",
+        "required": true,
+        "example": "Launch new pricing tier on May 21"
+      },
+      {
+        "name": "criteria",
+        "type": "string",
+        "description": "Pre-committed criteria",
+        "required": true,
+        "example": "1. Customer comms approved by legal. 2. Pricing page deployed and tested. 3. Sales team trained (>80% pass quiz). 4. No critical bugs unresolved (<3). 5. CFO sign-off on revenue forecast impact."
+      },
+      {
+        "name": "data",
+        "type": "string",
+        "description": "Status per criterion",
+        "required": true,
+        "example": "1. Legal approved 5/14. 2. Page deployed staging, prod awaiting final review. 3. 6 of 8 reps passed (75%). 4. 2 critical bugs in queue; ETA fix 5/19. 5. CFO sign-off pending revised forecast."
+      },
+      {
+        "name": "decision_makers",
+        "type": "string",
+        "description": "Who decides",
+        "required": true,
+        "example": "CEO + CFO + VP Product"
+      },
+      {
+        "name": "meeting_time",
+        "type": "string",
+        "description": "Meeting datetime",
+        "required": true,
+        "example": "May 20, 9am PT (30 min)"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "1-page brief: decision, TL;DR with recommendation, criteria scorecard table, what's right, what's not, what we don't know, recommendation, 3 asks."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Refuses to shift goalposts; honest about missed thresholds."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes hedges recommendation \u2014 re-pin \u2018have a point of view.\u2019"
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; \u2018what we don't know\u2019 section often soft."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for routine decisions."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Pre-mortem appended",
+        "description": "Add 100-word pre-mortem.",
+        "prompt_snippet": "Add: \u2018after recommendation, write a 100-word pre-mortem: assume the go-decision led to failure 90 days from now. What broke?\u2019"
+      },
+      {
+        "label": "Reversibility analysis",
+        "description": "How reversible is this decision?",
+        "prompt_snippet": "Add Section: \u2018REVERSIBILITY \u2014 one-way door / two-way door. If one-way, are we sure? If two-way, what's our pre-committed reversal trigger?\u2019"
+      },
+      {
+        "label": "Stakeholder veto check",
+        "description": "Surface dissent before the meeting.",
+        "prompt_snippet": "Add: \u2018list which stakeholders have expressed concerns + what those concerns are. Don't surprise them in the meeting.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Goalposts shift between criteria and scorecard.",
+        "fix": "Re-pin: \u2018scorecard criteria are VERBATIM from the input criteria. Don't add, don't reword.\u2019"
+      },
+      {
+        "symptom": "Recommendation is \u2018defer to discussion.\u2019",
+        "fix": "Add: \u2018the brief MUST have a point of view. Discussion happens, but you state the recommendation.\u2019"
+      },
+      {
+        "symptom": "\u2018What we don't know\u2019 skipped.",
+        "fix": "Force: \u2018every decision has unknowns. List 2-4 specifically. \u2018We know everything\u2019 is rarely true.\u2019"
+      },
+      {
+        "symptom": "Brief is 3 pages.",
+        "fix": "Hard cap: \u20181 page or it's not a go/no-go brief. Link to appendix for detail.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "strategic-tradeoff-analyzer",
+      "executive-summary-1-page",
+      "devils-advocate-pre-mortem"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "decision-meeting",
+      "reversibility"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why commit to criteria upfront?",
+        "answer": "Post-hoc criteria become justifications. Upfront criteria force honest evaluation. The discipline is harder than it looks; most teams need a few iterations."
+      },
+      {
+        "question": "What if criteria themselves were wrong?",
+        "answer": "Flag it. \u2018Criterion 3 turned out not to measure what we thought; recommend deferring the decision while we figure out the right criterion.\u2019 That's better than fake passing."
+      },
+      {
+        "question": "How long do these meetings take?",
+        "answer": "20-30 min if the brief is good. The brief did the work. Meeting is for the decision + immediate next steps."
+      }
+    ],
+    "meta_title": "Go/No-Go Decision Meeting Prep \u2014 Prompt",
+    "meta_description": "1-page brief for go/no-go meetings: decision, pre-committed criteria scorecard, what's right/wrong, recommendation with confidence. No goalpost shifting."
+  },
+  {
     "slug": "strategic-tradeoff-analyzer",
     "title": "Strategic Tradeoff Analyzer (multi-option matrix)",
     "category": "business",
@@ -9883,6 +10595,713 @@
     ],
     "meta_title": "Billing Dispute De-Escalation Response \u2014 Prompt",
     "meta_description": "Draft a 150-200 word billing dispute reply: acknowledge specific charge, explain policy without defensiveness, offer concrete remedy with next step."
+  },
+  {
+    "slug": "ticket-deflection-faq-suggestion",
+    "title": "Ticket Deflection: Suggest Existing FAQ",
+    "tldr": "Match an incoming ticket against existing FAQ articles and suggest the top 1-3 that likely answer it. Deflect or route to a rep with the rejected FAQs noted.",
+    "category": "customer-support",
+    "tags": [
+      "deflection",
+      "faq",
+      "self-service",
+      "routing"
+    ],
+    "best_for_tags": [
+      "help-center",
+      "ticket-deflection",
+      "scale"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Pre-submit deflection",
+        "example": "User typing ticket; auto-suggest 3 FAQs matching their query. Deflects 30-50% of common questions."
+      },
+      {
+        "scenario": "Auto-reply with suggestions",
+        "example": "Ticket submitted; auto-reply within 30s with top 3 FAQs + 'reply if these don't solve it'."
+      },
+      {
+        "scenario": "Triage with prior knowledge",
+        "example": "Rep sees ticket WITH the FAQs the user already saw and rejected; skips the obvious answer."
+      },
+      {
+        "scenario": "Knowledge gap discovery",
+        "example": "Tickets where NO FAQ matched well = candidate topics for new FAQ articles."
+      }
+    ],
+    "when_not_to_use": "Skip for emotional or escalated tickets (auto-suggest feels dismissive). Skip when the FAQ library is thin (irrelevant suggestions hurt trust).",
+    "full_prompt": "You are matching a customer ticket against existing FAQ articles. Suggest the top 1-3 that likely answer the question.\n\nINPUT\n- Customer's ticket text: {ticket}\n- Available FAQ articles (id, title, summary): {faq_index}\n- Customer tier (if known): {tier}\n\nOUTPUT (JSON)\n{\n  \"suggested_faqs\": [\n    {\"id\": \"faq-id\", \"title\": \"...\", \"match_confidence\": 0.0-1.0, \"why_it_matches\": \"1 line explanation\"},\n    ...\n  ],\n  \"no_good_match\": true|false,\n  \"if_no_match_route_to\": \"billing | technical | account | retention | other\",\n  \"tone_signal\": \"neutral | frustrated | confused | escalated\",\n  \"deflection_recommended\": true|false\n}\n\nRULES\n1. Suggest at most 3 FAQs, ranked by match_confidence (highest first).\n2. Only suggest FAQs with confidence > 0.5. If nothing crosses that, set no_good_match=true and skip the array.\n3. NEVER suggest a generic \"contact support\" FAQ \u2014 defeats the purpose.\n4. Match on UNDERLYING question, not surface keywords. (\"My card was declined\" might match \"Why was my payment refused\" even though different words.)\n5. tone_signal: detect emotional state. If escalated \u2192 deflection_recommended=false (route to human immediately, don't try FAQ).\n6. why_it_matches: must reference SPECIFIC overlap between ticket and FAQ. Vague matching is worse than no suggestion.\n\nANTI-PATTERNS\n- Suggesting tangentially-related FAQs to inflate hit rate\n- Ignoring tone (an angry customer doesn't want self-help links)\n- Recommending deflection when the question is account-specific (which FAQ can't answer)\n\nTICKET\n{ticket}\n\nFAQ INDEX\n{faq_index}\n\nOutput JSON only.",
+    "input_variables": [
+      {
+        "name": "ticket",
+        "type": "string",
+        "description": "Customer's ticket text",
+        "required": true,
+        "example": "I tried to upgrade to Pro last night but my card got declined three times. I called my bank \u2014 they say everything's fine on their end. What's wrong?"
+      },
+      {
+        "name": "faq_index",
+        "type": "string",
+        "description": "List of FAQ articles with id, title, summary",
+        "required": true,
+        "example": "faq-001: 'Why was my payment declined?' \u2014 Common reasons + retry steps. faq-002: 'How to upgrade plans' \u2014 UI walkthrough..."
+      },
+      {
+        "name": "tier",
+        "type": "string",
+        "description": "Customer tier",
+        "required": false,
+        "example": "Pro trial"
+      }
+    ],
+    "expected_output": {
+      "format": "json",
+      "schema": "{ suggested_faqs[], no_good_match, if_no_match_route_to, tone_signal, deflection_recommended }",
+      "sample": "{\n  \"suggested_faqs\": [\n    {\"id\":\"faq-001\",\"title\":\"Why was my payment declined?\",\"match_confidence\":0.87,\"why_it_matches\":\"Ticket describes card decline despite bank confirming OK \u2014 FAQ covers exactly this case (3DS friction, AVS mismatch).\"}\n  ],\n  \"no_good_match\": false,\n  \"if_no_match_route_to\": \"billing\",\n  \"tone_signal\": \"frustrated\",\n  \"deflection_recommended\": true\n}"
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong tone detection; honest about no-good-match."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can over-suggest weak matches \u2014 re-pin >0.5 threshold."
+      },
+      {
+        "model": "gpt-4o-mini",
+        "compatibility": "good",
+        "notes": "Cheap option for high-volume; verify on edge cases."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "good",
+        "notes": "Fast + cheap; weaker on tone nuance."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Multi-language",
+        "description": "Match across languages.",
+        "prompt_snippet": "Add: \u2018ticket may be in any language; FAQs may be in different language. Cross-language match is allowed; note language pair in why_it_matches.\u2019"
+      },
+      {
+        "label": "Account-context aware",
+        "description": "Include account state in match.",
+        "prompt_snippet": "Add input: account_state (plan, last_activity, recent_errors). Suggest FAQs that match BOTH ticket + account context."
+      },
+      {
+        "label": "A/B test suggestions",
+        "description": "Surface 2 distinct angle suggestions.",
+        "prompt_snippet": "Always return at least 2 suggestions IF the ticket is ambiguous; mark angle (e.g., 'billing-angle', 'auth-angle')."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Suggests generic FAQ that doesn't actually answer.",
+        "fix": "Re-pin: \u2018why_it_matches must reference SPECIFIC overlap; vague match is rejected.\u2019"
+      },
+      {
+        "symptom": "Recommends deflection on escalated tickets.",
+        "fix": "Add: \u2018if tone_signal=escalated, deflection_recommended must be false.\u2019"
+      },
+      {
+        "symptom": "Confidence always >0.7.",
+        "fix": "Add: \u2018confidence below 0.5 \u2192 skip the FAQ entirely; calibration test: half your suggestions should be 0.5-0.8 range.\u2019"
+      },
+      {
+        "symptom": "Misses account-specific questions.",
+        "fix": "Add: \u2018if ticket references customer-specific account state (\"my account\", \"my plan\"), FAQ can't answer alone \u2014 set deflection_recommended=false.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gpt-4o-mini",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "support-ticket-triage",
+      "support-knowledge-base-article-from-resolution",
+      "support-macro-from-recurring-tickets"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "ticket-deflection",
+      "self-service"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Won't customers just bypass the suggestions?",
+        "answer": "30-50% of common questions deflect. Heavy-context or angry tickets won't. That's fine \u2014 humans handle those. The deflection saves rep capacity for tickets that genuinely need a person."
+      },
+      {
+        "question": "What confidence threshold for auto-display?",
+        "answer": "0.7+ for auto-reply suggestions; 0.5+ for the rep's reference view. Tune from your match-vs-helpful-rate data after a month."
+      },
+      {
+        "question": "How does this beat keyword search?",
+        "answer": "Underlying-question matching catches paraphrases keyword search misses. Combine: keyword search for fast filter, this prompt for ranking + tone gate."
+      }
+    ],
+    "meta_title": "Ticket Deflection: Suggest Existing FAQ \u2014 Prompt",
+    "meta_description": "Match incoming tickets to existing FAQ articles with confidence + tone gating. Auto-deflect 30-50% of common questions safely."
+  },
+  {
+    "slug": "vip-customer-escalation-protocol",
+    "title": "VIP Customer Escalation Protocol",
+    "tldr": "Drafts an escalation handoff when a VIP customer's issue exceeds the front-line rep's authority \u2014 preserves context, names the request, attaches the relevant account history, and signals urgency without theatrics.",
+    "category": "customer-support",
+    "tags": [
+      "escalation",
+      "vip",
+      "handoff",
+      "high-touch"
+    ],
+    "best_for_tags": [
+      "enterprise-support",
+      "account-management",
+      "retention"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Enterprise account stuck on a problem >24h",
+        "example": "Front-line rep can't unblock; this prompt builds the escalation packet for the named CSM/AM."
+      },
+      {
+        "scenario": "Multi-stakeholder issue",
+        "example": "Customer's IT, security, and procurement all involved; one well-structured escalation summarizes for the receiving team."
+      },
+      {
+        "scenario": "Pre-renewal friction",
+        "example": "Customer with renewal in 30 days hits an issue; route to retention BEFORE it becomes a churn risk."
+      },
+      {
+        "scenario": "Executive complaint",
+        "example": "C-level customer escalates publicly (Twitter, LinkedIn); this prompt drafts the internal handoff to the exec sponsor."
+      }
+    ],
+    "when_not_to_use": "Skip for ordinary tickets \u2014 escalation overhead is wasted. Skip when the receiving team is unclear (figure that out FIRST). Skip when issue is genuinely unresolvable (set expectations honestly instead).",
+    "full_prompt": "You are drafting a VIP escalation packet. The receiver is a named CSM/AM/exec who's busy and needs to act fast.\n\nINPUT\n- Customer details: {customer_info}                (account name, primary contact, tier, ARR if known)\n- Issue summary (from prior tickets/conversation): {issue_summary}\n- What's already been tried: {prior_attempts}\n- What we need from the receiver: {requested_action}\n- Internal context (politics, history): {internal_context}\n- Receiver's role: {receiver_role}\n\nOUTPUT (escalation packet, ~250-400 words)\n\n## Subject line\n- Format: `[ESCALATION] <Customer> \u2014 <specific issue> \u2014 needs <action> by <when>`\n- Specific. NOT \"Urgent: please help\".\n\n## TL;DR (2 sentences)\nWhat's the situation and what's the ask.\n\n## Account context (bullets)\n- Account name + tier + ARR\n- Primary contact + recent interactions\n- Renewal date (if relevant)\n- Any prior escalations (relevant pattern?)\n\n## What's happening\n3-5 sentence narrative. Time-stamped. What changed, who's involved, where we are now.\n\n## What we've tried\nNumbered list. Each: what was attempted, what was the response, why it didn't resolve. Be honest \u2014 receiver can tell when escalation skipped steps.\n\n## What we're asking\nSpecific. Examples:\n- \"Approve refund of $X\" (with reasoning)\n- \"Have engineering investigate bug ID Y\"\n- \"Call the customer at <phone> by <time>\"\n- \"Sign off on credit/concession\"\n\n## Risk if not actioned by\nSpecific timing + specific risk. (\"If not resolved by EOD Friday, customer threatens public review/legal action/non-renewal.\")\n\n## What I've already prepared\nAnything ready to ship the moment the receiver approves. (\"Refund authorization drafted, awaiting your sign-off.\")\n\nCRITICAL RULES\n- Tone: matter-of-fact, no panic. VIP escalations DO need to flow but theatrics undermine credibility.\n- Don't blame other teams in the writeup; describe what happened, not who failed.\n- Estimate the receiver's TIME COST. If your ask costs them 30 min, name that explicitly so they can plan.\n- If the customer's request is unreasonable, say so plainly + recommend a reasonable counter.\n\nESCALATION INPUTS\n{customer_info}\n\n{issue_summary}\n\n{prior_attempts}\n\n{requested_action}\n\n{internal_context}\n\nNow draft the packet.",
+    "input_variables": [
+      {
+        "name": "customer_info",
+        "type": "string",
+        "description": "Customer account details",
+        "required": true,
+        "example": "Acme Corp \u2014 Enterprise tier \u2014 $240k ARR \u2014 Primary contact Jane Doe (VP Eng), renewal 2026-06-15"
+      },
+      {
+        "name": "issue_summary",
+        "type": "string",
+        "description": "What's happening",
+        "required": true,
+        "example": "API rate limiting impacting their production traffic. Started 4 days ago. Severity 1 from their side."
+      },
+      {
+        "name": "prior_attempts",
+        "type": "string",
+        "description": "What's been tried",
+        "required": true,
+        "example": "1. Increased rate limits manually 2x. 2. Engineering investigated; suspect a config drift on their tenant. 3. Customer's own debugging suggests cache invalidation issue."
+      },
+      {
+        "name": "requested_action",
+        "type": "string",
+        "description": "What we need from receiver",
+        "required": true,
+        "example": "Engineering manager approval to do a tenant-specific config reset (requires ops change window)."
+      },
+      {
+        "name": "internal_context",
+        "type": "string",
+        "description": "Politics/history",
+        "required": false,
+        "example": "This customer's renewal is contingent on the platform performing reliably. CSM mentioned hesitation in last call."
+      },
+      {
+        "name": "receiver_role",
+        "type": "string",
+        "description": "Receiver's role",
+        "required": true,
+        "example": "VP of Engineering"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Subject + TL;DR + account context + narrative + tried-list + ask + risk + prepared."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Matter-of-fact tone holds; no theatrics."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes adds unnecessary urgency words \u2014 call out the no-theatrics rule."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; receiver-cost estimate often missing."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for routine escalations; thin on internal-context nuance."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Multi-receiver",
+        "description": "Same packet to CSM + AM + exec.",
+        "prompt_snippet": "Add: \u2018also produce a 50-word version for the exec sponsor (skim-friendly) + a 30-word Slack-style alert for the on-call.\u2019"
+      },
+      {
+        "label": "Customer-facing companion",
+        "description": "Draft the customer-facing message in parallel.",
+        "prompt_snippet": "Add Section: \u2018also draft the message we'll send to the CUSTOMER acknowledging escalation \u2014 same facts, different tone (reassuring not internal).\u2019"
+      },
+      {
+        "label": "Templates by trigger",
+        "description": "Pre-formatted by trigger.",
+        "prompt_snippet": "Add: \u2018categorize trigger (technical / billing / contract / public-complaint); each has a slightly different structure \u2014 apply the matching template.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Theatrical urgency (multiple \u2018URGENT\u2019, all-caps).",
+        "fix": "Re-pin: \u2018no theatrics; the structured format is the urgency signal.\u2019"
+      },
+      {
+        "symptom": "Blames other teams.",
+        "fix": "Add: \u2018describe what happened, not who failed. Receiver can read between the lines.\u2019"
+      },
+      {
+        "symptom": "Ask is vague (\u2018please help\u2019).",
+        "fix": "Force: \u2018ask must be specific: approve X, call Y, decide Z \u2014 with timing.\u2019"
+      },
+      {
+        "symptom": "Receiver's time-cost not estimated.",
+        "fix": "Add: \u2018name the receiver's time cost so they can plan; \u201830 min review\u2019 or \u20181 quick call\u2019 etc.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "escalation-classifier",
+      "billing-dispute-deescalation",
+      "support-csat-recovery-response"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "escalation",
+      "enterprise-support"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "When is escalation premature?",
+        "answer": "When obvious next steps in the front-line process haven't been tried. Receiver shouldn't have to ask \u2018did you check X yet?\u2019 \u2014 the tried-list must show due diligence."
+      },
+      {
+        "question": "Should every VIP escalate?",
+        "answer": "No. VIPs get faster service, not auto-escalation. Escalate when the resolution genuinely requires authority/expertise beyond front-line."
+      },
+      {
+        "question": "What if the receiver doesn't respond?",
+        "answer": "Set a clear secondary contact + escalation-of-escalation path BEFORE you need it. \u2018If you can't action by Friday EOD, this goes to <named exec> per our SLA.\u2019"
+      }
+    ],
+    "meta_title": "VIP Customer Escalation Protocol \u2014 Prompt",
+    "meta_description": "Draft a VIP escalation packet: subject, TL;DR, account context, what's tried, specific ask, risk-if-not-actioned. No theatrics."
+  },
+  {
+    "slug": "support-chatbot-handoff-to-human",
+    "title": "Chatbot Handoff To Human (With Context)",
+    "tldr": "Generates the bridge message + structured handoff context when a support chatbot decides to escalate to a human rep \u2014 what's been tried, customer's actual question, signals the rep should know.",
+    "category": "customer-support",
+    "tags": [
+      "chatbot",
+      "handoff",
+      "context-transfer",
+      "ai-support"
+    ],
+    "best_for_tags": [
+      "chatbot-builders",
+      "support-automation",
+      "rep-tooling"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Chatbot detects emotional escalation",
+        "example": "Customer types in caps + 'I want to cancel' \u2192 bot routes to human with full conversation summary + escalation flag."
+      },
+      {
+        "scenario": "Bot can't answer after 3 attempts",
+        "example": "Asked 3 clarifying questions, still doesn't understand \u2192 escalate with what it DID figure out."
+      },
+      {
+        "scenario": "Account-specific question outside bot's knowledge",
+        "example": "Bot recognizes 'this needs account-level access' \u2192 route with the account ID and inferred intent."
+      },
+      {
+        "scenario": "VIP customer detected",
+        "example": "Bot detects high-value account; route to senior rep with full chat history + LTV signal."
+      }
+    ],
+    "when_not_to_use": "Skip when the bot doesn't have account context (handoff signals will be weak). Skip for purely synchronous chat where the human is always present.",
+    "full_prompt": "You are a chatbot deciding to hand off to a human rep. Generate the bridge message + structured context packet.\n\nINPUT\n- Full chat transcript so far: {transcript}\n- Reason for handoff: {handoff_reason}                (one of: cant_resolve, emotional, account_specific, vip, explicit_request, complex)\n- Customer account info (if available): {account_info}\n- Expected wait time for human: {wait_seconds}\n\nOUTPUT (two parts)\n\n## Part 1: Message TO THE CUSTOMER\n\nA short (1-3 sentence) bridge:\n- Acknowledge the limit. Don't apologize for the bot \u2014 describe what's happening.\n- Tell them what's next. Specific. (\"Connecting you to a billing specialist \u2014 usually ~3 min wait.\")\n- DON'T over-promise. Don't say \"they'll fix it right away\" \u2014 they might escalate further.\n\nNEVER:\n- Use \"Let me transfer you\" (bot can't, you're a bot)\n- Apologize for \"any inconvenience\" (clich\u00e9)\n- Make the customer re-explain (\"they'll have all my context, right?\")\n\n## Part 2: Context packet FOR THE REP\n\n```\n[HANDOFF PACKET \u2014 generated <timestamp>]\nReason: <handoff_reason from input>\nCustomer: <name + tier + LTV signal>\nChannel: <chat>\nConversation summary (3 bullets):\n- <key thing customer said>\n- <what bot tried>\n- <where it broke down>\n\nCustomer's CURRENT specific ask:\n<one-sentence as the bot understands it>\n\nWhat bot already verified:\n- <e.g., \"Confirmed account exists and is active\">\n- <e.g., \"Pulled latest invoice \u2014 was charged $X on date Y\">\n\nWhat bot did NOT verify:\n- <e.g., \"Did not confirm if 3DS challenge was completed\">\n- <e.g., \"Account permissions not checked\">\n\nTone signal:\n<neutral | frustrated | confused | escalated | satisfied-but-stuck>\n\nRecommended rep action:\n<specific: e.g., \"Verify 3DS challenge logs; offer payment retry\">\n\nThings to NOT do:\n<e.g., \"Don't re-ask for invoice details \u2014 customer already provided\">\n```\n\nRULES\n- Conversation summary must be FACTS from the transcript, not paraphrase.\n- 'Customer's CURRENT specific ask' should be REVISED \u2014 the customer's question may have evolved during the chat. Capture the LATEST.\n- 'Things to NOT do' is for protecting customer experience: skip steps the bot already covered.\n\nTRANSCRIPT\n{transcript}\n\nREASON: {handoff_reason}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "transcript",
+        "type": "string",
+        "description": "Chat transcript so far",
+        "required": true,
+        "example": "Bot: How can I help? User: I was charged twice last month. Bot: Let me look... Yes I see two charges of $99 on April 12 and April 13. User: I never bought twice. Why?"
+      },
+      {
+        "name": "handoff_reason",
+        "type": "string",
+        "description": "Why escalating",
+        "required": true,
+        "example": "account_specific"
+      },
+      {
+        "name": "account_info",
+        "type": "string",
+        "description": "Account info if available",
+        "required": false,
+        "example": "Jane Doe, Pro plan, signed up 2023-04. LTV $4,500. No prior chargebacks."
+      },
+      {
+        "name": "wait_seconds",
+        "type": "integer",
+        "description": "Expected wait",
+        "required": false,
+        "example": "180"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Part 1: customer bridge message. Part 2: structured handoff packet with reason, summary bullets, current ask, verified, not-verified, tone, recommended action, things-not-to-do."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Honest about what bot didn't verify; helpful summaries."
+      },
+      {
+        "model": "gpt-4o-mini",
+        "compatibility": "good",
+        "notes": "Cheap + fast; sometimes paraphrases instead of facts. Pin verbatim quotes for summary."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can be over-polite in customer bridge \u2014 call out plainness rule."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "good",
+        "notes": "Fast handoff packet generation."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Phone-call handoff",
+        "description": "Handoff to a phone agent.",
+        "prompt_snippet": "Adjust Part 1: \u2018ask if they prefer phone or continued chat; if phone, capture number + best time.\u2019"
+      },
+      {
+        "label": "Async-email handoff",
+        "description": "When no rep is available immediately.",
+        "prompt_snippet": "Adjust wait_seconds handling: if >15min, offer email follow-up with explicit time window."
+      },
+      {
+        "label": "Multi-language",
+        "description": "Translate context for receiving rep.",
+        "prompt_snippet": "Add: \u2018bot may operate in customer's language; packet must be in REP's working language (English default).\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Customer bridge is bot-apologetic (\u2018Sorry I couldn't help...\u2019).",
+        "fix": "Re-pin: \u2018describe what's happening, don't apologize for being a bot.\u2019"
+      },
+      {
+        "symptom": "Conversation summary is paraphrase, missing facts.",
+        "fix": "Add: \u2018summary bullets must be from transcript \u2014 paraphrase OK but key facts (numbers, dates, names) verbatim.\u2019"
+      },
+      {
+        "symptom": "\u2018Things to NOT do\u2019 section empty.",
+        "fix": "Force: \u2018list at least 2 things the bot covered so the rep doesn't redo them. Empty section = packet not helpful.\u2019"
+      },
+      {
+        "symptom": "Customer's current ask doesn't match what they LAST said.",
+        "fix": "Add: \u2018the ask is the LATEST customer position, not initial. Conversations evolve.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gpt-4o-mini",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "support-ticket-triage",
+      "support-response-empathetic",
+      "escalation-classifier"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "chatbot-handoff",
+      "human-in-the-loop"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How much should the packet say?",
+        "answer": "Enough that the rep doesn't have to re-read the transcript for routine cases. ~200 words. Long transcripts get summarized; key facts stay verbatim."
+      },
+      {
+        "question": "Should the customer see the packet?",
+        "answer": "No \u2014 internal-only. The customer sees Part 1 (bridge message) only. Part 2 is rep-side context."
+      },
+      {
+        "question": "What if the bot is confident about the answer?",
+        "answer": "Then don't hand off. This prompt's whole purpose is for cases where bot judgement says \u2018human needed.\u2019 Tune the trigger criteria upstream."
+      }
+    ],
+    "meta_title": "Chatbot Handoff To Human (With Context) \u2014 Prompt",
+    "meta_description": "Generate bridge message + structured handoff packet when a bot escalates to a human rep. Verbatim facts + tone signal + recommended action."
+  },
+  {
+    "slug": "post-incident-customer-comms",
+    "title": "Post-Incident Customer Communication",
+    "tldr": "After an outage or service incident, drafts a post-mortem customer email: what happened in plain English, what we did, who was affected, what we're doing to prevent recurrence, and the credit policy.",
+    "category": "customer-support",
+    "tags": [
+      "post-incident",
+      "customer-comms",
+      "outage",
+      "transparency"
+    ],
+    "best_for_tags": [
+      "enterprise-comms",
+      "incident-response",
+      "trust"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Production outage > 1 hour",
+        "example": "API down 90 min affecting Pro+ customers; this prompt drafts the customer email + status page entry."
+      },
+      {
+        "scenario": "Data integrity incident",
+        "example": "Some records were corrupted; need to communicate scope honestly without panic."
+      },
+      {
+        "scenario": "Security incident disclosure",
+        "example": "Suspicious activity detected; tight legal/comms requirements but customers need to know."
+      },
+      {
+        "scenario": "Performance degradation",
+        "example": "Not an outage, but observable slowdown affecting some users \u2014 communicate proactively before complaints pile up."
+      }
+    ],
+    "when_not_to_use": "Skip for sub-1-minute blips affecting nobody. Skip when legal/security require special handling (use a templated comms approval process instead).",
+    "full_prompt": "You are drafting a post-incident customer communication. Honesty over PR-speak.\n\nINPUT\n- Incident facts: {incident_facts}              (duration, impact, what broke)\n- Affected customer segment: {affected_segment}  (Pro+ / specific region / specific feature users / all)\n- Timeline: {timeline}                          (when started, when detected, when mitigated, when fully resolved)\n- Root cause (technical, in plain English): {root_cause}\n- Action taken: {actions_taken}\n- Prevention plan: {prevention}\n- Credit / make-good policy: {credit_policy}\n- Tone: {tone}                                  (matter-of-fact, mostly low-key / regulated-industry-formal / startup-personal)\n\nOUTPUT \u2014 email body, ~250-400 words\n\n## Structure\n\n1. Subject line: `[Action item: nothing] <Service name> incident on <date> \u2014 what happened`\n   - Including \u2018nothing for you to do\u2019 if true reduces panic\n   - Be specific: \"<date>\" not \"recent\"\n\n2. Opening (1 sentence). What happened, when, who saw it.\n   \"On <date> from <time> to <time> UTC, our API returned 500 errors for ~12% of requests, affecting customers on Pro and Enterprise tiers in the EU region.\"\n\n3. WHAT HAPPENED (1 paragraph). The technical story in PLAIN ENGLISH. No jargon if avoidable. If jargon necessary, define inline.\n   - Bad: \"Our k8s control plane experienced a leader election failure.\"\n   - Better: \"Our service-routing layer (the part that decides which server handles each request) got stuck choosing between two servers, causing some requests to timeout.\"\n\n4. WHAT WE DID (numbered list, 3-5 items).\n   - Specific actions, in order. Include detection time, mitigation time.\n   - \"10:42 UTC \u2014 our automated alerts fired. 10:51 UTC \u2014 engineer on call confirmed the issue and started failover. 11:13 UTC \u2014 full service restored.\"\n\n5. WHAT WE'RE DOING (numbered list, 2-4 items).\n   - Specific PREVENTION actions, with owners and rough timelines.\n   - \"Adding multi-leader fallback (eng owns; ETA next week)\" not \"improving reliability.\"\n\n6. WHAT THIS MEANS FOR YOU\n   - Was YOUR data affected? Be specific.\n   - Are credits being applied? Be specific.\n   - Do you need to take action? Be specific (usually nothing, sometimes \"rotate your API keys\", etc.).\n\n7. Close (1 sentence). Honest acknowledgment. NO apology for the apology.\n\nCRITICAL RULES\n- NO marketing language. Banned: \"incident\", \"challenge\", \"opportunity to improve\". Use: \"outage\", \"failure\", \"bug\".\n- Specify TIMES in UTC, not \"morning\" or \"earlier today\".\n- If you don't know something, say so. \"We're still investigating why X\" beats \"We've fully understood the issue\" when it's not true.\n- Credits: state the policy upfront. If automatic, say so. If by request, say so. Never bury this.\n- If there was DATA LOSS, say it directly in section 6. Don't hide.\n\nINCIDENT FACTS\n{incident_facts}\n\nTIMELINE\n{timeline}\n\nROOT CAUSE\n{root_cause}\n\nNow draft.",
+    "input_variables": [
+      {
+        "name": "incident_facts",
+        "type": "string",
+        "description": "What happened",
+        "required": true,
+        "example": "API 500 errors. ~12% of requests. EU region. Pro+ customers."
+      },
+      {
+        "name": "affected_segment",
+        "type": "string",
+        "description": "Who was affected",
+        "required": true,
+        "example": "Pro and Enterprise customers in EU region"
+      },
+      {
+        "name": "timeline",
+        "type": "string",
+        "description": "Timeline UTC",
+        "required": true,
+        "example": "Started 10:30, detected 10:42, mitigation 10:51, fully restored 11:13"
+      },
+      {
+        "name": "root_cause",
+        "type": "string",
+        "description": "Root cause plain English",
+        "required": true,
+        "example": "Service-routing layer entered split-brain after a network partition; chose between two leaders, causing request timeouts."
+      },
+      {
+        "name": "actions_taken",
+        "type": "string",
+        "description": "What we did",
+        "required": true,
+        "example": "Failover to backup region, manual leader override, validated, switched back when healthy."
+      },
+      {
+        "name": "prevention",
+        "type": "string",
+        "description": "Prevention plan",
+        "required": true,
+        "example": "Multi-leader resilience (eng team, ETA next week); chaos test for network partitions (monthly thereafter)."
+      },
+      {
+        "name": "credit_policy",
+        "type": "string",
+        "description": "Credit/make-good",
+        "required": true,
+        "example": "Automatic credit equal to 2x downtime applied to all affected Pro/Enterprise customers' next invoice."
+      },
+      {
+        "name": "tone",
+        "type": "string",
+        "description": "Tone preference",
+        "required": false,
+        "example": "matter-of-fact, startup-personal"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Subject line + 6-7 sections covering opening, what-happened plain English, what-we-did, what-we're-doing, what-it-means-for-you, close. 250-400 words."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Resists PR-speak; honest tone."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes drifts to \u2018incident\u2019 / \u2018challenge\u2019 \u2014 re-pin banned words."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; plain-English translation of root cause can be shallow."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for short outages; less precision on complex root causes."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Status-page version",
+        "description": "Shorter version for status page.",
+        "prompt_snippet": "Add: \u2018also produce a 100-word version for the public status page \u2014 same facts, more compressed.\u2019"
+      },
+      {
+        "label": "Enterprise sla-bound",
+        "description": "For contracts with formal SLA.",
+        "prompt_snippet": "Add: \u2018include explicit SLA calculation: was SLA breached? If yes, link to credit-claim form.\u2019"
+      },
+      {
+        "label": "Multi-incident week",
+        "description": "If multiple incidents related.",
+        "prompt_snippet": "Add: \u2018if this is incident #2+ in a week, acknowledge the pattern explicitly in the opening.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Hides scope of impact.",
+        "fix": "Re-pin: \u2018state who was affected, specifically. Hiding impact destroys trust faster than the outage did.\u2019"
+      },
+      {
+        "symptom": "PR-speak (\u2018incident\u2019, \u2018challenge\u2019).",
+        "fix": "Banned word list active. \u2018Outage\u2019, \u2018bug\u2019, \u2018failure\u2019 \u2014 describe what it was."
+      },
+      {
+        "symptom": "Prevention is vague (\u2018we will improve reliability\u2019).",
+        "fix": "Force: \u2018specific action + owner + ETA. \u2018Improve reliability\u2019 is not a prevention plan.\u2019"
+      },
+      {
+        "symptom": "Buries credit policy.",
+        "fix": "Add: \u2018credit policy goes in section 6, stated plainly. Never an afterthought.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "billing-dispute-deescalation",
+      "internal-memo-from-decision"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "post-incident",
+      "transparency"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Should we wait until fully resolved?",
+        "answer": "No \u2014 communicate ASAP, then update. Customers want to know during the outage. Initial message can be 'we see it, here's what we know so far'; full post-incident later."
+      },
+      {
+        "question": "What if legal won't let us be specific?",
+        "answer": "Then there are different templates. This prompt is for normal commercial outages. Security incidents, regulated industries: use a comms approval template + legal review."
+      },
+      {
+        "question": "Will credits actually retain customers?",
+        "answer": "Credits buy short-term goodwill. The PREVENTION-CREDIBILITY is what retains. Specific named-engineer-owned prevention beats $1000 of credits."
+      }
+    ],
+    "meta_title": "Post-Incident Customer Communication \u2014 Prompt",
+    "meta_description": "Draft post-outage email: plain-English root cause, timeline, what-we-did, prevention plan, credit policy. Honest over PR-speak."
   },
   {
     "slug": "faq-from-tickets",
