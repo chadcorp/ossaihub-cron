@@ -9241,7 +9241,7 @@
       }
     ],
     "expected_output": {
-      "format": "yaml",
+      "format": "code",
       "sample": "Complete OpenAPI 3.1 YAML + assumptions list + suggested manual additions."
     },
     "few_shot_examples": [],

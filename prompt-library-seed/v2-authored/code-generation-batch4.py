@@ -362,7 +362,7 @@ Generate the spec.""",
             {"name": "sample_data", "type": "string", "description": "Sample request/response if available", "required": False, "example": "Example request: {email: 'jane@example.com', password: '...', name: 'Jane'}. Response: {id: 1, email: '...', name: '...', created_at: '2026-05-14T10:00:00Z'}"},
         ],
         "expected_output": {
-            "format": "yaml",
+            "format": "code",
             "sample": "Complete OpenAPI 3.1 YAML + assumptions list + suggested manual additions.",
         },
         "few_shot_examples": [],
