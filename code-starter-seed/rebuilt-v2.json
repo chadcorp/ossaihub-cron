@@ -19536,6 +19536,570 @@
     "meta_description": "Approval testing for LLM outputs with syrupy: save known-good output, fail on drift, review legitimate changes. Plus semantic-similarity variant."
   },
   {
+    "slug": "llm-unit-test-with-mocks",
+    "title": "LLM Unit Test With Mocks (Fast + Deterministic)",
+    "tldr": "Test code that calls LLMs without ACTUALLY calling LLMs. Mock the SDK; assert your code's request shape; verify response handling. CI-fast, deterministic.",
+    "category": "testing",
+    "language": "python",
+    "framework": "pytest + unittest.mock",
+    "tags": [
+      "pytest",
+      "mock",
+      "unit-test",
+      "llm"
+    ],
+    "best_for_tags": [
+      "ci-speed",
+      "deterministic-tests",
+      "tdd"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "when_to_use": "Most of your test suite. LLM unit tests = mock the LLM, test YOUR code. Save real LLM calls for end-to-end / eval tests run nightly.",
+    "when_not_to_use": "Skip for evaluation (need real LLM behavior). Skip for testing prompt quality (use a separate eval suite).",
+    "quick_start": "pip install pytest && pytest tests/",
+    "full_code": "\"\"\"Unit-test LLM code with mocked SDK calls.\"\"\"\nfrom __future__ import annotations\n\nimport pytest\nfrom unittest.mock import MagicMock, patch\nfrom openai import OpenAI\n\n\n# ----------------- CODE UNDER TEST -----------------\n\ndef classify_ticket(client: OpenAI, message: str) -> dict:\n    \"\"\"The function we want to test.\"\"\"\n    response = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[\n            {\"role\": \"system\", \"content\": \"Classify the support ticket. Output JSON.\"},\n            {\"role\": \"user\", \"content\": message},\n        ],\n        response_format={\"type\": \"json_object\"},\n        temperature=0,\n    )\n    import json\n    return json.loads(response.choices[0].message.content)\n\n\n# ----------------- MOCK FIXTURE -----------------\n\n@pytest.fixture\ndef mock_openai():\n    \"\"\"Returns a mock OpenAI client that returns canned responses.\"\"\"\n    client = MagicMock(spec=OpenAI)\n    return client\n\n\ndef make_mock_response(content: str):\n    \"\"\"Helper to construct a mock chat.completions.create return.\"\"\"\n    mock_resp = MagicMock()\n    mock_resp.choices = [MagicMock()]\n    mock_resp.choices[0].message.content = content\n    mock_resp.usage.prompt_tokens = 100\n    mock_resp.usage.completion_tokens = 50\n    return mock_resp\n\n\n# ----------------- TESTS: REQUEST SHAPE -----------------\n\ndef test_classify_uses_correct_model(mock_openai):\n    \"\"\"Verify we call the cheap model.\"\"\"\n    mock_openai.chat.completions.create.return_value = make_mock_response(\n        '{\"category\": \"billing\", \"priority\": \"high\"}'\n    )\n    classify_ticket(mock_openai, \"I want a refund\")\n\n    call_args = mock_openai.chat.completions.create.call_args\n    assert call_args.kwargs[\"model\"] == \"gpt-4o-mini\", \\\n        \"Should use cheap model for classification\"\n\n\ndef test_classify_temperature_is_zero(mock_openai):\n    \"\"\"Determinism: temperature=0 always.\"\"\"\n    mock_openai.chat.completions.create.return_value = make_mock_response(\n        '{\"category\": \"billing\", \"priority\": \"high\"}'\n    )\n    classify_ticket(mock_openai, \"test\")\n\n    call_args = mock_openai.chat.completions.create.call_args\n    assert call_args.kwargs[\"temperature\"] == 0\n\n\ndef test_classify_uses_json_mode(mock_openai):\n    \"\"\"Force JSON output.\"\"\"\n    mock_openai.chat.completions.create.return_value = make_mock_response(\n        '{\"category\": \"billing\", \"priority\": \"high\"}'\n    )\n    classify_ticket(mock_openai, \"test\")\n\n    call_args = mock_openai.chat.completions.create.call_args\n    assert call_args.kwargs[\"response_format\"] == {\"type\": \"json_object\"}\n\n\n# ----------------- TESTS: RESPONSE HANDLING -----------------\n\ndef test_classify_returns_parsed_json(mock_openai):\n    mock_openai.chat.completions.create.return_value = make_mock_response(\n        '{\"category\": \"billing\", \"priority\": \"high\"}'\n    )\n    result = classify_ticket(mock_openai, \"I want a refund\")\n    assert result == {\"category\": \"billing\", \"priority\": \"high\"}\n\n\ndef test_classify_raises_on_malformed_json(mock_openai):\n    import json\n    mock_openai.chat.completions.create.return_value = make_mock_response(\"not valid json\")\n    with pytest.raises(json.JSONDecodeError):\n        classify_ticket(mock_openai, \"test\")\n\n\n# ----------------- TESTS: ERROR HANDLING -----------------\n\ndef test_classify_propagates_api_errors(mock_openai):\n    \"\"\"If OpenAI errors, our code re-raises (or handles, depending on design).\"\"\"\n    from openai import APIError\n    mock_openai.chat.completions.create.side_effect = APIError(\"rate limited\", request=None, body=None)\n    with pytest.raises(APIError):\n        classify_ticket(mock_openai, \"test\")\n\n\n# ----------------- PARAMETRIZED TESTS -----------------\n\n@pytest.mark.parametrize(\"message,expected_category\", [\n    (\"I was charged twice\", \"billing\"),\n    (\"Login is broken\", \"technical\"),\n    (\"Hi, just saying hello\", \"general\"),\n])\ndef test_classify_routes_correctly(mock_openai, message, expected_category):\n    \"\"\"Mock different responses for different inputs.\"\"\"\n    mock_openai.chat.completions.create.return_value = make_mock_response(\n        f'{{\"category\": \"{expected_category}\", \"priority\": \"low\"}}'\n    )\n    result = classify_ticket(mock_openai, message)\n    assert result[\"category\"] == expected_category\n\n\n# ----------------- USING patch INSTEAD OF FIXTURE -----------------\n\n@patch(\"openai.OpenAI\")\ndef test_with_patch(mock_class):\n    \"\"\"Alternative pattern: patch the class itself.\"\"\"\n    instance = mock_class.return_value\n    instance.chat.completions.create.return_value = make_mock_response('{\"category\": \"billing\"}')\n\n    client = OpenAI()\n    result = classify_ticket(client, \"test\")\n    assert result[\"category\"] == \"billing\"\n",
+    "dependencies": [
+      {
+        "name": "pytest",
+        "version": ">=7.0",
+        "purpose": "Test runner"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Type the mock against real SDK"
+      }
+    ],
+    "env_vars": [],
+    "setup_steps": [
+      "pip install pytest openai",
+      "Save tests/test_classify.py",
+      "pytest -v",
+      "All tests pass without OPENAI_API_KEY set (mocked)"
+    ],
+    "variations": [
+      {
+        "label": "VCR-py for recorded responses",
+        "description": "Record-then-replay HTTP.",
+        "code_snippet": "# pip install vcrpy; @pytest.fixture(autouse=True) def vcr_cassette(): with vcr.use_cassette('cassettes/...'): yield. Records first call; replays after."
+      },
+      {
+        "label": "respx for HTTPX mocking",
+        "description": "Mock at HTTP layer.",
+        "code_snippet": "# pip install respx; @respx.mock def test(): respx.post('...').mock(return_value=httpx.Response(200, json={...})). Tests entire stack."
+      },
+      {
+        "label": "Snapshot testing with syrupy",
+        "description": "Lock LLM outputs.",
+        "code_snippet": "# pip install syrupy; def test_output(snapshot): assert classify(...) == snapshot. First run records; subsequent runs assert match."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Mock not being applied",
+        "cause": "Patched wrong module.",
+        "fix_snippet": "Patch where the import happens, not where it's defined. If your_module does 'from openai import OpenAI', patch 'your_module.OpenAI'."
+      },
+      {
+        "error_text": "Real API call slipping through",
+        "cause": "Test uses real client instance.",
+        "fix_snippet": "Inject the client (dependency injection) rather than instantiate inside function. Pass mock_openai as parameter."
+      },
+      {
+        "error_text": "AttributeError on mock",
+        "cause": "Mock doesn't have the right structure.",
+        "fix_snippet": "Use MagicMock(spec=OpenAI) to enforce structure. Or build the nested mock chain explicitly (mock.chat.completions.create)."
+      },
+      {
+        "error_text": "Tests pass locally, fail in CI",
+        "cause": "Hidden env dependency.",
+        "fix_snippet": "Mock everything: OPENAI_API_KEY env, network calls, time. Make sure tests run with no env vars set."
+      }
+    ],
+    "production_checklist": [
+      "Inject LLM clients via DI (constructor / parameter); don't instantiate inside functions.",
+      "Test REQUEST SHAPE separately from response handling.",
+      "Use parametrize for many inputs / scenarios.",
+      "Cover error paths (rate limits, malformed JSON, timeouts).",
+      "Run unit tests on every commit; eval tests nightly.",
+      "Use respx / VCR for end-to-end scenarios with recorded API responses."
+    ],
+    "tested_with": {
+      "model_versions": [],
+      "library_versions": [
+        "pytest==7.0",
+        "openai==1.51"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "pytest",
+      "openai"
+    ],
+    "related_glossary_slugs": [
+      "unit-testing",
+      "mocking"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Unit test LLM behavior?",
+        "answer": "No \u2014 that's evaluation. Unit tests verify YOUR code calls the LLM correctly + handles responses. Evaluating prompt quality is a separate suite (Ragas, Promptfoo, etc.)."
+      },
+      {
+        "question": "Mock vs VCR vs respx?",
+        "answer": "Mock: fastest, no real call ever. VCR: record-replay; tests integration but stays deterministic. respx: HTTP-level mock; tests SDK behavior. Use mock by default; VCR/respx for integration coverage."
+      },
+      {
+        "question": "How to test streaming?",
+        "answer": "Mock with an iterable of mock chunks. Each chunk has .choices[0].delta.content. Iterate and assert concatenated output matches expected."
+      },
+      {
+        "question": "Test tool-calling code?",
+        "answer": "Yes \u2014 mock the response with tool_calls. Verify your code calls the right tool functions with right args. Then mock tool result and verify next iteration."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "LLM Unit Test With Mocks Starter",
+    "meta_description": "Unit test LLM code without calling real APIs. Mock SDK responses, verify request shape, test error paths. CI-fast."
+  },
+  {
+    "slug": "llm-snapshot-tests-with-syrupy",
+    "title": "LLM Snapshot Tests With Syrupy",
+    "tldr": "Snapshot tests for LLM outputs: lock the prompt \u2192 expected response. On regression (model update, prompt tweak), syrupy diffs the new output against the snapshot. CI-friendly.",
+    "category": "testing",
+    "language": "python",
+    "framework": "syrupy + pytest",
+    "tags": [
+      "snapshot",
+      "syrupy",
+      "regression",
+      "testing"
+    ],
+    "best_for_tags": [
+      "prompt-engineers",
+      "regression-prevention",
+      "deterministic-prompts"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Production prompts where you've achieved 'this is the output we want'. Snapshot tests lock that output; ANY deviation fails CI. Catches silent prompt regressions.",
+    "when_not_to_use": "Skip for creative / non-deterministic prompts (temperature > 0). Skip when expected output legitimately changes frequently.",
+    "quick_start": "pip install pytest syrupy && pytest --snapshot-update",
+    "full_code": "\"\"\"Snapshot tests for LLM outputs using syrupy.\"\"\"\nfrom __future__ import annotations\n\nimport pytest\nfrom syrupy.assertion import SnapshotAssertion\n\n\n# ----------------- CODE UNDER TEST -----------------\n\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n\ndef extract_invoice(email_text: str) -> dict:\n    response = client.chat.completions.create(\n        model=\"gpt-4o-2024-08-06\",  # Pin specific version for stable snapshots\n        messages=[\n            {\"role\": \"system\", \"content\": \"Extract invoice data. Output JSON: {invoice_number, amount_usd, due_date, line_items}\"},\n            {\"role\": \"user\", \"content\": email_text},\n        ],\n        response_format={\"type\": \"json_object\"},\n        temperature=0,\n        seed=42,  # Determinism (best effort)\n    )\n    import json\n    return json.loads(response.choices[0].message.content)\n\n\n# ----------------- SNAPSHOT TESTS -----------------\n\n# Pinned inputs \u2192 snapshot files in __snapshots__/ folder\n\nSAMPLE_EMAILS = [\n    \"Invoice #INV-2024-0042. Due: 2024-10-15. Total: $1,250.00. Setup fee: $1,000. Hosting: $250.\",\n    \"Hi, please find attached invoice 2024-Q3-007 for $5,432. Net 30, due Nov 1st 2024. Services: Strategy ($3,000), Implementation ($2,432).\",\n]\n\n\n@pytest.mark.parametrize(\"email_text\", SAMPLE_EMAILS)\ndef test_extract_invoice_snapshot(email_text: str, snapshot: SnapshotAssertion):\n    \"\"\"Assert extraction matches recorded snapshot.\"\"\"\n    result = extract_invoice(email_text)\n    assert result == snapshot\n\n\n# ----------------- CUSTOM SERIALIZER (sanitize timestamps, etc.) -----------------\n\n# In a conftest.py:\nCONFTEST = \"\"\"\nfrom syrupy.extensions.json import JSONSnapshotExtension\n\n@pytest.fixture\ndef snapshot_json(snapshot):\n    return snapshot.use_extension(JSONSnapshotExtension)\n\n# Then in test: assert result == snapshot_json\n\"\"\"\n\n\n# ----------------- WORKFLOW -----------------\n\nWORKFLOW = \"\"\"\n# First run: record snapshots\npytest --snapshot-update\n\n# Subsequent runs: assert against snapshots\npytest\n\n# If you change the prompt or model and EXPECT new output:\npytest --snapshot-update\n# Review the .ambr files in __snapshots__/ for diffs\n# Commit if they match what you expect\n\n# CI: detect unintentional changes\npytest                    # fails if snapshots differ\n\"\"\"\n\n\n# ----------------- REGRESSION DETECTION -----------------\n\n# After model update or prompt tweak:\n# 1. Run tests; they fail on snapshot mismatch\n# 2. Inspect git diff of __snapshots__/*.ambr \u2014 is the new output BETTER?\n# 3. If yes: commit new snapshots + describe change in PR\n# 4. If no: prompt regression; fix before merging\n\n\n# ----------------- ADVANCED: Filter unstable fields -----------------\n\nfrom syrupy.filters import props\n\n\ndef test_extract_skip_timestamps(snapshot):\n    \"\"\"Snapshot but ignore timestamp fields (often legitimately vary).\"\"\"\n    result = extract_invoice(SAMPLE_EMAILS[0])\n    # Add 'extracted_at' or similar transient fields\n    result[\"_extracted_at\"] = \"now\"\n    # Compare excluding _extracted_at\n    assert result == snapshot(exclude=props(\"_extracted_at\"))\n",
+    "dependencies": [
+      {
+        "name": "syrupy",
+        "version": ">=4.0",
+        "purpose": "Snapshot assertions"
+      },
+      {
+        "name": "pytest",
+        "version": ">=7.0",
+        "purpose": "Test runner"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "LLM under test"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "For real calls (snapshot mode)",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install syrupy pytest openai",
+      "Save tests; run pytest --snapshot-update to RECORD",
+      "Commit snapshots (.ambr files in __snapshots__/)",
+      "Future runs: pytest (asserts against snapshots)",
+      "On real change: review diff + update snapshots"
+    ],
+    "variations": [
+      {
+        "label": "Single-line snapshots (.amber-single)",
+        "description": "One file per test.",
+        "code_snippet": "# Default behavior; useful for grepping. Default extension is AmberSnapshotExtension."
+      },
+      {
+        "label": "JSON snapshots",
+        "description": "Human-readable for structured output.",
+        "code_snippet": "from syrupy.extensions.json import JSONSnapshotExtension\\nassert result == snapshot.use_extension(JSONSnapshotExtension)"
+      },
+      {
+        "label": "Image / binary snapshots",
+        "description": "For multimodal outputs.",
+        "code_snippet": "from syrupy.extensions.image import PNGImageSnapshotExtension\\n# Useful for testing generated images / charts"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Snapshots vary across runs",
+        "cause": "Temperature > 0 or seed not pinned.",
+        "fix_snippet": "Set temperature=0 AND seed= (for OpenAI 4o). Even then, expect occasional flakes \u2014 pin model version too."
+      },
+      {
+        "error_text": "Snapshot file shows whole nested structure",
+        "cause": "Default AMBR format.",
+        "fix_snippet": "Use JSONSnapshotExtension for cleaner diffs. Or use custom serializer that focuses on stable fields."
+      },
+      {
+        "error_text": "Test passes locally, fails in CI",
+        "cause": "Locale / time-zone in output.",
+        "fix_snippet": "Normalize transient fields. Use exclude=props('_timestamp') to skip them. Or scrub before assert."
+      },
+      {
+        "error_text": "Hundreds of stale snapshots",
+        "cause": "Tests removed but snapshots remain.",
+        "fix_snippet": "pytest --snapshot-update prunes orphan snapshots. Run periodically to clean up."
+      }
+    ],
+    "production_checklist": [
+      "Pin exact model version (no -latest).",
+      "Set temperature=0 + seed for determinism.",
+      "Review snapshot diffs CAREFULLY when updating (PR review).",
+      "Run snapshot tests only on prompt/model changes (heavy LLM cost on every commit).",
+      "Combine with unit tests (fast) for tighter loop.",
+      "Document when snapshots WERE deliberately updated in PR."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-2024-08-06"
+      ],
+      "library_versions": [
+        "syrupy==4.0",
+        "openai==1.51"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "syrupy",
+      "pytest"
+    ],
+    "related_glossary_slugs": [
+      "snapshot-testing",
+      "regression-prevention"
+    ],
+    "related_learn_slugs": [],
+    "license": "Apache-2.0",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How is this different from unit tests?",
+        "answer": "Unit tests verify YOUR code is correct given mocked LLM. Snapshots verify the LLM OUTPUT is what you expect given a fixed prompt. Both are valuable; they catch different things."
+      },
+      {
+        "question": "What about non-deterministic prompts?",
+        "answer": "Snapshot tests don't work well at temperature > 0. For non-deterministic prompts, use eval frameworks (Ragas, DeepEval) that measure properties not exact equality."
+      },
+      {
+        "question": "Cost?",
+        "answer": "Each snapshot run = real LLM call. For 10 snapshot tests: $0.01-0.05 per run. Cheap, but runs on every CI invocation. Mitigate: snapshot tests only on prompt/model changes, not every PR."
+      },
+      {
+        "question": "Snapshot file format?",
+        "answer": "AMBR (default), JSON, custom. AMBR is human-readable + git-friendly. Pick based on output shape. JSON is cleaner for structured data."
+      }
+    ],
+    "github_url": "https://github.com/syrupy-project/syrupy",
+    "meta_title": "LLM Snapshot Tests With Syrupy Starter",
+    "meta_description": "Snapshot tests for LLM outputs: pin prompt \u2192 expected response. Catch silent regressions on model/prompt changes."
+  },
+  {
+    "slug": "llm-integration-test-with-recorded-vcr",
+    "title": "LLM Integration Tests With VCR Cassettes",
+    "tldr": "VCR-py: record real LLM HTTP calls once; replay them in CI. Real-world integration tests without per-run LLM cost or flakiness.",
+    "category": "testing",
+    "language": "python",
+    "framework": "vcrpy + pytest",
+    "tags": [
+      "vcr",
+      "integration-test",
+      "recorded",
+      "deterministic"
+    ],
+    "best_for_tags": [
+      "integration-coverage",
+      "ci-cost",
+      "regression-protection"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Integration tests that exercise REAL LLM behavior (not just mocked) but should run deterministically in CI without per-run cost. VCR records once, replays forever.",
+    "when_not_to_use": "Skip when output uniqueness matters (each call should be different). Skip when prompts evolve frequently (cassettes go stale).",
+    "quick_start": "pip install pytest vcrpy && pytest tests/test_integration.py",
+    "full_code": "\"\"\"Integration tests with VCR cassettes.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport pytest\nimport vcr\nfrom openai import OpenAI\n\n\n# ----------------- VCR FIXTURE -----------------\n\n# Cassettes live in tests/cassettes/*.yaml\n# Each cassette records the HTTP request/response of a real call.\n\nvcr_obj = vcr.VCR(\n    cassette_library_dir=\"tests/cassettes\",\n    record_mode=\"once\",  # Record on first run; replay after\n    match_on=[\"uri\", \"method\", \"body\"],\n    filter_headers=[\"authorization\", \"openai-organization\"],\n    decode_compressed_response=True,\n)\n\n\n@pytest.fixture\ndef vcr_cassette(request):\n    \"\"\"Auto-load cassette named after the test function.\"\"\"\n    name = f\"{request.node.name}.yaml\"\n    with vcr_obj.use_cassette(name):\n        yield\n\n\n# ----------------- CODE UNDER TEST -----------------\n\ndef summarize(text: str, client: OpenAI) -> str:\n    response = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[\n            {\"role\": \"system\", \"content\": \"Summarize in one sentence.\"},\n            {\"role\": \"user\", \"content\": text},\n        ],\n        temperature=0,\n        seed=42,\n    )\n    return response.choices[0].message.content\n\n\n# ----------------- INTEGRATION TESTS -----------------\n\n@pytest.fixture\ndef client():\n    return OpenAI(api_key=os.environ.get(\"OPENAI_API_KEY\", \"test-key-for-replay\"))\n\n\ndef test_summarize_long_text(client, vcr_cassette):\n    long_text = (\n        \"Rate limiting is a strategy for controlling the rate of requests \"\n        \"to an API. Common patterns include token bucket, leaky bucket, \"\n        \"and sliding window. Each has different memory and fairness trade-offs.\"\n    )\n    summary = summarize(long_text, client)\n    assert len(summary) < len(long_text)\n    assert \"rate limit\" in summary.lower()\n\n\ndef test_summarize_short_text(client, vcr_cassette):\n    short_text = \"OAuth 2.0 PKCE prevents authorization-code interception.\"\n    summary = summarize(short_text, client)\n    assert \"OAuth\" in summary or \"authorization\" in summary.lower()\n\n\ndef test_summarize_empty_string(client, vcr_cassette):\n    \"\"\"Edge case \u2014 should return something sensible.\"\"\"\n    summary = summarize(\"\", client)\n    assert summary  # non-empty (model handles edge case)\n\n\n# ----------------- WORKFLOW -----------------\n\nWORKFLOW = \"\"\"\n# Record cassettes (run with real API key)\nexport OPENAI_API_KEY=sk-...\npytest tests/test_integration.py\n\n# First run: cassettes recorded in tests/cassettes/*.yaml\n# Subsequent runs: replay; no API calls\n\n# Commit cassettes to git (so CI can replay without keys)\ngit add tests/cassettes\ngit commit -m \"Add VCR cassettes\"\n\n# Re-record (after prompt change):\nrm tests/cassettes/test_summarize_long_text.yaml\npytest tests/test_integration.py  # re-records\n\"\"\"\n\n\n# ----------------- ADVANCED: ALLOW BODY DRIFT -----------------\n\n# When prompts include dynamic data (timestamps, IDs), bodies don't match.\n# Use a request-matcher that ignores certain fields:\n\ncustom_vcr = vcr.VCR(\n    cassette_library_dir=\"tests/cassettes\",\n    record_mode=\"once\",\n    match_on=[\"uri\", \"method\"],   # don't match body\n    # ... or write a custom matcher\n)\n\n\n# ----------------- COMMIT CASSETTES TO REPO -----------------\n\n# tests/cassettes/test_summarize_long_text.yaml:\nSAMPLE_CASSETTE = \"\"\"\ninteractions:\n- request:\n    body: '{\"model\": \"gpt-4o-mini\", \"messages\": [...], \"temperature\": 0}'\n    headers:\n      Content-Type: [application/json]\n    method: POST\n    uri: https://api.openai.com/v1/chat/completions\n  response:\n    body:\n      string: '{\"id\": \"chatcmpl-...\", \"choices\": [{\"message\": {\"content\": \"Rate limiting controls request rates via algorithms like token bucket.\"}}]}'\n    headers: {Content-Type: [application/json]}\n    status: {code: 200, message: OK}\nversion: 1\n\"\"\"\n",
+    "dependencies": [
+      {
+        "name": "pytest",
+        "version": ">=7.0",
+        "purpose": "Test runner"
+      },
+      {
+        "name": "vcrpy",
+        "version": ">=6.0",
+        "purpose": "HTTP request recording"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "Real LLM client"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "Required to RECORD (not REPLAY)",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install pytest vcrpy openai",
+      "Set OPENAI_API_KEY env var (for first record)",
+      "Run pytest: first run records cassettes",
+      "Commit cassettes to git",
+      "CI replays cassettes (no API key needed)"
+    ],
+    "variations": [
+      {
+        "label": "Use respx instead",
+        "description": "More Pythonic HTTPX mocking.",
+        "code_snippet": "# pip install respx; @respx.mock def test(): respx.post('...').mock(return_value=httpx.Response(...)). No record/replay; you write fixtures."
+      },
+      {
+        "label": "Scrub PII from cassettes",
+        "description": "Don't commit secrets.",
+        "code_snippet": "vcr.VCR(filter_headers=['authorization'], filter_post_data_parameters=['user_email'])"
+      },
+      {
+        "label": "Cassette per-class",
+        "description": "Group related tests.",
+        "code_snippet": "@vcr_obj.use_cassette('test_classifier.yaml')\\nclass TestClassifier: ... # all methods share one cassette file"
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Test fails \u2014 request body doesn't match cassette",
+        "cause": "Prompt drifted since recording.",
+        "fix_snippet": "Re-record: delete cassette + re-run. Or use match_on=['uri', 'method'] to skip body matching."
+      },
+      {
+        "error_text": "API key leaked in cassette",
+        "cause": "Forgot to filter headers.",
+        "fix_snippet": "filter_headers=['authorization', 'openai-organization']. Review cassettes BEFORE git add."
+      },
+      {
+        "error_text": "Cassette grows huge over time",
+        "cause": "Multiple recordings stack up.",
+        "fix_snippet": "Use record_mode='once' (records first call, replays after). Delete cassette to force re-record."
+      },
+      {
+        "error_text": "Cassettes work locally, fail in CI",
+        "cause": "Different SDK version \u2192 different headers.",
+        "fix_snippet": "Pin SDK version (openai==X.Y.Z) in requirements. Cassettes are sensitive to SDK changes."
+      }
+    ],
+    "production_checklist": [
+      "Filter Authorization + other secret headers.",
+      "Pin SDK version (cassettes break on SDK header changes).",
+      "Review cassettes before committing (no leaked PII / secrets).",
+      "Re-record cassettes when prompt changes intentionally.",
+      "Pair with unit tests (fast feedback) and snapshot tests (output verification).",
+      "Don't commit cassettes with sensitive responses (customer data)."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini"
+      ],
+      "library_versions": [
+        "vcrpy==6.0",
+        "openai==1.51"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "vcrpy",
+      "pytest"
+    ],
+    "related_glossary_slugs": [
+      "integration-testing",
+      "vcr"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "VCR vs respx vs mock?",
+        "answer": "Mock: fastest, no real call ever. respx: HTTP-level fixtures, you write them. VCR: record real call once, replay forever. Use VCR for INTEGRATION tests where you want realistic responses; mock for unit tests."
+      },
+      {
+        "question": "How to handle dynamic data in prompts?",
+        "answer": "Either (a) strip dynamic fields with match_on=['uri', 'method'], or (b) use custom matcher that ignores transient parts of the body."
+      },
+      {
+        "question": "When to re-record?",
+        "answer": "When you've intentionally changed: prompt content, model version, response_format, or other request shape. Don't re-record on every test run."
+      },
+      {
+        "question": "Cassettes too big for git?",
+        "answer": "Use git LFS for cassettes. Or store in a separate test-data repo. Most cassettes are small (a few KB); only worry for huge response bodies."
+      }
+    ],
+    "github_url": "https://github.com/kevin1024/vcrpy",
+    "meta_title": "LLM Integration Tests With VCR Cassettes Starter",
+    "meta_description": "VCR-py: record real LLM HTTP calls once, replay in CI. Real-world integration tests without per-run cost."
+  },
+  {
+    "slug": "llm-eval-as-test-with-pytest",
+    "title": "LLM Eval-As-Test (Quality Gates In CI)",
+    "tldr": "Express LLM quality requirements as pytest assertions: 'answer faithful to context', 'tool call format valid', 'latency under SLA'. Fails CI on regression.",
+    "category": "testing",
+    "language": "python",
+    "framework": "pytest + custom",
+    "tags": [
+      "eval",
+      "ci-gate",
+      "quality",
+      "pytest"
+    ],
+    "best_for_tags": [
+      "production-llm-app",
+      "quality-gates",
+      "ml-engineers"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "when_to_use": "Production LLM app where prompt/model changes need quality gates. Express requirements as pytest tests; CI fails if quality regresses. Lightweight alternative to dedicated eval frameworks.",
+    "when_not_to_use": "Skip for early prototypes (overhead). Skip if you have a dedicated eval suite (Ragas, Promptfoo) \u2014 duplication isn't valuable.",
+    "quick_start": "pip install pytest openai && pytest tests/test_quality.py",
+    "full_code": "\"\"\"LLM eval-as-test: quality requirements expressed as pytest assertions.\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport time\nimport pytest\nfrom openai import OpenAI\n\n\nclient = OpenAI()\n\n\n# ----------------- CODE UNDER TEST -----------------\n\ndef answer_with_context(question: str, context: str) -> dict:\n    \"\"\"RAG-style answerer.\"\"\"\n    start = time.time()\n    response = client.chat.completions.create(\n        model=\"gpt-4o-mini\",\n        messages=[\n            {\"role\": \"system\", \"content\": \"Answer using only the provided context.\"},\n            {\"role\": \"user\", \"content\": f\"Context:\\n{context}\\n\\nQuestion: {question}\"},\n        ],\n        temperature=0,\n    )\n    return {\n        \"answer\": response.choices[0].message.content,\n        \"latency_s\": time.time() - start,\n        \"tokens\": response.usage.completion_tokens,\n    }\n\n\n# ----------------- JUDGE (LLM-as-evaluator) -----------------\n\ndef judge_faithful(answer: str, context: str) -> bool:\n    \"\"\"Is the answer grounded in the context?\"\"\"\n    judge_response = client.chat.completions.create(\n        model=\"gpt-4o\",  # stronger model as judge\n        messages=[\n            {\"role\": \"user\", \"content\": (\n                f\"Context: {context}\\n\\n\"\n                f\"Answer: {answer}\\n\\n\"\n                \"Is every factual claim in the Answer supported by the Context? \"\n                \"Respond with only 'YES' or 'NO'.\"\n            )},\n        ],\n        temperature=0,\n    )\n    return \"YES\" in judge_response.choices[0].message.content.upper()\n\n\ndef judge_addresses_question(question: str, answer: str) -> bool:\n    judge_response = client.chat.completions.create(\n        model=\"gpt-4o\",\n        messages=[\n            {\"role\": \"user\", \"content\": (\n                f\"Question: {question}\\nAnswer: {answer}\\n\\n\"\n                \"Does the Answer address the Question? Reply 'YES' or 'NO'.\"\n            )},\n        ],\n        temperature=0,\n    )\n    return \"YES\" in judge_response.choices[0].message.content.upper()\n\n\n# ----------------- EVAL DATASET -----------------\n\nTEST_CASES = [\n    {\n        \"name\": \"rate_limit_question\",\n        \"context\": \"The /search endpoint allows 100 requests per second per API key.\",\n        \"question\": \"What's the rate limit for /search?\",\n        \"expected_keywords\": [\"100\", \"RPS\", \"per second\", \"second\"],\n    },\n    {\n        \"name\": \"soc2_question\",\n        \"context\": \"SOC2 Type II audits run annually covering security and availability.\",\n        \"question\": \"How often is the SOC2 audit?\",\n        \"expected_keywords\": [\"annually\", \"annual\", \"year\"],\n    },\n    {\n        \"name\": \"out_of_scope\",\n        \"context\": \"Our pricing tiers are Basic, Pro, Enterprise.\",\n        \"question\": \"What's your company's stock price?\",\n        \"expected_keywords\": [\"not\", \"don't\", \"outside\", \"not in context\"],\n    },\n]\n\n\n# ----------------- TESTS (quality gates) -----------------\n\n@pytest.mark.parametrize(\"case\", TEST_CASES, ids=lambda c: c[\"name\"])\ndef test_answer_is_relevant(case):\n    \"\"\"Every test case: answer addresses the question.\"\"\"\n    result = answer_with_context(case[\"question\"], case[\"context\"])\n    assert judge_addresses_question(case[\"question\"], result[\"answer\"]), \\\n        f\"Answer didn't address question for {case['name']}: {result['answer']}\"\n\n\n@pytest.mark.parametrize(\"case\", TEST_CASES, ids=lambda c: c[\"name\"])\ndef test_answer_is_faithful(case):\n    \"\"\"Answer grounded in context.\"\"\"\n    result = answer_with_context(case[\"question\"], case[\"context\"])\n    assert judge_faithful(result[\"answer\"], case[\"context\"]), \\\n        f\"Answer hallucinated for {case['name']}: {result['answer']}\"\n\n\n@pytest.mark.parametrize(\"case\", TEST_CASES, ids=lambda c: c[\"name\"])\ndef test_contains_expected_keywords(case):\n    \"\"\"At least one expected keyword appears.\"\"\"\n    result = answer_with_context(case[\"question\"], case[\"context\"])\n    text = result[\"answer\"].lower()\n    assert any(kw.lower() in text for kw in case[\"expected_keywords\"]), \\\n        f\"Answer for {case['name']} missing expected keywords. Got: {result['answer'][:200]}\"\n\n\ndef test_latency_under_sla():\n    \"\"\"P95 latency below 3s.\"\"\"\n    latencies = []\n    for case in TEST_CASES:\n        result = answer_with_context(case[\"question\"], case[\"context\"])\n        latencies.append(result[\"latency_s\"])\n    p95 = sorted(latencies)[int(0.95 * len(latencies))]\n    assert p95 < 3.0, f\"P95 latency {p95}s exceeds 3s SLA\"\n\n\ndef test_token_budget():\n    \"\"\"Answers stay concise \u2014 under 200 tokens average.\"\"\"\n    tokens = []\n    for case in TEST_CASES:\n        result = answer_with_context(case[\"question\"], case[\"context\"])\n        tokens.append(result[\"tokens\"])\n    avg = sum(tokens) / len(tokens)\n    assert avg < 200, f\"Avg tokens {avg} exceeds 200 budget\"\n",
+    "dependencies": [
+      {
+        "name": "pytest",
+        "version": ">=7.0",
+        "purpose": "Test runner"
+      },
+      {
+        "name": "openai",
+        "version": ">=1.40",
+        "purpose": "LLM under test + judge"
+      }
+    ],
+    "env_vars": [
+      {
+        "name": "OPENAI_API_KEY",
+        "required": true,
+        "description": "Both for test + judge",
+        "example": "sk-..."
+      }
+    ],
+    "setup_steps": [
+      "pip install pytest openai",
+      "Define TEST_CASES with question + context + expected_keywords",
+      "Run pytest tests/test_quality.py",
+      "Use --ignore-glob='*test_quality*' in CI to skip on every PR; run nightly"
+    ],
+    "variations": [
+      {
+        "label": "Statistical pass-rate threshold",
+        "description": "Require X% pass rate, not 100%.",
+        "code_snippet": "# Run N cases; count passes; assert pass_rate > 0.85. Better than all-or-nothing for noisy outputs."
+      },
+      {
+        "label": "Cost gate",
+        "description": "Fail if cost-per-query rises.",
+        "code_snippet": "# Track cost = (input_tokens * $in_rate + output_tokens * $out_rate). Assert avg cost < threshold."
+      },
+      {
+        "label": "Bias / fairness gate",
+        "description": "Test for biased outputs.",
+        "code_snippet": "# Include sensitive-topic test cases; use LLM judge to detect biased responses. Fail if any case detected."
+      }
+    ],
+    "common_errors": [
+      {
+        "error_text": "Judge LLM inconsistent",
+        "cause": "Non-determinism in judge.",
+        "fix_snippet": "Use temperature=0 + seed in judge. Use stronger judge model (gpt-4o, not mini). Run judge 3x and require majority."
+      },
+      {
+        "error_text": "Quality tests flaky in CI",
+        "cause": "Real LLM non-determinism.",
+        "fix_snippet": "Pin model version. seed=42. Use pass-rate threshold (e.g., 85%) instead of all-or-nothing. Or use VCR cassettes for replay."
+      },
+      {
+        "error_text": "Latency varies wildly",
+        "cause": "Network / OpenAI variance.",
+        "fix_snippet": "Run latency tests on a dedicated CI runner. Use longer SLA thresholds. Or measure latency separately from quality."
+      },
+      {
+        "error_text": "Cost of running quality tests",
+        "cause": "Many cases \u00d7 2 LLM calls (test + judge).",
+        "fix_snippet": "Run on every PR vs nightly: per PR = subset of critical cases; nightly = full suite. Cache judge results."
+      }
+    ],
+    "production_checklist": [
+      "Pin model + seed for determinism.",
+      "Use STRONGER LLM as judge (gpt-4o judges gpt-4o-mini outputs).",
+      "Cover happy path + edge cases + adversarial.",
+      "Test latency + cost + quality (not just quality).",
+      "Run lightweight subset on every PR; full suite nightly.",
+      "Track scores over time \u2014 alert on drift, not just regression."
+    ],
+    "tested_with": {
+      "model_versions": [
+        "gpt-4o-mini",
+        "gpt-4o"
+      ],
+      "library_versions": [
+        "pytest==7.0",
+        "openai==1.51"
+      ],
+      "last_verified_date": "2026-05-14"
+    },
+    "related_tool_slugs": [
+      "pytest",
+      "openai"
+    ],
+    "related_glossary_slugs": [
+      "llm-as-judge",
+      "quality-gate"
+    ],
+    "related_learn_slugs": [],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Eval-as-test vs dedicated eval framework?",
+        "answer": "Eval-as-test: lightweight, lives with code, fast to add. Dedicated (Ragas, DeepEval, Promptfoo): more metrics, structured reports. Use eval-as-test for CI gates; framework for deep analysis."
+      },
+      {
+        "question": "How to handle non-deterministic judge?",
+        "answer": "Three options: (1) Use stronger judge + temp 0. (2) Run N times + majority vote. (3) Use pass-rate threshold across many cases. Option 3 is most robust."
+      },
+      {
+        "question": "Cost of running on every PR?",
+        "answer": "10 cases \u00d7 2 LLM calls \u00d7 $0.001 = $0.02 per run. Hundreds of PRs/mo = ~$5/mo. Cheap relative to value."
+      },
+      {
+        "question": "What if all tests pass but quality is bad?",
+        "answer": "Test cases are samples. Pair with: random sampling of production traffic + human review. Tests catch known regressions; samples catch unknown."
+      }
+    ],
+    "github_url": "",
+    "meta_title": "LLM Eval-As-Test Starter \u2014 Pytest Quality Gates",
+    "meta_description": "Express LLM quality requirements as pytest tests: faithful answers, latency SLA, cost budget. CI fails on regression."
+  },
+  {
     "slug": "chroma-local-rag-quickstart",
     "title": "Chroma Local RAG Quickstart With Persistent Storage",
     "tldr": "Local-first RAG with ChromaDB \u2014 persists embeddings to disk, supports cosine similarity, and includes a clean ingest/query split so you can swap in your own document loader.",
