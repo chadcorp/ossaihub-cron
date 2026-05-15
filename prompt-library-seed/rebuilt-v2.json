@@ -18315,6 +18315,687 @@
     "meta_description": "Turn sampled video frames into narrative: per-frame observations, scene transitions, story summary, notable moments, honesty about gaps."
   },
   {
+    "slug": "chart-extraction-with-uncertainty",
+    "title": "Chart Extraction With Uncertainty",
+    "tldr": "Extracts data from chart images into a structured table with per-cell confidence and 'unreadable' flags \u2014 for slides, papers, and screenshots where raw data isn't available.",
+    "category": "multimodal",
+    "tags": [
+      "vision",
+      "chart-extraction",
+      "data-recovery",
+      "ocr"
+    ],
+    "best_for_tags": [
+      "analysts",
+      "researchers",
+      "competitive-intel"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Competitive intelligence",
+        "example": "Competitor's earnings call deck \u2014 extract chart values into a spreadsheet."
+      },
+      {
+        "scenario": "Academic figure re-analysis",
+        "example": "Paper provides chart but not data; extract values for replication."
+      },
+      {
+        "scenario": "Quarterly board prep",
+        "example": "Pull values from last year's deck charts to compare YoY."
+      },
+      {
+        "scenario": "Industry-report mining",
+        "example": "Analyst report charts \u2014 extract underlying data for model inputs."
+      }
+    ],
+    "when_not_to_use": "Skip for charts where the data is published separately (cite the source instead). Skip for line charts with >20 data points where pixel-level error accumulates rapidly.",
+    "full_prompt": "You are a chart-extraction analyst. Read the image, extract data into a table, attach per-cell confidence, flag what's unreadable.\n\nINPUT\n- Chart image: [attached]\n- Chart context (caption, source, units): {chart_context}\n- Use case (downstream calculation / comparison): {use_case}\n- Reliability requirement: {reliability}     (rough / production)\n\nOUTPUT\n\n## 1. Chart anatomy\nBefore extracting, describe what you see:\n- **Chart type:** bar / line / pie / scatter / area / stacked / other\n- **Axes:** x = ___, y = ___ (with units)\n- **Y-axis scale:** linear / log / truncated (NOT starting at 0) \u2014 call this out\n- **Series count:** ___\n- **Time period / categories:** ___\n- **Source / footnote / asterisks:** ___\n\nIf chart is unreadable (low res / occluded / 3D distortion), STOP. Tell user why.\n\n## 2. Extracted table\nPer data point:\n| Series | X-value | Y-value | Confidence | Notes |\n\nConfidence levels:\n- **High** \u2014 exact value labeled on chart OR major grid intersection.\n- **Medium** \u2014 readable from axis, no exact label, estimated to within ~3% of axis range.\n- **Low** \u2014 readable but mid-range between gridlines; \u00b110% or worse.\n- **Unreadable** \u2014 too small / occluded / mid-series squeeze.\n\nIf chart has data LABELS on bars, treat those as ground truth.\n\n## 3. Caveats this chart embeds\n- Truncated y-axis? (starts above 0, visually exaggerates differences)\n- Log scale? (visual gap \u2260 proportional difference)\n- Cumulative vs incremental? (often unclear)\n- Sample size / weighting? (footnote-only often)\n- Time-period selection bias?\n- Stacked confusing absolute vs share?\n\nFlag every visual rhetoric move the chart makes.\n\n## 4. Source-data alternatives\nIf a higher-fidelity source exists, name where to look:\n- \"Underlying data likely in [SEC 10-K / investor-day appendix / paper supplement].\"\n- \"If commercial report: [vendor name] sells the data.\"\n\n## 5. Recommended use\nGiven extracted confidence + caveats:\n- **Safe to use for:** order-of-magnitude estimates, trend direction.\n- **Use with caution:** specific values within \u00b15%.\n- **Do NOT use for:** [specific use cases the data won't support].\n\nCRITICAL RULES\n- Confidence is HONEST. Don't manufacture decimals you can't read.\n- Truncated axes and log scales MUST be called out \u2014 they distort interpretation.\n- 'Unreadable' is a valid extraction. Don't guess.\n- Reliability-production extraction requires high or medium confidence on every cell; flag any low/unreadable.\n- Source-data section is REQUIRED when applicable \u2014 saves users from extracting what was already published.\n\nCHART CONTEXT\n{chart_context}\n\nUSE CASE\n{use_case}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "chart_context",
+        "type": "string",
+        "description": "Chart caption, source, units",
+        "required": true,
+        "example": "Caption: 'Q3 Revenue by Segment (USD millions)'. Source: Acme Q3 2025 earnings deck slide 14. Units: USD M."
+      },
+      {
+        "name": "use_case",
+        "type": "string",
+        "description": "Downstream use",
+        "required": true,
+        "example": "YoY comparison vs same segments in Q3 2024 for competitive briefing."
+      },
+      {
+        "name": "reliability",
+        "type": "string",
+        "description": "Reliability requirement",
+        "required": true,
+        "example": "Production \u2014 values will be cited in customer-facing report"
+      }
+    ],
+    "expected_output": {
+      "format": "table",
+      "sample": "Five sections: chart anatomy, extracted data table with per-cell confidence, embedded caveats (truncation/log/etc.), source-data alternatives, recommended use limits."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest at honest confidence ratings + caveat flagging."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good at OCR + axis reading; can over-confident on mid-gridline values."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid for standard charts; weaker on dense scatterplots."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Limited vision compared to peers; not for production extraction."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Multi-chart batch",
+        "description": "Process several charts at once.",
+        "prompt_snippet": "Apply to a slide deck or report PDF. Output one table per chart + a summary of total cells extracted with confidence distribution."
+      },
+      {
+        "label": "Strict-confidence mode",
+        "description": "Only emit high-confidence cells.",
+        "prompt_snippet": "Suppress any cell rated Medium / Low / Unreadable. Output blanks with rationale. Used for citation-quality extraction."
+      },
+      {
+        "label": "Inverse \u2014 chart from data",
+        "description": "Given a chart description and extracted values, propose a chart redesign that's harder to manipulate.",
+        "prompt_snippet": "Output: (1) the original chart's rhetorical moves, (2) a redesign that preserves the truth without the manipulation."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Manufactures decimal precision.",
+        "fix": "Re-pin: 'confidence determines precision. Low-confidence cells: round to nearest 10% of axis range. High-confidence: match labeled precision.'"
+      },
+      {
+        "symptom": "Misses truncated y-axis.",
+        "fix": "Force: 'inspect y-axis bottom value. If not 0, mark TRUNCATED in caveats. Always.'"
+      },
+      {
+        "symptom": "Stacked-bar confusion.",
+        "fix": "Add: 'for stacked bars, distinguish total vs segment. Extract both. Note if labels show only total or only segments.'"
+      },
+      {
+        "symptom": "Hallucinates data points beyond visible.",
+        "fix": "Hard rule: 'only extract what's in the image. Off-screen / cropped = unreadable, not extrapolated.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "screenshot-to-spec",
+      "table-extraction-from-pdf",
+      "ui-component-from-screenshot"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "chart-junk",
+      "ocr"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Can it handle 3D / pie charts?",
+        "answer": "Pies yes (with low confidence on similar slices). 3D bars/lines have distorted perspective \u2014 confidence drops to Low or worse. Recommend asking for 2D source."
+      },
+      {
+        "question": "What about charts in non-English?",
+        "answer": "Numeric values extract fine. Series labels: pass language hint in chart_context. The output uses original language unless you ask for translation."
+      },
+      {
+        "question": "Why call out log-scale axes?",
+        "answer": "Equal visual gaps on log charts represent multiplicative, not additive, differences. People routinely misread log charts. Flagging prevents downstream errors."
+      },
+      {
+        "question": "Can it OCR handwritten chart labels?",
+        "answer": "Generally no for production use. The OCR confidence is too low. Treat handwritten-label values as Low confidence by default."
+      }
+    ],
+    "meta_title": "Chart Extraction With Uncertainty \u2014 Multimodal Prompt",
+    "meta_description": "Extract chart data into a table with per-cell confidence, axis-truncation flags, log-scale callouts, and source-data alternatives.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
+    "slug": "video-frame-summarizer",
+    "title": "Video Frame Summarizer",
+    "tldr": "Reads sampled video frames + transcript and produces a navigable timeline of beats \u2014 what's on screen, what's said, and what changes. For tutorials, lectures, and product walkthroughs.",
+    "category": "multimodal",
+    "tags": [
+      "video",
+      "timeline",
+      "summary",
+      "vision",
+      "transcript"
+    ],
+    "best_for_tags": [
+      "learners",
+      "educators",
+      "product-teams"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Tutorial video summary",
+        "example": "30-min coding tutorial \u2014 output navigable timeline of steps."
+      },
+      {
+        "scenario": "Lecture review",
+        "example": "Recorded lecture \u2014 outline beats with timestamps for review."
+      },
+      {
+        "scenario": "Product walkthrough",
+        "example": "Customer-success records walkthrough; summary becomes the asyncIN-DOCS for new hires."
+      },
+      {
+        "scenario": "Meeting recording",
+        "example": "Hour-long all-hands \u2014 surface decision points and topic shifts."
+      }
+    ],
+    "when_not_to_use": "Skip if video is purely visual (mime, music videos) \u2014 needs spoken transcript to anchor beats. Skip when full video length > model context (chunk first).",
+    "full_prompt": "You are a video-timeline analyst. Build a navigable timeline of beats from sampled frames + transcript.\n\nINPUT\n- Sampled frames with timestamps: [attached]\n- Transcript with timestamps: {transcript}\n- Video purpose: {purpose}\n- Audience: {audience}\n- Desired output depth: {depth}        (skim / scan / study)\n\nOUTPUT\n\n## 1. Video metadata\n- **Duration:** ___\n- **Format:** tutorial / lecture / walkthrough / talk / meeting / other\n- **Primary speaker(s):** ___\n- **On-screen elements:** code editor / slides / shared screen / face-cam / split\n\n## 2. Timeline\n| Timestamp | Beat | What's said | What's on screen | Why this matters |\n\nBeats are MEANINGFUL transitions, not every 30 seconds:\n- New topic / step\n- Major insight or definition\n- Screen change (new file, new slide)\n- Q&A pivot\n- Sub-tutorial within tutorial\n- Recap moments\n\nAim for 1 beat per ~2-5 minutes of video. Long beats get sub-bullets.\n\n## 3. Decision / definition / action list\nExtract the high-value items, with timestamps:\n\n**Decisions made:**\n- \"8:23 \u2014 Decided to use Postgres over MongoDB because of relational data.\"\n\n**Key definitions / concepts:**\n- \"14:10 \u2014 Defines 'eventual consistency' as ___\"\n\n**Action items / commitments:**\n- \"29:45 \u2014 Speaker commits to publishing the code repo Friday.\"\n\n**Resources mentioned:**\n- \"21:30 \u2014 Recommends 'Designing Data-Intensive Applications' book.\"\n\n## 4. Skip-to-this navigation\nFor different viewing intents:\n- **If you're new to topic:** start at ___ (skip intro + housekeeping).\n- **If you only care about decisions:** ___ (timestamps).\n- **If you want the deep technical detail:** ___ (specific chapter).\n- **If short on time, watch:** [3-5 critical minutes selected for highest density].\n\n## 5. What's NOT in the video\nThings the audience MIGHT EXPECT but the video doesn't cover:\n- \"No deployment instructions \u2014 only local dev setup.\"\n- \"Doesn't cover the security implications.\"\n\nSets expectations honestly.\n\n## 6. Discrepancies\nWhere transcript and frames disagree:\n- \"8:50 \u2014 speaker says 'click the BLUE button' but on-screen the button is green. Frame at 8:51 shows button is green; speaker likely color-naming error.\"\n\nThese signal edits / accuracy issues / accessibility concerns.\n\nCRITICAL RULES\n- Beats are MEANINGFUL transitions, not arbitrary time intervals.\n- Decisions / definitions / actions = HIGH-VALUE extracts with exact timestamps.\n- Skip-to-this section serves different audiences explicitly.\n- Discrepancies between transcript and frames must be flagged.\n- NOT-in-video section sets honest expectations.\n\nTRANSCRIPT\n{transcript}\n\nPURPOSE\n{purpose}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "transcript",
+        "type": "string",
+        "description": "Timestamped transcript",
+        "required": true,
+        "example": "[0:00] Welcome. [0:32] Today we'll cover three things..."
+      },
+      {
+        "name": "purpose",
+        "type": "string",
+        "description": "Video purpose",
+        "required": true,
+        "example": "Onboarding tutorial \u2014 new engineers learn our deployment pipeline"
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Audience",
+        "required": true,
+        "example": "Mid-level engineers, first week at the company"
+      },
+      {
+        "name": "depth",
+        "type": "string",
+        "description": "Output depth",
+        "required": true,
+        "example": "Study \u2014 used as primary onboarding document"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: metadata, beat-aligned timeline table, decisions/definitions/actions list, skip-to-this navigation for different intents, NOT-in-video, transcript/frame discrepancies."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest on beat selection + 'why this matters' annotation."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good with mixed visual + audio data."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "excellent",
+        "notes": "Long-context advantage; handles 1+ hour videos cleanly."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for short videos; thins on long-context discrepancy detection."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Code-tutorial-focused",
+        "description": "Optimize for code tutorials.",
+        "prompt_snippet": "Add a 'code-change diff' column: at each beat, what changed in the editor (file, lines, behavior)."
+      },
+      {
+        "label": "Search-index output",
+        "description": "Output as searchable index.",
+        "prompt_snippet": "Output a JSON index: [{timestamp, topic, keywords, summary}]. Use to build a search interface over the video."
+      },
+      {
+        "label": "Multi-video synthesis",
+        "description": "Compare 2+ videos on same topic.",
+        "prompt_snippet": "Run on multiple videos covering same topic. Output a cross-video map: where do they agree, disagree, and what does each cover uniquely."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Too-frequent or too-sparse beats.",
+        "fix": "Force: 'aim for 1 beat per ~2-5 min for tutorial; 1 per 30s-2min for interview. Re-pin density.'"
+      },
+      {
+        "symptom": "Misses decisions / actions buried in casual speech.",
+        "fix": "Add: 'scan for verbs of commitment: \"we\\'ll\", \"I\\'ll\", \"we should\", \"let\\'s\" \u2014 these often surface action items.'"
+      },
+      {
+        "symptom": "Skip-to-this section is generic.",
+        "fix": "Re-pin: 'each audience-intent links to a SPECIFIC timestamp, not a topic.'"
+      },
+      {
+        "symptom": "Misses transcript-frame discrepancies.",
+        "fix": "Force section 6: 'cross-check at least 5 spots where speaker references on-screen elements.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "podcast-show-notes-structured",
+      "research-summary-for-non-experts",
+      "blog-comment-thread-summarizer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "video-summarization",
+      "transcript-mining"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How are frames sampled?",
+        "answer": "Most pipelines sample 1 fps or scene-change-triggered. Pass key timestamps as input. The model uses the sampled frames as anchor points + transcript fills in between."
+      },
+      {
+        "question": "What about videos in non-English?",
+        "answer": "Pass the transcript in source language; the prompt outputs in source language by default. For translation, use the translation-of-video prompt first."
+      },
+      {
+        "question": "Long videos (2+ hours)?",
+        "answer": "Chunk into 30-min segments, run per-chunk, then synthesize timelines into a master. Gemini long-context can do 1-hour in one pass."
+      },
+      {
+        "question": "Can it handle multi-speaker discussions?",
+        "answer": "Yes if transcript has speaker labels. Without speaker labels, attribution accuracy drops. Pre-process with a diarization step if needed."
+      }
+    ],
+    "meta_title": "Video Frame Summarizer \u2014 Multimodal Prompt",
+    "meta_description": "Build a navigable timeline from video frames + transcript: beat-aligned summary, decisions/actions list, skip-to-this navigation, discrepancy flags.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
+    "slug": "image-accessibility-alt-text",
+    "title": "Image Alt-Text For Accessibility",
+    "tldr": "Generates alt-text that screen readers can actually use: prioritized information, function-aware (decorative vs informational), respects context, follows WCAG 1.1.1.",
+    "category": "multimodal",
+    "tags": [
+      "accessibility",
+      "alt-text",
+      "wcag",
+      "vision"
+    ],
+    "best_for_tags": [
+      "content-teams",
+      "web-dev",
+      "publishers"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "CMS bulk alt-text backfill",
+        "example": "10,000 product images missing alt-text \u2014 generate accessible descriptions."
+      },
+      {
+        "scenario": "Blog post image alt-text",
+        "example": "Hero image, embedded charts, decorative graphics \u2014 each gets appropriate alt or empty alt."
+      },
+      {
+        "scenario": "Slide-deck export to PDF",
+        "example": "Every slide image gets alt-text before PDF export."
+      },
+      {
+        "scenario": "Social media post accessibility",
+        "example": "Twitter/LinkedIn images get alt-text in publishing workflow."
+      }
+    ],
+    "when_not_to_use": "Skip when the image is purely decorative \u2014 output empty alt (alt=\"\") to let screen readers skip it. Skip for complex data charts where a full data-table substitute is needed instead.",
+    "full_prompt": "You are an accessibility alt-text writer. Output WCAG-compliant alt-text honoring purpose, function, and context.\n\nINPUT\n- Image: [attached]\n- Surrounding context (caption, paragraph, page purpose): {context}\n- Function of image: {function}        (decorative / informational / functional / complex)\n- Brand/style preferences: {style}     (formal / casual / specific terminology)\n- Length budget: {length_budget}       (typical: \u2264125 chars; tweet alt: \u22641000; complex: long-desc)\n\nOUTPUT\n\n## 1. Function classification\nFirst, classify the image:\n- **Decorative** \u2014 adds visual interest only; no info loss without it. \u2192 alt=\"\"\n- **Informational** \u2014 conveys info text doesn't otherwise convey. \u2192 Short alt.\n- **Functional** \u2014 image IS a link / button / control. \u2192 Alt describes ACTION not appearance.\n- **Complex** \u2014 chart, diagram, infographic. \u2192 Short alt + long-description elsewhere.\n\nIf decorative: output alt=\"\" and STOP. Don't write description for screen readers to skip.\n\n## 2. The alt-text\n- 1-2 sentences, \u2264125 chars (or whatever length_budget specifies)\n- LEAD with most important information\n- Skip \"image of\" / \"picture of\" \u2014 screen readers already announce that\n- For functional: describe the action, not appearance (\"Submit form\" not \"Blue button\")\n- For people: use respectful language; don't infer ethnicity / gender / age unless contextually critical\n- For text in image: include the text verbatim if it's the primary content\n- Don't repeat the caption \u2014 alt complements, doesn't duplicate\n\n## 3. (Complex only) Long-description\nFor charts, diagrams, infographics:\n- Short alt (above) summarizes the image\n- Long-description = the full content needed for equivalent access\n- Format as: table of data points, sequential steps of a diagram, or structured narrative\n- Linked from `aria-describedby` or `<details>` element\n\n## 4. Context-fit check\n- Does the alt repeat what surrounding paragraph already says? \u2192 Trim alt.\n- Does the page caption convey the info? \u2192 Alt can be shorter.\n- Is the image the ONLY source of this info on the page? \u2192 Alt MUST be comprehensive.\n\n## 5. Failure mode prevention\nFlag if any apply:\n- \"Decorative being treated as informational \u2014 would clutter screen-reader output.\"\n- \"Informational treated as decorative \u2014 info loss for non-sighted users.\"\n- \"Functional treated as informational \u2014 user can't tell what clicking does.\"\n- \"Sensitive content in image (faces, medical, demographics) \u2014 verify before publishing.\"\n\n## 6. Final output\n```html\n<img src=\"...\" alt=\"[the alt text]\">\n```\nFor complex images, include long-description structure:\n```html\n<img src=\"...\" alt=\"[short summary]\" aria-describedby=\"img-desc-1\">\n<div id=\"img-desc-1\" hidden>[long description]</div>\n```\n\nCRITICAL RULES\n- Decorative = empty alt. Period. No \"elegant background pattern\" \u2014 screen readers should SKIP.\n- Lead with most important info. Don't bury the lede.\n- No \"image of\" / \"picture of\" prefixes.\n- Functional alt describes ACTION (verb), not appearance (adjective).\n- Long-description for complex images is REQUIRED for equivalent access.\n- Sensitive content prompts manual review.\n\nCONTEXT\n{context}\n\nFUNCTION\n{function}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "context",
+        "type": "string",
+        "description": "Surrounding text / page purpose",
+        "required": true,
+        "example": "Blog post about climate change; image is between paragraphs discussing Arctic ice loss."
+      },
+      {
+        "name": "function",
+        "type": "string",
+        "description": "Function of image",
+        "required": true,
+        "example": "Informational \u2014 image shows ice extent comparison 1984 vs 2024"
+      },
+      {
+        "name": "style",
+        "type": "string",
+        "description": "Style preferences",
+        "required": true,
+        "example": "Formal, scientifically precise; uses 'Arctic sea ice' not 'ice up north'"
+      },
+      {
+        "name": "length_budget",
+        "type": "string",
+        "description": "Length budget in chars",
+        "required": true,
+        "example": "\u2264125 chars for short alt; up to 500 chars for long-description"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: function classification (decorative/info/functional/complex), the alt-text, long-description if complex, context-fit check, failure-mode flags, final HTML."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest at function classification + sensitivity to context."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can over-describe decorative \u2014 re-pin classification gate."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; can mis-classify functional vs informational."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "good",
+        "notes": "Workable for simple images; weaker on complex chart long-descriptions."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Brand-voice alt-text",
+        "description": "Match a publication's voice.",
+        "prompt_snippet": "Adapt the alt-text to match a specific style guide ({style_guide_url}). Maintain WCAG compliance while applying the voice."
+      },
+      {
+        "label": "Multi-language alt-text",
+        "description": "Generate alt in multiple languages.",
+        "prompt_snippet": "Output alt-text in {languages}. Each version follows WCAG + locale conventions; not a literal translation."
+      },
+      {
+        "label": "Existing alt audit",
+        "description": "Audit existing alt-text.",
+        "prompt_snippet": "Given EXISTING alt-text + image, output: (1) is the alt accurate? (2) WCAG violations? (3) replacement alt if needed."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Treats decorative as informational.",
+        "fix": "Re-pin: 'function classification is the FIRST gate. Decorative = empty alt. No descriptions for pure decoration.'"
+      },
+      {
+        "symptom": "Buries the lede.",
+        "fix": "Force: 'first 50 chars must contain the most important info. Don't lead with style description.'"
+      },
+      {
+        "symptom": "Includes \"image of\" prefix.",
+        "fix": "Hard rule: 'NEVER prefix with image-of / picture-of / illustration-of. Screen readers already announce image.'"
+      },
+      {
+        "symptom": "Functional alt describes appearance.",
+        "fix": "Force: 'functional alt = action verb. Not \"red button\"; instead \"Send message.\"'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "chart-extraction-with-uncertainty",
+      "ui-component-from-screenshot",
+      "screenshot-to-spec"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "wcag",
+      "alt-text"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "What's the max alt-text length?",
+        "answer": "WCAG doesn't set a hard cap, but most guidelines suggest \u2264125 chars for short alt. Twitter allows 1000. For complex images, use long-description elsewhere."
+      },
+      {
+        "question": "How do I know if an image is decorative?",
+        "answer": "Test: cover the image \u2014 does the surrounding text still make sense? If yes, decorative (empty alt). If readers lose info, informational (write alt)."
+      },
+      {
+        "question": "Do I need alt-text for emoji?",
+        "answer": "Most platforms handle emoji alt-text automatically (Unicode names). For custom emoji or stickers, write alt as you would for any informational image."
+      },
+      {
+        "question": "How to handle text-in-image?",
+        "answer": "Include the text verbatim in alt if it's the primary content. Better: avoid text-in-image entirely (it doesn't reflow, doesn't scale, breaks translation)."
+      }
+    ],
+    "meta_title": "Image Alt-Text For Accessibility \u2014 Multimodal Prompt",
+    "meta_description": "Generate WCAG-compliant alt-text: function-aware classification, context-fit checks, and long-descriptions for complex images.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
+    "slug": "before-after-image-comparison",
+    "title": "Before/After Image Comparison",
+    "tldr": "Compares two images (before/after, version A/B, original/edit) and surfaces meaningful differences with severity rating \u2014 for design review, QA, photo comparison.",
+    "category": "multimodal",
+    "tags": [
+      "vision",
+      "comparison",
+      "qa",
+      "design-review"
+    ],
+    "best_for_tags": [
+      "designers",
+      "qa",
+      "researchers"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Design review",
+        "example": "v1 vs v2 of a UI mockup \u2014 what changed and is it intentional?"
+      },
+      {
+        "scenario": "Visual QA on a release",
+        "example": "Screenshots before vs after deploy \u2014 regression detection."
+      },
+      {
+        "scenario": "Photo edit verification",
+        "example": "Original vs retouched \u2014 what was altered and where it shows."
+      },
+      {
+        "scenario": "Research figure comparison",
+        "example": "Same site / sample at two time points \u2014 what's the meaningful change."
+      }
+    ],
+    "when_not_to_use": "Skip when images are radically different (different scenes / domains) \u2014 comparison won't be meaningful. Skip when pixel-perfect comparison is needed; use a diff tool.",
+    "full_prompt": "You are a visual-comparison analyst. Compare two images, surface meaningful differences, rate severity.\n\nINPUT\n- Image A (before / version 1 / original): [attached]\n- Image B (after / version 2 / new): [attached]\n- Comparison purpose: {purpose}            (design review / QA / verification / research)\n- Context: {context}                       (what changed, why, who needs to know)\n- Scope: {scope}                           (all changes / specific area / specific dimension)\n\nOUTPUT\n\n## 1. Image pair sanity\n- Are the images comparable? (same subject / framing / resolution / aspect)\n- If not, what's mismatched and how does it affect comparison validity?\n\nIf pair is fundamentally non-comparable: STOP, recommend re-shoot / re-render.\n\n## 2. Difference inventory\nWalk through systematically:\n\n### Layout / structure\n- Element positions\n- Element sizes\n- Element addition / removal\n\n### Color / contrast / saturation\n- Hue shifts\n- Contrast changes\n- Saturation / desaturation\n\n### Text content\n- Text changes (verbatim diff)\n- Typography shifts (font, weight, size)\n\n### Imagery / illustration\n- Image content swaps\n- Crop / framing changes\n\n### Specific to purpose\n- For UI: spacing, alignment, micro-interaction cues.\n- For photo: exposure, sharpness, noise.\n- For research: subject changes, measurement-relevant shifts.\n\n## 3. Severity rating per difference\nFor each surfaced diff:\n- **Critical** \u2014 breaks function or violates a hard spec (color contrast below 4.5:1, removed required CTA).\n- **Significant** \u2014 meaningful change a reviewer needs to approve.\n- **Minor** \u2014 small refinement.\n- **Trivial** \u2014 rendering / format artifact (anti-aliasing, JPEG noise).\n\n| Diff | Location | Type | Severity | Notes |\n\n## 4. Intent inference\nFor each significant/critical change:\n- Likely intentional? (matches purpose / context) \u2014 YES with reason.\n- Possibly unintentional? \u2014 flag for confirmation.\n- Definitely unintentional? \u2014 escalate as bug / regression.\n\n## 5. What's NOT different\nUseful negative space \u2014 what STAYED the same:\n- Brand elements (logo, primary CTAs).\n- Hierarchy / flow.\n- Critical functional elements.\n\nIf something CRITICAL should have changed but didn't, flag that too.\n\n## 6. Recommended next action\nBased on purpose:\n- **Approve as-is** \u2014 all changes intentional, no regressions.\n- **Approve with notes** \u2014 minor adjustments to flag back.\n- **Request revisions** \u2014 list of specific things to fix.\n- **Reject / re-do** \u2014 major intent mismatch.\n- **Escalate** \u2014 possibly unintentional change with high impact.\n\nCRITICAL RULES\n- Difference inventory is COMPREHENSIVE within scope. Don't skip uncomfortable diffs.\n- Severity rating is HONEST \u2014 over-rating wastes reviewer time, under-rating ships bugs.\n- 'Possibly unintentional' is REQUIRED when ambiguous \u2014 don't guess.\n- What's-NOT-different section catches missing changes (a real failure mode).\n\nCONTEXT\n{context}\n\nPURPOSE\n{purpose}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "purpose",
+        "type": "string",
+        "description": "Comparison purpose",
+        "required": true,
+        "example": "Design review \u2014 v3 mockup of checkout page vs v2; partner sign-off."
+      },
+      {
+        "name": "context",
+        "type": "string",
+        "description": "What changed + why",
+        "required": true,
+        "example": "Designer iterated on v2 feedback: simplify CTA, increase trust signals, fix mobile breakpoint."
+      },
+      {
+        "name": "scope",
+        "type": "string",
+        "description": "What to compare",
+        "required": true,
+        "example": "All changes above the fold; ignore footer."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: pair sanity, structured difference inventory by category, severity-rated diff table, intent inference, what's-NOT-different, recommended next action."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong at intent inference + honest severity calibration."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very strong at layout / text diff detection."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; weaker on color/contrast nuance."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for simple diffs; thins on color/contrast and intent inference."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Pixel-diff inspection",
+        "description": "Tight QA mode.",
+        "prompt_snippet": "Treat every pixel-level diff as significant unless explicitly listed in scope. Used for visual-regression CI gates."
+      },
+      {
+        "label": "User-perceptible only",
+        "description": "Focus on what users see.",
+        "prompt_snippet": "Suppress diffs <1% of viewport area or that fall below contrast-perceptibility thresholds. Output 'user-perceptible diffs only.'"
+      },
+      {
+        "label": "A/B/C/N-way",
+        "description": "Compare 3+ images.",
+        "prompt_snippet": "Apply to N images. Output a matrix of pairwise diffs + an N-image summary highlighting which variant is the most differentiated."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Misses subtle but critical changes.",
+        "fix": "Force category-by-category sweep. Don't allow free-form diff listing \u2014 categories enforce coverage."
+      },
+      {
+        "symptom": "Over-rates severity.",
+        "fix": "Re-pin: 'severity scale matches WCAG / brand-guide / spec impact. Aesthetic preference = trivial unless it violates a documented rule.'"
+      },
+      {
+        "symptom": "Misses unchanged-things-that-should-change.",
+        "fix": "Require section 5: 'name 1-2 things that should have changed given the stated intent. If none, explicitly state.'"
+      },
+      {
+        "symptom": "Vague 'looks different' commentary.",
+        "fix": "Force: 'each diff names location (top-left, hero, etc.), type, and severity. No vague \"general feel\" diffs.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "chart-extraction-with-uncertainty",
+      "ui-component-from-screenshot",
+      "screenshot-to-spec"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "visual-regression",
+      "design-qa"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How small a diff is too small?",
+        "answer": "Default: ignore sub-pixel rendering artifacts. For visual regression CI, the pixel-diff variation treats every diff as significant. For design review, the user-perceptible variation suppresses noise."
+      },
+      {
+        "question": "Can it tell intentional vs accidental?",
+        "answer": "Only inference, not certainty. The intent inference uses purpose / context to make a calibrated guess + flags 'possibly unintentional' for ambiguous cases."
+      },
+      {
+        "question": "What about animations / video?",
+        "answer": "Out of scope \u2014 this prompt is for static frames. For animation comparison, sample frames and compare pairwise, then synthesize."
+      },
+      {
+        "question": "Color-difference accuracy?",
+        "answer": "Model vision is OK for hue shifts but not for \u0394E-quality color matching. For brand-color compliance, use a sampling tool + pass values to a non-vision check."
+      }
+    ],
+    "meta_title": "Before/After Image Comparison \u2014 Multimodal Prompt",
+    "meta_description": "Compare two images and surface meaningful differences with severity rating, intent inference, and recommended next-action.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
     "slug": "screenshot-bug-report-builder",
     "title": "Screenshot Bug Report Builder",
     "tldr": "Reads a screenshot of a UI bug and emits a complete bug report: what's wrong, expected vs. observed, where exactly on the screen, reproduction steps, and severity rationale.",
@@ -20903,6 +21584,737 @@
     "meta_description": "Turn messy TODOs into a realistic weekly plan: priorities, day blocks, explicit \u2018won't get done\u2019 list, Friday check question."
   },
   {
+    "slug": "weekly-review-friday-shutdown",
+    "title": "Weekly Review \u2014 Friday Shutdown",
+    "tldr": "End-of-week ritual that captures progress, surfaces stuck-points, plans next-week's three priorities, and CLOSES the loop on open commitments so Monday morning isn't archaeology.",
+    "category": "productivity",
+    "tags": [
+      "gtd",
+      "weekly-review",
+      "shutdown",
+      "planning"
+    ],
+    "best_for_tags": [
+      "knowledge-workers",
+      "managers",
+      "ic-engineers"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Engineering manager Friday close",
+        "example": "Reviews team standup notes, pulls own commitments, plans Monday's first hour."
+      },
+      {
+        "scenario": "Senior IC weekly close",
+        "example": "Triages own inbox, decides what's actually shipping next week."
+      },
+      {
+        "scenario": "Consultant client-week review",
+        "example": "End of client week \u2014 captures deliverables-status, open follow-ups, next-week's billable plan."
+      },
+      {
+        "scenario": "Founder weekly close",
+        "example": "Triages 80 open threads down to the 3 that move the company."
+      }
+    ],
+    "when_not_to_use": "Skip when you've been heads-down for 2+ weeks \u2014 do a full quarterly review instead. Skip when current week's fires are still actively burning; the shutdown shouldn't be theater.",
+    "full_prompt": "You are a weekly shutdown coach. Run a calibrated Friday close that captures, decides, and CLOSES open loops.\n\nINPUT\n- This week's calendar / commitments hit: {week_summary}\n- Outstanding tasks / threads: {open_threads}\n- Roles I'm carrying right now: {roles}              (e.g., 'IC engineer', 'manager of 3', 'parent of 2')\n- Energy right now (1-10): {energy}\n- Constraints next week: {constraints}              (e.g., 'PTO Tue', 'all-hands Wed', '2 deep-work blocks')\n\nOUTPUT\n\n## 1. The truthful week recap (3 bullets max)\n- What ACTUALLY shipped this week (not what was planned).\n- What slipped \u2014 and the real reason (not the polite reason).\n- The single highest-leverage thing I did, even if small.\n\n## 2. Open-loop sweep\nList EVERY open thread + suggested next action:\n| Thread | Status | Next action | Owner | Due |\n|---|---|---|---|---|\n\nCategorize each:\n- **Close now** \u2014 2-min action, do it Friday.\n- **Schedule** \u2014 needs a calendar block.\n- **Delegate** \u2014 pass it, with the right context.\n- **Drop** \u2014 explicit decision NOT to do. (This is the most important column.)\n\n## 3. The 'commitments to others' check\nThings I told someone I'd do this week and didn't:\n- For each: send a short message Friday rescheduling or closing. NEVER leave a Monday-morning surprise.\n\n## 4. Next week \u2014 three priorities (no more)\nPick THREE. Not five. Not ten. Three.\n- Priority 1: ___ (must-ship)\n- Priority 2: ___ (high-value)\n- Priority 3: ___ (high-leverage but not urgent)\n\nFor each, name:\n- Concrete artifact (PR / doc / decision) that proves it's done.\n- Time estimate vs available time.\n- The single thing that could block it.\n\n## 5. The Monday-morning hour\nWhat ARE you doing in your first 60 minutes Monday? Be specific.\n- Open file: ___\n- First action: ___\n- Slack first: ___ (or not)\n\nThis eliminates Monday-morning archaeology.\n\n## 6. Recovery / rest plan\n- Two non-work commitments this weekend (be honest).\n- Sunday-evening setup, if any (anti-anxiety move, NOT pre-work).\n\n## 7. One question to mull\nA real question \u2014 strategic / career / personal \u2014 to let your subconscious work on over the weekend. Not 'should I quit my job'-sized; one well-defined puzzle.\n\nCRITICAL RULES\n- Be HONEST about slipped tasks. The shutdown only works if it's truthful.\n- THREE priorities. Hard cap. If everything's a priority, nothing is.\n- Drop column is mandatory. Not dropping things is how weeks pile up.\n- Commitments-to-others check prevents Monday surprises.\n- Recovery plan is part of the shutdown, not separate.\n\nINPUTS\nWeek summary: {week_summary}\nOpen threads: {open_threads}\nRoles: {roles}\nEnergy: {energy}\nConstraints: {constraints}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "week_summary",
+        "type": "string",
+        "description": "What happened this week",
+        "required": true,
+        "example": "Shipped auth flow refactor, two 1:1s, sprint planning, two interview rounds, escalation thread with vendor."
+      },
+      {
+        "name": "open_threads",
+        "type": "string",
+        "description": "Outstanding tasks / commitments",
+        "required": true,
+        "example": "(1) finish security review for X feature, (2) reply to candidate Maya, (3) write team-update for VP, (4) book Q3 offsite venue..."
+      },
+      {
+        "name": "roles",
+        "type": "string",
+        "description": "Roles in play this week",
+        "required": true,
+        "example": "Eng manager of 4 + tech lead on Project Phoenix + interview-loop coordinator"
+      },
+      {
+        "name": "energy",
+        "type": "string",
+        "description": "Energy (1-10)",
+        "required": true,
+        "example": "4 / 10 \u2014 Fri exhausted, Q2 was heavy"
+      },
+      {
+        "name": "constraints",
+        "type": "string",
+        "description": "Next-week constraints",
+        "required": true,
+        "example": "Tue PTO, all-hands Wed PM, Friday off-site morning"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Seven sections: truthful recap, open-loop sweep table, commitments-to-others check, three priorities (capped), Monday-morning hour plan, recovery plan, one question to mull."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest on honesty about slips + ruthless 'drop' column."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can pad to 5+ priorities \u2014 re-pin hard cap of 3."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; weaker on the introspective 'one question to mull'."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "good",
+        "notes": "Works well \u2014 this prompt is structure-heavy, not deep-reasoning."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Manager weekly",
+        "description": "Adds team-leverage section.",
+        "prompt_snippet": "Add section: 'Where did I unblock vs block my team this week? What's my team's #1 blocker next week, and what can I move?'"
+      },
+      {
+        "label": "Founder weekly",
+        "description": "Strategic + tactical.",
+        "prompt_snippet": "Add a 'metric-of-the-week' that I committed to last week, what it did, and what I'm tracking next week. One number only."
+      },
+      {
+        "label": "Two-week sprint close",
+        "description": "Bi-weekly version.",
+        "prompt_snippet": "Run this against TWO weeks of inputs. Add a 'sprint retro' bullet: what to keep / change / drop in the next sprint."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "More than 3 priorities.",
+        "fix": "Hard rule: 'three. If forced to add a fourth, drop one. Output explicit drop with reason.'"
+      },
+      {
+        "symptom": "Recap is sanitized.",
+        "fix": "Re-pin: 'slipped section must name the real reason (overcommitted / not motivated / blocked / scope creep) \u2014 not the polite reason.'"
+      },
+      {
+        "symptom": "No 'drop' column entries.",
+        "fix": "Require: 'minimum 2 items in drop column. If truly none, state explicit reasoning.'"
+      },
+      {
+        "symptom": "Monday-hour plan is vague.",
+        "fix": "Force: 'first action = open this specific file / send this specific message / start this specific timer.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "inbox-zero-triage",
+      "okr-quality-audit",
+      "weekly-study-plan"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "gtd",
+      "weekly-review"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How long should this take?",
+        "answer": "20-30 minutes the first time, 12-15 once it's habit. Past 40 min, you're overthinking \u2014 close it and move."
+      },
+      {
+        "question": "What if my week was a disaster?",
+        "answer": "Run it anyway. The 'why it slipped' bullets are highest value on bad weeks \u2014 pattern-detection compounds."
+      },
+      {
+        "question": "Does the 'one question' really help?",
+        "answer": "Mileage varies. Some weeks it produces a Monday insight; some weeks nothing. The cost is low; the upside is real on big decisions."
+      },
+      {
+        "question": "Three priorities feels too few.",
+        "answer": "That's the point. Past 3, completion rate drops sharply. If 3 feels impossible, your problem is over-commitment, not the cap."
+      }
+    ],
+    "meta_title": "Weekly Review \u2014 Friday Shutdown Prompt",
+    "meta_description": "End-of-week ritual: truthful recap, open-loop sweep, three priorities, Monday-morning hour plan, recovery plan, and one strategic question.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
+    "slug": "meeting-agenda-with-decisions",
+    "title": "Meeting Agenda With Decisions",
+    "tldr": "Generates an agenda built around DECISIONS, not topics. Names the decision, the inputs, the decider, and the time budget. Skips meetings that should be docs.",
+    "category": "productivity",
+    "tags": [
+      "meetings",
+      "agenda",
+      "decision-making",
+      "productivity"
+    ],
+    "best_for_tags": [
+      "managers",
+      "founders",
+      "pms"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Weekly leadership sync",
+        "example": "Replace 'topics' format with 'decisions to make this week.'"
+      },
+      {
+        "scenario": "Cross-team coordination",
+        "example": "PMs gathering 4 teams \u2014 what 2-3 decisions justify the meeting."
+      },
+      {
+        "scenario": "1:1 prep",
+        "example": "Manager prepping 1:1 \u2014 convert vague topics into decisions or coaching outcomes."
+      },
+      {
+        "scenario": "Cross-functional planning kickoff",
+        "example": "Quarterly planning \u2014 name the 5 decisions, who decides each, what inputs are required pre-meeting."
+      }
+    ],
+    "when_not_to_use": "Skip for purely social meetings (1:1s with rapport-building, team lunches). Skip for status-only meetings that should be Slack updates \u2014 the prompt will tell you so.",
+    "full_prompt": "You are a meeting-design coach. Build an agenda around DECISIONS, not topics. Cancel the meeting if it shouldn't exist.\n\nINPUT\n- Meeting purpose (rough): {purpose}\n- Attendees (name + role): {attendees}\n- Time budget: {time_budget}\n- Pre-reads available: {pre_reads}\n- Decisions / outcomes wanted: {desired_outcomes}\n- History: prior meeting outcomes / blockers: {history}\n\nOUTPUT\n\n## 1. Meeting check \u2014 does this meeting need to exist?\nRun this filter FIRST. Return one of:\n- **PROCEED** \u2014 there are real decisions; meeting is justified.\n- **REPLACE WITH DOC** \u2014 it's status / FYI; propose async write-up instead with template.\n- **REPLACE WITH 2-PERSON SYNC** \u2014 only 2 of the attendees needed; others can read notes.\n- **POSTPONE** \u2014 required inputs not ready; meeting will be theater.\n\nIf anything other than PROCEED: explain why + propose alternative. STOP. Don't write the agenda.\n\n## 2. Decisions list (PROCEED only)\nFor each decision (target 2-4, NOT 8):\n- **Decision:** stated as a binary or pick-one (not a vague question).\n- **Inputs needed:** pre-read items / data points required to decide.\n- **Decider:** ONE name. (RACI: who calls it.)\n- **Time budget:** minutes.\n- **Pre-work:** what attendees MUST review pre-meeting.\n\n## 3. The agenda (decision-led)\n[5 min] **Frame** \u2014 Why we're here. The 2-4 decisions on the table.\n\n[X min] **Decision 1:** [framed as binary]\n- Background (2 sentences max, since pre-read covered it)\n- Inputs / open questions\n- Voice from each attendee (capped 2 min each)\n- DECIDER: ___ calls it.\n- Decision: __________________\n\n[repeat for decisions 2-4]\n\n[5 min] **Decisions recap + owners** \u2014 Each decision restated + who owns the action by when.\n\n[5 min buffer]\n\nTotal: ___ min. Compare against time_budget. If over, cut a decision.\n\n## 4. Pre-read packet\nA 1-page pre-read for attendees:\n- Context: 3-5 bullets\n- For each decision: the FRAMING (what's being decided), the OPTIONS (2-3), and the RECOMMENDATION (if any).\n- Required by: 24h before meeting.\n\n## 5. What this meeting will NOT do\nExplicit anti-scope:\n- Won't decide [thing] \u2014 that's a separate meeting / different decider.\n- Won't rehash [past decision] \u2014 closed.\n- Won't replace [doc / async channel].\n\nThis prevents scope creep.\n\n## 6. Cancellation criteria\nIf [X] happens before the meeting, CANCEL it:\n- \"If the pre-read isn't done by 24h before, meeting becomes 30-min doc review instead.\"\n- \"If decider can't attend, postpone \u2014 no proxy-deciding.\"\n\nCRITICAL RULES\n- Meeting check is FIRST. Don't write an agenda for a meeting that should be a doc.\n- Each decision has ONE decider, not a vote.\n- Time budget is HONEST. Better to cut a decision than blow the time.\n- Pre-read is mandatory. No pre-read = no meeting.\n- Anti-scope section prevents the meeting from sprawling.\n\nINPUTS\nPurpose: {purpose}\nAttendees: {attendees}\nTime budget: {time_budget}\nDesired outcomes: {desired_outcomes}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "purpose",
+        "type": "string",
+        "description": "Rough meeting purpose",
+        "required": true,
+        "example": "Decide whether to ship Project Phoenix beta to 5 customers Friday vs. delay another sprint."
+      },
+      {
+        "name": "attendees",
+        "type": "string",
+        "description": "Name + role of each attendee",
+        "required": true,
+        "example": "Sara (VP Eng, decider), Mark (TL Phoenix), Jess (PM), Devon (CS), Pat (Security)"
+      },
+      {
+        "name": "time_budget",
+        "type": "string",
+        "description": "Time budget",
+        "required": true,
+        "example": "45 min"
+      },
+      {
+        "name": "pre_reads",
+        "type": "string",
+        "description": "Pre-reads available",
+        "required": false,
+        "example": "Test pass-rate report, customer-readiness checklist, security-review draft"
+      },
+      {
+        "name": "desired_outcomes",
+        "type": "string",
+        "description": "Decisions wanted",
+        "required": true,
+        "example": "(1) ship Friday yes/no, (2) which 5 customers, (3) rollback plan owner"
+      },
+      {
+        "name": "history",
+        "type": "string",
+        "description": "Prior context",
+        "required": false,
+        "example": "Beta date already slipped twice; CS pressure to ship; security concerns last meeting."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: meeting check (proceed/replace/postpone), decisions list (2-4 max), decision-led agenda, pre-read packet, anti-scope, cancellation criteria."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest on 'replace with doc' calls; ruthless about cancellation."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; tends to default to PROCEED \u2014 re-pin meeting-check filter."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; weaker on anti-scope specificity."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "good",
+        "notes": "Works well \u2014 structure-heavy, low-reasoning."
+      }
+    ],
+    "variations": [
+      {
+        "label": "1:1 prep",
+        "description": "Reframe as 1:1 prep, not meeting design.",
+        "prompt_snippet": "Replace 'decider' with 'coaching outcome'. Decisions section becomes 'what does this person need from this 1:1 \u2014 career / unblock / feedback / signal-check?'"
+      },
+      {
+        "label": "Board / exec readout",
+        "description": "Optimize for board cadence.",
+        "prompt_snippet": "Frame the meeting around 3 decisions board needs to make + 5-min Q&A per. Pre-read becomes board memo (1-page summary + 2-page detail)."
+      },
+      {
+        "label": "Async-first replacement",
+        "description": "Output a doc, not an agenda.",
+        "prompt_snippet": "Skip the agenda. Output a 1-page async-decision doc the decider can read + comment on. Comment thread = meeting."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Approves meetings that should be docs.",
+        "fix": "Re-pin: 'meeting check is the FIRST gate. Status-only or one-voice meetings = REPLACE WITH DOC. Default to skepticism.'"
+      },
+      {
+        "symptom": "Vague decisions ('discuss roadmap').",
+        "fix": "Force: 'each decision must be a binary or pick-one. \"Discuss\" is not a decision.'"
+      },
+      {
+        "symptom": "More than 4 decisions in a 45-min meeting.",
+        "fix": "Hard cap: 'max 1 decision per 15 min of meeting time. Exceed = cut decisions or extend.'"
+      },
+      {
+        "symptom": "Anti-scope section is generic.",
+        "fix": "Require: 'each anti-scope bullet names a specific topic this meeting will NOT cover, with where it should go instead.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "go-no-go-decision-meeting-prep",
+      "okr-quality-audit",
+      "internal-memo-from-decision"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "decision-doc",
+      "raci"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Won't this kill some meetings I need?",
+        "answer": "Yes \u2014 that's the point. Most weekly meetings could be a Slack thread + Loom + 15-min sync of the actual deciders. The filter is brutal because meeting bloat is the norm."
+      },
+      {
+        "question": "Why one decider per decision?",
+        "answer": "Group voting causes 'consensus theater' where nobody owns the call. One decider = clear accountability + faster meetings. Inputs come from everyone; the call comes from one person."
+      },
+      {
+        "question": "What about brainstorming meetings?",
+        "answer": "Different format \u2014 don't run this prompt for them. This is for decision meetings. Brainstorms have their own structure (silent \u2192 diverge \u2192 converge)."
+      },
+      {
+        "question": "Can the decider be 'the group'?",
+        "answer": "Only for explicitly chartered groups (a board, a committee with voting rules). Otherwise no \u2014 'the group decides' usually means 'nothing gets decided.'"
+      }
+    ],
+    "meta_title": "Meeting Agenda With Decisions \u2014 Productivity Prompt",
+    "meta_description": "Build a meeting agenda around decisions, not topics. Cancel meetings that should be docs. Each decision has a decider, inputs, time budget.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
+    "slug": "calendar-audit-by-energy",
+    "title": "Calendar Audit By Energy Type",
+    "tldr": "Audits last 2 weeks of calendar by energy type (deep / shallow / draining / generative) and time-of-day. Surfaces structural mismatches and concrete rearrangements.",
+    "category": "productivity",
+    "tags": [
+      "calendar",
+      "audit",
+      "energy-management",
+      "scheduling"
+    ],
+    "best_for_tags": [
+      "knowledge-workers",
+      "managers",
+      "creatives"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Manager calendar audit",
+        "example": "Booked solid; identify which meetings to cut/move/redesign by energy type."
+      },
+      {
+        "scenario": "IC engineer audit",
+        "example": "Deep work scattered into 30-min slots between meetings \u2014 surface the wasted hours."
+      },
+      {
+        "scenario": "Founder audit",
+        "example": "Reactive day = no strategic work; rearrange to defend AM deep blocks."
+      },
+      {
+        "scenario": "Creative / writer audit",
+        "example": "Generative work mixed with admin; sort by energy and consolidate."
+      }
+    ],
+    "when_not_to_use": "Skip if your job is fully reactive (some support / on-call roles). Skip without 2+ weeks of historical calendar data \u2014 n=1 week is noise.",
+    "full_prompt": "You are a calendar-energy auditor. Sort 2 weeks of calendar by energy type and time-of-day, surface mismatches, propose concrete moves.\n\nINPUT\n- Last 2 weeks of calendar events (date, time, duration, title, attendees, my role): {calendar_events}\n- My natural energy curve: {energy_curve}     (e.g., 'peak focus 8-11am, slump 1-3pm, second-wind 4-6pm')\n- Job-shape constraints: {job_constraints}    (on-call rotation, mandatory standups, etc.)\n- My deep-work targets: {deep_work_target}    (hours/week)\n\nOUTPUT\n\n## 1. Energy classification\nFor each event, tag energy type:\n- **Deep** \u2014 needs sustained focus (>45 min, low context-switching). Coding, writing, design, analysis.\n- **Shallow** \u2014 reactive / coordination. Slack triage, quick decisions, async-replacements.\n- **Generative** \u2014 creative output. Strategy, brainstorm, design exploration.\n- **Draining** \u2014 emotionally heavy. Hard 1:1s, customer escalations, firefights.\n- **Recovery** \u2014 needed buffer. Lunch break, walks, recovery time between draining events.\n\nOutput a table:\n| Day | Time | Title | Duration | Energy type | My natural energy at this time |\n\n## 2. Mismatch surface\nWhere does the calendar fight the natural energy curve?\n- \"Deep work scheduled 1-3pm during slump (5 instances) \u2014 predicted output drop.\"\n- \"Draining 1:1s back-to-back 3-5pm \u2014 no recovery between.\"\n- \"Generative brainstorm sessions scheduled Friday 4pm \u2014 generally late-week energy crash.\"\n\nQuantify: how many hours/week are mis-matched?\n\n## 3. Hidden costs\nThings the calendar isn't tracking that bleed energy:\n- Context-switching tax: number of distinct topics per day.\n- Meeting buffers: meetings starting :00 with no transition time.\n- Late-running meetings consuming break time (look for back-to-back \u226530 min).\n\n## 4. Rearrangement plan\nConcrete moves. Don't propose 'block deep work' \u2014 propose SPECIFIC moves:\n- \"Move Tue 1pm engineering review to Wed 2pm (after deep-work block ends naturally).\"\n- \"Consolidate three 30-min 1:1s scheduled Tue/Wed/Thu into a single 90-min block Wed morning.\"\n- \"Decline recurring 'weekly sync' Friday 4pm \u2014 replace with async Friday-morning update.\"\n\nFor each move:\n- What energy it fixes.\n- Who's impacted + how to communicate the move.\n- 1-line script to send.\n\n## 5. The 'protected hours' commit\nBased on the audit, commit:\n- Deep-work block: ___ days/week, ___ to ___ time. Inviolable except for [criterion].\n- Recovery slots: ___.\n- Office hours / open-door time: ___ (so people know where to find you).\n\nThese go on the calendar AS EVENTS with names. Not 'free time' \u2014 booked.\n\n## 6. The 'cut, keep, redesign' list\nFor each recurring meeting:\n- **Cut:** decline / cancel.\n- **Keep:** working as-is.\n- **Redesign:** keep but change format (async, shorter, less frequent).\n\nBe honest. A 'redesign every recurring meeting' suggestion is real most of the time.\n\nCRITICAL RULES\n- Energy types are EVIDENCE-BASED \u2014 judge by event content, not your mood.\n- Mismatch quantified in hours/week, not vibes.\n- Rearrangement moves are SPECIFIC (date, time, owner, comms script).\n- Protected hours are CALENDAR EVENTS, not aspirations.\n- 'Cut / keep / redesign' applies to recurring meetings \u2014 be ruthless.\n\nCALENDAR\n{calendar_events}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "calendar_events",
+        "type": "string",
+        "description": "2 weeks of calendar events",
+        "required": true,
+        "example": "Mon 9-10 standup (7 ppl), Mon 10-11 1:1 with Mark, Mon 11-12 design review, Mon 12-1 lunch, Mon 1-2 cross-team sync (4 teams), Mon 2-3 deep work, Mon 3-4 customer call..."
+      },
+      {
+        "name": "energy_curve",
+        "type": "string",
+        "description": "Natural energy pattern",
+        "required": true,
+        "example": "Peak focus 8-11am, slump 12-2pm, second-wind 4-6pm, low after 7pm"
+      },
+      {
+        "name": "job_constraints",
+        "type": "string",
+        "description": "Job-shape constraints",
+        "required": true,
+        "example": "On-call rotation 1 wk/mo, mandatory daily standup 9:30am, weekly leadership 1pm Tue."
+      },
+      {
+        "name": "deep_work_target",
+        "type": "string",
+        "description": "Deep-work hours/week target",
+        "required": true,
+        "example": "12 hrs/week in 2-3 hr blocks"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: energy classification table, mismatch surface with hours quantified, hidden costs, rearrangement plan with comms scripts, protected-hours commitment, recurring meeting cut/keep/redesign list."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest at honest energy classification + ruthless cut decisions."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "good",
+        "notes": "Solid; tends to be polite ('redesign' default) \u2014 re-pin cut/keep/redesign honesty."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "excellent",
+        "notes": "Strong on 2-week pattern detection across structured events."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for one week of calendar; thins on cross-week patterns."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Team calendar audit",
+        "description": "Audit a team's collective calendar.",
+        "prompt_snippet": "Replace 'my' with 'the team's'. Surface meeting-load per person, meeting-overlap inefficiencies, meeting-free days at team level."
+      },
+      {
+        "label": "Pre-quarter reset",
+        "description": "Quarterly planning reset.",
+        "prompt_snippet": "Audit last quarter (12 weeks) instead of 2. Surface trends not weeks; recommend a fresh quarter calendar template."
+      },
+      {
+        "label": "Async-first redesign",
+        "description": "Optimize for async work.",
+        "prompt_snippet": "Tilt the cut/redesign list toward 'replace with async update'. Score every recurring meeting on async-feasibility."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Vague rearrangements ('protect more deep work').",
+        "fix": "Force: 'each move = specific date + time + who's affected + 1-line comms script.'"
+      },
+      {
+        "symptom": "Too polite on recurring meetings.",
+        "fix": "Re-pin: 'cut / keep / redesign \u2014 assume 30-50% of recurring meetings should be cut or redesigned. Default to ruthless.'"
+      },
+      {
+        "symptom": "Misses context-switching tax.",
+        "fix": "Add: 'count distinct topics per day. Highlight days with >5 topic-switches as flagged.'"
+      },
+      {
+        "symptom": "Protected hours are aspirations.",
+        "fix": "Require: 'protected hours go on calendar as named events with hold criterion. Not abstract zones.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "weekly-review-friday-shutdown",
+      "meeting-agenda-with-decisions",
+      "inbox-zero-triage"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "deep-work",
+      "energy-management"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "How do I export 2 weeks of calendar for input?",
+        "answer": "Most calendar tools export ICS or CSV. Paste in just title + time + duration; the prompt doesn't need attendees / location for energy classification."
+      },
+      {
+        "question": "What if I can't control most meetings?",
+        "answer": "The cut/keep/redesign list still works \u2014 the cuts get proposed to whoever owns them. Even partial wins (1-2 cuts/quarter) compound."
+      },
+      {
+        "question": "Why energy classification vs just task type?",
+        "answer": "Task type ('coding', 'meeting') hides cost. A 1:1 with a high-trust report is cheap; a 1:1 with a struggling report is expensive. Energy captures the real cost."
+      },
+      {
+        "question": "How often should I run this?",
+        "answer": "Quarterly is the sweet spot. Monthly is too noisy; annual is too late. Quarterly aligns with planning cycles."
+      }
+    ],
+    "meta_title": "Calendar Audit By Energy \u2014 Productivity Prompt",
+    "meta_description": "Audit 2 weeks of calendar by energy type and natural-energy curve. Surface mismatches, propose specific rearrangements, commit protected hours.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
+    "slug": "delegation-decision-framework",
+    "title": "Delegation Decision Framework",
+    "tldr": "Walks through whether to do, delegate, defer, or drop a specific task \u2014 naming the right delegatee, the brief, the success criteria, and how to NOT take it back.",
+    "category": "productivity",
+    "tags": [
+      "delegation",
+      "management",
+      "decision-making",
+      "leadership"
+    ],
+    "best_for_tags": [
+      "managers",
+      "founders",
+      "tech-leads"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "New manager learning to delegate",
+        "example": "Has a list of 8 things they're doing themselves \u2014 which should go to which report."
+      },
+      {
+        "scenario": "Founder bottleneck audit",
+        "example": "Founder doing 12 hats; which can go to the first 3 hires."
+      },
+      {
+        "scenario": "Tech lead delegating to senior IC",
+        "example": "Specific feature work that should go to senior engineer with clear scope."
+      },
+      {
+        "scenario": "Quarterly capacity reset",
+        "example": "Manager reset \u2014 what tasks belong to the manager vs the team."
+      }
+    ],
+    "when_not_to_use": "Skip when the team doesn't have anyone with capacity OR capability \u2014 delegation theater is worse than self-doing. Skip when the task is irreducibly the leader's (firing, hiring decisions, hard 1:1s).",
+    "full_prompt": "You are a delegation coach. Walk a leader through do / delegate / defer / drop on a specific task.\n\nINPUT\n- The task: {task}                     (concrete, not 'manage the team')\n- Why I'm currently doing it: {current_reason}\n- Team / reports available: {team_members}    (name, role, current load, capability for this)\n- My time cost if I do it: {my_time_cost}\n- Stakes if it goes wrong: {stakes}    (revenue / reputation / safety / morale)\n- Time horizon: {horizon}              (this week / this quarter / ongoing)\n\nOUTPUT\n\n## 1. Honest task analysis\n- Is this work IRREDUCIBLE to me? (firing, hiring final-call, hard 1:1s, vision-setting \u2192 usually yes; everything else \u2192 usually no)\n- Am I doing it because it's MINE or because nobody else CAN?\n- What's my SUNK-COST attachment to it?\n\nIf irreducible: STOP here, recommend keep + add 'why irreducible' explanation. Skip rest.\n\n## 2. The 4-quadrant call\nPlace this task in one of:\n\n- **DO** \u2014 irreducible OR stakes too high to delegate AND no one ready.\n- **DELEGATE** \u2014 someone is ready (or close); benefits compound for them.\n- **DEFER** \u2014 important but not now; will be a delegate-candidate in N weeks.\n- **DROP** \u2014 looked important; isn't actually moving the needle. Kill it.\n\nJustify the call in 2-3 sentences.\n\n## 3. (DELEGATE only) Pick the person\nFor each candidate in {team_members}:\n- Capability fit: ___\n- Capacity: ___\n- Growth value for them: ___\n- Risk: ___\n\nPick ONE. State why over the others.\n\nIf NOBODY is fit:\n- Closest candidate + 'stretch with safety net' plan.\n- OR explicit decision: 'no one ready; this becomes DO until [hiring / development milestone].'\n\n## 4. (DELEGATE only) The delegation brief\nA 1-page brief the delegatee gets:\n- **What:** the task, in one sentence.\n- **Why it matters:** business / team impact.\n- **Definition of done:** concrete artifact / outcome.\n- **Decision authority:** what they can decide vs check with me on.\n- **Resources:** budget, people, time.\n- **Check-ins:** when, what they bring, what I give.\n- **Failure modes I'm watching for:** 2-3 specific risks.\n- **What success looks like at 30 days / 60 days.**\n\n## 5. The 'don't take it back' commitment\nThe #1 failure of delegation is the manager taking it back at the first wobble.\n- What's the FIRST wobble I'll be tempted to take this back on?\n- What's my pre-committed response (coach vs rescue)?\n- Who reminds me if I start re-absorbing?\n\n## 6. (DROP only) The drop narrative\n- Who needs to know it's dropped.\n- 1-line message to send.\n- What might break and how I'll know.\n\n## 7. Calendar / system update\nWhat changes immediately:\n- Calendar invite ___ moved to delegatee.\n- Doc owner changed to ___.\n- Slack channel ownership ___.\n\nIf nothing changes systems-wise, the delegation didn't really happen.\n\nCRITICAL RULES\n- Be HONEST about ego-attachment. Many 'irreducible' tasks aren't.\n- One delegatee, not a committee. (Co-ownership = no ownership.)\n- Don't-take-it-back commitment is REQUIRED \u2014 it's where delegations die.\n- Drop is a real option. Most overcommitted managers have 2-3 things on this list.\n\nTASK\n{task}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "task",
+        "type": "string",
+        "description": "The specific task being considered",
+        "required": true,
+        "example": "Owning the weekly customer-success digest \u2014 pulling data, writing summary, sending to leadership."
+      },
+      {
+        "name": "current_reason",
+        "type": "string",
+        "description": "Why I'm currently doing it",
+        "required": true,
+        "example": "Started it 9 months ago; nobody else has the context; I'm comfortable with it."
+      },
+      {
+        "name": "team_members",
+        "type": "string",
+        "description": "Team / reports + capability",
+        "required": true,
+        "example": "Maya (Sr CS Manager \u2014 strong writing, full load), Devon (CS analyst \u2014 growth role, has time), Pat (Ops \u2014 overloaded)"
+      },
+      {
+        "name": "my_time_cost",
+        "type": "string",
+        "description": "Time it costs me",
+        "required": true,
+        "example": "3-4 hrs / week"
+      },
+      {
+        "name": "stakes",
+        "type": "string",
+        "description": "Stakes if it goes wrong",
+        "required": true,
+        "example": "Internal-only; mild reputation impact if late or sloppy; no revenue impact."
+      },
+      {
+        "name": "horizon",
+        "type": "string",
+        "description": "Time horizon",
+        "required": true,
+        "example": "Ongoing \u2014 recurring weekly task"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Seven sections: irreducibility check, 4-quadrant call, person picked, full delegation brief, don't-take-it-back commitment, drop narrative (if drop), calendar/system updates."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest on ego-attachment honesty + delegation brief quality."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can soft-pedal irreducibility test \u2014 re-pin."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; sometimes vague on don't-take-it-back commitment."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "good",
+        "notes": "Works well \u2014 structure-heavy; weaker on nuanced person selection."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Batch delegation",
+        "description": "Run on a list of tasks.",
+        "prompt_snippet": "Run sections 1-2 against a LIST of tasks. Output a portfolio view: do / delegate / defer / drop counts + total time freed."
+      },
+      {
+        "label": "Founder-specific",
+        "description": "Founder bottleneck audit.",
+        "prompt_snippet": "Add irreducibility test specifically for founder tasks (board, fundraise, hiring senior, top-customer relationships). Default toward 'delegate everything else.'"
+      },
+      {
+        "label": "Promotion-engine variant",
+        "description": "Frame as growth opportunity.",
+        "prompt_snippet": "Re-frame section 3: for each candidate, rate this as a promotion-track stretch task. Pick the candidate where this is most career-positive."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Recommends 'do' too often.",
+        "fix": "Re-pin: 'irreducibility test is strict. Default to delegate. \"Nobody else can\" is usually \"nobody else has the context \u2014 I can fix that.\"'"
+      },
+      {
+        "symptom": "Vague delegation brief.",
+        "fix": "Force: 'each brief section has a concrete example, not a placeholder. Definition of done = specific artifact.'"
+      },
+      {
+        "symptom": "No don't-take-it-back commitment.",
+        "fix": "Require: 'pre-commit the first wobble + the coach-not-rescue response. Otherwise this delegation will fail.'"
+      },
+      {
+        "symptom": "Skips system updates.",
+        "fix": "Force section 7: 'if calendar / doc-owner / channel-owner doesn't change, the delegation isn't real.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "weekly-review-friday-shutdown",
+      "calendar-audit-by-energy",
+      "okr-quality-audit"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "delegation",
+      "raci"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "What if my team is too junior?",
+        "answer": "Then 'stretch with safety net' is the path \u2014 pick the closest candidate, define the safety net (your check-ins, escape valve, rollback plan). Don't use junior-ness as a permanent excuse to keep tasks."
+      },
+      {
+        "question": "What's a 'stretch with safety net' plan?",
+        "answer": "Pair the new owner with you for the first 2-3 cycles. They do the work; you review BEFORE it goes out. Iteration 1 = lots of review; iteration 3 = light touch."
+      },
+      {
+        "question": "How do I know I'm taking it back too much?",
+        "answer": "Pre-committed response. The first time you'd otherwise step in, ask yourself: am I coaching or rescuing? Rescuing = stop. Track frequency."
+      },
+      {
+        "question": "What if the delegatee fails?",
+        "answer": "Then you learn something \u2014 about their fit, the brief quality, your check-in cadence. Failed delegation is data, not proof that you should do everything yourself."
+      }
+    ],
+    "meta_title": "Delegation Decision Framework \u2014 Productivity Prompt",
+    "meta_description": "Walk through do / delegate / defer / drop for a specific task: irreducibility check, person fit, delegation brief, don't-take-it-back commitment.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
     "slug": "weekly-review-coach",
     "title": "Weekly Review Coach (wins / blockers / next-week priorities)",
     "category": "productivity",
@@ -21755,6 +23167,716 @@
     ],
     "meta_title": "Second-Order Thinking Probe \u2014 Prompt",
     "meta_description": "Push past first-order analysis to second-order consequences: specific actors, timing, counter-moves, and the \u2018why doesn't everyone do this\u2019 check."
+  },
+  {
+    "slug": "argument-steelman-then-counter",
+    "title": "Argument Steelman, Then Counter",
+    "tldr": "Takes a position, builds the strongest STEELMAN version another rational person could hold, then constructs the counter-argument \u2014 forcing intellectual honesty before disagreement.",
+    "category": "reasoning",
+    "tags": [
+      "debate",
+      "epistemics",
+      "argumentation",
+      "steelman"
+    ],
+    "best_for_tags": [
+      "analysts",
+      "writers",
+      "leaders"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Internal policy debate",
+        "example": "Team disagrees on a hiring policy \u2014 steelman both sides before deciding."
+      },
+      {
+        "scenario": "Op-ed prep",
+        "example": "Writer's piece will be attacked \u2014 steelman the attack to anticipate."
+      },
+      {
+        "scenario": "Negotiation prep",
+        "example": "Steelman the other side's strongest version to avoid weak-arg traps."
+      },
+      {
+        "scenario": "PhD defense prep",
+        "example": "Anticipate the strongest committee challenges by steelmanning."
+      }
+    ],
+    "when_not_to_use": "Skip when the position is genuinely indefensible (factual / ethical absolutes). Don't use it as cover for false-balance on settled questions.",
+    "full_prompt": "You are a steelman-then-counter analyst. Build the strongest version of a position another rational person could hold, then construct the strongest counter.\n\nINPUT\n- The position: {position}\n- Domain / context: {context}\n- Audience: {audience}                 (who's hearing this argument)\n- Your own current view: {my_view}     (so model knows where you're coming from)\n- Stakes: {stakes}                     (decision being made / what changes if argument wins)\n\nOUTPUT\n\n## 1. The position, in its own words\nRestate the position so its strongest advocates would accept the restatement.\n- Use their VOCABULARY (not your translations).\n- Name the IMPLICIT premise (often more controversial than the explicit claim).\n\nIf you can't restate it without distortion, STOP. The position isn't well-defined enough to argue against.\n\n## 2. The steelman\nThe strongest version of this argument. Construct 3-4 supporting pillars:\n- **Premise:** what they're assuming and WHY that assumption is reasonable.\n- **Evidence:** what real-world data / studies / cases support it. Cite specifics.\n- **Mechanism:** the causal / logical chain from premise to conclusion.\n- **Counter-pre-rebut:** how the steelman ANTICIPATES and answers the obvious objection.\n\nA good steelman is one a steelman-advocate would ENDORSE as a fair version of their argument. Pass that test.\n\n## 3. The strongest counter\nNow attack the steelman \u2014 at its STRONGEST point, not its weakest.\n\n- **Where the steelman's strongest pillar fails:** specific premise / evidence / mechanism critique.\n- **What the steelman over-claims:** scope it doesn't actually support.\n- **Better-fitting alternative explanation:** what fits the data better.\n- **Predictive failure:** what should happen under the steelman that doesn't.\n\nDon't strawman. The counter is real argumentation, not name-calling.\n\n## 4. Where the disagreement actually lives\nMost arguments aren't about the explicit claim \u2014 they're about an underlying ASSUMPTION.\n- Name the load-bearing assumption both sides are disagreeing about.\n- Is this an empirical disagreement (could be resolved by data)?\n- A values disagreement (different priorities)?\n- A definitional disagreement (using same word, different meanings)?\n\n## 5. The 'change my mind' test\nFor BOTH sides:\n- What evidence would update the steelman side toward the counter?\n- What evidence would update the counter side toward the steelman?\n\nIf neither side has a clear answer, this is values-based not evidence-based. Flag.\n\n## 6. Honest verdict\nAfter working through the above:\n- Which side does the actual evidence currently support more?\n- Where's the legitimate residual uncertainty?\n- Where does {my_view} need updating, if anywhere?\n\nThe verdict can be 'steelman wins on evidence', 'counter wins', 'genuine tie', or 'wrong question.'\n\nCRITICAL RULES\n- The steelman MUST be one its advocates would endorse. If they wouldn't, you're strawmanning.\n- The counter attacks the STRONGEST point, not the weakest.\n- The 'change my mind' test names CONCRETE evidence, not abstract conditions.\n- Honest verdict accepts 'counter wins' or 'I was wrong' as valid outcomes.\n\nPOSITION\n{position}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "position",
+        "type": "string",
+        "description": "Position to steelman",
+        "required": true,
+        "example": "We should ban smartphone use by under-16s in schools entirely."
+      },
+      {
+        "name": "context",
+        "type": "string",
+        "description": "Domain / context",
+        "required": true,
+        "example": "Education-policy debate at school district level"
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Who hears the argument",
+        "required": true,
+        "example": "School board, parent group, teachers union"
+      },
+      {
+        "name": "my_view",
+        "type": "string",
+        "description": "Your current view",
+        "required": true,
+        "example": "I lean toward 'restrict in classrooms but not all-day ban' but feel uncertain."
+      },
+      {
+        "name": "stakes",
+        "type": "string",
+        "description": "What changes if argument wins",
+        "required": true,
+        "example": "District-wide policy change; affects 12,000 students; vote in 6 weeks."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: position-restated, 4-pillar steelman, strongest counter, where the real disagreement lives, change-my-mind tests for both sides, honest verdict."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest at steelman quality + willingness to render honest verdicts."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very strong; sometimes false-balances when verdict should be clear \u2014 re-pin honest-verdict rule."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; can miss the 'load-bearing assumption' in section 4."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Steelman is workable; counter is thinner. Use for first-pass drafts."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Three-way",
+        "description": "Compare 3 positions, not 2.",
+        "prompt_snippet": "Replace 'position vs counter' with 3 distinct positions. Steelman each, identify the assumptions each rejects from the others."
+      },
+      {
+        "label": "Time-traveler",
+        "description": "Apply steelman+counter to past decisions.",
+        "prompt_snippet": "Apply to a historical decision; steelman the path NOT taken and counter the path that WAS taken. Used for post-mortems."
+      },
+      {
+        "label": "Internal vs external",
+        "description": "Steelman an internal vs external critique.",
+        "prompt_snippet": "Steelman an INTERNAL critic (someone inside the system) vs EXTERNAL critic (outside expert). Surface where the institution defends against external but not internal challenge."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Strawmans the position.",
+        "fix": "Re-pin: 'steelman must pass the endorsement test \u2014 if the position's advocates would object, you're strawmanning. Re-write with their vocabulary.'"
+      },
+      {
+        "symptom": "Attacks the weakest point.",
+        "fix": "Force: 'counter targets the STRONGEST pillar from section 2, not the easiest.'"
+      },
+      {
+        "symptom": "False-balance verdict.",
+        "fix": "Re-pin: 'honest verdict accepts \"counter wins\" or \"steelman wins\". Genuine tie only when evidence is actually split.'"
+      },
+      {
+        "symptom": "Generic 'change my mind' criteria.",
+        "fix": "Require: 'specific evidence type, source, design. Not \"more research\" \u2014 name the study that would update you.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "fermi-estimation",
+      "root-cause-five-whys",
+      "evidence-quality-scorer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "steelman",
+      "epistemics"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Is this just rhetoric?",
+        "answer": "No \u2014 done right, it changes minds. Most arguments fail because each side caricatures the other. Real steelman + real counter is how disagreements get productive."
+      },
+      {
+        "question": "When should I NOT steelman?",
+        "answer": "For positions that are factually false or ethically beyond-pale. Steelmanning vaccine denial or holocaust denial gives false equivalence. Reserve for genuine disagreements where smart people differ."
+      },
+      {
+        "question": "What if I can't steelman?",
+        "answer": "Read more from the position's advocates in their own words. If you can only describe the position in YOUR terms, you don't yet understand it well enough to disagree with it."
+      },
+      {
+        "question": "Won't this lead to fence-sitting?",
+        "answer": "Only if you stop at section 5. The honest verdict in section 6 is required \u2014 you take a position. Steelmanning makes that position better-grounded, not weaker."
+      }
+    ],
+    "meta_title": "Steelman Then Counter \u2014 Reasoning Prompt",
+    "meta_description": "Build the strongest version of a position another rational person could hold, then attack it at its strongest point. With honest verdict.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
+    "slug": "base-rate-correction-check",
+    "title": "Base-Rate Correction Check",
+    "tldr": "Catches base-rate-neglect in arguments: surfaces the actual base rate, the conditional probability being conflated, and the correct Bayesian conclusion \u2014 for medical, legal, hiring, and risk reasoning.",
+    "category": "reasoning",
+    "tags": [
+      "bayes",
+      "base-rate",
+      "probability",
+      "epistemics"
+    ],
+    "best_for_tags": [
+      "analysts",
+      "researchers",
+      "policy"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Medical test result interpretation",
+        "example": "Positive screen for rare condition \u2014 true vs false positive."
+      },
+      {
+        "scenario": "Hiring 'success pattern' claims",
+        "example": "All 5 top hires went to Ivy schools \u2192 does that justify Ivy bias?"
+      },
+      {
+        "scenario": "Crime / behavior risk-flagging",
+        "example": "Algorithm flags X% of group; is that signal or just base rate of population?"
+      },
+      {
+        "scenario": "Investment / startup pattern matching",
+        "example": "Founders matching 'Stanford CS' have X% success \u2014 is that signal or base rate?"
+      }
+    ],
+    "when_not_to_use": "Skip when there's no probabilistic claim \u2014 pure deductive arguments don't need this. Skip when the base rate is genuinely unknowable.",
+    "full_prompt": "You are a base-rate inspector. Find the probabilistic claim, surface the relevant base rate, do the Bayesian correction.\n\nINPUT\n- The claim or argument: {claim}\n- Domain (medicine / hiring / criminal-justice / investing / education / other): {domain}\n- Population being talked about: {population}\n- Evidence cited (test result, observation, pattern): {evidence}\n\nOUTPUT\n\n## 1. The probabilistic claim\nRestate the argument in probabilistic form:\n- Probability of (something) given (some evidence) = ?\n- What's being implicitly claimed.\n\nIf the argument isn't probabilistic at all, STOP and tell the user.\n\n## 2. The base rate\nWhat's the base rate of the thing being claimed, in {population}?\n- Cite source (study, official data, plausible estimate).\n- If base rate is unknown, give a confidence interval.\n\nThis is the BASELINE probability before any evidence.\n\n## 3. The conditional probabilities\n- **Sensitivity:** P(evidence | thing-is-true)\n- **Specificity:** P(no-evidence | thing-is-false)\n- **False positive rate:** P(evidence | thing-is-false) = 1 - specificity.\n- **False negative rate:** P(no-evidence | thing-is-true) = 1 - sensitivity.\n\nSource these from study data when possible.\n\n## 4. The Bayesian correction\nApply Bayes:\n- P(thing-is-true | evidence) = (sensitivity \u00d7 base rate) / [(sensitivity \u00d7 base rate) + (false-positive rate \u00d7 (1 - base rate))]\n\nWalk through with numbers:\n- Base rate: ___\n- Sensitivity: ___\n- Specificity: ___\n- Posterior probability: ___\n\n## 5. The bias surfaced\n- Original argument implicitly assumed posterior \u2248 sensitivity (e.g., \"test is 95% accurate, so 95% chance you have it\").\n- Correct posterior accounting for base rate: ___\n- Difference: ___ (often dramatic for rare conditions or weak evidence).\n\n## 6. The 'when would this matter' check\nFor what range of base rates does this argument hold?\n- \"If base rate of X in this population is >30%, the original argument is roughly correct.\"\n- \"If base rate is <5%, the original argument overstates by >50%.\"\n\nThis lets the reader decide whether base-rate neglect matters here.\n\n## 7. Decision implications\n- If acting on the argument, what's the correct posterior to use?\n- What's the cost of acting on the WRONG posterior?\n- Where should additional confirmatory evidence be sought?\n\nCRITICAL RULES\n- Walk through numbers EXPLICITLY. Don't skip arithmetic \u2014 that's where intuition fails.\n- Base rate sourced or interval-estimated. Don't make up numbers.\n- 'When would this matter' bracket shows where base rate flips the argument.\n- Decision implications connect the math to real-world action.\n\nCLAIM\n{claim}\n\nEVIDENCE\n{evidence}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "claim",
+        "type": "string",
+        "description": "Claim being made",
+        "required": true,
+        "example": "Half our top performers attended top-tier universities, so we should prioritize candidates from top schools."
+      },
+      {
+        "name": "domain",
+        "type": "string",
+        "description": "Domain",
+        "required": true,
+        "example": "Tech hiring \u2014 software engineering"
+      },
+      {
+        "name": "population",
+        "type": "string",
+        "description": "Population",
+        "required": true,
+        "example": "Candidates applying to senior SWE roles in our pipeline"
+      },
+      {
+        "name": "evidence",
+        "type": "string",
+        "description": "Evidence",
+        "required": true,
+        "example": "5 of top 10 performers from top-tier universities."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Seven sections: probabilistic claim restate, base rate with source, conditional probabilities (sens/spec/FPR/FNR), Bayesian correction with numbers, bias surfaced, 'when would this matter' range, decision implications."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong arithmetic + honest about base-rate uncertainty."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very strong; will hallucinate specific numbers if you don't pin sourcing."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; sometimes vague on 'when would this matter' brackets."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Arithmetic accurate; weaker on nuanced bias-surfacing."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Frequency-format",
+        "description": "Use natural frequencies, not probabilities.",
+        "prompt_snippet": "Convert all probabilities to 'X out of 10,000 people' format. Gigerenzer-style \u2014 easier to communicate."
+      },
+      {
+        "label": "Multi-test",
+        "description": "Compute updated posterior after multiple independent tests.",
+        "prompt_snippet": "Run Bayesian update for SEQUENCE of independent evidence (each test result updates the prior). Show how posterior shifts with each."
+      },
+      {
+        "label": "False-positive cost-benefit",
+        "description": "Compute expected cost of acting.",
+        "prompt_snippet": "Add: 'compute expected cost of acting on positive result given posterior, vs expected cost of NOT acting. Show the breakeven base rate.'"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Hallucinates base rates.",
+        "fix": "Re-pin: 'base rate MUST be sourced OR given as interval estimate with reasoning. No invented decimals.'"
+      },
+      {
+        "symptom": "Skips arithmetic.",
+        "fix": "Force: 'show the numbers. Don't say \"applying Bayes\" \u2014 apply Bayes with the specific values.'"
+      },
+      {
+        "symptom": "Vague 'matters when base rate is low' commentary.",
+        "fix": "Require: 'specify the range \u2014 at base rate X to Y, the argument flips. Numbers.'"
+      },
+      {
+        "symptom": "Misses values-based components.",
+        "fix": "Add: 'if disagreement is values-based (false-positive harm vs false-negative harm), surface explicitly. Bayes can't decide values.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "argument-steelman-then-counter",
+      "fermi-estimation",
+      "evidence-quality-scorer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "bayes-theorem",
+      "base-rate-fallacy"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why are base rates so hard?",
+        "answer": "Human intuition uses representativeness, not probability. We see 'top-performer is from top-school' and conclude 'school predicts performance', skipping the base rate of top-school candidates in the applicant pool entirely."
+      },
+      {
+        "question": "What if I genuinely don't know the base rate?",
+        "answer": "Use the 'when would this matter' bracket to show under what assumed base rates the argument holds. Forces honest reasoning under uncertainty."
+      },
+      {
+        "question": "Is this just statistics?",
+        "answer": "Yes \u2014 Bayesian reasoning applied. The value is having a checklist that surfaces the bias systematically, not after-the-fact statistical critique."
+      },
+      {
+        "question": "Doesn't this make every argument 'it depends'?",
+        "answer": "It makes you specify WHAT it depends on. That's progress. Bayesian correction often DOES flip conclusions \u2014 not always toward uncertainty."
+      }
+    ],
+    "meta_title": "Base-Rate Correction Check \u2014 Reasoning Prompt",
+    "meta_description": "Catch base-rate neglect: surface the base rate, conditional probabilities, Bayesian correction with explicit numbers, decision implications.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
+    "slug": "second-order-consequences-mapper",
+    "title": "Second-Order Consequences Mapper",
+    "tldr": "Maps the 2nd and 3rd-order consequences of a decision \u2014 who responds, what incentives shift, what equilibria emerge \u2014 for policy, product, and people decisions where first-order thinking misses the actual impact.",
+    "category": "reasoning",
+    "tags": [
+      "systems-thinking",
+      "second-order",
+      "decision-making",
+      "consequences"
+    ],
+    "best_for_tags": [
+      "executives",
+      "policymakers",
+      "product-leaders"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Product pricing change",
+        "example": "Lower price: 1st-order = more buyers; 2nd = competitor reaction, churn from existing; 3rd = brand-position shift."
+      },
+      {
+        "scenario": "HR policy update",
+        "example": "Mandatory office: 1st = compliance; 2nd = attrition of remote talent; 3rd = recruiting pipeline shift."
+      },
+      {
+        "scenario": "Public-policy proposal",
+        "example": "Rent control: 1st = stabilized rents; 2nd = supply withdrawal; 3rd = informal-market growth."
+      },
+      {
+        "scenario": "Algorithm or moderation change",
+        "example": "Tighten content rules: 1st = less harmful content; 2nd = shift to alternative platforms; 3rd = reduced engagement."
+      }
+    ],
+    "when_not_to_use": "Skip for genuinely simple decisions (no significant stakeholders react). Skip when you'd be guessing \u2014 needs real domain knowledge of how actors respond.",
+    "full_prompt": "You are a systems-thinking analyst. Map 2nd and 3rd-order consequences of a decision, including stakeholder responses and equilibrium shifts.\n\nINPUT\n- The decision: {decision}\n- Context / domain: {context}\n- Stakeholders affected: {stakeholders}\n- Time horizon: {horizon}            (3 mo / 1 yr / 3 yrs)\n- What the decider HOPES will happen (1st-order goal): {hoped_outcome}\n\nOUTPUT\n\n## 1. The 1st-order intended effect\nRestate the decision and what the decider EXPECTS will happen:\n- Direct mechanism: ___\n- Expected magnitude: ___\n- Time-to-effect: ___\n\nThis is the obvious / intended impact.\n\n## 2. Who responds (stakeholder reaction map)\nFor each stakeholder in {stakeholders}:\n- **Who:** ___\n- **Their current incentives:** ___\n- **How their incentives SHIFT under the new decision:** ___\n- **What they'll do in response (likely + counter-likely action):** ___\n- **Time-to-response:** fast (days) / medium (weeks) / slow (months)\n\nA 2nd-order effect = the AGGREGATE of stakeholder responses.\n\n## 3. 2nd-order effects\nNow synthesize what happens when stakeholders respond:\n- 2nd-order effect 1: ___\n- 2nd-order effect 2: ___\n- 2nd-order effect 3: ___\n\nFor each: how it amplifies, dampens, or REVERSES the 1st-order intended effect.\n\n## 4. 3rd-order effects (equilibrium shifts)\nWhat new equilibrium emerges?\n- New steady state: ___ (compared to old equilibrium)\n- Who's better off: ___\n- Who's worse off: ___\n- What's irreversible: ___\n\n3rd-order is the hardest to predict \u2014 name your CONFIDENCE level (high / medium / low).\n\n## 5. The 'this could backfire' scenarios\nSpecific ways the decision could PRODUCE THE OPPOSITE of intended:\n- Scenario A: ___ (e.g., 'price cut intended to increase volume actually shrinks because brand becomes a budget-brand')\n- Scenario B: ___\n\nRate likelihood for each: high / medium / low.\n\n## 6. Indicators to watch\nWhat metrics, if observed, indicate the decision is producing 1st vs 2nd vs 3rd order effects?\n- Leading indicators (1st-order playing out): ___\n- Lagging indicators (2nd-order arriving): ___\n- Equilibrium indicators (3rd-order setting in): ___\n\nThese let you DIAGNOSE the decision in production.\n\n## 7. Mitigations\nFor the highest-likelihood backfire scenarios:\n- Mitigation 1: ___ (concrete action that reduces 2nd/3rd order downside)\n- Mitigation 2: ___\n\nA mitigation should be CONCRETE, not 'monitor closely'.\n\nCRITICAL RULES\n- Stakeholder responses are EVIDENCE-BASED (rooted in their actual incentives), not narrative speculation.\n- 2nd-order effects can REVERSE 1st-order \u2014 be willing to predict that.\n- 3rd-order has lower confidence; mark it.\n- Backfire scenarios are required \u2014 first-order thinking is too rosy.\n- Indicators are MEASURABLE; mitigations are CONCRETE.\n\nDECISION\n{decision}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "decision",
+        "type": "string",
+        "description": "Decision being made",
+        "required": true,
+        "example": "Move our SaaS pricing from per-seat to usage-based, effective in 90 days."
+      },
+      {
+        "name": "context",
+        "type": "string",
+        "description": "Context / domain",
+        "required": true,
+        "example": "B2B SaaS, 800 customers, $40M ARR, competitive market with 3 main alternatives."
+      },
+      {
+        "name": "stakeholders",
+        "type": "string",
+        "description": "Stakeholders",
+        "required": true,
+        "example": "Existing customers (heavy + light users), prospects, sales reps (comp plan tied to seats), CS team, competitors, investors."
+      },
+      {
+        "name": "horizon",
+        "type": "string",
+        "description": "Time horizon",
+        "required": true,
+        "example": "1 year"
+      },
+      {
+        "name": "hoped_outcome",
+        "type": "string",
+        "description": "Hoped 1st-order outcome",
+        "required": true,
+        "example": "Pricing better aligned to value; expand revenue from heavy users; easier to acquire small accounts."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Seven sections: 1st-order intended effect, stakeholder reaction map, 2nd-order effects, 3rd-order equilibrium shifts (with confidence), backfire scenarios with likelihood, indicators to watch, mitigations."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest at backfire scenarios + honest confidence on 3rd-order."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can default to optimism \u2014 re-pin backfire requirement."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; weaker on stakeholder incentive precision."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for simple decisions; thins on 3rd-order analysis."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Pre-mortem-style",
+        "description": "Lead with backfire.",
+        "prompt_snippet": "Reverse the sections: lead with section 5 (backfires) before sections 3-4. Used when the team is in advocacy mode and needs disruption."
+      },
+      {
+        "label": "Multi-decision compare",
+        "description": "Compare 2-3 decisions.",
+        "prompt_snippet": "Apply to N candidate decisions. Output a comparison: 2nd-order effects per decision + which has the most resilient 3rd-order equilibrium."
+      },
+      {
+        "label": "Reversibility map",
+        "description": "Focus on which 3rd-order shifts are irreversible.",
+        "prompt_snippet": "After section 4, add: 'rank each 3rd-order shift by reversibility (reversible / costly-to-reverse / permanent). Frame the decision through reversibility lens.'"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Stakeholder responses are speculation.",
+        "fix": "Re-pin: 'each response anchored in their stated/implied incentives. If you can\\'t name the incentive, you\\'re guessing.'"
+      },
+      {
+        "symptom": "2nd-order just describes more 1st-order.",
+        "fix": "Force: '2nd-order = aggregate of stakeholder responses, not direct effect. If you can describe it without naming who responded, it\\'s not 2nd-order.'"
+      },
+      {
+        "symptom": "Misses 'reverses intended effect' cases.",
+        "fix": "Add: 'one of the 2nd-order effects must consider whether the decision PRODUCES THE OPPOSITE of intent.'"
+      },
+      {
+        "symptom": "Vague indicators ('watch the numbers').",
+        "fix": "Require: 'each indicator is a specific metric + threshold + when to look.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "argument-steelman-then-counter",
+      "go-no-go-decision-meeting-prep",
+      "incident-postmortem-blameless"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "systems-thinking",
+      "second-order-effects"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Isn't this just 'thinking harder'?",
+        "answer": "It's structured thinking. First-order intuition is fast but biased optimistic. The structure forces stakeholder-by-stakeholder reasoning + explicit backfire consideration."
+      },
+      {
+        "question": "How confident should I be in 3rd-order predictions?",
+        "answer": "Low-to-medium for complex systems. The value isn't precise prediction \u2014 it's surfacing the equilibrium-shift category so you watch for it."
+      },
+      {
+        "question": "Can it predict black swans?",
+        "answer": "No \u2014 black swans are by definition out-of-distribution. But it surfaces the GREY swans: predictable second-order effects most teams miss."
+      },
+      {
+        "question": "Why include mitigations?",
+        "answer": "Decisions get made anyway. Mitigations buy down the downside of the highest-likelihood backfire scenarios. Without them, you've identified risk but not reduced it."
+      }
+    ],
+    "meta_title": "Second-Order Consequences Mapper \u2014 Reasoning Prompt",
+    "meta_description": "Map 2nd and 3rd-order consequences: stakeholder responses, equilibrium shifts, backfire scenarios with likelihood, indicators to watch, mitigations.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
+    "slug": "analogy-quality-stress-test",
+    "title": "Analogy Quality Stress-Test",
+    "tldr": "Tests an analogy by mapping where it HOLDS, where it BREAKS, and where it leads readers ASTRAY \u2014 for product positioning, public communication, and strategic framing.",
+    "category": "reasoning",
+    "tags": [
+      "analogy",
+      "framing",
+      "communication",
+      "epistemics"
+    ],
+    "best_for_tags": [
+      "communicators",
+      "strategists",
+      "founders"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Product positioning",
+        "example": "'We're the Uber for X' \u2014 does the analogy actually hold or mislead?"
+      },
+      {
+        "scenario": "Public policy framing",
+        "example": "'Internet should be regulated like utilities' \u2014 where the analogy works vs breaks."
+      },
+      {
+        "scenario": "Strategic positioning memo",
+        "example": "Internal memo uses analogy; stress-test before publishing."
+      },
+      {
+        "scenario": "Customer education",
+        "example": "Explaining new product \u2014 is the analogy you're using helpful or misleading?"
+      }
+    ],
+    "when_not_to_use": "Skip when the audience is technical experts who can reason from first principles \u2014 analogy hurts precision. Skip when stakes are very high and a literal explanation is feasible.",
+    "full_prompt": "You are an analogy stress-tester. Map where an analogy holds, breaks, and misleads.\n\nINPUT\n- The analogy: {analogy}                  (typically X is like Y, or X is the Y of Z)\n- What it's being used to communicate: {claim_being_made}\n- Audience: {audience}\n- Stakes (decisions / actions that depend on the analogy): {stakes}\n\nOUTPUT\n\n## 1. The analogy unpacked\nRestate the analogy explicitly:\n- **Source:** ___ (the familiar thing being mapped FROM)\n- **Target:** ___ (the new thing being mapped TO)\n- **Implied mapping:** what features of source \u2192 target.\n\nSometimes the analogy is more specific than people realize ('Uber for X' implies marketplace + asymmetric utilization + service-on-demand). Surface what's actually being claimed.\n\n## 2. Where the analogy HOLDS\nSpecific structural similarities \u2014 real, not vague:\n- **Mapping 1:** [source feature] \u2194 [target feature]. Why it holds: ___\n- **Mapping 2:** ___\n- **Mapping 3:** ___\n\nThese are the parts of the analogy that EARN it.\n\n## 3. Where the analogy BREAKS\nDisanalogies \u2014 specific features that DON'T map:\n- **Break 1:** Source has X; target doesn't. Implication: ___\n- **Break 2:** ___\n- **Break 3:** ___\n\nDon't soften. The breaks are usually where the analogy LEADS DECISIONS ASTRAY.\n\n## 4. Where the analogy MISLEADS\nThe most dangerous part. What CONCLUSIONS will the audience draw from the analogy that AREN'T TRUE of the target?\n- \"If [target] is like [source], audience will assume X. But X is FALSE for target.\"\n- \"The analogy implies [strategy] that works for source but FAILS for target because [break].\"\n\nThese are the analogy's epistemic costs.\n\n## 5. The analogy scorecard\n- **Useful for:** [communication situations where the analogy works]\n- **Dangerous for:** [communication situations where it misleads]\n- **Better analogies if you need one:** [2-3 alternatives + when each is better]\n- **Better than analogy entirely:** [literal description if feasible]\n\n## 6. Refinement\nIf the analogy is mostly useful but has known break points:\n- Phrasing that PRESERVES the useful similarities while DISCLAIMING the breaks.\n- Example: \"X is like Uber-the-app, NOT like Uber-the-business \u2014 same on-demand UX, very different unit economics.\"\n\n## 7. Verdict\n- **KEEP** \u2014 analogy mostly holds; refine per section 6.\n- **REPLACE** \u2014 better analogy exists; suggest it.\n- **DROP** \u2014 analogy is more misleading than useful; recommend literal explanation.\n\nCRITICAL RULES\n- Mappings in section 2 are SPECIFIC structural similarities, not vague vibes.\n- Breaks in section 3 are HONEST \u2014 the goal is finding them, not protecting the analogy.\n- Misleads in section 4 are the most important section \u2014 that's where decisions go wrong.\n- Verdict is willing to say 'DROP' if the analogy hurts more than helps.\n\nANALOGY\n{analogy}\n\nCLAIM\n{claim_being_made}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "analogy",
+        "type": "string",
+        "description": "The analogy being tested",
+        "required": true,
+        "example": "Our LLM agent platform is the GitHub for AI agents."
+      },
+      {
+        "name": "claim_being_made",
+        "type": "string",
+        "description": "What the analogy communicates",
+        "required": true,
+        "example": "We're the developer-first hub where agents are versioned, shared, forked, and collaborated on."
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Audience",
+        "required": true,
+        "example": "Developer founders + early-stage VCs"
+      },
+      {
+        "name": "stakes",
+        "type": "string",
+        "description": "Decisions that depend on it",
+        "required": true,
+        "example": "Positioning for a Series A pitch + GTM messaging for developer launch."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Seven sections: analogy unpacked, where it holds (mappings), where it breaks (disanalogies), where it misleads (epistemic costs), scorecard, refinement language, verdict."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest at honest breaks + 'misleads' section without softening."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can soft-pedal misleads \u2014 re-pin honesty."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; sometimes vague on structural mappings."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for simple analogies; thins on misleads."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Position-vs-competitor",
+        "description": "Stress-test competitor's analogy.",
+        "prompt_snippet": "Apply to a COMPETITOR's analogy (how they describe themselves). Output: where their analogy works for them, where it WEAKENS them, where you can attack."
+      },
+      {
+        "label": "Education metaphor audit",
+        "description": "Apply to teaching metaphors.",
+        "prompt_snippet": "Test a teaching analogy used in onboarding / docs. Surface where learners are likely to TRANSFER the wrong intuition."
+      },
+      {
+        "label": "Inverse \u2014 analogy generator",
+        "description": "Generate better analogies for a claim.",
+        "prompt_snippet": "Given the CLAIM but no analogy, generate 4-5 candidate analogies + score each on usefulness vs misleading-ness."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Vague mappings.",
+        "fix": "Force: 'each mapping names a SPECIFIC feature of source and target. Not \"similar in spirit\".'"
+      },
+      {
+        "symptom": "Skips breaks.",
+        "fix": "Re-pin: 'minimum 3 breaks. If genuinely fewer, explain why this analogy is unusually clean.'"
+      },
+      {
+        "symptom": "Misleads section is generic.",
+        "fix": "Require: 'specific WRONG inference an audience will draw. Name the wrong conclusion.'"
+      },
+      {
+        "symptom": "Verdict avoids DROP.",
+        "fix": "Re-pin: 'DROP is a real option. Many analogies should be retired. Don\\'t protect bad analogies.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "argument-steelman-then-counter",
+      "metaphor-extender",
+      "concept-explainer-with-progressive-depth"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "analogy",
+      "framing"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Aren't analogies necessary for communication?",
+        "answer": "Yes \u2014 they're powerful when used well. The point isn't to ban analogies, it's to test them. A stress-tested analogy is stronger; a failed-stress-test analogy is dangerous."
+      },
+      {
+        "question": "What if the audience expects the analogy?",
+        "answer": "Use the refinement in section 6 \u2014 preserve the useful similarity while disclaiming the breaks. The phrasing 'X is like Y in terms of A, but unlike Y in terms of B' is often the best of both."
+      },
+      {
+        "question": "Most common analogy traps?",
+        "answer": "'Uber for X' (usually fails unit economics test). 'GitHub for X' (usually fails network-effect test). 'Netflix for X' (usually fails content-investment test). These get retired most often after stress-testing."
+      },
+      {
+        "question": "Can the analogy be useful AND misleading?",
+        "answer": "Often \u2014 that's the point of the scorecard. The same analogy can clarify a positioning conversation while misleading a strategy decision. Use case-by-case."
+      }
+    ],
+    "meta_title": "Analogy Quality Stress-Test \u2014 Reasoning Prompt",
+    "meta_description": "Test where an analogy holds, breaks, and misleads. With refinement phrasing and keep/replace/drop verdict.",
+    "version": "v2.0",
+    "release_status": "stable"
   },
   {
     "slug": "tree-of-thought-decision",
@@ -23201,6 +25323,707 @@
     ],
     "meta_title": "Thematic Coding From Qualitative Transcripts \u2014 Prompt",
     "meta_description": "Code qualitative transcripts into themes via 5-pass process: open codes, theme clustering, singletons-that-matter, what's-not-here, synthesis."
+  },
+  {
+    "slug": "literature-review-gap-finder",
+    "title": "Literature Review Gap-Finder",
+    "tldr": "Reads a small corpus of papers/sources, maps what each one CLAIMS vs ASSUMES vs LEAVES UNADDRESSED, then surfaces real research gaps \u2014 not just unread papers.",
+    "category": "research",
+    "tags": [
+      "research",
+      "literature-review",
+      "gap-analysis",
+      "academic"
+    ],
+    "best_for_tags": [
+      "phd-students",
+      "rd-teams",
+      "consultants"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "PhD lit-review chapter",
+        "example": "8-12 papers on graph neural networks for fraud detection \u2014 what gaps justify the dissertation."
+      },
+      {
+        "scenario": "R&D landscape scan",
+        "example": "Industry team scoping a new feature \u2014 what's published vs what's unsolved."
+      },
+      {
+        "scenario": "Consulting whitespace map",
+        "example": "Sector study \u2014 where the field's actual blind spots sit, not just buzzwords."
+      },
+      {
+        "scenario": "Grant proposal positioning",
+        "example": "Position a grant against gaps the reviewers will recognize."
+      }
+    ],
+    "when_not_to_use": "Skip when corpus exceeds ~15 papers \u2014 the model will skim. Skip when you haven't read the papers yourself \u2014 you can't validate the gaps.",
+    "full_prompt": "You are a research-gap analyst. You map what a corpus CLAIMS, ASSUMES, and LEAVES UNADDRESSED \u2014 then surface gaps worth pursuing.\n\nINPUT\n- Topic / question: {topic}\n- Papers / sources (title + key claims for each): {sources}\n- My current angle (if any): {my_angle}\n- Audience: {audience}                (dissertation committee / industry team / grant reviewers)\n\nOUTPUT\n\n## 1. Claims map\nFor each source, in 1-2 sentences:\n- **What it CLAIMS** (the headline result)\n- **What it ASSUMES** (the unstated premise \u2014 domain, data, model, time period)\n- **What it LEAVES UNADDRESSED** (what the paper does NOT say it can do)\n\nBe precise. \"Leaves unaddressed\" is NOT \"didn't cite my favorite paper.\" It's the actual scope boundary.\n\n## 2. Convergence vs divergence\n- Where do the sources AGREE? (3-5 points)\n- Where do they DISAGREE \u2014 and on what? (3-5 points, name the sources)\n- Where do they TALK PAST each other? (different problem definitions disguised as same)\n\n## 3. Gap surface\nNow the real gaps \u2014 categorized:\n\n### Type A: Empirical gaps\nThings the field claims but hasn't tested rigorously. Cite which source(s) make the claim untested.\n\n### Type B: Method gaps\nMethods that exist but haven't been applied to this domain. Be specific about which method + which sub-problem.\n\n### Type C: Definitional gaps\nWhere the field uses a term loosely and a sharper definition would unlock progress.\n\n### Type D: Scale gaps\nWhere results hold at small scale but haven't been shown at production / population scale.\n\nFor each gap: rate **research-worthiness** (high / medium / low) with one-sentence justification.\n\n## 4. Anti-gaps (DON'T pursue)\n2-3 things that LOOK like gaps but aren't worth pursuing:\n- \"Combining X and Y\" \u2014 sounds novel, but X and Y combine trivially.\n- \"Replication of [paper] in [adjacent domain]\" \u2014 already done in [other paper].\n\nThis section protects the reader from chasing fool's gold.\n\n## 5. My angle check\nGiven {my_angle}, where does it sit on the gap surface?\n- Gap type it fills: ___\n- Risk it's already been solved (cite the closest related work): ___\n- 1-2 adjustments that would make it stronger.\n\nIf no angle was provided, suggest the 2-3 most promising angles ordered by research-worthiness.\n\nCRITICAL RULES\n- Be SPECIFIC about which sources make which claim. Vague gaps are useless.\n- \"Leaves unaddressed\" is scope, not failure. Don't strawman papers.\n- Anti-gaps section is REQUIRED \u2014 protects user from wasted PhD years.\n- For each gap, name a tractable next step.\n\nSOURCES\n{sources}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "topic",
+        "type": "string",
+        "description": "Research topic / question",
+        "required": true,
+        "example": "Graph neural networks for transaction fraud detection in small-merchant payments"
+      },
+      {
+        "name": "sources",
+        "type": "string",
+        "description": "List of papers with title + key claims",
+        "required": true,
+        "example": "(1) Smith 2024: GNN beats XGBoost on fraud F1 by 4pp using merchant graph. (2) Lee 2023: graph methods overfit on small-merchant tail..."
+      },
+      {
+        "name": "my_angle",
+        "type": "string",
+        "description": "User's current research angle (optional)",
+        "required": false,
+        "example": "Use temporal graph attention to handle merchant-onboarding cold-start"
+      },
+      {
+        "name": "audience",
+        "type": "string",
+        "description": "Target audience",
+        "required": true,
+        "example": "PhD dissertation committee \u2014 comp sci"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Five sections: claims map per source, convergence/divergence, four-type gap surface with rated worthiness, anti-gaps to avoid, user-angle check."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest at scope-boundary precision; willing to call anti-gaps."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "good",
+        "notes": "Solid; tends to be overly polite on anti-gaps \u2014 re-pin."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Good with long source lists; weaker on anti-gaps."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for <8 sources; thins out on Type B/D gaps."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Industry whitespace map",
+        "description": "Replace 'research-worthiness' with 'commercial-viability'.",
+        "prompt_snippet": "Swap the rating axis in section 3 from research-worthiness to commercial-viability (high / medium / low) with revenue path."
+      },
+      {
+        "label": "Single-paper deep critique",
+        "description": "One paper, deep gap analysis.",
+        "prompt_snippet": "Skip sections 1-2. Run sections 3-4 against a single paper at depth \u2014 every gap traced to a specific section/figure."
+      },
+      {
+        "label": "Funding-aligned framing",
+        "description": "Match a specific funding call.",
+        "prompt_snippet": "Add: re-frame Type A-D gaps against the priorities of {funding_call}. Drop gaps the call won't fund."
+      },
+      {
+        "label": "Pre-registered study",
+        "description": "Output a pre-registration template.",
+        "prompt_snippet": "After section 5, output a 1-page pre-registration template: hypothesis, design, analysis plan, anti-gap defense."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Gaps are vague ('more work needed in X').",
+        "fix": "Demand: 'each gap must name a tractable next experiment with measurable outcome.'"
+      },
+      {
+        "symptom": "Anti-gaps section is empty.",
+        "fix": "Force: 'minimum 2 anti-gaps with citation of the closest related work that makes them dead.'"
+      },
+      {
+        "symptom": "Strawmans the papers.",
+        "fix": "Add: 'leaves unaddressed is scope, not failure. Quote the abstract or claim if borderline.'"
+      },
+      {
+        "symptom": "Convergence/divergence is bland summary.",
+        "fix": "Require: 'each agreement/disagreement names the source IDs and the specific claim text.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "research-summary-for-non-experts",
+      "competitor-feature-shipped-analysis",
+      "fermi-estimation"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "literature-review",
+      "research-gap"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Will it hallucinate citations?",
+        "answer": "Only if you ask it to. Feed real source text + claims; don't ask it to invent papers. The prompt operates on what you provide."
+      },
+      {
+        "question": "How many sources is too many?",
+        "answer": "8-12 is the sweet spot. Past 15, the model skims. Either pre-cluster sources or run the prompt per cluster and synthesize."
+      },
+      {
+        "question": "Why anti-gaps?",
+        "answer": "Most lit-reviews surface fake gaps that look novel but are already-done or trivially-combined. The anti-gaps section forces honesty about which gaps are real."
+      },
+      {
+        "question": "Can I use this for grant proposals?",
+        "answer": "Yes \u2014 use the funding-aligned variation. It'll re-frame gaps against the call's priorities and drop the ones the call won't fund."
+      }
+    ],
+    "meta_title": "Literature Review Gap-Finder \u2014 Research Prompt",
+    "meta_description": "Map what a research corpus claims, assumes, and leaves unaddressed. Surface real gaps with research-worthiness ratings and an anti-gaps section.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
+    "slug": "evidence-quality-scorer",
+    "title": "Evidence-Quality Scorer",
+    "tldr": "Rates a body of evidence on study design, sample, methods, conflicts, and replication \u2014 assigns a tiered confidence rating + tells you what would move it up or down.",
+    "category": "research",
+    "tags": [
+      "research",
+      "evidence-rating",
+      "epistemics",
+      "fact-checking"
+    ],
+    "best_for_tags": [
+      "journalists",
+      "policy",
+      "evidence-based-medicine"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Journalism fact-check",
+        "example": "A nutrition claim circulating online \u2014 rate the underlying evidence."
+      },
+      {
+        "scenario": "Policy evidence review",
+        "example": "Briefing memo needs an evidence confidence rating before publication."
+      },
+      {
+        "scenario": "Medical evidence appraisal",
+        "example": "Clinical decision support \u2014 what's the actual strength of the recommendation."
+      },
+      {
+        "scenario": "Investor due-diligence",
+        "example": "Startup pitches a clinical claim; rate the evidence cited."
+      }
+    ],
+    "when_not_to_use": "Skip for opinion / theoretical work \u2014 needs empirical evidence to rate. Skip when the model can't actually access the underlying studies (it can only rate what you tell it).",
+    "full_prompt": "You are an evidence appraiser. Rate a body of evidence \u2014 design, sample, methods, conflicts, replication \u2014 then issue a tiered confidence rating.\n\nINPUT\n- Claim being evaluated: {claim}\n- Evidence available (study by study with key details): {evidence}\n- Domain: {domain}              (medicine / nutrition / education / economics / social-science / engineering)\n\nOUTPUT\n\n## 1. Claim restate\nRestate the claim in PRECISE terms. If the original claim is vague, sharpen it. Note ambiguities.\n\n## 2. Per-study appraisal\nFor each study:\n- **Design:** RCT / cohort / cross-sectional / case-control / observational / experimental / mechanistic / animal / in-vitro / opinion\n- **Sample size:** n = ___ ; representative of {domain}? (yes / no / unclear)\n- **Method strength:** strong / adequate / weak (with 1-sentence reason)\n- **Conflicts:** funding source, author conflicts, pre-registration status\n- **Effect size:** numeric if available; otherwise qualitative (large / moderate / small / null)\n- **Independent replication:** yes (cite) / no / mixed\n\n## 3. Body-of-evidence patterns\nStep back from individual studies:\n- Does the effect REPLICATE across labs / settings?\n- Do effect sizes SHRINK as study quality improves? (decline-effect = red flag)\n- Are there OBVIOUS confounders that consistently apply?\n- Is there a known PUBLICATION-BIAS pattern in this sub-field?\n\n## 4. Confidence rating\nIssue ONE of these tiers:\n- **Robust** \u2014 RCTs or strong quasi-experimental, multiple labs, large effects survive quality controls.\n- **Provisional** \u2014 Good direction-of-effect evidence; needs more replication or larger n.\n- **Suggestive** \u2014 Pattern in data but mechanism unclear or replication mixed.\n- **Inconclusive** \u2014 Conflicting findings across solid studies.\n- **Weak** \u2014 Small n, single lab, observational, OR pre-clinical only.\n- **Effectively no evidence** \u2014 Anecdote, opinion, mechanistic-only, or known-fraudulent corpus.\n\nState the rating + 1-2 sentences on WHY.\n\n## 5. What would move this rating\n- \u2191 Move UP to next tier: ___ (concrete: 'a pre-registered RCT with n>500 in non-Western sample').\n- \u2193 Move DOWN: ___ (e.g., 'failed pre-registered replication').\n\n## 6. Common misuses of this evidence\n- Where this evidence is OFTEN over-claimed: ___\n- Where it's correctly used: ___\n- 1-line headline a journalist could write that the evidence WOULDN'T support.\n\nCRITICAL RULES\n- A single RCT is not 'Robust' on its own. Robust requires REPLICATION across labs/settings.\n- Sample size matters but representativeness matters more. n=10000 in one country is still WEIRD-sample.\n- Mechanism plausibility \u2260 evidence. Mechanism is a story, not a result.\n- Conflicts don't auto-disqualify, but DO downgrade if not mitigated by pre-reg.\n- If evidence is thin, say 'Weak' or 'Effectively no evidence' \u2014 don't soften.\n\nEVIDENCE\n{evidence}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "claim",
+        "type": "string",
+        "description": "The claim being evaluated",
+        "required": true,
+        "example": "Intermittent fasting causes more fat loss than standard caloric restriction at the same total calories."
+      },
+      {
+        "name": "evidence",
+        "type": "string",
+        "description": "Available studies with key details",
+        "required": true,
+        "example": "(1) Trepanowski 2017 RCT n=100 1yr: null. (2) Sutton 2018 RCT n=8 cross-over: TRF improved insulin sensitivity. (3) 6 observational cohort studies: positive effect..."
+      },
+      {
+        "name": "domain",
+        "type": "string",
+        "description": "Domain",
+        "required": true,
+        "example": "nutrition / metabolic-health"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: precise claim restate, per-study appraisal table, body-of-evidence patterns, tiered rating, what would move it, common misuses."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Willing to issue 'Weak' or 'Effectively no evidence' ratings without softening."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "good",
+        "notes": "Tends to soften ratings; re-pin: 'rate honestly even if rating is weak.'"
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Strong on body-of-evidence patterns; can be vague on effect-size."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable but loses nuance on conflicts and decline-effect."
+      }
+    ],
+    "variations": [
+      {
+        "label": "GRADE-aligned",
+        "description": "Output in GRADE framework.",
+        "prompt_snippet": "Map the confidence tier to GRADE (High / Moderate / Low / Very Low) and explain the GRADE downgrade reasons (RoB, inconsistency, indirectness, imprecision, publication bias)."
+      },
+      {
+        "label": "Layperson summary",
+        "description": "Plain-language summary of the rating.",
+        "prompt_snippet": "After section 4, add a 'For a non-expert reader' paragraph in plain English \u2014 what the rating means without jargon."
+      },
+      {
+        "label": "Domain-specific checks",
+        "description": "Add domain checks.",
+        "prompt_snippet": "For {domain}, add field-specific quality checks (e.g., for nutrition: 24-hour-recall vs biomarkers; for medicine: ITT vs per-protocol)."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Over-rates evidence to seem balanced.",
+        "fix": "Re-pin: 'rate based on evidence quality, not on social acceptability. Weak is weak.'"
+      },
+      {
+        "symptom": "Ignores conflicts of interest.",
+        "fix": "Force: 'each study MUST have funding source + author-conflict disclosure noted.'"
+      },
+      {
+        "symptom": "Single-study Robust ratings.",
+        "fix": "Hard rule: 'Robust requires independent replication across labs. One RCT = at most Provisional.'"
+      },
+      {
+        "symptom": "Bland 'more research needed' conclusions.",
+        "fix": "Require section 5 to specify 'a pre-registered study of design X with n>Y in population Z'."
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "literature-review-gap-finder",
+      "research-summary-for-non-experts",
+      "fact-check-with-source-grading"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "evidence-rating",
+      "grade-framework"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Will it hallucinate the GRADE rating?",
+        "answer": "Only if you feed thin evidence. The prompt operates on what you give it. Don't ask it to rate a claim with no studies attached."
+      },
+      {
+        "question": "Why isn't 'one big RCT' Robust?",
+        "answer": "Single-lab effects often fail replication. Robust evidence survives across teams, populations, and settings. One trial buys you Provisional at best."
+      },
+      {
+        "question": "What's 'decline-effect'?",
+        "answer": "When effect sizes shrink as study quality improves \u2014 common in nutrition and psychology. It's a red flag that early excitement won't hold up."
+      },
+      {
+        "question": "Can I use this for legal cases?",
+        "answer": "It can scaffold the analysis, but legal admissibility (Daubert, Frye) has specific tests. Use the output as a draft for an expert witness, not the witness."
+      }
+    ],
+    "meta_title": "Evidence-Quality Scorer \u2014 Research Prompt",
+    "meta_description": "Rate evidence on design, sample, methods, conflicts, and replication. Issues a tiered confidence rating plus what would move it up or down.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
+    "slug": "interview-transcript-theme-coder",
+    "title": "Interview Transcript Theme Coder",
+    "tldr": "Codes qualitative interview transcripts into themes with grounded quotes, frequency counts, and disconfirming evidence \u2014 outputs an audit trail an academic reviewer would accept.",
+    "category": "research",
+    "tags": [
+      "qualitative",
+      "interviews",
+      "coding",
+      "ethnography"
+    ],
+    "best_for_tags": [
+      "ux-researchers",
+      "qual-academics",
+      "policy-research"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "UX research synthesis",
+        "example": "12 user interviews about a new checkout flow \u2014 extract themes with quote evidence."
+      },
+      {
+        "scenario": "Qualitative academic study",
+        "example": "20 ethnographic interviews \u2014 first-pass open coding before axial coding."
+      },
+      {
+        "scenario": "Customer Voice synthesis",
+        "example": "Customer-success team has 30 churn-interview transcripts; extract churn themes."
+      },
+      {
+        "scenario": "Policy-research field interviews",
+        "example": "Field interviews with case workers \u2014 surface barriers in a benefits-program rollout."
+      }
+    ],
+    "when_not_to_use": "Skip when you haven't read the transcripts yourself \u2014 you need to validate themes against your domain knowledge. Skip for >20 transcripts in one pass; chunk it.",
+    "full_prompt": "You are a qualitative research coder. Extract themes from transcripts with grounded evidence, frequency, and disconfirming cases.\n\nINPUT\n- Research question: {research_question}\n- Transcripts (numbered, with participant ID): {transcripts}\n- Coding approach: {coding_approach}        (open / axial / deductive-with-codebook / inductive)\n- Existing codebook (if any): {codebook}\n\nOUTPUT\n\n## 1. Code list\nExtract codes \u2014 short labels for concepts that recur. For each code:\n- **Code:** short label\n- **Definition:** 1 sentence\n- **Inclusion criteria:** what counts\n- **Exclusion criteria:** what doesn't (the boundary)\n\n## 2. Theme map\nGroup related codes into themes. For each theme:\n- **Theme name:** 2-4 words\n- **Codes included:** ___\n- **Frequency:** mentioned by N of M participants\n- **Strength:** strong (multiple participants, multiple incidents per) / moderate (multiple participants, single incidents) / weak (few participants)\n\n## 3. Grounded quotes\nFor each theme, provide 2-3 verbatim quotes with participant IDs:\n> \"P03: [quote]\"\n> \"P07: [quote]\"\n\nCRITICAL: Quotes must be VERBATIM from input transcripts. If a quote doesn't exist literally, REPHRASE as paraphrase and label '(paraphrase, P03)'.\n\n## 4. Disconfirming evidence\nFor each theme, what's the COUNTER-EVIDENCE in the transcripts?\n- \"Theme: 'users want speed.' Disconfirming: P05 explicitly said speed wasn't an issue, accuracy was.\"\n\nIf no disconfirming evidence exists, say so EXPLICITLY: \"No disconfirming evidence in this corpus. Treat with caution \u2014 possible sampling effect.\"\n\n## 5. Unique outliers\nParticipants who didn't fit any theme \u2014 what did they say? They might be:\n- Edge cases worth a follow-up interview\n- Signals of an emerging theme that didn't reach saturation\n- Random noise\n\nLabel which.\n\n## 6. Saturation check\nDid the LAST 2-3 transcripts add new codes?\n- If yes: saturation NOT reached, more transcripts needed.\n- If no: saturation likely reached for this research question.\n\n## 7. Reviewer audit trail\nThings an academic / methodology reviewer would ask:\n- \"How did you decide what counts as theme X vs Y?\"\n- \"Why did you treat P05 as outlier vs revising theme?\"\n- \"What's the inter-rater reliability with the codebook?\"\n\nAnswer each with the decisions you made.\n\nCRITICAL RULES\n- Quotes are VERBATIM or labeled paraphrase. NEVER invent dialogue.\n- Frequency is COUNTED accurately. Don't inflate.\n- Disconfirming evidence section is REQUIRED \u2014 confirmation bias is the #1 qual-research failure.\n- Saturation check is HONEST: if you'd add new codes from one more transcript, say not-reached.\n- Outliers are not noise by default \u2014 they're potential leads.\n\nTRANSCRIPTS\n{transcripts}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "research_question",
+        "type": "string",
+        "description": "Research question driving the coding",
+        "required": true,
+        "example": "Why do small-business owners abandon our onboarding flow at step 4?"
+      },
+      {
+        "name": "transcripts",
+        "type": "string",
+        "description": "Numbered transcripts with participant IDs",
+        "required": true,
+        "example": "P01: ...; P02: ...; P03: ..."
+      },
+      {
+        "name": "coding_approach",
+        "type": "string",
+        "description": "Coding approach",
+        "required": true,
+        "example": "Inductive open coding"
+      },
+      {
+        "name": "codebook",
+        "type": "string",
+        "description": "Existing codebook (optional)",
+        "required": false,
+        "example": "(none for first pass)"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Seven sections: code list with inclusion/exclusion, theme map with frequency, grounded quotes, disconfirming evidence, outliers, saturation check, reviewer audit trail."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest on disconfirming evidence + reviewer audit; respects verbatim rule."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "good",
+        "notes": "Solid; may invent quotes \u2014 re-pin verbatim rule + check."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "excellent",
+        "notes": "Long context advantage; handles 15+ transcripts cleanly."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for <8 short transcripts. Disconfirming section thins out."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Codebook-deductive",
+        "description": "Apply existing codebook.",
+        "prompt_snippet": "Use the provided codebook strictly. New codes proposed only when existing ones don't fit \u2014 flag as proposed additions, not free codes."
+      },
+      {
+        "label": "Multi-coder reliability",
+        "description": "Produce 2 independent codings.",
+        "prompt_snippet": "Code the transcripts TWICE under independent assumptions. Then run inter-coder agreement (% match) and surface disagreements for human resolution."
+      },
+      {
+        "label": "Story-tier synthesis",
+        "description": "Output stories + themes.",
+        "prompt_snippet": "After section 7, output 3 representative participant stories (composite, anonymized) \u2014 used in stakeholder readouts."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Invents quotes.",
+        "fix": "Hard rule: 'every quote must be traceable to the input by surface text. Otherwise label paraphrase.' Run a verbatim check pass."
+      },
+      {
+        "symptom": "Skips disconfirming section.",
+        "fix": "Force: 'section 4 must have at least one entry per theme OR explicitly state \"no disconfirming evidence\" with sampling caveat.'"
+      },
+      {
+        "symptom": "Inflates frequency counts.",
+        "fix": "Require: 'frequency = count of distinct participants who explicitly mentioned. Mark inferred mentions separately.'"
+      },
+      {
+        "symptom": "Treats outliers as noise.",
+        "fix": "Re-pin: 'outliers are leads, not noise. Label which category each falls in.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "user-feedback-theme-extractor",
+      "research-summary-for-non-experts",
+      "competitor-feature-shipped-analysis"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "qualitative-coding",
+      "thematic-analysis"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Is this a replacement for human coding?",
+        "answer": "No. It's a first-pass scaffold. Humans validate themes, check verbatim accuracy, and resolve outlier interpretation. The audit trail makes that easier."
+      },
+      {
+        "question": "How many transcripts per pass?",
+        "answer": "Up to ~15 for thorough coding. Gemini long-context can handle more for synthesis, but accuracy of disconfirming evidence drops past 20."
+      },
+      {
+        "question": "Inter-rater reliability?",
+        "answer": "Use the multi-coder variation to get a baseline. Real IRR requires independent human coders; the model can flag disagreements for human review."
+      },
+      {
+        "question": "Can I use it for sensitive interviews?",
+        "answer": "Yes if transcripts are pre-anonymized. Don't paste raw identifiable data; PII strip first."
+      }
+    ],
+    "meta_title": "Interview Transcript Theme Coder \u2014 Qualitative Research Prompt",
+    "meta_description": "Code interview transcripts into themes with grounded quotes, frequency counts, disconfirming evidence, and a reviewer audit trail.",
+    "version": "v2.0",
+    "release_status": "stable"
+  },
+  {
+    "slug": "research-protocol-pre-mortem",
+    "title": "Research Protocol Pre-Mortem",
+    "tldr": "Reads a planned research protocol and surfaces what's most likely to break \u2014 sampling, instruments, attrition, analysis assumptions, ethics \u2014 BEFORE you collect data.",
+    "category": "research",
+    "tags": [
+      "research-design",
+      "pre-mortem",
+      "methods",
+      "study-planning"
+    ],
+    "best_for_tags": [
+      "academics",
+      "ux-research",
+      "clinical-trials"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Dissertation proposal defense prep",
+        "example": "Submit protocol; pre-mortem surfaces what committee will challenge."
+      },
+      {
+        "scenario": "Clinical trial protocol review",
+        "example": "Before IRB submission, run the pre-mortem to catch protocol flaws."
+      },
+      {
+        "scenario": "UX research planning",
+        "example": "Before booking 20 user interviews, sanity-check the recruiting + script."
+      },
+      {
+        "scenario": "Grant-funded study planning",
+        "example": "Funded study about to launch \u2014 last-chance pre-mortem before sunk-cost kicks in."
+      }
+    ],
+    "when_not_to_use": "Skip after data collection has started \u2014 most fixes require pre-data changes. Skip for very early ideation; use it after the protocol is real but pre-launch.",
+    "full_prompt": "You are a research-methods skeptic. Your job is to find the most likely failure modes in a planned protocol BEFORE data collection.\n\nINPUT\n- Research question: {research_question}\n- Hypothesis (if any): {hypothesis}\n- Protocol (design, sampling, instruments, analysis plan): {protocol}\n- Resources / constraints: {constraints}\n- Domain: {domain}\n\nOUTPUT\n\n## 1. Protocol restate (in your words)\nRestate the protocol in 5-8 bullets to confirm understanding. If anything's ambiguous, flag it here \u2014 ambiguity is its own risk.\n\n## 2. The 7-failure pre-mortem\nFor each of the following, rate **likelihood (high / medium / low)** and **impact (kills-study / partial / minor)**, with a 2-3 sentence diagnosis.\n\n### A. Sampling failure\nWhat's the chance the sample won't represent the target population?\n- Self-selection bias? Convenience sample dressed as random? WEIRD-sample creep?\n\n### B. Instrument failure\nWill the measurement instruments capture what you think they capture?\n- Construct validity? Order effects? Reactivity? Translation / cultural fit?\n\n### C. Attrition failure\nWho will drop out and what's the differential effect?\n- Long protocols, sensitive topics, low incentive \u2192 asymmetric attrition.\n\n### D. Analysis-plan failure\nIs the analysis pre-specified, and is it the RIGHT analysis?\n- Garden of forking paths? Multiple comparisons? Wrong statistical test for the design?\n\n### E. Ethical / consent failure\nWhat's the chance you'll fail IRB / ethics review or harm participants?\n- Vulnerable populations, deception, data security, withdrawal mechanism.\n\n### F. Power / detection failure\nWith the planned sample size and effect size, what power do you have?\n- Underpowered to detect the effect you care about?\n- Powered for the wrong effect (e.g., main effect when interaction is theoretical interest)?\n\n### G. Generalization failure\nEven if it works, will it generalize beyond your sample?\n- Single site, single cohort, single time point. What's the external-validity story?\n\n## 3. The 'most likely failure' diagnosis\nPick the SINGLE highest-risk failure mode from the 7. State it in 1 sentence.\n\n## 4. Pre-data fixes\nFor each failure scored high-likelihood OR high-impact, propose CONCRETE pre-data fixes:\n- \"Stratify sample on X to fix sampling failure\"\n- \"Add pilot of 10 to test instrument before main study\"\n- \"Pre-register analysis plan to fix garden-of-forking-paths\"\n\nEach fix names the COST (time, money, scope) honestly.\n\n## 5. The 'kill criteria'\nWhat result, observed mid-study, would tell you to STOP and re-design?\n- \"If attrition >40% by week 4, halt and redesign.\"\n- \"If pilot inter-rater reliability <0.7, re-train coders before main coding.\"\n\nThese are GO/NO-GO checks the study commits to in advance.\n\n## 6. Committee / reviewer attack surface\nTop 3 questions a hostile reviewer will ask. Don't answer them \u2014 surface them so the researcher answers BEFORE submission.\n\nCRITICAL RULES\n- Be SKEPTICAL. The goal is to find what breaks, not to validate the protocol.\n- Rate honestly. If sampling is fine, say 'low likelihood, minor impact.' Don't manufacture risks.\n- Every high-impact failure MUST have a pre-data fix proposed.\n- Kill criteria are CONCRETE numbers, not vibes.\n\nPROTOCOL\n{protocol}\n\nBegin.",
+    "input_variables": [
+      {
+        "name": "research_question",
+        "type": "string",
+        "description": "Research question",
+        "required": true,
+        "example": "Does a 6-week mindfulness app reduce self-reported anxiety in college students relative to a journaling control?"
+      },
+      {
+        "name": "hypothesis",
+        "type": "string",
+        "description": "Hypothesis if formal",
+        "required": false,
+        "example": "App group will show \u22651.5 point reduction on GAD-7 vs control at 6wk."
+      },
+      {
+        "name": "protocol",
+        "type": "string",
+        "description": "Protocol details",
+        "required": true,
+        "example": "Design: RCT 1:1, n=120 college freshmen, recruited via campus poster + email. Instrument: GAD-7 baseline + 6wk + 12wk follow-up. Analysis: ITT t-test of change scores..."
+      },
+      {
+        "name": "constraints",
+        "type": "string",
+        "description": "Resources / constraints",
+        "required": true,
+        "example": "$8k budget, 1 PhD-student researcher, 9-mo dissertation timeline."
+      },
+      {
+        "name": "domain",
+        "type": "string",
+        "description": "Domain",
+        "required": true,
+        "example": "Clinical psychology / wellness intervention"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: protocol restate, 7-failure pre-mortem with likelihood/impact, single highest risk, pre-data fixes with cost, kill criteria, committee attack surface."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strongest on garden-of-forking-paths + power analysis nuance."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "good",
+        "notes": "Solid; can soft-pedal high-risk findings \u2014 re-pin skeptic framing."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Long protocol context handled well; weaker on kill criteria specificity."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for simple protocols; thins on multi-arm trials."
+      }
+    ],
+    "variations": [
+      {
+        "label": "IRB-focused",
+        "description": "Lean into ethics + consent risks.",
+        "prompt_snippet": "Weight section E (Ethical/consent) heavier. Add an IRB-narrative draft for the highest-risk consent / withdrawal failure modes."
+      },
+      {
+        "label": "Quant power analysis",
+        "description": "Output a power calc.",
+        "prompt_snippet": "In section F, run a back-of-envelope power calc with the planned n and effect size; show MDE."
+      },
+      {
+        "label": "Qual-research pre-mortem",
+        "description": "Reframe for qualitative.",
+        "prompt_snippet": "Replace sections D and F with: 'Saturation risk' (will you reach theme saturation in planned n?) and 'Reflexivity risk' (where does the researcher's positionality bias themes?)."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Validates the protocol instead of attacking it.",
+        "fix": "Re-pin: 'pretend you're the harshest reviewer on the dissertation committee. Steelman every failure mode.'"
+      },
+      {
+        "symptom": "Vague pre-data fixes.",
+        "fix": "Force: 'each fix names a CONCRETE change + the cost in time/money/scope.'"
+      },
+      {
+        "symptom": "Kill criteria are vibes ('if it's not working').",
+        "fix": "Demand: 'kill criteria specify a metric + threshold + decision rule.'"
+      },
+      {
+        "symptom": "Misses power-analysis problems.",
+        "fix": "Add: 'state the MDE given the planned n and alpha; flag if MDE > realistic effect.'"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "evidence-quality-scorer",
+      "literature-review-gap-finder",
+      "go-no-go-decision-meeting-prep"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "pre-registration",
+      "internal-validity"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "When in the process should I run this?",
+        "answer": "After the protocol is real but BEFORE recruitment opens. Late enough for the design to be concrete; early enough to actually fix what breaks."
+      },
+      {
+        "question": "Does it replace IRB review?",
+        "answer": "No \u2014 IRB has formal authority. This is a pre-IRB sanity check to fix problems you'd otherwise be asked to fix during review."
+      },
+      {
+        "question": "Can I trust the power calc?",
+        "answer": "Treat it as directional. Run a real power calc (G*Power, R pwr package) before final commitment. The variation flag surfaces order-of-magnitude problems."
+      },
+      {
+        "question": "Why so much focus on kill criteria?",
+        "answer": "Studies without pre-committed kill criteria suffer sunk-cost bias. Pre-commitment makes mid-study honesty cheaper."
+      }
+    ],
+    "meta_title": "Research Protocol Pre-Mortem \u2014 Methods Prompt",
+    "meta_description": "Pre-mortem a research protocol across 7 failure modes with pre-data fixes and kill criteria \u2014 before data collection starts.",
+    "version": "v2.0",
+    "release_status": "stable"
   },
   {
     "slug": "literature-review-synthesizer",
