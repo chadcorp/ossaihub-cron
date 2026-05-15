@@ -8832,6 +8832,689 @@
     "meta_description": "Generate test data: realistic distributions + curated edge cases (boundary, null, Unicode, injection). Far better than Faker."
   },
   {
+    "slug": "test-suite-coverage-gap-finder",
+    "title": "Test Suite Coverage Gap Finder",
+    "tldr": "Reads a function + its existing tests and identifies coverage gaps: untested branches, edge cases, error paths. Returns specific new test cases to add (with code) \u2014 not just \u2018add more tests\u2019.",
+    "category": "code-generation",
+    "tags": [
+      "testing",
+      "coverage",
+      "tdd",
+      "quality"
+    ],
+    "best_for_tags": [
+      "backend-engineering",
+      "qa",
+      "legacy-code"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "PR review with thin tests",
+        "example": "New code shipped with 2 happy-path tests; this prompt suggests 6 more covering edges."
+      },
+      {
+        "scenario": "Legacy function with 30% coverage",
+        "example": "Bring it up to 80% with targeted tests, not bulk-generated nonsense."
+      },
+      {
+        "scenario": "Pre-refactor safety net",
+        "example": "Before refactoring complex function, ensure tests cover all current behavior."
+      },
+      {
+        "scenario": "Bug-driven test addition",
+        "example": "Bug reported in edge case; this prompt suggests the broader edge-case family to test."
+      }
+    ],
+    "when_not_to_use": "Skip for simple pure functions (existing tests probably cover what matters). Skip when the code is changing rapidly \u2014 invest in tests once design stabilizes.",
+    "full_prompt": "You are auditing test coverage for a specific function. Identify gaps, propose specific new tests.\n\nINPUT\n- Function under test (full code): {function_code}\n- Existing tests for this function: {existing_tests}\n- Language / framework: {language}\n- Coverage report (if available): {coverage_report}\n\nOUTPUT\n\n## 1. Function's behavioral surface\nList every observable behavior:\n- Input parameters (types, ranges, optional/required)\n- Return values (success cases + error cases)\n- Side effects (DB writes, file I/O, external API calls)\n- Exceptions raised\n- Branches (if/else, switch cases, ternaries)\n- Loops (bounded? what termination?)\n\n## 2. What existing tests cover\nFor each existing test, note what behavior it tests. Highlight overlaps (multiple tests covering same thing) and obvious gaps.\n\n## 3. Coverage gaps (numbered)\nFor each gap:\n\n### Gap N: <one-line description>\n- What behavior is NOT tested\n- Why it matters (severity: blocker / major / minor)\n- Suggested test (code in {language}):\n  ```{language}\n  // ...\n  ```\n\nAim for 5-10 high-value gap tests, NOT a generic \u2018all branches\u2019 list.\n\n## 4. Property-based test suggestions (if appropriate)\n1-3 invariants that should hold across many inputs:\n- \"For all valid X, fn(X) returns Y in [range]\"\n- \"fn(fn(X)) == fn(X) (idempotence)\"\n- \"Input parity (e.g., sorted input \u2192 sorted output)\"\n\nProvide as Hypothesis or fast-check pseudocode.\n\n## 5. Tests I'd NOT prioritize\n2-3 things that look like gaps but aren't worth testing:\n- \"Library-internal types (trust the library)\"\n- \"Trivial getters/setters\"\n- \"Mocks that don't reflect real behavior\"\n\n## 6. Refactor recommendation (if applicable)\nIf the function has too many responsibilities to test cleanly, suggest a refactor that would make it testable. Don't propose the refactor as a test \u2014 note it explicitly.\n\nCRITICAL RULES\n- Suggested tests are RUNNABLE code, not pseudocode.\n- Cover edge cases: empty, null, max-size, off-by-one, unicode, timezone, concurrency, error paths.\n- Don't manufacture gap tests for completeness \u2014 only ones with real value.\n- If existing tests are GOOD, say so: section 3 can have \u2018no critical gaps; minor edge case test added below.\u2019\n\nFUNCTION\n{function_code}\n\nEXISTING TESTS\n{existing_tests}\n\nLANGUAGE: {language}\n\nAudit.",
+    "input_variables": [
+      {
+        "name": "function_code",
+        "type": "string",
+        "description": "Full function code",
+        "required": true,
+        "example": "def parse_price(s: str) -> float:\\n    s = s.strip().replace('$', '').replace(',', '')\\n    if not s: return 0.0\\n    return float(s)"
+      },
+      {
+        "name": "existing_tests",
+        "type": "string",
+        "description": "Existing tests",
+        "required": true,
+        "example": "def test_basic(): assert parse_price('$1,000') == 1000.0\\ndef test_empty(): assert parse_price('') == 0.0"
+      },
+      {
+        "name": "language",
+        "type": "string",
+        "description": "Language/framework",
+        "required": true,
+        "example": "Python with pytest"
+      },
+      {
+        "name": "coverage_report",
+        "type": "string",
+        "description": "Coverage data if available",
+        "required": false,
+        "example": "Lines covered: 4/6. Missing: lines 5, 6 (error handling)"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: behavioral surface, what's covered, numbered gaps with runnable test code, property-based test suggestions, what-not-to-test, refactor recommendation."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Specific behavioral analysis; runnable test code."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes over-generates edge cases \u2014 re-pin \u2018high-value only.\u2019"
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; property-based suggestions can be weaker."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for simple functions; thin on complex behavior."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Mutation-tested",
+        "description": "Add mutation testing suggestions.",
+        "prompt_snippet": "Add: \u2018suggest 3-5 mutations that would survive existing tests (e.g., flipping > to >=). For each, write the test that would catch it.\u2019"
+      },
+      {
+        "label": "Performance test branch",
+        "description": "Tests for performance regressions.",
+        "prompt_snippet": "Add: \u2018suggest performance tests for any function with loops or DB calls. Define acceptable bounds (e.g., <100ms for N=1000).\u2019"
+      },
+      {
+        "label": "Multi-language",
+        "description": "Java / TypeScript / Go variant.",
+        "prompt_snippet": "Replace pytest with junit/jest/go-test. Adjust syntax in suggested tests."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Lists EVERY possible test (low signal).",
+        "fix": "Re-pin: \u2018high-value gaps only. 5-10 specific tests > 30 generic ones.\u2019"
+      },
+      {
+        "symptom": "Suggested tests are pseudocode, not runnable.",
+        "fix": "Add: \u2018every test is runnable in the specified framework. Show real assertion syntax.\u2019"
+      },
+      {
+        "symptom": "Misses error paths.",
+        "fix": "Add: \u2018error paths (exceptions, error returns) are often the biggest gaps. Explicitly check.\u2019"
+      },
+      {
+        "symptom": "Suggests trivial coverage (test getters).",
+        "fix": "Add: \u2018what-not-to-test section: trivial accessors, library internals. Don't suggest these.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "code-snippet-with-tests-tdd",
+      "pytest-generator-from-source",
+      "senior-code-reviewer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "test-coverage",
+      "edge-cases"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Should I aim for 100% coverage?",
+        "answer": "No \u2014 coverage rate is a weak signal. 85% of high-value tests > 100% with bulk-generated low-value tests. Tune for COVERAGE OF FAILURE MODES, not lines."
+      },
+      {
+        "question": "Will it understand my framework?",
+        "answer": "Major frameworks (pytest, jest, junit, go-test, rspec): yes. Niche or custom frameworks: provide an example test in the framework so it can match style."
+      },
+      {
+        "question": "What about integration tests?",
+        "answer": "This prompt focuses on unit tests. For integration/E2E, use a different prompt with full system context."
+      }
+    ],
+    "meta_title": "Test Suite Coverage Gap Finder \u2014 Prompt",
+    "meta_description": "Audit existing tests + identify high-value gaps. Returns runnable test code, property-based suggestions, refactor recommendations if needed."
+  },
+  {
+    "slug": "code-comment-explainer",
+    "title": "Code Comment Explainer (Plain-English Inline)",
+    "tldr": "Adds plain-English inline comments to a code block: explains WHY (not just what), notes non-obvious decisions, flags tricky parts. Doesn't comment-pollute trivial lines.",
+    "category": "code-generation",
+    "tags": [
+      "comments",
+      "documentation",
+      "readability"
+    ],
+    "best_for_tags": [
+      "legacy-code-onboarding",
+      "tutorials",
+      "teaching"
+    ],
+    "difficulty_tier": "beginner",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Onboarding new engineer to a codebase",
+        "example": "Critical algorithm needs annotation; this prompt explains the WHY."
+      },
+      {
+        "scenario": "Open-source project tutorial",
+        "example": "Tutorial snippet needs walk-through; inline comments make it self-explanatory."
+      },
+      {
+        "scenario": "Code review feedback",
+        "example": "Reviewer wants to flag what's confusing; prompt suggests where comments would help."
+      },
+      {
+        "scenario": "Legacy code archaeology",
+        "example": "Old code with no comments; this prompt reconstructs likely INTENT (with caveats)."
+      }
+    ],
+    "when_not_to_use": "Skip for trivial code (just a few lines). Skip when the code itself should be REFACTORED to not need comments (rename a variable, extract a function).",
+    "full_prompt": "You are adding plain-English comments to code. Comments explain WHY, not what.\n\nINPUT\n- Code block: {code}\n- Language: {language}\n- Reader context (who's reading, what they know): {reader_context}\n- Comment style: {comment_style}    (per-line / per-block / docstring-only)\n\nOUTPUT\n\n## 1. Annotated code\n\n```{language}\n<code with comments inline>\n```\n\nComment rules:\n- WHY > WHAT. Don't say \"increment counter\" for `counter += 1`. Say \"track retry attempts\" if that's why.\n- ONE comment per logical block, not per line.\n- Highlight NON-OBVIOUS decisions. (\"Using nested loops here because Set lookup would lose ordering required downstream.\")\n- Flag TRICKY parts. (\"Off-by-one is intentional \u2014 we want closed-open interval.\")\n- Mark UNCERTAIN parts. (\"Likely-but-not-confirmed: this assumes upstream sorted by date.\")\n\n## 2. Summary block (above code)\n2-3 lines explaining what the code does at a high level:\n```\n# This function:\n#   - Takes a list of API responses\n#   - Filters out failures and dedupes by request_id\n#   - Returns a normalized list ready for analytics\n```\n\n## 3. Caveats / open questions\n2-4 things YOU couldn't determine from the code alone:\n- \"I assume X means Y; not verified by reading caller context\"\n- \"Magic constant 0.65 looks like a threshold; explanation not in this file\"\n- \"This catches exceptions silently; intentional?\"\n\n## 4. Suggested refactors (if applicable)\n2-3 places where renaming a variable or extracting a function would REPLACE the need for a comment. Brief \u2014 these are observations, not full refactor plans.\n\nCRITICAL RULES\n- Don't add comments where code is self-explanatory. (Bad: `# loop through items` above `for item in items:`.)\n- Don't comment OVER what the code does \u2014 defer to the code where it speaks.\n- Be honest about uncertainty: \"Likely Y because...\" not \"Definitely Y.\"\n- Match the host file's existing comment style (Python docstrings vs //, etc.).\n\nCODE\n{code}\n\nLANGUAGE: {language}\n\nREADER: {reader_context}\n\nAnnotate.",
+    "input_variables": [
+      {
+        "name": "code",
+        "type": "string",
+        "description": "Code to annotate",
+        "required": true,
+        "example": "def dedupe(items):\\n    seen = set()\\n    out = []\\n    for x in items:\\n        if x.id in seen: continue\\n        seen.add(x.id)\\n        out.append(x)\\n    return out"
+      },
+      {
+        "name": "language",
+        "type": "string",
+        "description": "Programming language",
+        "required": true,
+        "example": "Python"
+      },
+      {
+        "name": "reader_context",
+        "type": "string",
+        "description": "Reader's context",
+        "required": true,
+        "example": "Junior engineer onboarding, familiar with Python basics but not our codebase"
+      },
+      {
+        "name": "comment_style",
+        "type": "string",
+        "description": "Comment style preference",
+        "required": false,
+        "example": "per-block"
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Summary block + annotated code with WHY comments + caveats/open-questions + suggested refactors."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong WHY-focus; honest uncertainty."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes adds WHAT-comments \u2014 call out."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; refactor suggestions vary."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Tends toward WHAT-comments; reinforce WHY."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Tutorial-mode",
+        "description": "Heavier explanation for teaching.",
+        "prompt_snippet": "Adjust: \u2018this is a TUTORIAL audience \u2014 beginner. Comment density can be higher; explain idioms and conventions, not just business logic.\u2019"
+      },
+      {
+        "label": "Strict-minimal",
+        "description": "Only critical comments.",
+        "prompt_snippet": "Adjust: \u2018only comment where code's INTENT is NOT obvious. If the code is self-explanatory, no comment.\u2019"
+      },
+      {
+        "label": "Algorithmic deep-dive",
+        "description": "For complex algorithms.",
+        "prompt_snippet": "Add: \u2018also produce an Algorithm walkthrough section above the code \u2014 describe complexity, invariants, edge case handling.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Adds comments to every line (noise).",
+        "fix": "Re-pin: \u2018ONE comment per logical block. Self-explanatory code = no comment.\u2019"
+      },
+      {
+        "symptom": "Comments restate what code does.",
+        "fix": "Add: \u2018WHY-comment, not WHAT. \u2018# track retries\u2019 not \u2018# increment counter.\u2019\u2019"
+      },
+      {
+        "symptom": "Doesn't flag uncertainty.",
+        "fix": "Force: \u2018when guessing intent, label as guess. \u2018Likely X because Y\u2019 not \u2018X.\u2019\u2019"
+      },
+      {
+        "symptom": "Suggests refactors as comments (wrong layer).",
+        "fix": "Add: \u2018refactor suggestions go in Section 4, not in inline comments.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "senior-code-reviewer",
+      "regex-builder-with-explanation"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "code-comments",
+      "documentation"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Should comments be added everywhere?",
+        "answer": "No. Code's clarity is its own documentation. Comments shine where intent is non-obvious. The best response to \u2018this needs a comment\u2019 is often \u2018this needs a refactor.\u2019"
+      },
+      {
+        "question": "What if the code's intent is genuinely unclear?",
+        "answer": "Section 3 (caveats) captures this. Comments labeled as guess help readers; bluffing certainty doesn't."
+      },
+      {
+        "question": "Will this work for non-English codebases?",
+        "answer": "Match the host language. If file's comments are in another language, suggest matching that \u2014 don't switch to English."
+      }
+    ],
+    "meta_title": "Code Comment Explainer (Plain-English Inline) \u2014 Prompt",
+    "meta_description": "Add WHY-focused inline comments to code. Highlights non-obvious decisions, flags uncertainty, suggests refactors where comments aren't enough."
+  },
+  {
+    "slug": "openapi-spec-from-handler",
+    "title": "OpenAPI Spec From a Handler Function",
+    "tldr": "Reads a request handler (FastAPI / Express / Rails) and generates an OpenAPI 3.1 specification: paths, parameters, request/response schemas, error responses, examples. Flags what it had to infer.",
+    "category": "code-generation",
+    "tags": [
+      "openapi",
+      "api-docs",
+      "fastapi",
+      "spec-generation"
+    ],
+    "best_for_tags": [
+      "api-development",
+      "documentation",
+      "sdk-generation"
+    ],
+    "difficulty_tier": "intermediate",
+    "featured": false,
+    "use_cases": [
+      {
+        "scenario": "Auto-generate API docs",
+        "example": "Backend handler exists; this prompt produces OpenAPI for client SDK gen + Swagger UI."
+      },
+      {
+        "scenario": "Legacy API documentation",
+        "example": "Documented endpoints retrofit \u2014 read 30 handlers, generate the spec."
+      },
+      {
+        "scenario": "Public API release prep",
+        "example": "Internal handler \u2192 public OpenAPI with proper examples and error responses."
+      },
+      {
+        "scenario": "Pre-deploy validation",
+        "example": "Generated spec compared to checked-in spec \u2014 diff catches drift."
+      }
+    ],
+    "when_not_to_use": "Skip when framework auto-generates OpenAPI (FastAPI does much of this natively). Skip for non-REST APIs (gRPC, GraphQL).",
+    "full_prompt": "You are generating an OpenAPI 3.1 specification from a handler function.\n\nINPUT\n- Handler code: {handler_code}\n- Framework: {framework}\n- Existing schemas / models referenced: {existing_schemas}\n- Auth pattern used: {auth_pattern}\n- Sample request / response (if available): {sample_data}\n\nOUTPUT (YAML, OpenAPI 3.1)\n\n```yaml\nopenapi: 3.1.0\ninfo:\n  title: <inferred from handler scope>\n  version: <inferred>\n\npaths:\n  /<path>:\n    <method>:\n      summary: <one-line>\n      description: |\n        <2-3 sentences. What this endpoint does and when to use it.>\n      operationId: <camelCase from function name>\n      tags:\n        - <group from handler module / class>\n      parameters:\n        - name: <param>\n          in: path | query | header\n          required: true|false\n          schema:\n            type: ...\n          description: ...\n          example: ...\n      requestBody:\n        required: true|false\n        content:\n          application/json:\n            schema:\n              $ref: '#/components/schemas/<Schema>'\n            examples:\n              normal:\n                value: ...\n      responses:\n        '200':\n          description: <successful case>\n          content:\n            application/json:\n              schema:\n                $ref: '#/components/schemas/<ResponseSchema>'\n              examples:\n                ...\n        '4xx':\n          description: ...\n        '5xx':\n          description: ...\n      security:\n        - <auth scheme>\n\ncomponents:\n  schemas:\n    <RequestSchema>:\n      type: object\n      required: [...]\n      properties: ...\n    <ResponseSchema>: ...\n\n  securitySchemes:\n    <name>: ...\n```\n\n## After the YAML, output:\n\n### Assumptions I had to make\nList what was INFERRED vs explicit in the code:\n- \"Request body schema inferred from Pydantic model `UserCreate` \u2014 assumed all fields visible in code are public.\"\n- \"Error response shape assumed standard ProblemDetail (RFC 7807) \u2014 code shows custom format; please verify.\"\n- \"200 examples generated from positive-case dummy data.\"\n\n### Suggested manual additions\nWhat an automated extractor CAN'T add:\n- Rate-limit headers\n- Pagination patterns (when handler doesn't expose them clearly)\n- Authorization scope details\n- Webhook callbacks\n- Deprecation notices\n\nCRITICAL RULES\n- Don't invent schemas. If the handler references `MyModel` and you don't have its definition, mark it as a stub: `schema: type: object  # NOTE: stub \u2014 model definition not in input`.\n- Status codes from handler's actual paths \u2014 don't add generic ones.\n- Examples should be REALISTIC (don't use `string` as a sample value).\n- The OpenAPI spec must be VALID YAML \u2014 test for syntax errors.\n\nHANDLER\n{handler_code}\n\nFRAMEWORK: {framework}\n\nGenerate the spec.",
+    "input_variables": [
+      {
+        "name": "handler_code",
+        "type": "string",
+        "description": "Handler function code",
+        "required": true,
+        "example": "@router.post('/users')\\ndef create_user(payload: UserCreate, db: Session = Depends(get_db)) -> UserResponse:\\n    if db.query(User).filter_by(email=payload.email).first():\\n        raise HTTPException(409, 'Email taken')\\n    user = User(**payload.dict())\\n    db.add(user); db.commit()\\n    return UserResponse.from_orm(user)"
+      },
+      {
+        "name": "framework",
+        "type": "string",
+        "description": "Framework",
+        "required": true,
+        "example": "FastAPI"
+      },
+      {
+        "name": "existing_schemas",
+        "type": "string",
+        "description": "Referenced schemas",
+        "required": false,
+        "example": "class UserCreate(BaseModel): email: EmailStr; password: SecretStr; name: str"
+      },
+      {
+        "name": "auth_pattern",
+        "type": "string",
+        "description": "Auth used",
+        "required": false,
+        "example": "JWT bearer token via Depends(auth_required)"
+      },
+      {
+        "name": "sample_data",
+        "type": "string",
+        "description": "Sample request/response if available",
+        "required": false,
+        "example": "Example request: {email: 'jane@example.com', password: '...', name: 'Jane'}. Response: {id: 1, email: '...', name: '...', created_at: '2026-05-14T10:00:00Z'}"
+      }
+    ],
+    "expected_output": {
+      "format": "yaml",
+      "sample": "Complete OpenAPI 3.1 YAML + assumptions list + suggested manual additions."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong YAML structure; honest about inferences."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; sometimes invents schemas \u2014 re-pin \u2018stub if not in input.\u2019"
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; examples can be unrealistic (default values)."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for simple handlers; thin on complex schemas."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Multiple handlers \u2192 unified spec",
+        "description": "Read 5-10 handlers and merge.",
+        "prompt_snippet": "Accept multiple handler code blocks; produce ONE unified spec with all paths under same `info`."
+      },
+      {
+        "label": "GraphQL adaptation",
+        "description": "GraphQL schema instead.",
+        "prompt_snippet": "Replace OpenAPI with GraphQL SDL. Adjust to types + queries + mutations + subscriptions."
+      },
+      {
+        "label": "Diff with existing",
+        "description": "Compare to checked-in spec.",
+        "prompt_snippet": "Accept existing spec; produce DIFF \u2014 added paths, removed paths, breaking changes. Useful for CI guardrails."
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Invents schemas not in input.",
+        "fix": "Re-pin: \u2018mark unknown schemas as stubs; do NOT fabricate full schemas.\u2019"
+      },
+      {
+        "symptom": "YAML syntax errors.",
+        "fix": "Add: \u2018test the YAML structurally. Indentation, quotes, $refs valid.\u2019"
+      },
+      {
+        "symptom": "Examples are placeholder values.",
+        "fix": "Add: \u2018examples must be realistic \u2014 use believable values for emails, dates, names, etc.\u2019"
+      },
+      {
+        "symptom": "Misses error status codes from raises.",
+        "fix": "Force: \u2018every raised HTTPException/error gets a response code in the spec.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "api-design-from-requirements",
+      "code-snippet-with-tests-tdd"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "openapi",
+      "api-spec"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "Why not use the framework's auto-generation?",
+        "answer": "FastAPI's auto-gen is great but limited (doesn't capture error responses well, examples are bare). This prompt adds the human-quality bits."
+      },
+      {
+        "question": "What about schema validation?",
+        "answer": "Run output through `spectral` or `openapi-cli` to lint. AI gets 95% right; lint catches the last 5%."
+      },
+      {
+        "question": "Should I commit AI-generated specs?",
+        "answer": "Treat them as drafts. Review carefully. Commit only after running validation + adding manual sections (rate limits, auth scopes, etc.) the AI can't infer."
+      }
+    ],
+    "meta_title": "OpenAPI Spec From a Handler Function \u2014 Prompt",
+    "meta_description": "Generate OpenAPI 3.1 spec from a request handler. Paths, schemas, error responses, realistic examples. Marks inferred vs explicit."
+  },
+  {
+    "slug": "code-modernization-stepwise",
+    "title": "Code Modernization Step-By-Step Plan",
+    "tldr": "Given a legacy code module and a target modern stack, generates a stepwise migration plan: tests-first, smallest-safe-steps, with PR-sized commits and rollback strategy at each step. NOT a big-bang rewrite.",
+    "category": "code-generation",
+    "tags": [
+      "modernization",
+      "migration",
+      "refactoring",
+      "legacy"
+    ],
+    "best_for_tags": [
+      "legacy-systems",
+      "framework-migrations",
+      "tech-debt"
+    ],
+    "difficulty_tier": "advanced",
+    "featured": true,
+    "use_cases": [
+      {
+        "scenario": "Migrate Python 2 to 3",
+        "example": "Old codebase still on Py2; this prompt sequences the migration."
+      },
+      {
+        "scenario": "Switch ORM (SQLAlchemy \u2192 Tortoise)",
+        "example": "Multi-week migration with safety steps."
+      },
+      {
+        "scenario": "Frontend framework switch (Angular \u2192 React)",
+        "example": "Module-by-module migration plan, not big-bang."
+      },
+      {
+        "scenario": "On-prem to cloud",
+        "example": "Refactor to remove on-prem assumptions; plan with rollback points."
+      }
+    ],
+    "when_not_to_use": "Skip for trivial code (just refactor). Skip when team explicitly wants big-bang (you'll be ignored). Skip when no tests exist \u2014 write tests FIRST (separate task).",
+    "full_prompt": "You are planning a stepwise modernization of a code module. Smallest safe steps; tests first; rollback-friendly.\n\nINPUT\n- Current module (source code or summary): {current_module}\n- Current stack (language version, framework, deps): {current_stack}\n- Target stack: {target_stack}\n- Existing tests (coverage % if known): {existing_tests}\n- Constraints (deadline, can't break prod, frozen interfaces, etc.): {constraints}\n\nOUTPUT\n\n## 1. Migration philosophy\n- Strategy: strangler-fig / parallel-write / incremental-rewrite / full-rewrite\n- Rationale: why this approach for THIS situation\n- Total estimated effort (in PR-weeks): N\n\n## 2. Pre-migration: safety net\nBefore ANY migration, what must exist:\n- Test coverage threshold: target % before starting (typically >70%)\n- Observability: log what users hit, what code paths execute\n- Rollback rehearsal: practice rolling back in staging\n\nIf safety net is missing, the plan starts with BUILDING THE SAFETY NET.\n\n## 3. Steps (numbered PR-sized commits)\n\n### Step N: <one-line description>\n- **What changes**: specific code areas\n- **Why this step now**: dependency ordering\n- **Test that proves it works**: name the test or describe new tests added\n- **Rollback if it fails**: revert the PR? Hide behind feature flag? Restore from backup?\n- **Estimated PR size**: small (<200 LOC) / medium (<500) / large (<1000) \u2014 large should be split\n\nAim for 6-15 steps. More = unwieldy. Fewer = steps too large.\n\n## 4. Risk register\n3-5 things that could go wrong, ranked by likelihood \u00d7 impact:\n- \"DB migration locks table for 10+ min on production size\" \u2192 mitigation\n- \"New ORM has different transaction semantics\" \u2192 mitigation\n- \"Library X has different default behavior re: nulls\" \u2192 mitigation\n\n## 5. Compatibility timeline\n- When can old code be REMOVED (not just stop being added to)?\n- When are users / downstream services migrated off old interface?\n- What's the parallel-run period?\n\n## 6. Reality check (skipped steps)\n2-3 things people typically skip in modernizations that are mistakes:\n- \"Skipping the observability step because \u2018we'll add it later\u2019 \u2014 never happens\"\n- \"Bundling DB migration with code migration in same PR \u2014 one fails, both roll back\"\n- \"Not testing rollback path \u2014 fails when needed\"\n\nCRITICAL RULES\n- Tests-first: don't migrate code that's not under test. Step 1-3 usually IS test addition.\n- Strangler-fig preferred when interfaces are visible \u2014 new code lives alongside old, old gradually deletes.\n- Big-bang ONLY when the module is tiny + isolated. Most cases: incremental.\n- Each step is INDEPENDENTLY rollback-able. If step 7 breaks, you don't have to roll back 1-6.\n\nMODULE\n{current_module}\n\nCURRENT: {current_stack}\nTARGET: {target_stack}\nCONSTRAINTS: {constraints}\n\nPlan.",
+    "input_variables": [
+      {
+        "name": "current_module",
+        "type": "string",
+        "description": "Current module code or summary",
+        "required": true,
+        "example": "auth.py: ~600 LOC, handles JWT signing + session storage + 2FA. Uses PyJWT 1.x + Flask sessions + custom SMS gateway."
+      },
+      {
+        "name": "current_stack",
+        "type": "string",
+        "description": "Current stack",
+        "required": true,
+        "example": "Python 3.8, Flask 1.x, PyJWT 1.7, custom SMS gateway"
+      },
+      {
+        "name": "target_stack",
+        "type": "string",
+        "description": "Target stack",
+        "required": true,
+        "example": "Python 3.12, FastAPI, PyJWT 2.x, Twilio SDK"
+      },
+      {
+        "name": "existing_tests",
+        "type": "string",
+        "description": "Existing test coverage",
+        "required": true,
+        "example": "30% coverage. Happy-path tests for login/logout. No tests for 2FA or session expiry."
+      },
+      {
+        "name": "constraints",
+        "type": "string",
+        "description": "Constraints",
+        "required": true,
+        "example": "Auth is hot-path \u2014 zero downtime. Production has 10M sessions. PCI compliance \u2014 auth changes need security review per step."
+      }
+    ],
+    "expected_output": {
+      "format": "markdown",
+      "sample": "Six sections: philosophy, safety net, 6-15 numbered steps with size/rollback, risk register, compatibility timeline, reality check."
+    },
+    "few_shot_examples": [],
+    "model_compatibility": [
+      {
+        "model": "claude-3-7-sonnet",
+        "compatibility": "excellent",
+        "notes": "Strong on dependency ordering and rollback strategies."
+      },
+      {
+        "model": "gpt-4o",
+        "compatibility": "excellent",
+        "notes": "Very good; can underestimate effort \u2014 re-pin honest PR-week estimates."
+      },
+      {
+        "model": "gemini-1.5-pro",
+        "compatibility": "good",
+        "notes": "Solid; risk register can be generic."
+      },
+      {
+        "model": "claude-3-5-haiku",
+        "compatibility": "fair",
+        "notes": "Workable for simple migrations; thin on complex dependency ordering."
+      }
+    ],
+    "variations": [
+      {
+        "label": "Database migration variant",
+        "description": "For DB engine migrations.",
+        "prompt_snippet": "Adjust: \u2018DB migrations have unique constraints \u2014 dual-write phase, schema evolution, backfill, cutover, cleanup. Step structure reflects this.\u2019"
+      },
+      {
+        "label": "Cloud migration variant",
+        "description": "On-prem to cloud.",
+        "prompt_snippet": "Add: \u2018include cloud-specific concerns: secrets management migration, networking, observability replacement, cost monitoring during parallel run.\u2019"
+      },
+      {
+        "label": "Frontend framework variant",
+        "description": "Angular \u2192 React etc.",
+        "prompt_snippet": "Adjust: \u2018frontend module-by-module strangler-fig. Old and new live alongside in production. Route-by-route migration.\u2019"
+      }
+    ],
+    "failure_modes": [
+      {
+        "symptom": "Steps too large (PR > 1000 LOC).",
+        "fix": "Re-pin PR size; \u2018large\u2019 steps must be split.\u2019"
+      },
+      {
+        "symptom": "Skips \u2018safety net\u2019 section.",
+        "fix": "Force: \u2018migration without tests is rewriting. Make the safety net the first phase.\u2019"
+      },
+      {
+        "symptom": "Rollback strategy missing per step.",
+        "fix": "Add: \u2018every step states how it rolls back. Without rollback plan, the step isn't ready.\u2019"
+      },
+      {
+        "symptom": "Reality-check section generic.",
+        "fix": "Add: \u2018reality check references SPECIFIC patterns teams skip in YOUR migration type.\u2019"
+      }
+    ],
+    "tested_with": {
+      "models": [
+        "claude-3-7-sonnet",
+        "gpt-4o",
+        "gemini-1.5-pro",
+        "claude-3-5-haiku"
+      ],
+      "last_verified_date": "2026-05-13"
+    },
+    "related_prompt_slugs": [
+      "sql-schema-migration-safe",
+      "test-suite-coverage-gap-finder",
+      "senior-code-reviewer"
+    ],
+    "related_tool_slugs": [],
+    "related_glossary_slugs": [
+      "strangler-fig",
+      "modernization"
+    ],
+    "license": "MIT",
+    "attribution": "OSS AI Hub",
+    "faq": [
+      {
+        "question": "When is big-bang OK?",
+        "answer": "Module is small (<2000 LOC), well-isolated (clean API boundary), and has thorough tests. Even then, parallel-run for a week before deleting old."
+      },
+      {
+        "question": "How long does typical modernization take?",
+        "answer": "1-3 PR-weeks per 1000 LOC of legacy code, depending on test coverage and complexity. Less if well-tested; more if behaviors are emergent."
+      },
+      {
+        "question": "Can I parallelize steps?",
+        "answer": "Yes \u2014 if steps touch independent areas. Dependency graph in section 3 should make parallelizable steps explicit."
+      }
+    ],
+    "meta_title": "Code Modernization Step-By-Step Plan \u2014 Prompt",
+    "meta_description": "Plan a stepwise legacy modernization: safety-net first, 6-15 PR-sized steps, rollback per step, risk register, compatibility timeline."
+  },
+  {
     "slug": "senior-code-reviewer",
     "title": "Senior Code Reviewer (security + perf + style)",
     "category": "code-generation",
