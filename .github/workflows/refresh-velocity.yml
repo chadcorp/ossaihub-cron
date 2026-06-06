@@ -1,0 +1,27 @@
+name: Refresh OSS AI Hub velocity
+on:
+  schedule:
+    - cron: '23 */2 * * *'   # every 2 hours, off the hour
+  workflow_dispatch:          # manual trigger from the Actions tab
+
+# Drives the Base44 syncGitHubVelocity function, which refreshes GitHubVelocity
+# (stars_7d_gain etc.) for the most-stale tools first, bounded per run.
+# Replaces the Base44-native 6h schedule that silently stalled on 2026-06-03.
+
+jobs:
+  velocity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger syncGitHubVelocity
+        run: |
+          echo "POST syncGitHubVelocity ..."
+          code=$(curl -sS -o resp.json -w "%{http_code}" \
+            -X POST "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/syncGitHubVelocity" \
+            -H "Content-Type: application/json" \
+            -H "API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}" \
+            --max-time 280 \
+            -d '{}')
+          echo "HTTP $code"
+          cat resp.json || true
+          echo
+          test "$code" = "200"
