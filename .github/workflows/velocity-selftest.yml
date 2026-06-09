@@ -1,0 +1,15 @@
+name: Velocity endpoint selftest
+on:
+  workflow_dispatch:   # manual only — diagnostics, never scheduled
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: node velocity-selftest.mjs
+        env:
+          BASE44_API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}
