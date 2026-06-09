@@ -1,27 +1,30 @@
 name: Refresh OSS AI Hub velocity
 on:
   schedule:
-    - cron: '23 */2 * * *'   # every 2 hours, off the hour
-  workflow_dispatch:          # manual trigger from the Actions tab
+    - cron: '23 2,8,14,20 * * *'   # every 6h, offset from stars(06:17)/discover(04:23)/enrich(07:43)
+  workflow_dispatch:               # manual trigger from the Actions tab
 
-# Drives the Base44 syncGitHubVelocity function, which refreshes GitHubVelocity
-# (stars_7d_gain etc.) for the most-stale tools first, bounded per run.
-# Replaces the Base44-native 6h schedule that silently stalled on 2026-06-03.
+# Full GitHubVelocity refresh. Computes stars/forks/open-issues on the Actions
+# side (GITHUB_TOKEN = 5000 req/hr) and bulk-upserts EVERY tool's velocity row
+# through the Base44 `upsertVelocityData` endpoint in small paced batches with
+# retry (gains are computed server-side).
+#
+# Replaces the old path that POSTed to `syncGitHubVelocity`, which wrote only
+# ~50 of 200 rows/run under Base44's per-row write rate-limit and never advanced
+# the most-stale tail — ~445 rows froze for 2+ weeks (hermes-agent 25 days),
+# which froze the public Weekly Digest headline for four straight weeks.
+# `syncGitHubVelocity` is left in place as a manual fallback.
 
 jobs:
   velocity:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
-      - name: Trigger syncGitHubVelocity
-        run: |
-          echo "POST syncGitHubVelocity ..."
-          code=$(curl -sS -o resp.json -w "%{http_code}" \
-            -X POST "https://base44.app/api/apps/69a91ff6770c8ca0347ae03d/functions/syncGitHubVelocity" \
-            -H "Content-Type: application/json" \
-            -H "API_KEY: ${{ secrets.TOOLS_UPSERT_API_KEY }}" \
-            --max-time 280 \
-            -d '{}')
-          echo "HTTP $code"
-          cat resp.json || true
-          echo
-          test "$code" = "200"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node refresh-velocity.mjs
+        env:
+          GH_READONLY_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # auto-provided by Actions, no setup
+          BASE44_API_KEY:    ${{ secrets.TOOLS_UPSERT_API_KEY }}
