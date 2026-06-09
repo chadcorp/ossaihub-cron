@@ -247,31 +247,64 @@ async function fetchStats(repos) {
   return { live, dead, skipped };
 }
 
+async function postBatch(chunk, runLog) {
+  const body = runLog ? { items: chunk, run_log: runLog } : { items: chunk };
+  const r = await fetchWithRetry(VELOCITY_UPSERT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', API_KEY: BASE44_API_KEY },
+    body: JSON.stringify(body),
+  });
+  return r.json().catch(() => ({}));
+}
+
 // POST per-tool velocity items to upsertVelocityData in small paced batches
-// with retry (same pattern as refresh-stars.mjs upsert()).
+// (same pattern as refresh-stars.mjs upsert()), then re-send batches that
+// still report failures. Re-sending is safe: the endpoint no-op-skips rows
+// written in the last 45 min with unchanged stars, so a retried mixed batch
+// only re-attempts the rows that actually failed (Base44's per-row write
+// rate-limit fails whole batches in bursts; a cooled-down retry lands them).
 async function upsert(items) {
   const BATCH = 25;
   const INTER_BATCH_DELAY_MS = 8000;
+  const RETRY_COOLDOWN_MS = [90000, 150000]; // pass 2, pass 3
+
+  const batches = [];
+  for (let i = 0; i < items.length; i += BATCH) {
+    batches.push({ chunk: items.slice(i, i + BATCH), failed: 0 });
+  }
+
   let updated = 0;
   let created = 0;
-  let failed = 0;
-  const totalBatches = Math.ceil(items.length / BATCH);
-  for (let i = 0; i < items.length; i += BATCH) {
-    const chunk = items.slice(i, i + BATCH);
-    const batchNum = i / BATCH + 1;
-    const r = await fetchWithRetry(VELOCITY_UPSERT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', API_KEY: BASE44_API_KEY },
-      body: JSON.stringify({ items: chunk }),
-    });
-    const res = await r.json().catch(() => ({}));
+  let noop = 0;
+  for (let b = 0; b < batches.length; b++) {
+    const res = await postBatch(batches[b].chunk);
     updated += res.updated ?? 0;
     created += res.created ?? 0;
-    failed += res.failed ?? 0;
-    console.log(`  batch ${batchNum}/${totalBatches}: ${chunk.length} sent, updated=${res.updated ?? '?'}, created=${res.created ?? 0}, failed=${res.failed ?? 0}`);
-    if (i + BATCH < items.length) await new Promise((res) => setTimeout(res, INTER_BATCH_DELAY_MS));
+    noop += res.skipped_noop ?? 0;
+    batches[b].failed = res.failed ?? 0;
+    console.log(`  batch ${b + 1}/${batches.length}: ${batches[b].chunk.length} sent, updated=${res.updated ?? '?'}, created=${res.created ?? 0}, noop=${res.skipped_noop ?? 0}, failed=${res.failed ?? 0}`);
+    if (b < batches.length - 1) await new Promise((res) => setTimeout(res, INTER_BATCH_DELAY_MS));
   }
-  console.log(`Velocity upsert totals — updated: ${updated}, created: ${created}, failed: ${failed}`);
+
+  for (let pass = 0; pass < RETRY_COOLDOWN_MS.length; pass++) {
+    const retry = batches.filter((b) => b.failed > 0);
+    if (!retry.length) break;
+    console.log(`Retry pass ${pass + 2}: ${retry.length} batches still have failures — cooling down ${RETRY_COOLDOWN_MS[pass] / 1000}s...`);
+    await new Promise((r) => setTimeout(r, RETRY_COOLDOWN_MS[pass]));
+    for (let b = 0; b < retry.length; b++) {
+      const res = await postBatch(retry[b].chunk);
+      updated += res.updated ?? 0;
+      created += res.created ?? 0;
+      noop += res.skipped_noop ?? 0;
+      retry[b].failed = res.failed ?? 0;
+      console.log(`  retry ${b + 1}/${retry.length}: updated=${res.updated ?? '?'}, noop=${res.skipped_noop ?? 0}, failed=${res.failed ?? 0}`);
+      if (b < retry.length - 1) await new Promise((r) => setTimeout(r, INTER_BATCH_DELAY_MS));
+    }
+  }
+
+  const failed = batches.reduce((n, b) => n + b.failed, 0);
+  console.log(`Velocity upsert totals — updated: ${updated}, created: ${created}, noop: ${noop}, failed (final): ${failed}`);
+  return { updated, created, noop, failed, total: items.length };
 }
 
 (async () => {
@@ -312,7 +345,28 @@ async function upsert(items) {
     }
   }
   console.log(`Posting ${items.length} per-tool velocity rows (${live.length} live repos, ${dead.length} dead)`);
-  await upsert(items);
+  const totals = await upsert(items);
+
+  // One CronExecutionLog row per run (written server-side by the endpoint) so
+  // /data-health keeps tracking sync-github-velocity under the new pipeline.
+  const failRate = totals.total ? totals.failed / totals.total : 0;
+  const status = failRate > 0.25 ? 'failed' : 'success';
+  try {
+    await postBatch([], {
+      status,
+      records_processed: totals.updated + totals.created,
+      updated: totals.updated,
+      created: totals.created,
+      failed: totals.failed,
+      noop: totals.noop,
+    });
+  } catch (e) {
+    console.warn(`run_log post failed (non-fatal): ${e.message}`);
+  }
+
+  if (status === 'failed') {
+    throw new Error(`Final failure rate ${(failRate * 100).toFixed(1)}% (>25%): ${totals.failed}/${totals.total} rows unwritten after retries. Failing loudly.`);
+  }
   console.log('Done.');
 })().catch((e) => {
   console.error(e);
