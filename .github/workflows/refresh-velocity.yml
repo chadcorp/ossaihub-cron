@@ -1,13 +1,18 @@
 name: Refresh OSS AI Hub velocity
 on:
   schedule:
-    - cron: '23 2,8,14,20 * * *'   # every 6h, offset from stars(06:17)/discover(04:23)/enrich(07:43)
-  workflow_dispatch:               # manual trigger from the Actions tab
+    - cron: '53 21 * * *'   # daily 21:53 UTC — cadence IS the measurement window:
+                            # the script refreshes EVERY tool each run, so each tool's
+                            # star-gain window = time since the previous run. Daily
+                            # snapshots feed stars_history, from which the endpoint
+                            # computes a true rolling 7-day gain. Do NOT make this more
+                            # frequent without checking upsertVelocityData's gain math.
+  workflow_dispatch:        # manual trigger from the Actions tab
 
 # Full GitHubVelocity refresh. Computes stars/forks/open-issues on the Actions
 # side (GITHUB_TOKEN = 5000 req/hr) and bulk-upserts EVERY tool's velocity row
 # through the Base44 `upsertVelocityData` endpoint in small paced batches with
-# retry (gains are computed server-side).
+# retry (gains are computed server-side from stars_history daily snapshots).
 #
 # Replaces the old path that POSTed to `syncGitHubVelocity`, which wrote only
 # ~50 of 200 rows/run under Base44's per-row write rate-limit and never advanced
@@ -20,10 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
       - run: node refresh-velocity.mjs
         env:
           GH_READONLY_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # auto-provided by Actions, no setup
