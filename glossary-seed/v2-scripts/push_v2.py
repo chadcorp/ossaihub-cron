@@ -72,7 +72,7 @@ def sanitize_for_upsert(rec):
         "example", "pitfalls", "when_use", "when_avoid",
         "related_terms", "related_tools", "related_prompts",
         "faq", "meta_title", "meta_description", "seo_variations",
-        "schema_jsonld",
+        "schema_jsonld", "rewrite_version", "rewritten_at",
         # legacy compatibility — keep short_definition in sync with tldr so
         # any v1-only code paths still show something
         "short_definition", "full_explanation", "common_misconceptions",
