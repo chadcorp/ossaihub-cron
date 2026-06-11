@@ -163,9 +163,21 @@ def main():
         body = json.dumps({"records": chunk}).encode("utf-8")
         try:
             status, resp = post_with_retry(args.url, api_key, body)
-            ok = resp.get("upserted", len(chunk)) if isinstance(resp, dict) else len(chunk)
+            # upsertCodeStarter returns {inserted, updated, failed, errors} — there is
+            # no "upserted" key, so the old resp.get("upserted", len(chunk)) reported
+            # blind success and swallowed per-record failures.
+            if isinstance(resp, dict):
+                ok = int(resp.get("inserted", 0)) + int(resp.get("updated", 0))
+                failed = int(resp.get("failed", 0))
+                errors = resp.get("errors") or []
+            else:
+                ok, failed, errors = len(chunk), 0, []
             total_ok += ok
-            print(f"chunk {ci}/{len(chunks)} -> HTTP {status} upserted={ok}", flush=True)
+            total_failed += failed
+            print(f"chunk {ci}/{len(chunks)} -> HTTP {status} ok={ok} failed={failed}", flush=True)
+            for err in errors[:10]:
+                print(f"    FAILED {err.get('slug', '?')}: {str(err.get('message', ''))[:200]}",
+                      file=sys.stderr, flush=True)
         except Exception as e:
             total_failed += len(chunk)
             print(f"chunk {ci}/{len(chunks)} FAILED: {e}", file=sys.stderr, flush=True)

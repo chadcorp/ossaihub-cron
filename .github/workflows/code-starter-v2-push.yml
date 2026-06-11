@@ -19,7 +19,10 @@ on:
 jobs:
   push:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # 75 min: a full 307-record push fits in ~20 min alone, but Cloudflare
+    # rate-limit retries under concurrent workflow load have pushed real runs
+    # past 45 min — a mid-flight cancel strands the tail of the file unpushed.
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
 

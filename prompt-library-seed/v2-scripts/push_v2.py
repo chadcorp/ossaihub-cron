@@ -144,8 +144,14 @@ def main():
             status, resp = post_with_retry(args.url, api_key, body)
             ok = resp.get("upserted", len(chunk)) if isinstance(resp, dict) else len(chunk)
             total_ok += ok
+            # upsertPrompt also returns failed_slugs — surface them instead of
+            # silently counting the chunk as fully landed.
+            failed_slugs = (resp.get("failed_slugs") or []) if isinstance(resp, dict) else []
+            total_failed += len(failed_slugs)
             slugs_in_chunk = [r.get("slug", "?") for r in chunk]
             extra = ""
+            if failed_slugs:
+                extra = f" FAILED_SLUGS={failed_slugs[:5]}"
             if isinstance(resp, dict) and ok == 0:
                 # Diagnostic — dump entire response when nothing landed
                 extra = f" RESP={json.dumps(resp)[:500]} SLUGS={slugs_in_chunk[:3]}..."
